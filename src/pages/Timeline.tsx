@@ -9,165 +9,300 @@ import {
   Button,
   Input,
 } from "@chakra-ui/react";
-import timelineData from "../../reference/case-documents/timeline_data.json";
+import { observer } from "mobx-react-lite";
+import { useStore } from "../store/StoreContext";
 import { parseLocalDate } from "../lib/dateUtils";
 
+type EventSource =
+  | "deadline"
+  | "filing"
+  | "evidence"
+  | "case"
+  | "finance"
+  | "task";
+
 interface TimelineEvent {
-  party: string;
-  date: string;
+  id: string;
+  date: Date;
+  dateStr: string;
   title: string;
-  case: { type?: string; number?: string };
-  isCritical: boolean;
+  source: EventSource;
   details?: string;
-  source?: string;
+  isCritical: boolean;
+  caseId?: string;
+  metadata?: Record<string, string>;
 }
 
-const PARTY_COLORS: Record<string, { bg: string; border: string }> = {
-  Father: { bg: "blue.500/20", border: "blue.500" },
-  Mother: { bg: "red.500/20", border: "red.500" },
-  Court: { bg: "purple.500/20", border: "purple.500" },
-  "": { bg: "gray.500/20", border: "gray.500" },
+const SOURCE_COLORS: Record<EventSource, { bg: string; border: string; palette: string }> = {
+  deadline: { bg: "orange.500/20", border: "orange.500", palette: "orange" },
+  filing: { bg: "blue.500/20", border: "blue.500", palette: "blue" },
+  evidence: { bg: "green.500/20", border: "green.500", palette: "green" },
+  case: { bg: "purple.500/20", border: "purple.500", palette: "purple" },
+  finance: { bg: "teal.500/20", border: "teal.500", palette: "teal" },
+  task: { bg: "gray.500/20", border: "gray.500", palette: "gray" },
+};
+
+const SOURCE_LABELS: Record<EventSource, string> = {
+  deadline: "Deadlines",
+  filing: "Filings",
+  evidence: "Evidence",
+  case: "Cases",
+  finance: "Finances",
+  task: "Tasks",
 };
 
 const MONTHS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-function assignYears(events: TimelineEvent[]) {
-  let year = 2023;
-  let prevMonth = 0;
-  return events.map((e) => {
-    const [mm, dd] = e.date.split("-").map(Number);
-    if (mm < prevMonth - 2) year++;
-    prevMonth = mm;
-    const fullDate = new Date(year, mm - 1, dd);
-    return { ...e, fullDate, year };
-  });
+function tryParseDate(dateStr: string): Date | null {
+  if (!dateStr) return null;
+  // YYYY-MM-DD format
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return parseLocalDate(dateStr);
+  }
+  // ISO timestamp
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? null : d;
 }
 
-export default function Timeline() {
-  const enriched = useMemo(
-    () => assignYears(timelineData.events as TimelineEvent[]),
-    [],
-  );
-  const years = useMemo(
-    () => [...new Set(enriched.map((e) => e.year))].sort(),
-    [enriched],
-  );
-  const minYear = years[0];
-  const maxYear = years[years.length - 1];
+function toDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
-  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
-  const [partyFilter, setPartyFilter] = useState<string | null>(null);
-  const [startDateFilter, setStartDateFilter] = useState<string>(
-    `${minYear}-01-01`,
-  );
-  const [endDateFilter, setEndDateFilter] = useState<string>(
-    `${maxYear}-12-31`,
-  );
+const Timeline = observer(function Timeline() {
+  const {
+    caseStore,
+    deadlineStore,
+    filingStore,
+    evidenceStore,
+    financeStore,
+    taskStore,
+  } = useStore();
 
-  // Compute date range based on filters or defaults
+  // Build unified events from all stores
+  const allEvents = useMemo(() => {
+    const events: TimelineEvent[] = [];
+
+    // Deadlines
+    for (const d of deadlineStore.deadlines) {
+      const date = tryParseDate(d.date);
+      if (!date) continue;
+      events.push({
+        id: `deadline-${d.id}`,
+        date,
+        dateStr: d.date,
+        title: d.title,
+        source: "deadline",
+        details: d.description || undefined,
+        isCritical: d.priority === "high" || d.urgency === "overdue",
+        caseId: d.caseId || undefined,
+        metadata: { type: d.type, priority: d.priority, status: d.completed ? "completed" : d.urgency },
+      });
+    }
+
+    // Filings
+    for (const f of filingStore.filings) {
+      const date = tryParseDate(f.date);
+      if (!date) continue;
+      events.push({
+        id: `filing-${f.id}`,
+        date,
+        dateStr: f.date,
+        title: f.title,
+        source: "filing",
+        details: f.notes || undefined,
+        isCritical: false,
+        caseId: f.caseId || undefined,
+        metadata: f.type ? { type: f.type } : undefined,
+      });
+    }
+
+    // Evidence
+    for (const e of evidenceStore.evidences) {
+      const date = tryParseDate(e.dateCollected) || tryParseDate(e.createdAt);
+      if (!date) continue;
+      events.push({
+        id: `evidence-${e.id}`,
+        date,
+        dateStr: e.dateCollected || toDateStr(new Date(e.createdAt)),
+        title: e.title,
+        source: "evidence",
+        details: e.description || undefined,
+        isCritical: e.relevance === "high",
+        caseId: e.caseId || undefined,
+        metadata: { type: e.type, relevance: e.relevance },
+      });
+    }
+
+    // Cases (creation events)
+    for (const c of caseStore.cases) {
+      const date = tryParseDate(c.createdAt);
+      if (!date) continue;
+      events.push({
+        id: `case-${c.id}`,
+        date,
+        dateStr: toDateStr(date),
+        title: `Case opened: ${c.name}`,
+        source: "case",
+        details: c.notes || undefined,
+        isCritical: false,
+        caseId: c.id,
+        metadata: {
+          ...(c.caseNumber ? { number: c.caseNumber } : {}),
+          ...(c.court ? { court: c.court } : {}),
+          status: c.status,
+        },
+      });
+    }
+
+    // Finances
+    for (const f of financeStore.entries) {
+      const date = tryParseDate(f.date);
+      if (!date) continue;
+      events.push({
+        id: `finance-${f.id}`,
+        date,
+        dateStr: f.date,
+        title: `${f.category === "income" ? "Income" : "Expense"}: ${f.subcategory}`,
+        source: "finance",
+        details: f.description || undefined,
+        isCritical: false,
+        metadata: { category: f.category, amount: `$${f.amount.toFixed(2)}` },
+      });
+    }
+
+    // Tasks (with due dates)
+    for (const t of taskStore.tasks) {
+      const date = tryParseDate(t.dueDate ?? "");
+      if (!date) continue;
+      events.push({
+        id: `task-${t.id}`,
+        date,
+        dateStr: t.dueDate!,
+        title: t.title,
+        source: "task",
+        details: t.description || undefined,
+        isCritical: t.priority === "high",
+        metadata: { priority: t.priority, status: t.status },
+      });
+    }
+
+    // Sort chronologically
+    events.sort((a, b) => a.date.getTime() - b.date.getTime());
+    return events;
+  }, [
+    deadlineStore.deadlines,
+    filingStore.filings,
+    evidenceStore.evidences,
+    caseStore.cases,
+    financeStore.entries,
+    taskStore.tasks,
+  ]);
+
+  // Compute date bounds from data
+  const { minDate, maxDate } = useMemo(() => {
+    if (allEvents.length === 0) {
+      const now = new Date();
+      return { minDate: now, maxDate: now };
+    }
+    return {
+      minDate: allEvents[0].date,
+      maxDate: allEvents[allEvents.length - 1].date,
+    };
+  }, [allEvents]);
+
+  const defaultStart = toDateStr(minDate);
+  const defaultEnd = toDateStr(maxDate);
+
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [sourceFilter, setSourceFilter] = useState<EventSource | null>(null);
+  const [startDateFilter, setStartDateFilter] = useState<string>("");
+  const [endDateFilter, setEndDateFilter] = useState<string>("");
+
+  const effectiveStart = startDateFilter || defaultStart;
+  const effectiveEnd = endDateFilter || defaultEnd;
+
+  // Compute ruler and range
   const { rangeStart, rangeEnd, rulerMarks } = useMemo(() => {
-    const start = startDateFilter
-      ? parseLocalDate(startDateFilter)
-      : new Date(minYear, 0, 1);
-    const end = endDateFilter
-      ? parseLocalDate(endDateFilter)
-      : new Date(maxYear, 11, 31);
-
-    // Ensure end is after start
-    const finalStart = start;
-    const finalEnd = end > start ? end : start;
+    const start = parseLocalDate(effectiveStart);
+    const end = parseLocalDate(effectiveEnd);
+    const finalEnd = end >= start ? end : start;
 
     const marks: { label: string; pct: number }[] = [];
-    const startYear = finalStart.getFullYear();
+    const totalMs = finalEnd.getTime() - start.getTime();
+    if (totalMs <= 0) return { rangeStart: start, rangeEnd: finalEnd, rulerMarks: marks };
+
+    const startYear = start.getFullYear();
     const endYear = finalEnd.getFullYear();
 
     for (let y = startYear; y <= endYear; y++) {
       const yStart = new Date(y, 0, 1);
-      const pct =
-        ((yStart.getTime() - finalStart.getTime()) /
-          (finalEnd.getTime() - finalStart.getTime())) *
-        100;
+      const pct = ((yStart.getTime() - start.getTime()) / totalMs) * 100;
       if (pct >= 0 && pct <= 100) {
         marks.push({ label: String(y), pct });
       }
-      // Add quarter marks
       for (let q = 1; q <= 3; q++) {
         const qStart = new Date(y, q * 3, 1);
-        const qPct =
-          ((qStart.getTime() - finalStart.getTime()) /
-            (finalEnd.getTime() - finalStart.getTime())) *
-          100;
+        const qPct = ((qStart.getTime() - start.getTime()) / totalMs) * 100;
         if (qPct >= 0 && qPct <= 100) {
           marks.push({ label: MONTHS[q * 3], pct: qPct });
         }
       }
     }
-    return { rangeStart: finalStart, rangeEnd: finalEnd, rulerMarks: marks };
-  }, [minYear, maxYear, startDateFilter, endDateFilter]);
+    return { rangeStart: start, rangeEnd: finalEnd, rulerMarks: marks };
+  }, [effectiveStart, effectiveEnd]);
 
   const totalMs = rangeEnd.getTime() - rangeStart.getTime();
   function pctOffset(d: Date) {
+    if (totalMs <= 0) return 50;
     return ((d.getTime() - rangeStart.getTime()) / totalMs) * 100;
   }
 
   const visibleEvents = useMemo(() => {
-    let filtered = enriched.filter(
-      (e) => e.fullDate >= rangeStart && e.fullDate <= rangeEnd,
+    let filtered = allEvents.filter(
+      (e) => e.date >= rangeStart && e.date <= rangeEnd,
     );
-    if (partyFilter !== null)
-      filtered = filtered.filter((e) => e.party === partyFilter);
+    if (sourceFilter !== null)
+      filtered = filtered.filter((e) => e.source === sourceFilter);
     return filtered;
-  }, [enriched, rangeStart, rangeEnd, partyFilter]);
+  }, [allEvents, rangeStart, rangeEnd, sourceFilter]);
 
-  const parties = ["Father", "Mother", "Court", ""];
-
-  // Format default dates
-  const defaultStartDate = `${minYear}-01-01`;
-  const defaultEndDate = `${maxYear}-12-31`;
-
+  const hasDateFilter = startDateFilter !== "" || endDateFilter !== "";
   const clearDateFilter = () => {
-    setStartDateFilter(defaultStartDate);
-    setEndDateFilter(defaultEndDate);
+    setStartDateFilter("");
+    setEndDateFilter("");
   };
 
-  const hasDateFilter =
-    startDateFilter !== defaultStartDate || endDateFilter !== defaultEndDate;
+  const sources: EventSource[] = ["deadline", "filing", "evidence", "case", "finance", "task"];
+
+  // Find case name by id for display
+  const caseNameMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const c of caseStore.cases) {
+      map[c.id] = c.name;
+    }
+    return map;
+  }, [caseStore.cases]);
 
   return (
     <VStack align="stretch" gap="6">
       <HStack justify="space-between" flexWrap="wrap">
         <Heading size="2xl">Timeline</Heading>
-        <HStack>
-          {parties.map((p) => (
+        <HStack flexWrap="wrap">
+          {sources.map((s) => (
             <Badge
-              key={p || "other"}
+              key={s}
               cursor="pointer"
-              variant={partyFilter === p ? "solid" : "outline"}
-              colorPalette={
-                p === "Father"
-                  ? "blue"
-                  : p === "Mother"
-                    ? "red"
-                    : p === "Court"
-                      ? "purple"
-                      : "gray"
-              }
-              onClick={() => setPartyFilter(partyFilter === p ? null : p)}
+              variant={sourceFilter === s ? "solid" : "outline"}
+              colorPalette={SOURCE_COLORS[s].palette}
+              onClick={() => setSourceFilter(sourceFilter === s ? null : s)}
             >
-              {p || "Other"}
+              {SOURCE_LABELS[s]}
             </Badge>
           ))}
         </HStack>
@@ -183,9 +318,9 @@ export default function Timeline() {
             type="date"
             size="sm"
             w="150px"
-            value={startDateFilter}
+            value={effectiveStart}
             onChange={(e) => setStartDateFilter(e.target.value)}
-            max={endDateFilter}
+            max={effectiveEnd}
             data-testid="timeline-date-from"
           />
         </HStack>
@@ -197,9 +332,9 @@ export default function Timeline() {
             type="date"
             size="sm"
             w="150px"
-            value={endDateFilter}
+            value={effectiveEnd}
             onChange={(e) => setEndDateFilter(e.target.value)}
-            min={startDateFilter}
+            min={effectiveStart}
             data-testid="timeline-date-to"
           />
         </HStack>
@@ -249,21 +384,22 @@ export default function Timeline() {
       <VStack align="stretch" gap="1" minH="200px">
         {visibleEvents.length === 0 && (
           <Text color="fg.muted" textAlign="center" py="8">
-            No events in this range
-            {partyFilter !== null ? ` (${partyFilter || "Other"})` : ""}
+            {allEvents.length === 0
+              ? "No data yet. Add deadlines, filings, evidence, or other records to see them here."
+              : `No events in this range${sourceFilter !== null ? ` (${SOURCE_LABELS[sourceFilter]})` : ""}`}
           </Text>
         )}
-        {visibleEvents.map((evt, i) => {
-          const left = Math.max(0, Math.min(pctOffset(evt.fullDate), 99));
-          const colors = PARTY_COLORS[evt.party] || PARTY_COLORS[""];
-          const isExpanded = expandedIdx === i;
+        {visibleEvents.map((evt) => {
+          const left = Math.max(0, Math.min(pctOffset(evt.date), 99));
+          const colors = SOURCE_COLORS[evt.source];
+          const isExpanded = expandedId === evt.id;
           return (
-            <Box key={i}>
+            <Box key={evt.id}>
               <Box
                 pos="relative"
                 h="32px"
                 cursor="pointer"
-                onClick={() => setExpandedIdx(isExpanded ? null : i)}
+                onClick={() => setExpandedId(isExpanded ? null : evt.id)}
                 _hover={{ bg: "bg.muted" }}
                 borderRadius="sm"
               >
@@ -298,12 +434,12 @@ export default function Timeline() {
                     fontWeight={evt.isCritical ? "bold" : "normal"}
                     truncate
                   >
-                    {evt.isCritical && "⚠ "}
-                    {evt.fullDate.toLocaleDateString("en-US", {
+                    {evt.isCritical && "\u26A0 "}
+                    {evt.date.toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
+                      year: "numeric",
                     })}
-                    , {evt.year}
                     {" — "}
                     {evt.title}
                   </Text>
@@ -325,28 +461,22 @@ export default function Timeline() {
                     {evt.title}
                   </Text>
                   <HStack gap="2" mb="2" flexWrap="wrap">
-                    {evt.party && (
-                      <Badge
-                        size="sm"
-                        colorPalette={
-                          evt.party === "Father"
-                            ? "blue"
-                            : evt.party === "Mother"
-                              ? "red"
-                              : "purple"
-                        }
-                      >
-                        {evt.party}
-                      </Badge>
-                    )}
-                    {evt.case?.number && (
+                    <Badge size="sm" colorPalette={colors.palette}>
+                      {SOURCE_LABELS[evt.source]}
+                    </Badge>
+                    {evt.caseId && caseNameMap[evt.caseId] && (
                       <Badge size="sm" variant="outline">
-                        {evt.case.number}
+                        {caseNameMap[evt.caseId]}
                       </Badge>
                     )}
-                    {evt.case?.type && (
+                    {evt.metadata?.type && (
                       <Badge size="sm" variant="surface">
-                        {evt.case.type}
+                        {evt.metadata.type}
+                      </Badge>
+                    )}
+                    {evt.metadata?.amount && (
+                      <Badge size="sm" variant="surface">
+                        {evt.metadata.amount}
                       </Badge>
                     )}
                     {evt.isCritical && (
@@ -358,11 +488,6 @@ export default function Timeline() {
                   {evt.details && (
                     <Text fontSize="xs" color="fg.muted" whiteSpace="pre-line">
                       {evt.details}
-                    </Text>
-                  )}
-                  {evt.source && (
-                    <Text fontSize="xs" color="fg.subtle" mt="2">
-                      {evt.source}
                     </Text>
                   )}
                 </Box>
@@ -377,21 +502,16 @@ export default function Timeline() {
         <Text fontSize="xs" color="fg.muted">
           Legend:
         </Text>
-        {[
-          { label: "Father", color: "blue.500" },
-          { label: "Mother", color: "red.500" },
-          { label: "Court", color: "purple.500" },
-          { label: "Other", color: "gray.500" },
-        ].map((l) => (
-          <HStack key={l.label} gap="1">
-            <Box w="3" h="3" borderRadius="sm" bg={l.color} />
+        {sources.map((s) => (
+          <HStack key={s} gap="1">
+            <Box w="3" h="3" borderRadius="sm" bg={SOURCE_COLORS[s].border} />
             <Text fontSize="xs" color="fg.muted">
-              {l.label}
+              {SOURCE_LABELS[s]}
             </Text>
           </HStack>
         ))}
         <HStack gap="1">
-          <Text fontSize="xs">⚠</Text>
+          <Text fontSize="xs">{"\u26A0"}</Text>
           <Text fontSize="xs" color="fg.muted">
             Critical
           </Text>
@@ -399,4 +519,6 @@ export default function Timeline() {
       </HStack>
     </VStack>
   );
-}
+});
+
+export default Timeline;

@@ -123,7 +123,7 @@ The frontend will be available at `http://localhost:5173` and automatically prox
 ## Project Structure
 
 ```
-pro-se-va-copy/
+proseva/
 ├── src/                          # Frontend (React)
 │   ├── pages/                    # Top-level page components
 │   ├── components/               # Reusable UI components
@@ -155,7 +155,6 @@ pro-se-va-copy/
 ├── public/                       # Static assets
 ├── vite.config.ts               # Vite configuration
 ├── vitest.config.ts             # Vitest configuration
-├── CLAUDE.md                     # Claude Code instructions
 ├── capabilities.md              # Feature list
 └── README.md                     # This file
 ```
@@ -534,8 +533,6 @@ Outputs:
 - Verify localStorage keys in `RootStore.ts` STORAGE_KEYS
 
 ## Resources
-
-- [CLAUDE.md](./CLAUDE.md) - Detailed Claude Code instructions
 - [capabilities.md](./capabilities.md) - Feature list and capabilities
 - [Vite Documentation](https://vitejs.dev)
 - [React Documentation](https://react.dev)
