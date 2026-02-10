@@ -1,39 +1,84 @@
 import { render, screen, fireEvent } from "../test-utils";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import Timeline from "./Timeline";
+import { StoreProvider } from "../store/StoreContext";
+import { RootStore } from "../store/RootStore";
 
-// Mock the timeline data
-vi.mock("../../reference/case-documents/timeline_data.json", () => ({
-  default: {
-    events: [
-      {
-        party: "Father",
-        date: "01-15",
-        title: "Custody filing",
-        case: { type: "Custody", number: "2024-CV-001" },
-        isCritical: true,
-        details: "Initial custody filing",
-        source: "Court records",
-      },
-      {
-        party: "Mother",
-        date: "02-01",
-        title: "Response filed",
-        case: { type: "Custody", number: "2024-CV-001" },
-        isCritical: false,
-        details: "Mother's response",
-        source: "Court records",
-      },
-      {
-        party: "Court",
-        date: "03-10",
-        title: "Hearing scheduled",
-        case: { type: "Custody" },
-        isCritical: true,
-      },
-    ],
+// Mock the API module
+vi.mock("../lib/api", () => ({
+  api: {
+    cases: { list: vi.fn().mockResolvedValue([]), create: vi.fn(), update: vi.fn(), delete: vi.fn(), addParty: vi.fn(), removeParty: vi.fn(), addFiling: vi.fn(), removeFiling: vi.fn() },
+    deadlines: { list: vi.fn().mockResolvedValue([]), create: vi.fn(), update: vi.fn(), delete: vi.fn(), toggleComplete: vi.fn() },
+    filings: { list: vi.fn().mockResolvedValue([]), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
+    evidences: { list: vi.fn().mockResolvedValue([]), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
+    finances: { list: vi.fn().mockResolvedValue([]), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
+    contacts: { list: vi.fn().mockResolvedValue([]) },
+    documents: { list: vi.fn().mockResolvedValue([]) },
   },
 }));
+
+function createTestStore(overrides: Record<string, unknown> = {}) {
+  return RootStore.create({
+    caseStore: { cases: [] },
+    deadlineStore: {
+      deadlines: [],
+      selectedType: "all",
+      selectedUrgency: "all",
+      selectedCaseId: "all",
+      searchQuery: "",
+    },
+    financeStore: { entries: [] },
+    contactStore: { contacts: [] },
+    chatStore: { messages: [] },
+    documentStore: { documents: [] },
+    noteStore: { notes: [] },
+    taskStore: { tasks: [] },
+    evidenceStore: {
+      evidences: [],
+      selectedType: "all",
+      selectedRelevance: "all",
+      selectedCaseId: "all",
+      selectedAdmissible: "all",
+      searchQuery: "",
+    },
+    filingStore: {
+      filings: [],
+      selectedType: "all",
+      selectedCaseId: "all",
+      searchQuery: "",
+      dateFrom: "",
+      dateTo: "",
+    },
+    evaluationStore: {
+      evaluations: [],
+      deviceTokens: [],
+      smsRecipients: [],
+      schedulerStatus: null,
+      isLoading: false,
+      isTriggering: false,
+    },
+    configStore: {
+      config: null,
+      isLoading: false,
+      isTesting: false,
+      error: null,
+    },
+    estatePlanStore: {
+      plans: [],
+      selectedStatus: "all",
+      searchQuery: "",
+    },
+    ...overrides,
+  });
+}
+
+function renderTimeline(store = createTestStore()) {
+  return render(
+    <StoreProvider store={store}>
+      <Timeline />
+    </StoreProvider>,
+  );
+}
 
 describe("Timeline", () => {
   beforeEach(() => {
@@ -41,87 +86,255 @@ describe("Timeline", () => {
   });
 
   it("renders timeline heading", () => {
-    render(<Timeline />);
+    renderTimeline();
     expect(
       screen.getByRole("heading", { name: "Timeline" }),
     ).toBeInTheDocument();
   });
 
-  it("displays party filter badges", () => {
-    render(<Timeline />);
-    // Party names appear in both filter badges and legend, use getAllByText
-    expect(screen.getAllByText("Father").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Mother").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Court").length).toBeGreaterThan(0);
+  it("shows empty state when no data", () => {
+    renderTimeline();
+    expect(screen.getByText(/No data yet/)).toBeInTheDocument();
+  });
+
+  it("displays source filter badges", () => {
+    renderTimeline();
+    expect(screen.getAllByText("Deadlines").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Filings").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Evidence").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Cases").length).toBeGreaterThan(0);
+  });
+
+  it("displays events from deadlines", () => {
+    const store = createTestStore({
+      deadlineStore: {
+        deadlines: [
+          {
+            id: "d1",
+            title: "File motion",
+            date: "2024-06-15",
+            type: "filing",
+            completed: false,
+            caseId: "",
+            description: "Important deadline",
+            priority: "high",
+          },
+        ],
+        selectedType: "all",
+        selectedUrgency: "all",
+        selectedCaseId: "all",
+        searchQuery: "",
+      },
+    });
+    renderTimeline(store);
+    expect(screen.getByText(/File motion/)).toBeInTheDocument();
+    expect(screen.getByText(/1 events/)).toBeInTheDocument();
+  });
+
+  it("displays events from filings", () => {
+    const store = createTestStore({
+      filingStore: {
+        filings: [
+          {
+            id: "f1",
+            title: "Complaint filed",
+            date: "2024-03-01",
+            type: "complaint",
+            notes: "",
+            caseId: "",
+          },
+        ],
+        selectedType: "all",
+        selectedCaseId: "all",
+        searchQuery: "",
+        dateFrom: "",
+        dateTo: "",
+      },
+    });
+    renderTimeline(store);
+    expect(screen.getByText(/Complaint filed/)).toBeInTheDocument();
+  });
+
+  it("displays events from multiple sources", () => {
+    const store = createTestStore({
+      deadlineStore: {
+        deadlines: [
+          {
+            id: "d1",
+            title: "Hearing date",
+            date: "2024-05-10",
+            type: "hearing",
+            completed: false,
+            caseId: "",
+            description: "",
+            priority: "medium",
+          },
+        ],
+        selectedType: "all",
+        selectedUrgency: "all",
+        selectedCaseId: "all",
+        searchQuery: "",
+      },
+      filingStore: {
+        filings: [
+          {
+            id: "f1",
+            title: "Answer filed",
+            date: "2024-04-01",
+            type: "",
+            notes: "",
+            caseId: "",
+          },
+        ],
+        selectedType: "all",
+        selectedCaseId: "all",
+        searchQuery: "",
+        dateFrom: "",
+        dateTo: "",
+      },
+    });
+    renderTimeline(store);
+    expect(screen.getByText(/Hearing date/)).toBeInTheDocument();
+    expect(screen.getByText(/Answer filed/)).toBeInTheDocument();
+    expect(screen.getByText(/2 events/)).toBeInTheDocument();
+  });
+
+  it("filters events by source when badge is clicked", () => {
+    const store = createTestStore({
+      deadlineStore: {
+        deadlines: [
+          {
+            id: "d1",
+            title: "Deadline event",
+            date: "2024-05-10",
+            type: "filing",
+            completed: false,
+            caseId: "",
+            description: "",
+            priority: "medium",
+          },
+        ],
+        selectedType: "all",
+        selectedUrgency: "all",
+        selectedCaseId: "all",
+        searchQuery: "",
+      },
+      filingStore: {
+        filings: [
+          {
+            id: "f1",
+            title: "Filing event",
+            date: "2024-04-01",
+            type: "",
+            notes: "",
+            caseId: "",
+          },
+        ],
+        selectedType: "all",
+        selectedCaseId: "all",
+        searchQuery: "",
+        dateFrom: "",
+        dateTo: "",
+      },
+    });
+    renderTimeline(store);
+
+    // Click on Filings filter
+    const filingsElements = screen.getAllByText("Filings");
+    fireEvent.click(filingsElements[0]);
+
+    expect(screen.getByText(/1 events/)).toBeInTheDocument();
+    expect(screen.getByText(/Filing event/)).toBeInTheDocument();
   });
 
   it("displays date range filters", () => {
-    render(<Timeline />);
+    const store = createTestStore({
+      deadlineStore: {
+        deadlines: [
+          {
+            id: "d1",
+            title: "Test",
+            date: "2024-01-15",
+            type: "other",
+            completed: false,
+            caseId: "",
+            description: "",
+            priority: "medium",
+          },
+        ],
+        selectedType: "all",
+        selectedUrgency: "all",
+        selectedCaseId: "all",
+        searchQuery: "",
+      },
+    });
+    renderTimeline(store);
     const dateInputs = screen.getAllByDisplayValue(/\d{4}-\d{2}-\d{2}/);
     expect(dateInputs.length).toBeGreaterThanOrEqual(2);
-  });
-
-  it("filters events by party when party badge is clicked", () => {
-    render(<Timeline />);
-    // Get the badge (first occurrence), not the legend text
-    const fatherElements = screen.getAllByText("Father");
-    fireEvent.click(fatherElements[0]);
-    expect(fatherElements[0]).toBeInTheDocument();
   });
 
   it("displays event count", () => {
-    render(<Timeline />);
-    const eventCountText = screen.getByText(/\d+ events/);
+    renderTimeline();
+    const eventCountText = screen.getByText(/0 events/);
     expect(eventCountText).toBeInTheDocument();
   });
 
-  it("displays year range", () => {
-    render(<Timeline />);
-    const yearText = screen.getByText(/\d{4} – \d{4}/);
-    expect(yearText).toBeInTheDocument();
-  });
-
-  it("renders timeline ruler with year marks", () => {
-    const { container } = render(<Timeline />);
-    expect(container).toBeInTheDocument();
-  });
-
-  it("shows legend with party colors", () => {
-    render(<Timeline />);
+  it("shows legend with source colors", () => {
+    renderTimeline();
     expect(screen.getByText("Legend:")).toBeInTheDocument();
   });
 
-  it("handles date range filter changes", () => {
-    render(<Timeline />);
-    const dateInputs = screen.getAllByDisplayValue(/\d{4}-\d{2}-\d{2}/);
-    expect(dateInputs.length).toBeGreaterThanOrEqual(2);
+  it("allows source filter toggle on/off", () => {
+    const store = createTestStore({
+      deadlineStore: {
+        deadlines: [
+          {
+            id: "d1",
+            title: "Test deadline",
+            date: "2024-01-15",
+            type: "other",
+            completed: false,
+            caseId: "",
+            description: "",
+            priority: "medium",
+          },
+        ],
+        selectedType: "all",
+        selectedUrgency: "all",
+        selectedCaseId: "all",
+        searchQuery: "",
+      },
+    });
+    renderTimeline(store);
+    const deadlinesElements = screen.getAllByText("Deadlines");
+    fireEvent.click(deadlinesElements[0]);
+    fireEvent.click(deadlinesElements[0]);
+    expect(screen.getByText(/1 events/)).toBeInTheDocument();
   });
 
-  it("displays reset button when date filter is active", () => {
-    render(<Timeline />);
-    const dateInputs = screen.getAllByDisplayValue(/\d{4}-\d{2}-\d{2}/);
-    if (dateInputs.length > 0) {
-      fireEvent.change(dateInputs[0], { target: { value: "2024-01-01" } });
-      const { container } = render(<Timeline />);
-      expect(container).toBeInTheDocument();
-    }
-  });
-
-  it("shows no events message when no events in range", () => {
-    const { container } = render(<Timeline />);
-    expect(container.firstChild).toBeInTheDocument();
-  });
-
-  it("renders timeline events", () => {
-    const { container } = render(<Timeline />);
-    expect(container).toBeInTheDocument();
-  });
-
-  it("allows party filter toggle on/off", () => {
-    render(<Timeline />);
-    const fatherElements = screen.getAllByText("Father");
-    fireEvent.click(fatherElements[0]);
-    fireEvent.click(fatherElements[0]);
-    expect(fatherElements[0]).toBeInTheDocument();
+  it("marks high-priority deadlines as critical", () => {
+    const store = createTestStore({
+      deadlineStore: {
+        deadlines: [
+          {
+            id: "d1",
+            title: "Urgent deadline",
+            date: "2024-06-15",
+            type: "filing",
+            completed: false,
+            caseId: "",
+            description: "Critical filing",
+            priority: "high",
+          },
+        ],
+        selectedType: "all",
+        selectedUrgency: "all",
+        selectedCaseId: "all",
+        searchQuery: "",
+      },
+    });
+    renderTimeline(store);
+    // The critical warning symbol appears in the event row and the legend
+    expect(screen.getAllByText(/\u26A0/).length).toBeGreaterThanOrEqual(2);
   });
 });

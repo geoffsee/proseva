@@ -28,7 +28,6 @@ import {
 } from "./ingest";
 import { autoPopulateFromDocument } from "./ingestion-agent";
 import { executeSearch, type EntityType } from "./search";
-import embeddingsDb from "../data/embeddings-database.json";
 import {
   initScheduler,
   getSchedulerStatus,
@@ -45,19 +44,7 @@ import {
 } from "./notifications";
 import { configRouter } from "./config-api";
 import { getConfig } from "./config";
-
-function cosineSimilarity(a: number[], b: number[]): number {
-  let dot = 0,
-    magA = 0,
-    magB = 0;
-  for (let i = 0; i < a.length; i++) {
-    dot += a[i] * b[i];
-    magA += a[i] * a[i];
-    magB += b[i] * b[i];
-  }
-  const denom = Math.sqrt(magA) * Math.sqrt(magB);
-  return denom === 0 ? 0 : dot / denom;
-}
+import { cosine_similarity_dataspace } from "wasm-similarity";
 import {
   generateCaseSummary,
   generateEvidenceAnalysis,
@@ -931,21 +918,28 @@ You have access to tools that let you look up the user's cases, deadlines, conta
               input: args.query,
             });
             const queryVec = embResponse.data[0].embedding;
-            const scored = (
-              embeddingsDb as {
-                id: string;
-                source: string;
-                content: string;
-                embedding: number[];
-              }[]
-            )
-              .map((record) => ({
-                source: record.source,
-                content: record.content,
-                score: cosineSimilarity(queryVec, record.embedding),
-              }))
-              .sort((a, b) => b.score - a.score)
-              .slice(0, topK);
+            const records = Array.from(db.embeddings.values());
+            if (records.length === 0) return JSON.stringify([]);
+            const dim = queryVec.length;
+            const flat = new Float64Array(records.length * dim);
+            for (let i = 0; i < records.length; i++) {
+              flat.set(records[i].embedding, i * dim);
+            }
+            const ranked = cosine_similarity_dataspace(
+              flat,
+              records.length,
+              dim,
+              new Float64Array(queryVec),
+            );
+            const scored = [];
+            for (let i = 0; i < ranked.length && scored.length < topK; i += 2) {
+              const idx = ranked[i + 1];
+              scored.push({
+                source: records[idx].source,
+                content: records[idx].content,
+                score: ranked[i],
+              });
+            }
             return JSON.stringify(scored);
           } catch {
             return JSON.stringify({ error: "Knowledge search failed" });

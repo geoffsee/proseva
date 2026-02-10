@@ -255,6 +255,13 @@ export type EstateDocument = {
   updatedAt: string;
 };
 
+export type Embedding = {
+  id: string;
+  source: string;
+  content: string;
+  embedding: number[];
+};
+
 export type EstatePlan = {
   id: string;
   title: string;
@@ -288,6 +295,7 @@ type Collections = {
   evaluations: Map<string, Evaluation>;
   serverConfig: Map<string, ServerConfig>;
   estatePlans: Map<string, EstatePlan>;
+  embeddings: Map<string, Embedding>;
 };
 
 const COLLECTION_KEYS: (keyof Collections)[] = [
@@ -303,6 +311,7 @@ const COLLECTION_KEYS: (keyof Collections)[] = [
   "evaluations",
   "serverConfig",
   "estatePlans",
+  "embeddings",
 ];
 
 function toMaps(raw: Record<string, Record<string, unknown>>): Collections {
@@ -336,6 +345,7 @@ export class Database {
   evaluations: Map<string, Evaluation>;
   serverConfig: Map<string, ServerConfig>;
   estatePlans: Map<string, EstatePlan>;
+  embeddings: Map<string, Embedding>;
 
   private adapter: PersistenceAdapter;
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -356,6 +366,7 @@ export class Database {
     this.evaluations = maps.evaluations;
     this.serverConfig = maps.serverConfig;
     this.estatePlans = maps.estatePlans;
+    this.embeddings = maps.embeddings;
   }
 
   /** Debounced write — coalesces rapid mutations into a single disk write. */
