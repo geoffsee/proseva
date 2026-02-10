@@ -1,0 +1,1560 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ProSeVA API",
+    "description": "API for the legal assistant software",
+    "version": "0.1.0"
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Application server"
+    }
+  ],
+  "paths": {
+    "/cases": {
+      "get": {
+        "operationId": "listCases",
+        "tags": ["Cases"],
+        "summary": "List all cases",
+        "responses": {
+          "200": {
+            "description": "List of cases",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Case" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createCase",
+        "tags": ["Cases"],
+        "summary": "Create a case",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CaseCreate" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created case",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Case" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cases/{caseId}": {
+      "parameters": [{ "$ref": "#/components/parameters/caseId" }],
+      "get": {
+        "operationId": "getCase",
+        "tags": ["Cases"],
+        "summary": "Get a case by ID",
+        "responses": {
+          "200": {
+            "description": "The case",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Case" }
+              }
+            }
+          },
+          "404": { "description": "Case not found" }
+        }
+      },
+      "patch": {
+        "operationId": "updateCase",
+        "tags": ["Cases"],
+        "summary": "Update a case",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CaseUpdate" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated case",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Case" }
+              }
+            }
+          },
+          "404": { "description": "Case not found" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteCase",
+        "tags": ["Cases"],
+        "summary": "Delete a case",
+        "responses": {
+          "204": { "description": "Deleted" },
+          "404": { "description": "Case not found" }
+        }
+      }
+    },
+    "/cases/{caseId}/parties": {
+      "parameters": [{ "$ref": "#/components/parameters/caseId" }],
+      "post": {
+        "operationId": "addParty",
+        "tags": ["Cases"],
+        "summary": "Add a party to a case",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PartyCreate" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created party",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Party" }
+              }
+            }
+          },
+          "404": { "description": "Case not found" }
+        }
+      }
+    },
+    "/cases/{caseId}/parties/{partyId}": {
+      "parameters": [
+        { "$ref": "#/components/parameters/caseId" },
+        { "$ref": "#/components/parameters/partyId" }
+      ],
+      "delete": {
+        "operationId": "removeParty",
+        "tags": ["Cases"],
+        "summary": "Remove a party from a case",
+        "responses": {
+          "204": { "description": "Deleted" },
+          "404": { "description": "Case or party not found" }
+        }
+      }
+    },
+    "/cases/{caseId}/filings": {
+      "parameters": [{ "$ref": "#/components/parameters/caseId" }],
+      "post": {
+        "operationId": "addFiling",
+        "tags": ["Cases"],
+        "summary": "Add a filing to a case",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FilingCreate" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created filing",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Filing" }
+              }
+            }
+          },
+          "404": { "description": "Case not found" }
+        }
+      }
+    },
+    "/cases/{caseId}/filings/{filingId}": {
+      "parameters": [
+        { "$ref": "#/components/parameters/caseId" },
+        { "$ref": "#/components/parameters/filingId" }
+      ],
+      "delete": {
+        "operationId": "removeFiling",
+        "tags": ["Cases"],
+        "summary": "Remove a filing from a case",
+        "responses": {
+          "204": { "description": "Deleted" },
+          "404": { "description": "Case or filing not found" }
+        }
+      }
+    },
+    "/contacts": {
+      "get": {
+        "operationId": "listContacts",
+        "tags": ["Contacts"],
+        "summary": "List all contacts",
+        "responses": {
+          "200": {
+            "description": "List of contacts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Contact" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createContact",
+        "tags": ["Contacts"],
+        "summary": "Create a contact",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ContactCreate" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created contact",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Contact" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contacts/{contactId}": {
+      "parameters": [{ "$ref": "#/components/parameters/contactId" }],
+      "get": {
+        "operationId": "getContact",
+        "tags": ["Contacts"],
+        "summary": "Get a contact by ID",
+        "responses": {
+          "200": {
+            "description": "The contact",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Contact" }
+              }
+            }
+          },
+          "404": { "description": "Contact not found" }
+        }
+      },
+      "patch": {
+        "operationId": "updateContact",
+        "tags": ["Contacts"],
+        "summary": "Update a contact",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ContactUpdate" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated contact",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Contact" }
+              }
+            }
+          },
+          "404": { "description": "Contact not found" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteContact",
+        "tags": ["Contacts"],
+        "summary": "Delete a contact",
+        "responses": {
+          "204": { "description": "Deleted" },
+          "404": { "description": "Contact not found" }
+        }
+      }
+    },
+    "/deadlines": {
+      "get": {
+        "operationId": "listDeadlines",
+        "tags": ["Deadlines"],
+        "summary": "List all deadlines",
+        "responses": {
+          "200": {
+            "description": "List of deadlines",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Deadline" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createDeadline",
+        "tags": ["Deadlines"],
+        "summary": "Create a deadline",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DeadlineCreate" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created deadline",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Deadline" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/deadlines/{deadlineId}": {
+      "parameters": [{ "$ref": "#/components/parameters/deadlineId" }],
+      "get": {
+        "operationId": "getDeadline",
+        "tags": ["Deadlines"],
+        "summary": "Get a deadline by ID",
+        "responses": {
+          "200": {
+            "description": "The deadline",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Deadline" }
+              }
+            }
+          },
+          "404": { "description": "Deadline not found" }
+        }
+      },
+      "patch": {
+        "operationId": "updateDeadline",
+        "tags": ["Deadlines"],
+        "summary": "Update a deadline",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DeadlineUpdate" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated deadline",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Deadline" }
+              }
+            }
+          },
+          "404": { "description": "Deadline not found" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteDeadline",
+        "tags": ["Deadlines"],
+        "summary": "Delete a deadline",
+        "responses": {
+          "204": { "description": "Deleted" },
+          "404": { "description": "Deadline not found" }
+        }
+      }
+    },
+    "/deadlines/{deadlineId}/toggle-complete": {
+      "parameters": [{ "$ref": "#/components/parameters/deadlineId" }],
+      "post": {
+        "operationId": "toggleDeadlineComplete",
+        "tags": ["Deadlines"],
+        "summary": "Toggle a deadline's completed status",
+        "responses": {
+          "200": {
+            "description": "Updated deadline",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Deadline" }
+              }
+            }
+          },
+          "404": { "description": "Deadline not found" }
+        }
+      }
+    },
+    "/finances": {
+      "get": {
+        "operationId": "listFinancialEntries",
+        "tags": ["Finances"],
+        "summary": "List all financial entries",
+        "responses": {
+          "200": {
+            "description": "List of financial entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/FinancialEntry" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createFinancialEntry",
+        "tags": ["Finances"],
+        "summary": "Create a financial entry",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FinancialEntryCreate" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created entry",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FinancialEntry" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/finances/{entryId}": {
+      "parameters": [{ "$ref": "#/components/parameters/entryId" }],
+      "get": {
+        "operationId": "getFinancialEntry",
+        "tags": ["Finances"],
+        "summary": "Get a financial entry by ID",
+        "responses": {
+          "200": {
+            "description": "The financial entry",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FinancialEntry" }
+              }
+            }
+          },
+          "404": { "description": "Entry not found" }
+        }
+      },
+      "patch": {
+        "operationId": "updateFinancialEntry",
+        "tags": ["Finances"],
+        "summary": "Update a financial entry",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FinancialEntryUpdate" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated entry",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FinancialEntry" }
+              }
+            }
+          },
+          "404": { "description": "Entry not found" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteFinancialEntry",
+        "tags": ["Finances"],
+        "summary": "Delete a financial entry",
+        "responses": {
+          "204": { "description": "Deleted" },
+          "404": { "description": "Entry not found" }
+        }
+      }
+    },
+    "/evidences": {
+      "get": {
+        "operationId": "listEvidences",
+        "tags": ["Evidences"],
+        "summary": "List all evidence items",
+        "responses": {
+          "200": {
+            "description": "List of evidence items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Evidence" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createEvidence",
+        "tags": ["Evidences"],
+        "summary": "Create an evidence item",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EvidenceCreate" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created evidence",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Evidence" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/evidences/{evidenceId}": {
+      "parameters": [{ "$ref": "#/components/parameters/evidenceId" }],
+      "get": {
+        "operationId": "getEvidence",
+        "tags": ["Evidences"],
+        "summary": "Get an evidence item by ID",
+        "responses": {
+          "200": {
+            "description": "The evidence item",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Evidence" }
+              }
+            }
+          },
+          "404": { "description": "Evidence not found" }
+        }
+      },
+      "patch": {
+        "operationId": "updateEvidence",
+        "tags": ["Evidences"],
+        "summary": "Update an evidence item",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EvidenceUpdate" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated evidence",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Evidence" }
+              }
+            }
+          },
+          "404": { "description": "Evidence not found" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteEvidence",
+        "tags": ["Evidences"],
+        "summary": "Delete an evidence item",
+        "responses": {
+          "204": { "description": "Deleted" },
+          "404": { "description": "Evidence not found" }
+        }
+      }
+    },
+    "/filings": {
+      "get": {
+        "operationId": "listFilings",
+        "tags": ["Filings"],
+        "summary": "List all filings",
+        "responses": {
+          "200": {
+            "description": "List of filings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Filing" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createFiling",
+        "tags": ["Filings"],
+        "summary": "Create a filing",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FilingCreate" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created filing",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Filing" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/filings/{filingId}": {
+      "parameters": [{ "$ref": "#/components/parameters/filingId" }],
+      "get": {
+        "operationId": "getFiling",
+        "tags": ["Filings"],
+        "summary": "Get a filing by ID",
+        "responses": {
+          "200": {
+            "description": "The filing",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Filing" }
+              }
+            }
+          },
+          "404": { "description": "Filing not found" }
+        }
+      },
+      "patch": {
+        "operationId": "updateFiling",
+        "tags": ["Filings"],
+        "summary": "Update a filing",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FilingUpdate" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated filing",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Filing" }
+              }
+            }
+          },
+          "404": { "description": "Filing not found" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteFiling",
+        "tags": ["Filings"],
+        "summary": "Delete a filing",
+        "responses": {
+          "204": { "description": "Deleted" },
+          "404": { "description": "Filing not found" }
+        }
+      }
+    },
+    "/notes": {
+      "get": {
+        "operationId": "listNotes",
+        "tags": ["Notes"],
+        "summary": "List all notes",
+        "responses": {
+          "200": {
+            "description": "List of notes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Note" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createNote",
+        "tags": ["Notes"],
+        "summary": "Create a note",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/NoteCreate" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created note",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Note" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notes/{noteId}": {
+      "parameters": [{ "$ref": "#/components/parameters/noteId" }],
+      "get": {
+        "operationId": "getNote",
+        "tags": ["Notes"],
+        "summary": "Get a note by ID",
+        "responses": {
+          "200": {
+            "description": "The note",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Note" }
+              }
+            }
+          },
+          "404": { "description": "Note not found" }
+        }
+      },
+      "patch": {
+        "operationId": "updateNote",
+        "tags": ["Notes"],
+        "summary": "Update a note",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/NoteUpdate" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated note",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Note" }
+              }
+            }
+          },
+          "404": { "description": "Note not found" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteNote",
+        "tags": ["Notes"],
+        "summary": "Delete a note",
+        "responses": {
+          "204": { "description": "Deleted" },
+          "404": { "description": "Note not found" }
+        }
+      }
+    },
+    "/chat": {
+      "post": {
+        "operationId": "chat",
+        "tags": ["Chat"],
+        "summary": "Send a message to the AI legal assistant",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["messages"],
+                "properties": {
+                  "messages": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["role", "content"],
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "enum": ["user", "assistant"]
+                        },
+                        "content": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Chat response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["reply"],
+                  "properties": {
+                    "reply": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reports": {
+      "post": {
+        "operationId": "generateReport",
+        "tags": ["Reports"],
+        "summary": "Generate an AI-powered report",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["type"],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "case-summary",
+                      "evidence-analysis",
+                      "financial",
+                      "chronology"
+                    ]
+                  }
+                },
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Generated report"
+          },
+          "400": {
+            "description": "Invalid report type"
+          }
+        }
+      }
+    },
+    "/documents/upload": {
+      "post": {
+        "operationId": "uploadDocuments",
+        "tags": ["Documents"],
+        "summary": "Upload and ingest PDF documents",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["files"],
+                "properties": {
+                  "files": {
+                    "type": "array",
+                    "items": { "type": "string", "format": "binary" }
+                  },
+                  "category": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Ingested documents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/DocumentEntry" }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No files provided"
+          }
+        }
+      }
+    },
+    "/ingest/scan": {
+      "post": {
+        "operationId": "scanDirectory",
+        "tags": ["Documents"],
+        "summary": "Scan directory for PDF documents",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["directory"],
+                "properties": {
+                  "directory": {
+                    "type": "string",
+                    "description": "Absolute path to directory on server"
+                  },
+                  "watch": {
+                    "type": "boolean",
+                    "description": "Enable continuous watching"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Scan result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "added",
+                    "skipped",
+                    "errors",
+                    "directory",
+                    "startedAt"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["running", "completed", "error"]
+                    },
+                    "added": { "type": "integer" },
+                    "skipped": { "type": "integer" },
+                    "errors": { "type": "integer" },
+                    "directory": { "type": "string" },
+                    "startedAt": { "type": "string", "format": "date-time" },
+                    "finishedAt": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or configuration"
+          },
+          "500": {
+            "description": "Scan failed"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "caseId": {
+        "name": "caseId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" }
+      },
+      "partyId": {
+        "name": "partyId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" }
+      },
+      "filingId": {
+        "name": "filingId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" }
+      },
+      "contactId": {
+        "name": "contactId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" }
+      },
+      "deadlineId": {
+        "name": "deadlineId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" }
+      },
+      "entryId": {
+        "name": "entryId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" }
+      },
+      "noteId": {
+        "name": "noteId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" }
+      },
+      "evidenceId": {
+        "name": "evidenceId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" }
+      }
+    },
+    "schemas": {
+      "Party": {
+        "type": "object",
+        "required": ["id", "name", "role"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "role": { "type": "string" },
+          "contact": { "type": "string", "default": "" }
+        }
+      },
+      "PartyCreate": {
+        "type": "object",
+        "required": ["name", "role"],
+        "properties": {
+          "name": { "type": "string" },
+          "role": { "type": "string" },
+          "contact": { "type": "string" }
+        }
+      },
+      "Filing": {
+        "type": "object",
+        "required": ["id", "title", "date"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "date": { "type": "string", "format": "date" },
+          "type": { "type": "string", "default": "" },
+          "notes": { "type": "string", "default": "" },
+          "caseId": { "type": "string", "default": "" }
+        }
+      },
+      "FilingCreate": {
+        "type": "object",
+        "required": ["title", "date"],
+        "properties": {
+          "title": { "type": "string" },
+          "date": { "type": "string", "format": "date" },
+          "type": { "type": "string" },
+          "notes": { "type": "string" },
+          "caseId": { "type": "string" }
+        }
+      },
+      "FilingUpdate": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "date": { "type": "string", "format": "date" },
+          "type": { "type": "string" },
+          "notes": { "type": "string" },
+          "caseId": { "type": "string" }
+        }
+      },
+      "Case": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "status",
+          "parties",
+          "filings",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "caseNumber": { "type": "string", "default": "" },
+          "court": { "type": "string", "default": "" },
+          "caseType": { "type": "string", "default": "" },
+          "status": {
+            "type": "string",
+            "enum": ["active", "closed", "pending"],
+            "default": "active"
+          },
+          "parties": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Party" }
+          },
+          "filings": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Filing" }
+          },
+          "notes": { "type": "string", "default": "" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CaseCreate": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "caseNumber": { "type": "string" },
+          "court": { "type": "string" },
+          "caseType": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["active", "closed", "pending"]
+          },
+          "notes": { "type": "string" }
+        }
+      },
+      "CaseUpdate": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "caseNumber": { "type": "string" },
+          "court": { "type": "string" },
+          "caseType": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["active", "closed", "pending"]
+          },
+          "notes": { "type": "string" }
+        }
+      },
+      "Contact": {
+        "type": "object",
+        "required": ["id", "name", "role"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "role": {
+            "type": "string",
+            "enum": [
+              "attorney",
+              "judge",
+              "clerk",
+              "witness",
+              "expert",
+              "opposing_party",
+              "other"
+            ]
+          },
+          "organization": { "type": "string", "default": "" },
+          "phone": { "type": "string", "default": "" },
+          "email": { "type": "string", "format": "email", "default": "" },
+          "address": { "type": "string", "default": "" },
+          "notes": { "type": "string", "default": "" },
+          "caseId": { "type": "string", "default": "" }
+        }
+      },
+      "ContactCreate": {
+        "type": "object",
+        "required": ["name", "role"],
+        "properties": {
+          "name": { "type": "string" },
+          "role": {
+            "type": "string",
+            "enum": [
+              "attorney",
+              "judge",
+              "clerk",
+              "witness",
+              "expert",
+              "opposing_party",
+              "other"
+            ]
+          },
+          "organization": { "type": "string" },
+          "phone": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "address": { "type": "string" },
+          "notes": { "type": "string" },
+          "caseId": { "type": "string" }
+        }
+      },
+      "ContactUpdate": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "role": {
+            "type": "string",
+            "enum": [
+              "attorney",
+              "judge",
+              "clerk",
+              "witness",
+              "expert",
+              "opposing_party",
+              "other"
+            ]
+          },
+          "organization": { "type": "string" },
+          "phone": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "address": { "type": "string" },
+          "notes": { "type": "string" },
+          "caseId": { "type": "string" }
+        }
+      },
+      "Deadline": {
+        "type": "object",
+        "required": ["id", "title", "date"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "caseId": { "type": "string", "default": "" },
+          "title": { "type": "string" },
+          "date": { "type": "string", "format": "date" },
+          "type": {
+            "type": "string",
+            "enum": ["filing", "hearing", "discovery", "other"],
+            "default": "other"
+          },
+          "completed": { "type": "boolean", "default": false }
+        }
+      },
+      "DeadlineCreate": {
+        "type": "object",
+        "required": ["title", "date"],
+        "properties": {
+          "title": { "type": "string" },
+          "date": { "type": "string", "format": "date" },
+          "type": {
+            "type": "string",
+            "enum": ["filing", "hearing", "discovery", "other"]
+          },
+          "completed": { "type": "boolean" },
+          "caseId": { "type": "string" }
+        }
+      },
+      "DeadlineUpdate": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "date": { "type": "string", "format": "date" },
+          "type": {
+            "type": "string",
+            "enum": ["filing", "hearing", "discovery", "other"]
+          },
+          "completed": { "type": "boolean" },
+          "caseId": { "type": "string" }
+        }
+      },
+      "FinancialEntry": {
+        "type": "object",
+        "required": ["id", "category", "subcategory", "amount", "date"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "category": {
+            "type": "string",
+            "enum": ["income", "expense"]
+          },
+          "subcategory": { "type": "string" },
+          "amount": { "type": "number" },
+          "frequency": {
+            "type": "string",
+            "enum": ["one-time", "weekly", "biweekly", "monthly", "annually"],
+            "default": "one-time"
+          },
+          "date": { "type": "string", "format": "date" },
+          "description": { "type": "string", "default": "" }
+        }
+      },
+      "FinancialEntryCreate": {
+        "type": "object",
+        "required": ["category", "subcategory", "amount", "date"],
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": ["income", "expense"]
+          },
+          "subcategory": { "type": "string" },
+          "amount": { "type": "number" },
+          "frequency": {
+            "type": "string",
+            "enum": ["one-time", "weekly", "biweekly", "monthly", "annually"]
+          },
+          "date": { "type": "string", "format": "date" },
+          "description": { "type": "string" }
+        }
+      },
+      "FinancialEntryUpdate": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": ["income", "expense"]
+          },
+          "subcategory": { "type": "string" },
+          "amount": { "type": "number" },
+          "frequency": {
+            "type": "string",
+            "enum": ["one-time", "weekly", "biweekly", "monthly", "annually"]
+          },
+          "date": { "type": "string", "format": "date" },
+          "description": { "type": "string" }
+        }
+      },
+      "ChainOfCustodyEntry": {
+        "type": "object",
+        "required": [
+          "id",
+          "date",
+          "transferredFrom",
+          "transferredTo",
+          "purpose"
+        ],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "date": { "type": "string" },
+          "transferredFrom": { "type": "string" },
+          "transferredTo": { "type": "string" },
+          "purpose": { "type": "string" },
+          "notes": { "type": "string", "default": "" }
+        }
+      },
+      "Evidence": {
+        "type": "object",
+        "required": ["id", "title", "createdAt", "updatedAt"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "caseId": { "type": "string", "default": "" },
+          "exhibitNumber": { "type": "string", "default": "" },
+          "title": { "type": "string" },
+          "description": { "type": "string", "default": "" },
+          "type": {
+            "type": "string",
+            "enum": [
+              "document",
+              "photo",
+              "video",
+              "audio",
+              "physical",
+              "testimony",
+              "digital",
+              "other"
+            ],
+            "default": "other"
+          },
+          "fileUrl": { "type": "string", "default": "" },
+          "dateCollected": { "type": "string", "default": "" },
+          "location": { "type": "string", "default": "" },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string" },
+            "default": []
+          },
+          "relevance": {
+            "type": "string",
+            "enum": ["high", "medium", "low"],
+            "default": "medium"
+          },
+          "admissible": { "type": "boolean", "default": false },
+          "chain": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ChainOfCustodyEntry" },
+            "default": []
+          },
+          "notes": { "type": "string", "default": "" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "EvidenceCreate": {
+        "type": "object",
+        "required": ["title"],
+        "properties": {
+          "caseId": { "type": "string" },
+          "exhibitNumber": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": [
+              "document",
+              "photo",
+              "video",
+              "audio",
+              "physical",
+              "testimony",
+              "digital",
+              "other"
+            ]
+          },
+          "fileUrl": { "type": "string" },
+          "dateCollected": { "type": "string" },
+          "location": { "type": "string" },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "relevance": {
+            "type": "string",
+            "enum": ["high", "medium", "low"]
+          },
+          "admissible": { "type": "boolean" },
+          "chain": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ChainOfCustodyEntry" }
+          },
+          "notes": { "type": "string" }
+        }
+      },
+      "EvidenceUpdate": {
+        "type": "object",
+        "properties": {
+          "caseId": { "type": "string" },
+          "exhibitNumber": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": [
+              "document",
+              "photo",
+              "video",
+              "audio",
+              "physical",
+              "testimony",
+              "digital",
+              "other"
+            ]
+          },
+          "fileUrl": { "type": "string" },
+          "dateCollected": { "type": "string" },
+          "location": { "type": "string" },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "relevance": {
+            "type": "string",
+            "enum": ["high", "medium", "low"]
+          },
+          "admissible": { "type": "boolean" },
+          "chain": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ChainOfCustodyEntry" }
+          },
+          "notes": { "type": "string" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Note": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "content",
+          "category",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "content": { "type": "string" },
+          "category": {
+            "type": "string",
+            "enum": ["case-notes", "research", "todo", "general", "other"]
+          },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string" },
+            "default": []
+          },
+          "caseId": { "type": "string", "default": "" },
+          "isPinned": { "type": "boolean", "default": false },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "NoteCreate": {
+        "type": "object",
+        "required": ["title", "content", "category"],
+        "properties": {
+          "title": { "type": "string" },
+          "content": { "type": "string" },
+          "category": {
+            "type": "string",
+            "enum": ["case-notes", "research", "todo", "general", "other"]
+          },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "caseId": { "type": "string" },
+          "isPinned": { "type": "boolean" }
+        }
+      },
+      "NoteUpdate": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "content": { "type": "string" },
+          "category": {
+            "type": "string",
+            "enum": ["case-notes", "research", "todo", "general", "other"]
+          },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "caseId": { "type": "string" },
+          "isPinned": { "type": "boolean" }
+        }
+      },
+      "DocumentEntry": {
+        "type": "object",
+        "required": [
+          "id",
+          "filename",
+          "path",
+          "category",
+          "title",
+          "pageCount",
+          "textFile",
+          "dates",
+          "fileSize"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "filename": { "type": "string" },
+          "path": { "type": "string" },
+          "category": { "type": "string" },
+          "title": { "type": "string" },
+          "pageCount": { "type": "integer" },
+          "textFile": { "type": "string" },
+          "dates": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "fileSize": { "type": "integer" },
+          "caseId": { "type": "string" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,33 @@
+import { types } from "mobx-state-tree";
+
+export const ContactModel = types.model("Contact", {
+  id: types.identifier,
+  name: types.string,
+  role: types.enumeration([
+    "Attorney",
+    "Judge",
+    "Clerk",
+    "Witness",
+    "Expert",
+    "Opposing Party",
+    "Petitioner",
+    "Respondent",
+    "Plaintiff",
+    "Defendant",
+    "Court",
+    "Other",
+    "attorney",
+    "judge",
+    "clerk",
+    "witness",
+    "expert",
+    "opposing_party",
+    "other",
+  ]),
+  organization: types.optional(types.string, ""),
+  phone: types.optional(types.string, ""),
+  email: types.optional(types.string, ""),
+  address: types.optional(types.string, ""),
+  notes: types.optional(types.string, ""),
+  caseId: types.optional(types.string, ""),
+});

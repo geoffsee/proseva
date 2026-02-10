@@ -1,0 +1,29 @@
+{
+  "events": [
+    {
+      "party": "Father",
+      "date": "01-15",
+      "title": "Custody filing",
+      "case": { "type": "Custody", "number": "2024-CV-001" },
+      "isCritical": true,
+      "details": "Initial custody filing",
+      "source": "Court records"
+    },
+    {
+      "party": "Mother",
+      "date": "02-01",
+      "title": "Response filed",
+      "case": { "type": "Custody", "number": "2024-CV-001" },
+      "isCritical": false,
+      "details": "Mother's response",
+      "source": "Court records"
+    },
+    {
+      "party": "Court",
+      "date": "03-10",
+      "title": "Hearing scheduled",
+      "case": { "type": "Custody" },
+      "isCritical": true
+    }
+  ]
+}

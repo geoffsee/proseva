@@ -1,0 +1,16 @@
+{
+  "name": "pro-se-va-server",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "croner": "^9.0.0",
+    "firebase-admin": "^13.0.2",
+    "itty-router": "^5.0.0",
+    "openai": "^6.17.0",
+    "twilio": "^5.4.3"
+  }
+}
