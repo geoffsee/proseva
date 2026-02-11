@@ -12,9 +12,6 @@ import {
   type FinancialEntry,
   type Evidence,
   type Note,
-  type DeviceToken,
-  type SmsRecipient,
-  type Evaluation,
   type EstatePlan,
   type Beneficiary,
   type EstateAsset,
@@ -45,6 +42,7 @@ import {
 import { configRouter } from "./config-api";
 import { getConfig } from "./config";
 import { researchRouter } from "./research";
+import { handleResearchChat } from "./research-agent";
 import { cosine_similarity_dataspace } from "wasm-similarity";
 import {
   generateCaseSummary,
@@ -187,7 +185,7 @@ async function maybeAutoIngestFromEnv(): Promise<void> {
       await stat(join(categoryDir, filename));
       ingestionStatus.skipped += 1;
       continue;
-    } catch {}
+    } catch { /* file doesn't exist yet, proceed with ingestion */ }
 
     const buffer = await readFile(filePath);
     const { entry, text } = await ingestPdfBuffer(
@@ -325,7 +323,7 @@ router
       "status",
       "notes",
     ] as const) {
-      if (body[key] !== undefined) (c as any)[key] = body[key];
+      if (body[key] !== undefined) (c as Record<string, unknown>)[key] = body[key];
     }
     c.updatedAt = new Date().toISOString();
     return c;
@@ -419,7 +417,7 @@ router
       "notes",
       "caseId",
     ] as const) {
-      if (body[key] !== undefined) (c as any)[key] = body[key];
+      if (body[key] !== undefined) (c as Record<string, unknown>)[key] = body[key];
     }
     return c;
   })
@@ -459,7 +457,7 @@ router
       "completed",
       "caseId",
     ] as const) {
-      if (body[key] !== undefined) (d as any)[key] = body[key];
+      if (body[key] !== undefined) (d as Record<string, unknown>)[key] = body[key];
     }
     return d;
   })
@@ -507,7 +505,7 @@ router
       "date",
       "description",
     ] as const) {
-      if (body[key] !== undefined) (e as any)[key] = body[key];
+      if (body[key] !== undefined) (e as Record<string, unknown>)[key] = body[key];
     }
     return e;
   })
@@ -567,7 +565,7 @@ router
       "notes",
       "updatedAt",
     ] as const) {
-      if (body[key] !== undefined) (e as any)[key] = body[key];
+      if (body[key] !== undefined) (e as Record<string, unknown>)[key] = body[key];
     }
     return e;
   })
@@ -601,7 +599,7 @@ router
     if (!f) return notFound();
     const body = await req.json();
     for (const key of ["title", "date", "type", "notes", "caseId"] as const) {
-      if (body[key] !== undefined) (f as any)[key] = body[key];
+      if (body[key] !== undefined) (f as Record<string, unknown>)[key] = body[key];
     }
     return f;
   })
@@ -646,7 +644,7 @@ router
       "caseId",
       "isPinned",
     ] as const) {
-      if (body[key] !== undefined) (n as any)[key] = body[key];
+      if (body[key] !== undefined) (n as Record<string, unknown>)[key] = body[key];
     }
     n.updatedAt = new Date().toISOString();
     return n;
@@ -861,6 +859,16 @@ You have access to tools that let you look up the user's cases, deadlines, conta
           }
         }
         case "SearchTimeline": {
+          interface TimelineEvent {
+            title?: string;
+            details?: string;
+            party?: string;
+            date?: string;
+            case?: { number?: string };
+            isCritical?: boolean;
+            source?: string;
+          }
+
           try {
             const timelinePath = join(
               appRoot,
@@ -868,41 +876,41 @@ You have access to tools that let you look up the user's cases, deadlines, conta
             );
             const timelineRaw = await readFile(timelinePath, "utf-8");
             const timelineData = JSON.parse(timelineRaw);
-            let events = timelineData.events || [];
+            let events: TimelineEvent[] = timelineData.events || [];
 
             // Apply filters
             if (args.query) {
               const q = args.query.toLowerCase();
               events = events.filter(
-                (e: any) =>
+                (e: TimelineEvent) =>
                   e.title?.toLowerCase().includes(q) ||
                   e.details?.toLowerCase().includes(q) ||
                   e.party?.toLowerCase().includes(q),
               );
             }
             if (args.party) {
-              events = events.filter((e: any) => e.party === args.party);
+              events = events.filter((e: TimelineEvent) => e.party === args.party);
             }
             if (args.caseNumber) {
               events = events.filter(
-                (e: any) => e.case?.number === args.caseNumber,
+                (e: TimelineEvent) => e.case?.number === args.caseNumber,
               );
             }
             if (args.isCritical !== undefined) {
               events = events.filter(
-                (e: any) => e.isCritical === args.isCritical,
+                (e: TimelineEvent) => e.isCritical === args.isCritical,
               );
             }
             if (args.startDate) {
-              events = events.filter((e: any) => e.date >= args.startDate);
+              events = events.filter((e: TimelineEvent) => e.date && e.date >= args.startDate);
             }
             if (args.endDate) {
-              events = events.filter((e: any) => e.date <= args.endDate);
+              events = events.filter((e: TimelineEvent) => e.date && e.date <= args.endDate);
             }
 
             return JSON.stringify({
               total: events.length,
-              events: events.map((e: any) => ({
+              events: events.map((e: TimelineEvent) => ({
                 date: e.date,
                 party: e.party,
                 title: e.title,
@@ -1054,7 +1062,7 @@ You have access to tools that let you look up the user's cases, deadlines, conta
     try {
       const raw = await readFile(indexPath, "utf-8");
       existingEntries = JSON.parse(raw);
-    } catch {}
+    } catch { /* index file doesn't exist yet */ }
 
     const newEntries: DocumentEntry[] = [];
 
@@ -1157,7 +1165,7 @@ You have access to tools that let you look up the user's cases, deadlines, conta
       try {
         const raw = await readFile(indexPath, "utf-8");
         existingEntries = JSON.parse(raw);
-      } catch {}
+      } catch { /* index file doesn't exist yet */ }
 
       // Find all PDFs in directory recursively
       const { readdirSync, statSync } = await import("fs");
@@ -1389,7 +1397,7 @@ router
       "guardianPhone",
       "notes",
     ] as const) {
-      if (body[key] !== undefined) (plan as any)[key] = body[key];
+      if (body[key] !== undefined) (plan as Record<string, unknown>)[key] = body[key];
     }
     plan.updatedAt = new Date().toISOString();
     return plan;
@@ -1497,7 +1505,7 @@ router
       "signedDate",
       "notes",
     ] as const) {
-      if (body[key] !== undefined) (doc as any)[key] = body[key];
+      if (body[key] !== undefined) (doc as Record<string, unknown>)[key] = body[key];
     }
     doc.updatedAt = new Date().toISOString();
     plan.updatedAt = new Date().toISOString();
@@ -1516,6 +1524,38 @@ router
 // Mount config router
 router.all("/config/*", configRouter.fetch);
 
+// Research agent chat endpoint
+router.post("/research/agent/chat", async (request: Request) => {
+  try {
+    const body = (await request.json()) as { messages?: Array<{ role: string; content: string }> };
+    if (!body.messages || !Array.isArray(body.messages)) {
+      return new Response(JSON.stringify({ error: "messages array is required" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    const result = await handleResearchChat(
+      body.messages.map((m) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      })),
+    );
+    return new Response(JSON.stringify(result), {
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (err) {
+    console.error("[ResearchAgent] Error:", (err as Error)?.message);
+    return new Response(
+      JSON.stringify({
+        reply: "An error occurred while processing your research request.",
+        toolResults: [],
+        error: (err as Error)?.message,
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } },
+    );
+  }
+});
+
 // Mount research router
 router.all("/research/*", researchRouter.fetch);
 
@@ -1528,7 +1568,7 @@ if (staticDir) {
   // Serve built frontend assets as a catch-all after API routes
   router.all("*", async (req) => {
     const url = new URL(req.url);
-    let filePath = join(staticDir, url.pathname);
+    const filePath = join(staticDir, url.pathname);
 
     // Try exact file first
     try {

@@ -41,3 +41,55 @@ export class LocalFileAdapter implements PersistenceAdapter {
     writeFileSync(this.filePath, JSON.stringify(data, null, 2));
   }
 }
+
+type IndexedDbRepoLike = {
+  put: (
+    key: string,
+    value: unknown,
+    options?: { metadata?: Record<string, unknown> | null },
+  ) => Promise<void>;
+};
+
+/**
+ * Electron adapter that keeps file persistence behavior but mirrors writes to IndexedDB via idb-repo.
+ * The file remains the source of truth for sync startup compatibility with the current DB interface.
+ */
+export class ElectronIdbRepoAdapter extends LocalFileAdapter {
+  private kvPromise: Promise<IndexedDbRepoLike | null>;
+
+  constructor(filePath?: string) {
+    super(filePath);
+    this.kvPromise = this.initIndexedDbRepo();
+  }
+
+  override save(data: Record<string, Record<string, unknown>>): void {
+    super.save(data);
+    void this.mirrorToIndexedDb(data).catch(() => {
+      // File persistence is the source of truth; ignore IndexedDB mirror errors.
+    });
+  }
+
+  private async initIndexedDbRepo(): Promise<IndexedDbRepoLike | null> {
+    if (typeof indexedDB === "undefined") return null;
+    try {
+      const { createIndexedDbKV } = await import("idb-repo");
+      return createIndexedDbKV({
+        dbName: "proseva",
+        storeName: "server-db",
+        version: 1,
+      });
+    } catch {
+      return null;
+    }
+  }
+
+  private async mirrorToIndexedDb(
+    data: Record<string, Record<string, unknown>>,
+  ): Promise<void> {
+    const kv = await this.kvPromise;
+    if (!kv) return;
+    await kv.put("snapshot", data, {
+      metadata: { source: "server-local-file" },
+    });
+  }
+}

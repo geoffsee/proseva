@@ -68,6 +68,9 @@ function createTestStore(overrides: Record<string, unknown> = {}) {
       selectedStatus: "all",
       searchQuery: "",
     },
+    researchStore: {
+      messages: [],
+    },
     ...overrides,
   });
 }

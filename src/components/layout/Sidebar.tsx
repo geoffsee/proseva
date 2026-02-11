@@ -56,6 +56,7 @@ const NAV_SECTIONS = [
       { to: "/resources", label: "Resources", icon: LuBookOpen },
       { to: "/document-manager", label: "Doc Manager", icon: LuArchive },
       { to: "/chat", label: "ProSeVA AI", icon: LuMessageSquare },
+      { to: "/research", label: "Case Research", icon: LuSearch },
       { to: "/reports", label: "Reports", icon: LuFile },
       { to: "/evaluations", label: "Evaluations", icon: LuBell },
       { to: "/estate", label: "Estate Planning", icon: LuScroll },

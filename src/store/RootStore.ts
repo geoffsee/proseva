@@ -12,6 +12,7 @@ import { FilingStore } from "./FilingStore";
 import { EvaluationStore } from "./EvaluationStore";
 import { ConfigStore } from "./ConfigStore";
 import { EstatePlanStore } from "./EstatePlanStore";
+import { ResearchStore } from "./ResearchStore";
 
 export const RootStore = types.model("RootStore", {
   caseStore: CaseStore,
@@ -27,6 +28,7 @@ export const RootStore = types.model("RootStore", {
   evaluationStore: EvaluationStore,
   configStore: ConfigStore,
   estatePlanStore: EstatePlanStore,
+  researchStore: ResearchStore,
 });
 
 export type IRootStore = ReturnType<typeof RootStore.create>;
@@ -42,6 +44,7 @@ const STORAGE_KEYS = {
   evidences: "evidences",
   filings: "filings",
   estatePlans: "estate_plans",
+  research: "research_chat",
 } as const;
 
 function loadJSON<T>(key: string, fallback: T): T {
@@ -105,6 +108,9 @@ export function createRootStore(): IRootStore {
       selectedStatus: "all",
       searchQuery: "",
     },
+    researchStore: {
+      messages: loadJSON(STORAGE_KEYS.research, []),
+    },
   });
 
   onSnapshot(store.caseStore, (snap) => {
@@ -142,6 +148,12 @@ export function createRootStore(): IRootStore {
   });
   onSnapshot(store.estatePlanStore, (snap) => {
     localStorage.setItem(STORAGE_KEYS.estatePlans, JSON.stringify(snap.plans));
+  });
+  onSnapshot(store.researchStore, (snap) => {
+    localStorage.setItem(
+      STORAGE_KEYS.research,
+      JSON.stringify(snap.messages),
+    );
   });
 
   return store;

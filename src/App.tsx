@@ -11,6 +11,7 @@ import Contacts from "./pages/Contacts";
 import Notes from "./pages/Notes";
 import Kanban from "./pages/Kanban";
 import Chat from "./pages/Chat";
+import Research from "./pages/Research";
 import DocumentManager from "./pages/DocumentManager";
 import Deadlines from "./pages/Deadlines";
 import Filings from "./pages/Filings";
@@ -47,6 +48,7 @@ function App() {
           <Route path="/notes" element={<Notes />} />
           <Route path="/tasks" element={<Kanban />} />
           <Route path="/chat" element={<Chat />} />
+          <Route path="/research" element={<Research />} />
           <Route path="/document-manager" element={<DocumentManager />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/evaluations" element={<Evaluations />} />

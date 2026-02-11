@@ -1,5 +1,6 @@
 import {
   type PersistenceAdapter,
+  ElectronIdbRepoAdapter,
   LocalFileAdapter,
   InMemoryAdapter,
 } from "./persistence";
@@ -429,7 +430,10 @@ export class Database {
 }
 
 function createDefaultAdapter(): PersistenceAdapter {
+  const isElectron =
+    Boolean(process.versions.electron) || process.env.PROSEVA_DATA_DIR != null;
   try {
+    if (isElectron) return new ElectronIdbRepoAdapter();
     return new LocalFileAdapter();
   } catch {
     return new InMemoryAdapter();

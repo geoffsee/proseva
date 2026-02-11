@@ -225,8 +225,8 @@ export const notesApi = {
 };
 
 export const reportsApi = {
-  generate: (config: { type: string; [key: string]: any }) =>
-    unwrap(client.POST("/reports", { body: config as any })),
+  generate: (config: { type: string; [key: string]: unknown }) =>
+    unwrap(client.POST("/reports", { body: config as Record<string, unknown> })),
 };
 
 export const searchApi = {
@@ -638,6 +638,20 @@ export const estatePlansApi = {
   },
 };
 
+export const researchAgentApi = {
+  chat: async (
+    messages: Array<{ role: string; content: string }>,
+  ): Promise<{ reply: string; toolResults: Array<{ toolName: string; results: unknown }> }> => {
+    const res = await fetch("/api/research/agent/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages }),
+    });
+    if (!res.ok) throw new Error(`Research agent error: ${res.status}`);
+    return res.json();
+  },
+};
+
 export const api = {
   cases: casesApi,
   contacts: contactsApi,
@@ -654,4 +668,5 @@ export const api = {
   scheduler: schedulerApi,
   config: configApi,
   estatePlans: estatePlansApi,
+  researchAgent: researchAgentApi,
 };
