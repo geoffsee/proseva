@@ -72,7 +72,9 @@ export class ElectronIdbRepoAdapter extends LocalFileAdapter {
   private async initIndexedDbRepo(): Promise<IndexedDbRepoLike | null> {
     if (typeof indexedDB === "undefined") return null;
     try {
-      const { createIndexedDbKV } = await import("idb-repo");
+      const { createIndexedDbKV } = await import(
+        "../node_modules/idb-repo/dist/index-node.js"
+      );
       return createIndexedDbKV({
         dbName: "proseva",
         storeName: "server-db",

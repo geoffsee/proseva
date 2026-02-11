@@ -74,3 +74,4 @@ server/data/backups/
 ._*
 /dist-electron/
 /server/data
+/dist-server/proseva-server

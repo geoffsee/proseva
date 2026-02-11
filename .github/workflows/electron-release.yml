@@ -48,7 +48,7 @@ jobs:
 
       - name: Build server
         shell: bash
-        run: cd server && bun build --compile ${{ matrix.bun_target }} src/index.ts --outfile=../dist-server/proseva-server
+        run: cd server && bun install --frozen-lockfile && bun build --compile ${{ matrix.bun_target }} src/index.ts --outfile=../dist-server/proseva-server
 
       - name: Build electron
         run: bun run build:electron
