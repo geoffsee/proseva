@@ -41,6 +41,25 @@ vi.mock("./ingest", () => ({
   }),
 }));
 
+vi.mock("./ingestion-agent", () => ({
+  autoPopulateFromDocument: vi.fn().mockResolvedValue({ caseId: "" }),
+}));
+
+vi.mock("./scheduler", () => ({
+  initScheduler: vi.fn(),
+  getSchedulerStatus: vi.fn().mockReturnValue({
+    enabled: false,
+    running: false,
+    lastRunTime: null,
+    nextRunTime: null,
+    timezone: "UTC",
+    cronExpression: "0 0 18 * * *",
+  }),
+  triggerEvaluation: vi.fn(),
+  stopScheduler: vi.fn(),
+  restartScheduler: vi.fn(),
+}));
+
 import { freshDb } from "./test-helpers";
 import { router } from "./index";
 

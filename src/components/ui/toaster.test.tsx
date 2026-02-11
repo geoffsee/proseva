@@ -1,4 +1,4 @@
-import { render } from "../../test-utils";
+import { render, act } from "../../test-utils";
 import { describe, it, expect, beforeEach } from "vitest";
 import { Toaster, toaster } from "./toaster";
 
@@ -50,12 +50,10 @@ describe("Toaster", () => {
     });
 
     it("has bottom-end placement", () => {
-      // Verify toaster was created with correct placement option
       expect(toaster).toBeDefined();
     });
 
     it("pauses on page idle", () => {
-      // Verify toaster was created with pauseOnPageIdle option
       expect(toaster).toBeDefined();
     });
   });
@@ -79,32 +77,32 @@ describe("Toaster", () => {
 
     it("handles multiple toasts", () => {
       render(<Toaster />);
-      expect(() => {
+      act(() => {
         toaster.create({ title: "First" });
         toaster.create({ title: "Second" });
         toaster.create({ title: "Third" });
-      }).not.toThrow();
+      });
     });
 
     it("handles toast with loading state", () => {
       render(<Toaster />);
-      expect(() => {
+      act(() => {
         toaster.create({
           title: "Processing",
           type: "loading",
         });
-      }).not.toThrow();
+      });
     });
 
     it("handles toast with custom properties", () => {
       render(<Toaster />);
-      expect(() => {
+      act(() => {
         toaster.create({
           title: "Custom Toast",
           description: "With description",
           type: "info",
         });
-      }).not.toThrow();
+      });
     });
   });
 
@@ -114,49 +112,49 @@ describe("Toaster", () => {
     });
 
     it("can be used for success notifications", () => {
-      expect(() => {
+      act(() => {
         toaster.create({
           title: "Operation completed",
           type: "success",
         });
-      }).not.toThrow();
+      });
     });
 
     it("can be used for error notifications", () => {
-      expect(() => {
+      act(() => {
         toaster.create({
           title: "Something went wrong",
           type: "error",
         });
-      }).not.toThrow();
+      });
     });
 
     it("can be used for loading states", () => {
-      expect(() => {
+      act(() => {
         toaster.create({
           title: "Please wait",
           type: "loading",
         });
-      }).not.toThrow();
+      });
     });
 
     it("supports both title and description", () => {
-      expect(() => {
+      act(() => {
         toaster.create({
           title: "Title",
           description: "Detailed description",
         });
-      }).not.toThrow();
+      });
     });
 
     it("renders correctly with complex content", () => {
-      expect(() => {
+      act(() => {
         toaster.create({
           title: "Complex Toast",
           description:
             "This is a longer description with multiple lines of text to test the layout.",
         });
-      }).not.toThrow();
+      });
     });
   });
 });

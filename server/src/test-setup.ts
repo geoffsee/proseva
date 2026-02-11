@@ -1,12 +1,10 @@
-import "@testing-library/jest-dom/vitest";
-
-// Suppress known harmless Node.js process warnings that pollute CI output
+// Suppress known harmless Node.js deprecation warnings that pollute CI output
 const _originalEmit = process.emit;
 // @ts-expect-error - overriding emit to filter noisy warnings
 process.emit = function (event: string, ...args: unknown[]) {
   if (event === "warning") {
     const msg = (args[0] as { message?: string })?.message ?? "";
-    if (msg.includes("--localstorage-file") || msg.includes("punycode")) {
+    if (msg.includes("punycode")) {
       return false;
     }
   }
