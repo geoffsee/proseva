@@ -71,3 +71,5 @@ server/data/backups/
 .AppleDouble
 .LSOverride
 ._*
+/dist-electron/
+/server/data

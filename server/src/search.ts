@@ -293,9 +293,10 @@ async function loadDocuments(): Promise<DocumentEntry[]> {
     import.meta.dir ??
     import.meta.dirname ??
     new URL(".", import.meta.url).pathname;
+  const appRoot = process.env.PROSEVA_DATA_DIR ?? join(__dir, "../..");
   const indexPath = join(
-    __dir,
-    "../../case-data/case-documents-app/index.json",
+    appRoot,
+    "case-data/case-documents-app/index.json",
   );
 
   try {

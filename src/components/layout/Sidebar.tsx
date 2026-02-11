@@ -73,7 +73,7 @@ export function Sidebar() {
 
   const navContent = (
     <VStack align="stretch" gap="1" flex="1">
-      <HStack justify="space-between" align="center" px="3" py="4">
+      <HStack justify="space-between" align="center" px="3" pt="10" pb="4">
         <Text fontWeight="bold" fontSize="lg">
           ProSe VA
         </Text>
@@ -206,6 +206,7 @@ export function Sidebar() {
         left="0"
         bottom="0"
         bg="bg.panel"
+        overflowY="auto"
       >
         {navContent}
       </Box>

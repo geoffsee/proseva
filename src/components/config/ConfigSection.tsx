@@ -34,9 +34,9 @@ export function ConfigSection({
 
   return (
     <Card.Root>
-      <Card.Header>
-        <HStack justify="space-between">
-          <HStack>
+      <Card.Header py="3">
+        <HStack justify="space-between" align="center">
+          <HStack align="center">
             {icon}
             <Heading size="md">{title}</Heading>
             {status && (

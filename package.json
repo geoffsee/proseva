@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "dist-electron/main.js",
   "scripts": {
     "dev": "bun run dev:frontend & bun run dev:server & wait",
     "dev:frontend": "vite",
@@ -17,7 +18,12 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
-    "generate:api-types": "openapi-typescript server/openapi.json -o src/lib/api-types.d.ts"
+    "generate:api-types": "openapi-typescript server/openapi.json -o src/lib/api-types.d.ts",
+    "build:server": "cd server && bun build --compile src/index.ts --outfile=../dist-server/proseva-server",
+    "build:electron": "tsc -p electron/tsconfig.json",
+    "build:all": "bun run build && bun run build:server && bun run build:electron",
+    "electron:dev": "concurrently -n vite,electron \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:dist": "bun run build:all && electron-builder"
   },
   "dependencies": {
     "@chakra-ui/react": "^3.31.0",
@@ -43,6 +49,10 @@
     "zustand": "^5.0.10"
   },
   "devDependencies": {
+    "concurrently": "^9.1.2",
+    "electron": "^34.2.0",
+    "electron-builder": "^26.0.12",
+    "wait-on": "^8.0.3",
     "@eslint/js": "^9.39.1",
     "@playwright/test": "^1.58.1",
     "@testing-library/dom": "^10.4.1",
