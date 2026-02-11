@@ -1,5 +1,6 @@
 import createClient from "openapi-fetch";
 import type { paths, components } from "./api-types.js";
+import type { ReportConfig } from "../types";
 
 export type Case = components["schemas"]["Case"];
 export type Party = components["schemas"]["Party"];
@@ -225,8 +226,8 @@ export const notesApi = {
 };
 
 export const reportsApi = {
-  generate: (config: { type: string; [key: string]: unknown }) =>
-    unwrap(client.POST("/reports", { body: config as Record<string, unknown> })),
+  generate: (config: ReportConfig) =>
+    unwrap(client.POST("/reports", { body: config })),
 };
 
 export const searchApi = {

@@ -55,7 +55,7 @@ interface ResultItem {
 
 interface ResultSet {
   toolName: string;
-  results: ResultItem[];
+  results: unknown;
 }
 
 const TOOL_LABELS: Record<string, { label: string; icon: ElementType }> = {
@@ -120,7 +120,7 @@ function ResultCard({ item, toolName }: { item: ResultItem; toolName: string }) 
       {(toolName === "search_lawyers") && item.phone && (
         <Text color="fg.muted">{item.phone}</Text>
       )}
-      {item.citedBy > 0 && (
+      {(item.citedBy ?? 0) > 0 && (
         <Text color="fg.muted">Cited by {item.citedBy}</Text>
       )}
       {link && (
@@ -164,8 +164,8 @@ function ResultsSidebar({
           icon: LuFileText,
         };
         const isCollapsed = collapsed[toolName];
-        const allResults = resultSets.flatMap(
-          (rs: ResultSet) => rs.results || [],
+        const allResults: ResultItem[] = resultSets.flatMap((rs: ResultSet) =>
+          Array.isArray(rs.results) ? (rs.results as ResultItem[]) : [],
         );
 
         return (

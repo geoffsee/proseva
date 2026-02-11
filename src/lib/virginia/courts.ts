@@ -6,8 +6,8 @@ export interface CourtInfo {
   type: "General District" | "Juvenile & Domestic Relations" | "Combined District";
   district: string;
   clerk: string | null;
-  phone: string;
-  phones?: Record<string, string>;
+  phone: string | null;
+  phones?: Record<string, string | undefined>;
   fax: string | null;
   email: string | null;
   address: string | null;

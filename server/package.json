@@ -9,6 +9,8 @@
   "dependencies": {
     "croner": "^9.0.0",
     "firebase-admin": "^13.0.2",
+    "wasm-pqc-subtle": "^0.1.4",
+    "idb-repo": "^1.2.2",
     "itty-router": "^5.0.0",
     "openai": "^6.17.0",
     "twilio": "^5.4.3"
