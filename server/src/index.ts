@@ -57,6 +57,11 @@ const __dir =
   import.meta.dirname ??
   new URL(".", import.meta.url).pathname;
 
+// Configurable root for data files. In Electron production mode,
+// PROSEVA_DATA_DIR points to the app's userData directory.
+// Defaults to the project-relative layout used in development.
+const appRoot = process.env.PROSEVA_DATA_DIR ?? join(__dir, "../..");
+
 const { preflight, corsify } = cors();
 
 const persistAfterMutation = (response: Response, request: Request) => {
@@ -123,7 +128,7 @@ async function maybeAutoIngestFromEnv(): Promise<void> {
   ingestionStatus.errors = 0;
   ingestionStatus.lastRunStarted = new Date().toISOString();
 
-  const baseDir = join(__dir, "../../server/app-data");
+  const baseDir = join(appRoot, "server/app-data");
   await mkdir(baseDir, { recursive: true });
   const indexPath = join(baseDir, "index.json");
 
@@ -801,7 +806,7 @@ You have access to tools that let you look up the user's cases, deadlines, conta
       },
     ];
 
-    const baseDir = join(__dir, "../../case-data/case-documents-app");
+    const baseDir = join(appRoot, "case-data/case-documents-app");
     const indexPath = join(baseDir, "index.json");
 
     const executeTool = async (
@@ -857,8 +862,8 @@ You have access to tools that let you look up the user's cases, deadlines, conta
         case "SearchTimeline": {
           try {
             const timelinePath = join(
-              __dir,
-              "../../case-data/case-documents/timeline_data.json",
+              appRoot,
+              "case-data/case-documents/timeline_data.json",
             );
             const timelineRaw = await readFile(timelinePath, "utf-8");
             const timelineData = JSON.parse(timelineRaw);
@@ -1015,8 +1020,8 @@ You have access to tools that let you look up the user's cases, deadlines, conta
   // --- Documents ---
   .get("/documents", async () => {
     const indexPath = join(
-      __dir,
-      "../../case-data/case-documents-app/index.json",
+      appRoot,
+      "case-data/case-documents-app/index.json",
     );
     try {
       const raw = await readFile(indexPath, "utf-8");
@@ -1038,7 +1043,7 @@ You have access to tools that let you look up the user's cases, deadlines, conta
       return new Response("No files provided", { status: 400 });
     }
 
-    const baseDir = join(__dir, "../../case-data/case-documents-app");
+    const baseDir = join(appRoot, "case-data/case-documents-app");
     await mkdir(baseDir, { recursive: true });
 
     const openai = new OpenAI();
@@ -1143,7 +1148,7 @@ You have access to tools that let you look up the user's cases, deadlines, conta
 
       const startedAt = new Date().toISOString();
       const openai = new OpenAI({ apiKey: openaiApiKey });
-      const baseDir = join(__dir, "../../case-data/case-documents-app");
+      const baseDir = join(appRoot, "case-data/case-documents-app");
       const indexPath = join(baseDir, "index.json");
 
       // Load existing entries
@@ -1513,11 +1518,63 @@ router.all("/config/*", configRouter.fetch);
 // Initialize the scheduler on server startup
 initScheduler();
 
+// --- Static file serving for production Electron builds ---
+const staticDir = process.env.PROSEVA_STATIC_DIR;
+if (staticDir) {
+  // Serve built frontend assets as a catch-all after API routes
+  router.all("*", async (req) => {
+    const url = new URL(req.url);
+    let filePath = join(staticDir, url.pathname);
+
+    // Try exact file first
+    try {
+      const fileStat = await stat(filePath);
+      if (fileStat.isFile()) {
+        const content = await readFile(filePath);
+        const ext = filePath.split(".").pop() ?? "";
+        const mimeTypes: Record<string, string> = {
+          html: "text/html",
+          js: "application/javascript",
+          css: "text/css",
+          json: "application/json",
+          png: "image/png",
+          jpg: "image/jpeg",
+          jpeg: "image/jpeg",
+          svg: "image/svg+xml",
+          ico: "image/x-icon",
+          woff: "font/woff",
+          woff2: "font/woff2",
+          ttf: "font/ttf",
+        };
+        return new Response(content, {
+          headers: {
+            "content-type": mimeTypes[ext] ?? "application/octet-stream",
+          },
+        });
+      }
+    } catch {
+      // File not found, fall through to index.html
+    }
+
+    // SPA fallback: serve index.html for non-file routes
+    try {
+      const indexHtml = await readFile(join(staticDir, "index.html"));
+      return new Response(indexHtml, {
+        headers: { "content-type": "text/html" },
+      });
+    } catch {
+      return new Response("Not Found", { status: 404 });
+    }
+  });
+}
+
+const port = parseInt(process.env.PORT || "3001", 10);
+
 if (import.meta.main) {
-  console.log("ProSeVA server running on http://localhost:3001");
+  console.log(`ProSeVA server running on http://localhost:${port}`);
 }
 
 export default {
-  port: 3001,
+  port,
   fetch: router.fetch,
 };

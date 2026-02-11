@@ -21,7 +21,11 @@ export class InMemoryAdapter implements PersistenceAdapter {
 export class LocalFileAdapter implements PersistenceAdapter {
   private filePath: string;
 
-  constructor(filePath = resolve(import.meta.dir, "..", "data", "db.json")) {
+  constructor(
+    filePath = process.env.PROSEVA_DATA_DIR
+      ? resolve(process.env.PROSEVA_DATA_DIR, "db.json")
+      : resolve(import.meta.dir, "..", "data", "db.json"),
+  ) {
     this.filePath = filePath;
     const dir = resolve(filePath, "..");
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });

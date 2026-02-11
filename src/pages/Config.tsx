@@ -485,22 +485,21 @@ const Config = observer(() => {
             <Alert.Indicator>
               <FiAlertTriangle />
             </Alert.Indicator>
-            <Alert.Title>Requires server restart</Alert.Title>
+            <Alert.Title>Requires restart</Alert.Title>
             <Alert.Description>
-              Changes to auto-ingest directory require a server restart to take
+              Changes to auto-ingest directory require a restart to take
               effect
             </Alert.Description>
           </Alert.Root>
           <Text fontSize="sm" color="gray.600">
-            Automatically ingest PDF files from the specified directory on
-            server startup
+            Automatically ingest PDF files from the specified directory
           </Text>
         </ConfigSection>
 
         {/* Action Buttons */}
         <HStack justify="flex-end">
           <Button variant="outline" onClick={handleResetAll}>
-            Reset All to Environment Variables
+            Reset All
           </Button>
           <Button
             colorPalette="blue"

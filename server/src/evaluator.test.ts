@@ -22,6 +22,14 @@ vi.mock("openai", () => {
   };
 });
 
+/** Format a Date as YYYY-MM-DD in local time */
+function localDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 describe("Evaluator", () => {
   beforeEach(() => {
     resetDb(new InMemoryAdapter());
@@ -43,7 +51,7 @@ describe("Evaluator", () => {
       // Add an overdue deadline (yesterday)
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      const dateStr = yesterday.toISOString().split("T")[0];
+      const dateStr = localDateStr(yesterday);
 
       db.deadlines.set("1", {
         id: "1",
@@ -65,7 +73,7 @@ describe("Evaluator", () => {
       // Add a deadline for tomorrow
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
-      const dateStr = tomorrow.toISOString().split("T")[0];
+      const dateStr = localDateStr(tomorrow);
 
       db.deadlines.set("1", {
         id: "1",
@@ -87,7 +95,7 @@ describe("Evaluator", () => {
     it("should exclude completed deadlines", async () => {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      const dateStr = yesterday.toISOString().split("T")[0];
+      const dateStr = localDateStr(yesterday);
 
       db.deadlines.set("1", {
         id: "1",
@@ -106,7 +114,7 @@ describe("Evaluator", () => {
     it("should include case name when available", async () => {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
-      const dateStr = tomorrow.toISOString().split("T")[0];
+      const dateStr = localDateStr(tomorrow);
 
       db.cases.set("case-1", {
         id: "case-1",
@@ -219,7 +227,7 @@ describe("Evaluator", () => {
     it("should include analysis data in evaluation", async () => {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
-      const dateStr = tomorrow.toISOString().split("T")[0];
+      const dateStr = localDateStr(tomorrow);
 
       db.deadlines.set("1", {
         id: "1",
