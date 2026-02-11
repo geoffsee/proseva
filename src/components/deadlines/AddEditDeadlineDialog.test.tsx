@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "../../test-utils";
+import { render, screen, fireEvent } from "../../test-utils";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AddEditDeadlineDialog } from "./AddEditDeadlineDialog";
 import type { Deadline } from "../../types";

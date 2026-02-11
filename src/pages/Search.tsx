@@ -231,7 +231,7 @@ function SearchResultCard({ item }: { item: SearchResultItem }) {
                 color={`${config.color}.600`}
                 _dark={{ color: `${config.color}.300` }}
               >
-                <>{config.icon({})}</>
+                <config.icon />
               </Icon>
             </Box>
             <VStack align="start" gap="1" flex="1">
@@ -299,7 +299,7 @@ function TypeFilter({
                 <Checkbox.Label>
                   <HStack gap="2">
                     <Icon fontSize="sm" color={`${config.color}.500`}>
-                      <>{config.icon({})}</>
+                      <config.icon />
                     </Icon>
                     <Text fontSize="sm">{config.label}</Text>
                   </HStack>

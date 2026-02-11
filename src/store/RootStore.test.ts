@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { createRootStore, RootStore } from "./RootStore";
+import { createRootStore } from "./RootStore";
 import type { IRootStore } from "./RootStore";
 import * as apiModule from "../lib/api";
 

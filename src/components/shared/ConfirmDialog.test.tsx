@@ -28,7 +28,7 @@ describe("ConfirmDialog", () => {
     const onClose = vi.fn();
     const onConfirm = vi.fn();
 
-    const { container } = render(
+    render(
       <ConfirmDialog
         open={false}
         onClose={onClose}

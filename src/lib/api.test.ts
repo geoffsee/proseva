@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock fetch before any module loads (openapi-fetch captures globalThis.fetch at import time)
 const mockFetch = vi.fn();

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor, within } from "../test-utils";
+import { render, screen, fireEvent, waitFor } from "../test-utils";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import Notes from "./Notes";
 import { useStore } from "../store/StoreContext";

@@ -79,13 +79,10 @@ describe("Tooltip", () => {
   });
 
   it("forwards ref correctly", () => {
-    let ref: HTMLDivElement | null = null;
     render(
       <Tooltip
         content="Tooltip"
-        ref={(el) => {
-          ref = el;
-        }}
+        ref={() => {}}
       >
         <button>Button</button>
       </Tooltip>,

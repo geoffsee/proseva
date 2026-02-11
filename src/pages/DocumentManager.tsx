@@ -162,7 +162,7 @@ export default function DocumentManager() {
       <Heading size="2xl">Document Manager</Heading>
       {ingestStatus ? (
         <Box p="3" borderWidth="1px" borderRadius="md" bg="bg.subtle">
-          <HStack spacing="3" flexWrap="wrap">
+          <HStack gap="3" flexWrap="wrap">
             <Badge
               colorScheme={
                 ingestStatus.running

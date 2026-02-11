@@ -269,7 +269,7 @@ describe("DocumentPreview", () => {
         onBack={vi.fn()}
       />,
     );
-    const contentBox = container.querySelector("div[style*='mono']");
+    container.querySelector("div[style*='mono']");
     // Check that the content box has the correct styling
     expect(screen.getByText("test content")).toBeInTheDocument();
   });

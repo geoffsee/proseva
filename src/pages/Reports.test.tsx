@@ -42,7 +42,6 @@ vi.mock("../components/reports/ReportConfigForm", () => ({
     onGenerate,
     onBack,
     onConfigChange,
-    config,
     reportType,
   }: any) => (
     <div>
@@ -232,7 +231,7 @@ describe("Reports", () => {
       content: "Generated report",
     } as any);
 
-    const { rerender } = render(<Reports />);
+    render(<Reports />);
     fireEvent.click(screen.getByTestId("select-case-summary"));
 
     await waitFor(() => {

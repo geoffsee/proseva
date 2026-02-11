@@ -58,7 +58,16 @@ const DUP_DOCS = [
 function mockFetch(
   data: unknown,
   ok = true,
-  ingestStatus = {
+  ingestStatus: {
+    active: boolean;
+    directory: string;
+    running: boolean;
+    lastRunStarted: string | null;
+    lastRunFinished: string | null;
+    added: number;
+    skipped: number;
+    errors: number;
+  } = {
     active: false,
     directory: "",
     running: false,

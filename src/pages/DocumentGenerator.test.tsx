@@ -36,7 +36,6 @@ vi.mock("../components/documents/TemplateSelector", () => ({
 
 vi.mock("../components/documents/TemplateForm", () => ({
   TemplateForm: ({
-    template,
     fieldValues,
     onFieldChange,
     onBack,
@@ -108,13 +107,10 @@ describe("DocumentGenerator", () => {
       ],
     };
 
-    let selectedTemplate = mockTemplate;
-
     const MockSelector = ({ onSelect }: any) => (
       <div>
         <button
           onClick={() => {
-            selectedTemplate = mockTemplate;
             onSelect(mockTemplate);
           }}
           data-testid="select-template-1"
@@ -123,7 +119,6 @@ describe("DocumentGenerator", () => {
         </button>
         <button
           onClick={() => {
-            selectedTemplate = anotherTemplate;
             onSelect(anotherTemplate);
           }}
           data-testid="select-template-2"
@@ -398,17 +393,6 @@ describe("DocumentGenerator", () => {
   });
 
   it("handles template with single field", async () => {
-    const singleFieldTemplate: DocumentTemplate = {
-      id: "single",
-      name: "Simple Template",
-      description: "Single field template",
-      category: "legal",
-      outputFormat: "Value: {{value}}",
-      fields: [
-        { name: "value", label: "Value", type: "text", required: false },
-      ],
-    };
-
     // Would need to modify mock to support this, but test demonstrates the concept
     render(<DocumentGenerator />);
     fireEvent.click(screen.getByTestId("select-template"));

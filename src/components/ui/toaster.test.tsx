@@ -1,4 +1,4 @@
-import { render, screen } from "../../test-utils";
+import { render } from "../../test-utils";
 import { describe, it, expect, beforeEach } from "vitest";
 import { Toaster, toaster } from "./toaster";
 

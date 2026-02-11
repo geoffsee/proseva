@@ -11,7 +11,6 @@ vi.stubGlobal(
 
 const { StoreProvider, useStore } = await import("./StoreContext");
 const { createRootStore } = await import("./RootStore");
-type IRootStore = ReturnType<typeof createRootStore>;
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -175,7 +174,6 @@ describe("StoreContext", () => {
       const { result } = renderHook(() => useStore(), { wrapper });
 
       // Test case store mutation
-      const now = new Date().toISOString();
       act(() => {
         result.current.caseStore.addCase({ name: "Test Case" });
       });

@@ -39,7 +39,7 @@ describe("AppShell layout component", () => {
   });
 
   it("creates layout structure with sidebar and content", () => {
-    const { container } = render(
+    render(
       <BrowserRouter>
         <AppShell />
       </BrowserRouter>,
