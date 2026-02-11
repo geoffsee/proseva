@@ -5,6 +5,7 @@ import path from "path";
 import fs from "fs";
 
 const WASM_PQC_SUBTLE_ASSET_NAME = "wasm_pqc_subtle_bg.wasm";
+const WASM_CONTENT_TYPE = "application/wasm";
 
 function resolveWasmPqcSubtlePath() {
   const candidates = [
@@ -47,6 +48,30 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    {
+      name: "serve-wasm-pqc-subtle-dev",
+      apply: "serve",
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          const requestPath = req.url?.split("?")[0] ?? "";
+          if (!requestPath.endsWith(`/${WASM_PQC_SUBTLE_ASSET_NAME}`)) {
+            return next();
+          }
+
+          try {
+            const wasmPath = resolveWasmPqcSubtlePath();
+            res.statusCode = 200;
+            res.setHeader("Content-Type", WASM_CONTENT_TYPE);
+            res.end(fs.readFileSync(wasmPath));
+            return;
+          } catch {
+            res.statusCode = 404;
+            res.end("WASM asset not found");
+            return;
+          }
+        });
+      },
+    },
     {
       name: "emit-wasm-pqc-subtle-asset",
       apply: "build",
