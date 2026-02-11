@@ -8,7 +8,7 @@
  * Maintains backward compatibility with the legacy v1 envelope format
  * (hand-rolled AES-256-GCM) for reading existing encrypted databases.
  */
-import { PassphraseEncryptionProvider } from "idb-repo";
+import { PassphraseEncryptionProvider } from "../node_modules/idb-repo/dist/index-node.js";
 import { createDecipheriv, pbkdf2Sync } from "node:crypto";
 
 const DB_ENCRYPTION_KEY_ENV_VAR = "PROSEVA_DB_ENCRYPTION_KEY";

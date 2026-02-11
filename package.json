@@ -20,7 +20,7 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
     "generate:api-types": "openapi-typescript server/openapi.json -o src/lib/api-types.d.ts",
-    "build:server": "cd server && bun build --compile src/index.ts --outfile=../dist-server/proseva-server",
+    "build:server": "cd server && bun install --frozen-lockfile && bun build --compile src/index.ts --outfile=../dist-server/proseva-server",
     "build:electron": "tsc -p electron/tsconfig.json",
     "build:all": "bun run build && bun run build:server && bun run build:electron",
     "electron:dev": "concurrently -n vite,electron \"vite\" \"wait-on http://localhost:5173 && electron .\"",
