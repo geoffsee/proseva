@@ -45,10 +45,18 @@ const SchedulerConfigModel = types.model("SchedulerConfig", {
 const AIConfigModel = types.model("AIConfig", {
   openaiApiKey: types.maybeNull(types.string),
   openaiEndpoint: types.maybeNull(types.string),
+  selectedModels: types.optional(types.array(types.string), []),
+  vlmModel: types.maybeNull(types.string),
   openaiApiKeySource: types.maybeNull(
     types.enumeration(["database", "environment"]),
   ),
   openaiEndpointSource: types.maybeNull(
+    types.enumeration(["database", "environment"]),
+  ),
+  vlmModelSource: types.maybeNull(
+    types.enumeration(["database", "environment"]),
+  ),
+  selectedModelsSource: types.maybeNull(
     types.enumeration(["database", "environment"]),
   ),
 });
@@ -60,12 +68,32 @@ const AutoIngestConfigModel = types.model("AutoIngestConfig", {
   ),
 });
 
+const LegalResearchConfigModel = types.model("LegalResearchConfig", {
+  courtListenerApiToken: types.maybeNull(types.string),
+  legiscanApiKey: types.maybeNull(types.string),
+  govInfoApiKey: types.maybeNull(types.string),
+  serpapiBase: types.maybeNull(types.string),
+  courtListenerApiTokenSource: types.maybeNull(
+    types.enumeration(["database", "environment"]),
+  ),
+  legiscanApiKeySource: types.maybeNull(
+    types.enumeration(["database", "environment"]),
+  ),
+  govInfoApiKeySource: types.maybeNull(
+    types.enumeration(["database", "environment"]),
+  ),
+  serpapiBaseSource: types.maybeNull(
+    types.enumeration(["database", "environment"]),
+  ),
+});
+
 const ServerConfigModel = types.model("ServerConfigModel", {
   firebase: types.maybeNull(FirebaseConfigModel),
   twilio: types.maybeNull(TwilioConfigModel),
   scheduler: types.maybeNull(SchedulerConfigModel),
   ai: types.maybeNull(AIConfigModel),
   autoIngest: types.maybeNull(AutoIngestConfigModel),
+  legalResearch: types.maybeNull(LegalResearchConfigModel),
 });
 
 export const ConfigStore = types

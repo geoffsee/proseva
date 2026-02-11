@@ -6,6 +6,7 @@ import {
   type DeadlineSummary,
   type Evaluation,
 } from "./db";
+import { getConfig } from "./config";
 
 /**
  * Parse an ISO date string (YYYY-MM-DD) as a local date without timezone conversion
@@ -176,7 +177,7 @@ Focus on:
 Keep it concise and direct. No fluff.`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: getConfig("TEXT_MODEL_SMALL") || "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
       max_tokens: 200,
     });

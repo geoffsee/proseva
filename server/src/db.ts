@@ -191,10 +191,19 @@ export type ServerConfig = {
   ai?: {
     openaiApiKey?: string;
     openaiEndpoint?: string;
+    selectedModels?: string[];
+    vlmModel?: string;
   };
 
   autoIngest?: {
     directory?: string;
+  };
+
+  legalResearch?: {
+    courtListenerApiToken?: string;
+    legiscanApiKey?: string;
+    govInfoApiKey?: string;
+    serpapiBase?: string;
   };
 };
 
@@ -282,6 +291,29 @@ export type EstatePlan = {
   updatedAt: string;
 };
 
+export type ResearchCase = {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: number;
+  updatedAt: number;
+  isActive: boolean;
+  userEmail: string;
+  savedSearches: any[];
+  documents: any[];
+  summaries: any[];
+  contextItems: any[];
+  generatedDocuments?: any[];
+};
+
+export type ResearchAttachment = {
+  id: string;
+  userEmail: string;
+  data: number[];
+  type: string;
+  name: string;
+};
+
 type Collections = {
   cases: Map<string, Case>;
   contacts: Map<string, Contact>;
@@ -296,6 +328,8 @@ type Collections = {
   serverConfig: Map<string, ServerConfig>;
   estatePlans: Map<string, EstatePlan>;
   embeddings: Map<string, Embedding>;
+  researchCases: Map<string, ResearchCase>;
+  researchAttachments: Map<string, ResearchAttachment>;
 };
 
 const COLLECTION_KEYS: (keyof Collections)[] = [
@@ -312,6 +346,8 @@ const COLLECTION_KEYS: (keyof Collections)[] = [
   "serverConfig",
   "estatePlans",
   "embeddings",
+  "researchCases",
+  "researchAttachments",
 ];
 
 function toMaps(raw: Record<string, Record<string, unknown>>): Collections {
@@ -346,6 +382,8 @@ export class Database {
   serverConfig: Map<string, ServerConfig>;
   estatePlans: Map<string, EstatePlan>;
   embeddings: Map<string, Embedding>;
+  researchCases: Map<string, ResearchCase>;
+  researchAttachments: Map<string, ResearchAttachment>;
 
   private adapter: PersistenceAdapter;
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -367,6 +405,8 @@ export class Database {
     this.serverConfig = maps.serverConfig;
     this.estatePlans = maps.estatePlans;
     this.embeddings = maps.embeddings;
+    this.researchCases = maps.researchCases;
+    this.researchAttachments = maps.researchAttachments;
   }
 
   /** Debounced write — coalesces rapid mutations into a single disk write. */

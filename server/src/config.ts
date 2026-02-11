@@ -72,10 +72,33 @@ export function getConfig(key: string): string | undefined {
     if (key === "OPENAI_ENDPOINT" && configCache.ai?.openaiEndpoint) {
       return configCache.ai.openaiEndpoint;
     }
+    if (key === "VLM_MODEL" && configCache.ai?.vlmModel) {
+      return configCache.ai.vlmModel;
+    }
 
     // Auto-ingest keys
     if (key === "AUTO_INGEST_DIR" && configCache.autoIngest?.directory) {
       return configCache.autoIngest.directory;
+    }
+
+    // Legal research keys
+    if (
+      key === "COURTLISTENER_API_TOKEN" &&
+      configCache.legalResearch?.courtListenerApiToken
+    ) {
+      return configCache.legalResearch.courtListenerApiToken;
+    }
+    if (
+      key === "LEGISCAN_API_KEY" &&
+      configCache.legalResearch?.legiscanApiKey
+    ) {
+      return configCache.legalResearch.legiscanApiKey;
+    }
+    if (key === "GOVINFO_API_KEY" && configCache.legalResearch?.govInfoApiKey) {
+      return configCache.legalResearch.govInfoApiKey;
+    }
+    if (key === "SERPAPI_BASE" && configCache.legalResearch?.serpapiBase) {
+      return configCache.legalResearch.serpapiBase;
     }
   }
 
@@ -130,6 +153,7 @@ export function aiConfig() {
   return {
     apiKey: getConfig("OPENAI_API_KEY"),
     endpoint: getConfig("OPENAI_ENDPOINT"),
+    selectedModels: getConfig("SELECTED_MODELS")?.split(",") || [],
   };
 }
 
@@ -139,5 +163,17 @@ export function aiConfig() {
 export function autoIngestConfig() {
   return {
     directory: getConfig("AUTO_INGEST_DIR"),
+  };
+}
+
+/**
+ * Get legal research API configuration.
+ */
+export function legalResearchConfig() {
+  return {
+    courtListenerApiToken: getConfig("COURTLISTENER_API_TOKEN"),
+    legiscanApiKey: getConfig("LEGISCAN_API_KEY"),
+    govInfoApiKey: getConfig("GOVINFO_API_KEY"),
+    serpapiBase: getConfig("SERPAPI_BASE"),
   };
 }

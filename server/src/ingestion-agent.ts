@@ -11,6 +11,7 @@ import {
   type Party,
 } from "./db";
 import type { DocumentEntry } from "./ingest";
+import { getConfig } from "./config";
 
 type AutoPopulateParams = {
   openai: OpenAI;
@@ -532,7 +533,7 @@ export async function autoPopulateFromDocument(
 
   for (let i = 0; i < 8; i++) {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: getConfig("VLM_MODEL") || "gpt-4o-mini",
       messages,
       tools: ingestionTools,
     });

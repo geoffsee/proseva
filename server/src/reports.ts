@@ -179,7 +179,7 @@ Provide:
 Keep it concise and actionable for a pro se litigant.`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: getConfig("TEXT_MODEL_SMALL") || "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
     });
 
@@ -547,7 +547,7 @@ export async function testOpenAIConnection(): Promise<{
     });
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: getConfig("TEXT_MODEL_SMALL") || "gpt-4o-mini",
       messages: [{ role: "user", content: "Test connection. Reply with OK." }],
       max_tokens: 10,
     });

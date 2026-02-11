@@ -414,12 +414,26 @@ export interface ServerConfig {
   ai?: {
     openaiApiKey?: string;
     openaiEndpoint?: string;
+    selectedModels?: string[];
+    vlmModel?: string;
     openaiApiKeySource?: "database" | "environment";
     openaiEndpointSource?: "database" | "environment";
+    selectedModelsSource?: "database" | "environment";
+    vlmModelSource?: "database" | "environment";
   };
   autoIngest?: {
     directory?: string;
     directorySource?: "database" | "environment";
+  };
+  legalResearch?: {
+    courtListenerApiToken?: string;
+    legiscanApiKey?: string;
+    govInfoApiKey?: string;
+    serpapiBase?: string;
+    courtListenerApiTokenSource?: "database" | "environment";
+    legiscanApiKeySource?: "database" | "environment";
+    govInfoApiKeySource?: "database" | "environment";
+    serpapiBaseSource?: "database" | "environment";
   };
 }
 

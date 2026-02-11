@@ -52,6 +52,12 @@ router.get("/", () => {
     autoIngest: {
       directory: process.env.AUTO_INGEST_DIR,
     },
+    legalResearch: {
+      courtListenerApiToken: process.env.COURTLISTENER_API_TOKEN,
+      legiscanApiKey: process.env.LEGISCAN_API_KEY,
+      govInfoApiKey: process.env.GOVINFO_API_KEY,
+      serpapiBase: process.env.SERPAPI_BASE,
+    },
   };
 
   // Merge config with environment fallbacks and mask sensitive fields
@@ -110,6 +116,35 @@ router.get("/", () => {
         ? "database"
         : "environment",
     },
+    legalResearch: {
+      courtListenerApiToken: maskSensitiveValue(
+        config?.legalResearch?.courtListenerApiToken ||
+          envConfig.legalResearch.courtListenerApiToken,
+      ),
+      legiscanApiKey: maskSensitiveValue(
+        config?.legalResearch?.legiscanApiKey ||
+          envConfig.legalResearch.legiscanApiKey,
+      ),
+      govInfoApiKey: maskSensitiveValue(
+        config?.legalResearch?.govInfoApiKey ||
+          envConfig.legalResearch.govInfoApiKey,
+      ),
+      serpapiBase:
+        config?.legalResearch?.serpapiBase ||
+        envConfig.legalResearch.serpapiBase,
+      courtListenerApiTokenSource: config?.legalResearch?.courtListenerApiToken
+        ? "database"
+        : "environment",
+      legiscanApiKeySource: config?.legalResearch?.legiscanApiKey
+        ? "database"
+        : "environment",
+      govInfoApiKeySource: config?.legalResearch?.govInfoApiKey
+        ? "database"
+        : "environment",
+      serpapiBaseSource: config?.legalResearch?.serpapiBase
+        ? "database"
+        : "environment",
+    },
   };
 
   return Response.json(response);
@@ -149,6 +184,12 @@ router.patch("/", async (req) => {
     }
     if (updates.autoIngest) {
       config.autoIngest = { ...config.autoIngest, ...updates.autoIngest };
+    }
+    if (updates.legalResearch) {
+      config.legalResearch = {
+        ...config.legalResearch,
+        ...updates.legalResearch,
+      };
     }
 
     // Save to database
@@ -202,6 +243,8 @@ router.delete("/:group/:key", (req) => {
     delete (config.ai as any)[key];
   } else if (group === "autoIngest" && config.autoIngest) {
     delete (config.autoIngest as any)[key];
+  } else if (group === "legalResearch" && config.legalResearch) {
+    delete (config.legalResearch as any)[key];
   }
 
   config.updatedAt = new Date().toISOString();

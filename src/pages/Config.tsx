@@ -10,6 +10,7 @@ import {
   Button,
   Spinner,
   Alert,
+  Checkbox,
 } from "@chakra-ui/react";
 import {
   FiBell,
@@ -17,6 +18,7 @@ import {
   FiCpu,
   FiFolder,
   FiAlertTriangle,
+  FiSearch,
 } from "react-icons/fi";
 import { useStore } from "../store/StoreContext";
 import { toaster } from "../components/ui/toaster";
@@ -41,8 +43,15 @@ const Config = observer(() => {
 
   const [openaiApiKey, setOpenaiApiKey] = useState("");
   const [openaiEndpoint, setOpenaiEndpoint] = useState("");
+  const [selectedModels, setSelectedModels] = useState<string[]>([]);
+  const [vlmModel, setVlmModel] = useState("");
 
   const [autoIngestDir, setAutoIngestDir] = useState("");
+
+  const [courtListenerApiToken, setCourtListenerApiToken] = useState("");
+  const [legiscanApiKey, setLegiscanApiKey] = useState("");
+  const [govInfoApiKey, setGovInfoApiKey] = useState("");
+  const [serpapiBase, setSerpapiBase] = useState("");
 
   const [hasChanges, setHasChanges] = useState(false);
 
@@ -67,8 +76,19 @@ const Config = observer(() => {
 
       setOpenaiApiKey(configStore.config.ai?.openaiApiKey || "");
       setOpenaiEndpoint(configStore.config.ai?.openaiEndpoint || "");
+      setSelectedModels(configStore.config.ai?.selectedModels || []);
+      setVlmModel(configStore.config.ai?.vlmModel || "");
 
       setAutoIngestDir(configStore.config.autoIngest?.directory || "");
+
+      setCourtListenerApiToken(
+        configStore.config.legalResearch?.courtListenerApiToken || "",
+      );
+      setLegiscanApiKey(
+        configStore.config.legalResearch?.legiscanApiKey || "",
+      );
+      setGovInfoApiKey(configStore.config.legalResearch?.govInfoApiKey || "");
+      setSerpapiBase(configStore.config.legalResearch?.serpapiBase || "");
     }
   }, [configStore.config]);
 
@@ -92,9 +112,17 @@ const Config = observer(() => {
         ai: {
           openaiApiKey: openaiApiKey || undefined,
           openaiEndpoint: openaiEndpoint || undefined,
+          selectedModels: selectedModels,
+          vlmModel: vlmModel || undefined,
         },
         autoIngest: {
           directory: autoIngestDir || undefined,
+        },
+        legalResearch: {
+          courtListenerApiToken: courtListenerApiToken || undefined,
+          legiscanApiKey: legiscanApiKey || undefined,
+          govInfoApiKey: govInfoApiKey || undefined,
+          serpapiBase: serpapiBase || undefined,
         },
       });
 
@@ -220,6 +248,15 @@ const Config = observer(() => {
 
   const autoIngestStatus =
     configStore.config?.autoIngest?.directorySource === "database"
+      ? "database"
+      : "environment";
+
+  const legalResearchStatus =
+    configStore.config?.legalResearch?.courtListenerApiTokenSource ===
+      "database" ||
+    configStore.config?.legalResearch?.legiscanApiKeySource === "database" ||
+    configStore.config?.legalResearch?.govInfoApiKeySource === "database" ||
+    configStore.config?.legalResearch?.serpapiBaseSource === "database"
       ? "database"
       : "environment";
 
@@ -449,6 +486,81 @@ const Config = observer(() => {
               placeholder="https://api.openai.com/v1"
             />
           </Box>
+          <Box>
+            <Text fontSize="sm" mb={1} fontWeight="medium">
+              VLM Model (vision/document processing)
+            </Text>
+            <Input
+              value={vlmModel}
+              onChange={(e) => {
+                setVlmModel(e.target.value);
+                setHasChanges(true);
+              }}
+              placeholder="gpt-4o-mini"
+            />
+          </Box>
+          <Box>
+            <Text fontSize="sm" mb={3} fontWeight="medium">
+              Available Models
+            </Text>
+            <VStack gap={2} align="stretch">
+              <Checkbox
+                checked={selectedModels.includes("claude-opus-4-6")}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setSelectedModels([...selectedModels, "claude-opus-4-6"]);
+                  } else {
+                    setSelectedModels(
+                      selectedModels.filter((m) => m !== "claude-opus-4-6")
+                    );
+                  }
+                  setHasChanges(true);
+                }}
+              >
+                Claude Opus 4.6 (claude-opus-4-6)
+              </Checkbox>
+              <Checkbox
+                checked={selectedModels.includes("claude-sonnet-4-5-20250929")}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setSelectedModels([
+                      ...selectedModels,
+                      "claude-sonnet-4-5-20250929",
+                    ]);
+                  } else {
+                    setSelectedModels(
+                      selectedModels.filter(
+                        (m) => m !== "claude-sonnet-4-5-20250929"
+                      )
+                    );
+                  }
+                  setHasChanges(true);
+                }}
+              >
+                Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
+              </Checkbox>
+              <Checkbox
+                checked={selectedModels.includes("claude-haiku-4-5-20251001")}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setSelectedModels([
+                      ...selectedModels,
+                      "claude-haiku-4-5-20251001",
+                    ]);
+                  } else {
+                    setSelectedModels(
+                      selectedModels.filter(
+                        (m) => m !== "claude-haiku-4-5-20251001"
+                      )
+                    );
+                  }
+                  setHasChanges(true);
+                }}
+              >
+                Claude Haiku 4.5 (claude-haiku-4-5-20251001)
+              </Checkbox>
+            </VStack>
+          </Box>
           <Button
             size="sm"
             variant="outline"
@@ -459,6 +571,73 @@ const Config = observer(() => {
           </Button>
           <Text fontSize="sm" color="gray.600">
             Used for AI-powered case summaries, reports, and chat
+          </Text>
+        </ConfigSection>
+
+        {/* Legal Research APIs Section */}
+        <ConfigSection
+          title="Legal Research APIs"
+          icon={<FiSearch />}
+          status={legalResearchStatus}
+        >
+          <Box>
+            <Text fontSize="sm" mb={1} fontWeight="medium">
+              CourtListener API Token
+            </Text>
+            <MaskedInput
+              value={courtListenerApiToken}
+              onChange={(value) => {
+                setCourtListenerApiToken(value);
+                setHasChanges(true);
+              }}
+              placeholder="your-courtlistener-api-token"
+              label="CourtListener API Token"
+            />
+          </Box>
+          <Box>
+            <Text fontSize="sm" mb={1} fontWeight="medium">
+              LegiScan API Key
+            </Text>
+            <MaskedInput
+              value={legiscanApiKey}
+              onChange={(value) => {
+                setLegiscanApiKey(value);
+                setHasChanges(true);
+              }}
+              placeholder="your-legiscan-api-key"
+              label="LegiScan API Key"
+            />
+          </Box>
+          <Box>
+            <Text fontSize="sm" mb={1} fontWeight="medium">
+              GovInfo API Key
+            </Text>
+            <MaskedInput
+              value={govInfoApiKey}
+              onChange={(value) => {
+                setGovInfoApiKey(value);
+                setHasChanges(true);
+              }}
+              placeholder="your-govinfo-api-key"
+              label="GovInfo API Key"
+            />
+          </Box>
+          <Box>
+            <Text fontSize="sm" mb={1} fontWeight="medium">
+              SerpAPI Base URL
+            </Text>
+            <Input
+              value={serpapiBase}
+              onChange={(e) => {
+                setSerpapiBase(e.target.value);
+                setHasChanges(true);
+              }}
+              placeholder="https://serpapi.com"
+            />
+          </Box>
+          <Text fontSize="sm" color="gray.600">
+            API keys and endpoints for legal research services (case law,
+            legislation, and government publications)
           </Text>
         </ConfigSection>
 

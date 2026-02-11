@@ -2,6 +2,7 @@ import { basename, relative, join } from "path";
 import { readFile, writeFile, mkdir, stat } from "fs/promises";
 import { createHash } from "crypto";
 import OpenAI from "openai";
+import { getConfig } from "./config";
 
 export interface DocumentEntry {
   id: string;
@@ -50,7 +51,7 @@ export async function extractTextFromPdf(
 ): Promise<{ text: string; pageCount: number }> {
   const base64 = buffer.toString("base64");
   const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: getConfig("VLM_MODEL") || "gpt-4o-mini",
     messages: [
       {
         role: "user",

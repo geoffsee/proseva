@@ -44,6 +44,7 @@ import {
 } from "./notifications";
 import { configRouter } from "./config-api";
 import { getConfig } from "./config";
+import { researchRouter } from "./research";
 import { cosine_similarity_dataspace } from "wasm-similarity";
 import {
   generateCaseSummary,
@@ -919,7 +920,7 @@ You have access to tools that let you look up the user's cases, deadlines, conta
           try {
             const topK = Number(args.topK) || 3;
             const embResponse = await openai.embeddings.create({
-              model: "text-embedding-3-small",
+              model: getConfig("EMBEDDINGS_MODEL") || "text-embedding-3-small",
               input: args.query,
             });
             const queryVec = embResponse.data[0].embedding;
@@ -966,7 +967,7 @@ You have access to tools that let you look up the user's cases, deadlines, conta
     // Tool-calling loop
     for (let i = 0; i < 10; i++) {
       const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: getConfig("TEXT_MODEL_SMALL") || "gpt-4o-mini",
         messages: chatMessages,
         tools,
       });
@@ -1514,6 +1515,9 @@ router
 
 // Mount config router
 router.all("/config/*", configRouter.fetch);
+
+// Mount research router
+router.all("/research/*", researchRouter.fetch);
 
 // Initialize the scheduler on server startup
 initScheduler();
