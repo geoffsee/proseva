@@ -220,6 +220,7 @@ export interface ReportConfig {
     includeAI: boolean;
     includeChainOfCustody?: boolean;
   };
+  [key: string]: unknown;
 }
 
 export interface ReportSection {

@@ -36,7 +36,7 @@ describe("Research", () => {
         clearMessages: mockClearMessages,
         toggleSidebar: mockToggleSidebar,
       },
-    } as ReturnType<typeof useStore>);
+    } as unknown as ReturnType<typeof useStore>);
   });
 
   it("renders Case Research heading", () => {
@@ -138,7 +138,7 @@ describe("Research", () => {
         clearMessages: mockClearMessages,
         toggleSidebar: mockToggleSidebar,
       },
-    } as ReturnType<typeof useStore>);
+    } as unknown as ReturnType<typeof useStore>);
     render(<Research />);
     expect(screen.getByText("Search for patent cases")).toBeInTheDocument();
     expect(
@@ -158,7 +158,7 @@ describe("Research", () => {
         clearMessages: mockClearMessages,
         toggleSidebar: mockToggleSidebar,
       },
-    } as ReturnType<typeof useStore>);
+    } as unknown as ReturnType<typeof useStore>);
     render(<Research />);
     expect(screen.getByText("Researching...")).toBeInTheDocument();
   });

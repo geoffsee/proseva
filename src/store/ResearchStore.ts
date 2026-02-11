@@ -27,7 +27,7 @@ export const ResearchStore = types
       for (const tr of self.sidebarResults) {
         const key = tr.toolName;
         if (!grouped[key]) grouped[key] = [];
-        grouped[key].push(tr.results as ToolResultData);
+        grouped[key].push(tr);
       }
       return grouped;
     },

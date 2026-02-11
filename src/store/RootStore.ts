@@ -1,4 +1,4 @@
-import { types, onSnapshot, applySnapshot } from "mobx-state-tree";
+import { types, onSnapshot, applySnapshot, type SnapshotIn } from "mobx-state-tree";
 import { CaseStore } from "./CaseStore";
 import { DeadlineStore } from "./DeadlineStore";
 import { FinanceStore } from "./FinanceStore";
@@ -42,6 +42,7 @@ export const RootStore = types
   }));
 
 export type IRootStore = ReturnType<typeof RootStore.create>;
+type CaseSnapshot = SnapshotIn<typeof CaseStore>;
 
 /**
  * Creates a root store with empty defaults (sync, instant).
@@ -191,7 +192,9 @@ export async function hydrateStore(store: IRootStore): Promise<void> {
   ]);
 
   // Apply snapshots to hydrate the store
-  applySnapshot(store.caseStore, { cases });
+  applySnapshot(store.caseStore, {
+    cases: cases as CaseSnapshot["cases"],
+  });
   applySnapshot(store.deadlineStore, {
     deadlines,
     selectedType: "all",

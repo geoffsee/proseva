@@ -47,6 +47,7 @@
     "remark-gfm": "^4.0.1",
     "twilio": "^5.12.1",
     "uuid": "^13.0.0",
+    "wasm-pqc-subtle": "^0.1.4",
     "wasm-similarity": "^1.0.9",
     "zustand": "^5.0.10"
   },
