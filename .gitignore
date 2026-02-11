@@ -75,3 +75,4 @@ server/data/backups/
 /dist-electron/
 /server/data
 /dist-server/proseva-server
+/.output.txt
