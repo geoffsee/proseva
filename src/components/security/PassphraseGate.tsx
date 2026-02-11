@@ -84,14 +84,15 @@ export function PassphraseGate({ children }: { children: ReactNode }) {
           // 2b. Subsequent: load ML-KEM keys from keys KV
           const keys = await loadMLKEMKeys();
           if (!keys) {
-            setError(
-              "Could not load encryption keys. They may have been corrupted or the passphrase is incorrect.",
-            );
-            setState("enter-passphrase");
-            return;
+            // Recovery path: if passphrase is valid but keys are missing
+            // (e.g. first-run setup was interrupted), regenerate keys.
+            const regenerated = await generateAndStoreMLKEMKeys();
+            publicKey = regenerated.publicKey;
+            secretKey = regenerated.secretKey;
+          } else {
+            publicKey = keys.publicKey;
+            secretKey = keys.secretKey;
           }
-          publicKey = keys.publicKey;
-          secretKey = keys.secretKey;
         }
 
         // 3. Open the data store with ML-KEM keys

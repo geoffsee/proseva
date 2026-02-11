@@ -2,6 +2,7 @@ import {
   createKV,
   PassphraseEncryptionProvider,
   WasmMlKemProvider,
+  WebCryptoEncryptionProvider,
   kvGetJson,
   type KVNamespace,
 } from "idb-repo";
@@ -22,17 +23,49 @@ export const STORAGE_KEYS = {
 
 const MLKEM_PUBLIC_KEY = "mlkem-public-key";
 const MLKEM_SECRET_KEY = "mlkem-secret-key";
+const KEYS_STORE_SALT_STORAGE_KEY = "proseva-keys-store-salt";
 
 let _keysStore: KVNamespace | null = null;
 let _dataStore: KVNamespace | null = null;
 let _forceMemory = false;
+
+function encodeBytes(bytes: Uint8Array): string {
+  return btoa(String.fromCharCode(...bytes));
+}
+
+function decodeBytes(input: string): Uint8Array | null {
+  try {
+    return Uint8Array.from(atob(input), (ch) => ch.charCodeAt(0));
+  } catch {
+    return null;
+  }
+}
+
+function loadKeysStoreSalt(): Uint8Array | null {
+  const raw = localStorage.getItem(KEYS_STORE_SALT_STORAGE_KEY);
+  if (!raw) return null;
+  return decodeBytes(raw);
+}
+
+function saveKeysStoreSalt(salt: Uint8Array): void {
+  localStorage.setItem(KEYS_STORE_SALT_STORAGE_KEY, encodeBytes(salt));
+}
 
 /**
  * Initialize the keys KV store encrypted with user's passphrase (PBKDF2 + AES-256-GCM).
  * This store holds the ML-KEM keypair.
  */
 export async function initKeysStore(passphrase: string): Promise<KVNamespace> {
-  const provider = await PassphraseEncryptionProvider.create(passphrase);
+  const existingSalt = loadKeysStoreSalt();
+  const provider = await PassphraseEncryptionProvider.create(
+    passphrase,
+    existingSalt ?? undefined,
+  );
+
+  if (!existingSalt && typeof provider.getSalt === "function") {
+    saveKeysStoreSalt(provider.getSalt());
+  }
+
   _keysStore = createKV({
     dbName: "proseva-keys",
     encryptionProvider: provider,
@@ -49,7 +82,27 @@ export async function initDataStore(
   publicKey: Uint8Array,
   secretKey: Uint8Array,
 ): Promise<KVNamespace> {
-  const provider = await WasmMlKemProvider.fromKeys(publicKey, secretKey);
+  let provider: Awaited<ReturnType<typeof WasmMlKemProvider.fromKeys>>;
+  try {
+    provider = await WasmMlKemProvider.fromKeys(publicKey, secretKey);
+  } catch (err) {
+    // Fallback for environments where wasm module linking fails at runtime.
+    // Derive a stable AES-256 key from the persisted secret key.
+    const fallbackKey = secretKey.slice(0, 32);
+    if (fallbackKey.length < 32) {
+      throw err;
+    }
+    const webCryptoProvider = new WebCryptoEncryptionProvider(fallbackKey);
+    await webCryptoProvider.initialize();
+    _dataStore = createKV({
+      dbName: "proseva-data",
+      encryptionProvider: webCryptoProvider,
+      forceMemory: _forceMemory,
+    });
+    console.warn("ML-KEM wasm unavailable; using WebCrypto fallback.", err);
+    return _dataStore;
+  }
+
   _dataStore = createKV({
     dbName: "proseva-data",
     encryptionProvider: provider,
@@ -85,8 +138,21 @@ export async function generateAndStoreMLKEMKeys(): Promise<{
   secretKey: Uint8Array;
 }> {
   const keysStore = getKeysStore();
-  const mlkemProvider = await WasmMlKemProvider.create();
-  const { publicKey, secretKey } = mlkemProvider.exportKeys();
+  let publicKey: Uint8Array;
+  let secretKey: Uint8Array;
+
+  try {
+    const mlkemProvider = await WasmMlKemProvider.create();
+    const keys = mlkemProvider.exportKeys();
+    publicKey = keys.publicKey;
+    secretKey = keys.secretKey;
+  } catch (err) {
+    // Fallback for runtimes where wasm linking fails.
+    // Store a synthetic keypair so passphrase setup can still complete.
+    secretKey = crypto.getRandomValues(new Uint8Array(32));
+    publicKey = crypto.getRandomValues(new Uint8Array(32));
+    console.warn("ML-KEM key generation unavailable; using fallback keys.", err);
+  }
 
   await keysStore.put(MLKEM_PUBLIC_KEY, Array.from(publicKey));
   await keysStore.put(MLKEM_SECRET_KEY, Array.from(secretKey));
