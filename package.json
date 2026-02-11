@@ -12,6 +12,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run --silent",
+    "typecheck": "tsc -b --noEmit",
     "test:server": "vitest run --silent --config vitest.config.server.ts",
     "test:coverage": "vitest run --silent --coverage",
     "test:e2e": "playwright test",
