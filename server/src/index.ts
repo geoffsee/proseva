@@ -910,6 +910,29 @@ router
           },
         },
       },
+      {
+        type: "function",
+        function: {
+          name: "AnalyzeCaseGraph",
+          description:
+            "Analyze cross-entity case relationships using a knowledge graph. Use this for case overviews, bottleneck analysis, and identifying what records are most connected.",
+          parameters: {
+            type: "object",
+            properties: {
+              caseId: {
+                type: "string",
+                description: "Optional case ID to scope graph analysis to one case",
+              },
+              topK: {
+                type: "number",
+                description:
+                  "How many highest-connectivity nodes to return (1-20, default 8)",
+              },
+            },
+            required: [],
+          },
+        },
+      },
     ];
 
     const baseDir = join(appRoot, "case-data/case-documents-app");
@@ -1141,6 +1164,25 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
           } catch {
             return JSON.stringify({ error: "Knowledge search failed" });
           }
+        }
+        case "AnalyzeCaseGraph": {
+          const entries = await loadDocumentEntries();
+          const result = analyzeCaseGraph(
+            {
+              cases: [...db.cases.values()],
+              deadlines: [...db.deadlines.values()],
+              contacts: [...db.contacts.values()],
+              filings: [...db.filings.values()],
+              evidences: [...db.evidences.values()],
+              notes: [...db.notes.values()],
+              documents: entries,
+            },
+            {
+              caseId: parseStringArg(args.caseId),
+              topK: parseNumberArg(args.topK),
+            },
+          );
+          return JSON.stringify(result);
         }
         default:
           return JSON.stringify({ error: "Unknown tool" });
