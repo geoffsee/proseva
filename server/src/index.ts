@@ -40,6 +40,7 @@ import {
   getChannelsStatus,
 } from "./notifications";
 import { configRouter } from "./config-api";
+import { securityRouter } from "./security-api";
 import { getConfig } from "./config";
 import { researchRouter } from "./research";
 import { handleResearchChat } from "./research-agent";
@@ -62,6 +63,31 @@ const __dir =
 const appRoot = process.env.PROSEVA_DATA_DIR ?? join(__dir, "../..");
 
 const { preflight, corsify } = cors();
+
+const ALLOWED_WHEN_DB_LOCKED = new Set([
+  "/api/security/status",
+  "/api/security/recovery-key",
+]);
+
+const requireUnlockedDatabase = (request: Request) => {
+  if (request.method === "OPTIONS") return;
+  if (!db.isLocked()) return;
+
+  const pathname = new URL(request.url).pathname;
+  if (ALLOWED_WHEN_DB_LOCKED.has(pathname)) return;
+
+  return new Response(
+    JSON.stringify({
+      error: "Database is locked. Provide a valid recovery key to continue.",
+      code: "DB_LOCKED",
+      lockReason: db.securityStatus().lockReason,
+    }),
+    {
+      status: 423,
+      headers: { "content-type": "application/json" },
+    },
+  );
+};
 
 const persistAfterMutation = (response: Response, request: Request) => {
   if (request.method !== "GET") db.persist();
@@ -91,7 +117,7 @@ const ingestionStatus: IngestionStatus = {
 };
 
 export const router = AutoRouter({
-  before: [preflight],
+  before: [preflight, requireUnlockedDatabase],
   after: [persistAfterMutation, corsify],
   base: "/api",
 });
@@ -1523,6 +1549,7 @@ router
 
 // Mount config router
 router.all("/config/*", configRouter.fetch);
+router.all("/security/*", securityRouter.fetch);
 
 // Research agent chat endpoint
 router.post("/research/agent/chat", async (request: Request) => {

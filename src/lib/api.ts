@@ -437,6 +437,20 @@ export interface ServerConfig {
   };
 }
 
+export type DbSecurityStatus = {
+  locked: boolean;
+  encryptedAtRest: boolean;
+  keyLoaded: boolean;
+  lockReason: "missing_key" | "invalid_key" | null;
+};
+
+export type OpenAIModelsResponse = {
+  success: boolean;
+  models: string[];
+  endpoint?: string;
+  error?: string;
+};
+
 export const configApi = {
   get: async (): Promise<ServerConfig> => {
     const res = await fetch("/api/config");
@@ -486,6 +500,33 @@ export const configApi = {
   reinitialize: async (service: string): Promise<{ success: boolean }> => {
     const res = await fetch(`/api/config/reinitialize/${service}`, {
       method: "POST",
+    });
+    return res.json();
+  },
+  getOpenAIModels: async (
+    endpoint?: string,
+  ): Promise<OpenAIModelsResponse> => {
+    const url = new URL("/api/config/openai-models", window.location.origin);
+    if (endpoint && endpoint.trim()) {
+      url.searchParams.set("endpoint", endpoint.trim());
+    }
+    const res = await fetch(url.pathname + url.search);
+    return res.json();
+  },
+};
+
+export const securityApi = {
+  status: async (): Promise<DbSecurityStatus> => {
+    const res = await fetch("/api/security/status");
+    return res.json();
+  },
+  applyRecoveryKey: async (
+    recoveryKey: string,
+  ): Promise<{ success: boolean; status?: DbSecurityStatus; error?: string }> => {
+    const res = await fetch("/api/security/recovery-key", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ recoveryKey }),
     });
     return res.json();
   },
@@ -667,6 +708,7 @@ export const api = {
   evaluations: evaluationsApi,
   scheduler: schedulerApi,
   config: configApi,
+  security: securityApi,
   estatePlans: estatePlansApi,
   researchAgent: researchAgentApi,
 };

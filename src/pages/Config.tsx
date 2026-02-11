@@ -10,7 +10,6 @@ import {
   Button,
   Spinner,
   Alert,
-  Checkbox,
 } from "@chakra-ui/react";
 import {
   FiBell,
@@ -18,12 +17,37 @@ import {
   FiCpu,
   FiFolder,
   FiAlertTriangle,
+  FiKey,
   FiSearch,
 } from "react-icons/fi";
 import { useStore } from "../store/StoreContext";
 import { toaster } from "../components/ui/toaster";
 import { MaskedInput } from "../components/config/MaskedInput";
 import { ConfigSection } from "../components/config/ConfigSection";
+import { api, type DbSecurityStatus } from "../lib/api";
+
+const RECOVERY_KEY_STORAGE_KEY = "proseva.dbRecoveryKey";
+
+function generateRecoveryKey(): string {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = new Uint8Array(30);
+  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+    crypto.getRandomValues(bytes);
+  } else {
+    for (let i = 0; i < bytes.length; i += 1) {
+      bytes[i] = Math.floor(Math.random() * 256);
+    }
+  }
+  const chars = Array.from(bytes, (b) => alphabet[b % alphabet.length]);
+  const chunks = [
+    chars.slice(0, 6).join(""),
+    chars.slice(6, 12).join(""),
+    chars.slice(12, 18).join(""),
+    chars.slice(18, 24).join(""),
+    chars.slice(24, 30).join(""),
+  ];
+  return chunks.join("-");
+}
 
 const Config = observer(() => {
   const { configStore } = useStore();
@@ -54,9 +78,42 @@ const Config = observer(() => {
   const [serpapiBase, setSerpapiBase] = useState("");
 
   const [hasChanges, setHasChanges] = useState(false);
+  const [dbSecurityStatus, setDbSecurityStatus] =
+    useState<DbSecurityStatus | null>(null);
+  const [recoveryKey, setRecoveryKey] = useState("");
+  const [generatedRecoveryKey, setGeneratedRecoveryKey] = useState("");
+  const [isApplyingRecoveryKey, setIsApplyingRecoveryKey] = useState(false);
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
+  const [modelsError, setModelsError] = useState<string | null>(null);
+  const [modelsEndpoint, setModelsEndpoint] = useState<string | null>(null);
+
+  const loadOpenAIModels = async (endpointOverride?: string) => {
+    setIsLoadingModels(true);
+    setModelsError(null);
+    try {
+      const response = await api.config.getOpenAIModels(endpointOverride);
+      if (!response.success) {
+        setModelsError(response.error || "Failed to load models.");
+        return;
+      }
+      setAvailableModels(response.models);
+      setModelsEndpoint(response.endpoint ?? null);
+    } catch (error) {
+      setModelsError(String(error));
+    } finally {
+      setIsLoadingModels(false);
+    }
+  };
 
   useEffect(() => {
     configStore.loadConfig();
+    void api.security
+      .status()
+      .then((status) => setDbSecurityStatus(status))
+      .catch((error) => {
+        console.error("Failed to load DB security status:", error);
+      });
   }, [configStore]);
 
   useEffect(() => {
@@ -75,9 +132,11 @@ const Config = observer(() => {
       setSchedulerEnabled(configStore.config.scheduler?.enabled ?? true);
 
       setOpenaiApiKey(configStore.config.ai?.openaiApiKey || "");
-      setOpenaiEndpoint(configStore.config.ai?.openaiEndpoint || "");
+      const configuredEndpoint = configStore.config.ai?.openaiEndpoint || "";
+      setOpenaiEndpoint(configuredEndpoint);
       setSelectedModels(configStore.config.ai?.selectedModels || []);
       setVlmModel(configStore.config.ai?.vlmModel || "");
+      void loadOpenAIModels(configuredEndpoint);
 
       setAutoIngestDir(configStore.config.autoIngest?.directory || "");
 
@@ -130,6 +189,7 @@ const Config = observer(() => {
       await configStore.reinitializeService("firebase");
       await configStore.reinitializeService("twilio");
       await configStore.reinitializeService("scheduler");
+      await loadOpenAIModels(openaiEndpoint);
 
       setHasChanges(false);
       toaster.create({ title: "Configuration saved", type: "success" });
@@ -219,6 +279,82 @@ const Config = observer(() => {
     }
   };
 
+  const handleApplyRecoveryKey = async () => {
+    const trimmed = recoveryKey.trim();
+    if (!trimmed) {
+      toaster.create({
+        title: "Recovery key required",
+        description: "Enter a recovery key first.",
+        type: "error",
+      });
+      return;
+    }
+
+    setIsApplyingRecoveryKey(true);
+    try {
+      const result = await api.security.applyRecoveryKey(trimmed);
+      if (!result.success) {
+        toaster.create({
+          title: "Failed to apply recovery key",
+          description: result.error || "Invalid recovery key.",
+          type: "error",
+        });
+        return;
+      }
+
+      localStorage.setItem(RECOVERY_KEY_STORAGE_KEY, trimmed);
+      setDbSecurityStatus(result.status ?? null);
+      setGeneratedRecoveryKey(trimmed);
+      toaster.create({
+        title: "Recovery key applied",
+        description: "Encryption key is now active for this database.",
+        type: "success",
+      });
+    } catch (error) {
+      toaster.create({
+        title: "Failed to apply recovery key",
+        description: String(error),
+        type: "error",
+      });
+    } finally {
+      setIsApplyingRecoveryKey(false);
+    }
+  };
+
+  const handleGenerateRecoveryKey = () => {
+    const key = generateRecoveryKey();
+    setGeneratedRecoveryKey(key);
+    setRecoveryKey(key);
+    toaster.create({
+      title: "Recovery key generated",
+      description: "Save this key somewhere safe before applying it.",
+      type: "success",
+    });
+  };
+
+  const handleCopyRecoveryKey = async () => {
+    if (!generatedRecoveryKey) return;
+    try {
+      await navigator.clipboard.writeText(generatedRecoveryKey);
+      toaster.create({ title: "Recovery key copied", type: "success" });
+    } catch (error) {
+      toaster.create({
+        title: "Copy failed",
+        description: String(error),
+        type: "error",
+      });
+    }
+  };
+
+  const toggleModel = (model: string, checked: boolean) => {
+    if (checked) {
+      setSelectedModels(Array.from(new Set([...selectedModels, model])));
+    } else {
+      setSelectedModels(selectedModels.filter((m) => m !== model));
+    }
+    setHasChanges(true);
+  };
+
   if (configStore.isLoading && !configStore.config) {
     return (
       <Box p={8}>
@@ -259,6 +395,14 @@ const Config = observer(() => {
     configStore.config?.legalResearch?.serpapiBaseSource === "database"
       ? "database"
       : "environment";
+
+  const encryptionStatus = dbSecurityStatus?.encryptedAtRest
+    ? "database"
+    : "environment";
+
+  const modelOptions = Array.from(
+    new Set([...availableModels, ...selectedModels]),
+  ).sort((a, b) => a.localeCompare(b));
 
   return (
     <Box p={8}>
@@ -503,63 +647,51 @@ const Config = observer(() => {
             <Text fontSize="sm" mb={3} fontWeight="medium">
               Available Models
             </Text>
-            <VStack gap={2} align="stretch">
-              <Checkbox
-                checked={selectedModels.includes("claude-opus-4-6")}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    setSelectedModels([...selectedModels, "claude-opus-4-6"]);
-                  } else {
-                    setSelectedModels(
-                      selectedModels.filter((m) => m !== "claude-opus-4-6")
-                    );
-                  }
-                  setHasChanges(true);
+            <HStack mb={2}>
+              <Button
+                size="xs"
+                variant="outline"
+                onClick={() => {
+                  void loadOpenAIModels(openaiEndpoint);
                 }}
+                loading={isLoadingModels}
               >
-                Claude Opus 4.6 (claude-opus-4-6)
-              </Checkbox>
-              <Checkbox
-                checked={selectedModels.includes("claude-sonnet-4-5-20250929")}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    setSelectedModels([
-                      ...selectedModels,
-                      "claude-sonnet-4-5-20250929",
-                    ]);
-                  } else {
-                    setSelectedModels(
-                      selectedModels.filter(
-                        (m) => m !== "claude-sonnet-4-5-20250929"
-                      )
-                    );
-                  }
-                  setHasChanges(true);
-                }}
-              >
-                Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
-              </Checkbox>
-              <Checkbox
-                checked={selectedModels.includes("claude-haiku-4-5-20251001")}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    setSelectedModels([
-                      ...selectedModels,
-                      "claude-haiku-4-5-20251001",
-                    ]);
-                  } else {
-                    setSelectedModels(
-                      selectedModels.filter(
-                        (m) => m !== "claude-haiku-4-5-20251001"
-                      )
-                    );
-                  }
-                  setHasChanges(true);
-                }}
-              >
-                Claude Haiku 4.5 (claude-haiku-4-5-20251001)
-              </Checkbox>
-            </VStack>
+                Refresh Model List
+              </Button>
+              {modelsEndpoint && (
+                <Text fontSize="xs" color="gray.600">
+                  {modelsEndpoint}
+                </Text>
+              )}
+            </HStack>
+            {modelsError && (
+              <Alert.Root status="warning" mb={2}>
+                <Alert.Indicator />
+                <Alert.Description>{modelsError}</Alert.Description>
+              </Alert.Root>
+            )}
+            {modelOptions.length === 0 ? (
+              <Text fontSize="sm" color="gray.600">
+                No models available. Check endpoint/API key and refresh.
+              </Text>
+            ) : (
+              <VStack gap={2} align="stretch">
+                {modelOptions.map((model) => (
+                  <label
+                    key={model}
+                    style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedModels.includes(model)}
+                      onChange={(e) => toggleModel(model, e.target.checked)}
+                      style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                    />
+                    <Text fontSize="sm">{model}</Text>
+                  </label>
+                ))}
+              </VStack>
+            )}
           </Box>
           <Button
             size="sm"
@@ -639,6 +771,71 @@ const Config = observer(() => {
             API keys and endpoints for legal research services (case law,
             legislation, and government publications)
           </Text>
+        </ConfigSection>
+
+        {/* Data Encryption Section */}
+        <ConfigSection
+          title="Data Encryption"
+          icon={<FiKey />}
+          status={encryptionStatus}
+        >
+          <Text fontSize="sm" color="gray.600">
+            Generate or provide a recovery key to encrypt data at rest and
+            unlock encrypted databases on new devices.
+          </Text>
+
+          {dbSecurityStatus?.locked && (
+            <Alert.Root status="warning">
+              <Alert.Indicator />
+              <Alert.Title>Database locked</Alert.Title>
+              <Alert.Description>
+                Enter your recovery key to unlock this database.
+              </Alert.Description>
+            </Alert.Root>
+          )}
+
+          <Box>
+            <Text fontSize="sm" mb={1} fontWeight="medium">
+              Recovery Key
+            </Text>
+            <Input
+              type="password"
+              value={recoveryKey}
+              onChange={(e) => setRecoveryKey(e.target.value)}
+              placeholder="Enter existing key or generate a new one"
+            />
+          </Box>
+
+          <HStack>
+            <Button
+              size="sm"
+              colorPalette="blue"
+              onClick={handleApplyRecoveryKey}
+              loading={isApplyingRecoveryKey}
+            >
+              Apply Recovery Key
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleGenerateRecoveryKey}
+            >
+              Generate Recovery Key
+            </Button>
+          </HStack>
+
+          {generatedRecoveryKey && (
+            <Alert.Root status="warning">
+              <Alert.Indicator />
+              <Alert.Title>Store this key safely</Alert.Title>
+              <Alert.Description>
+                {generatedRecoveryKey}
+              </Alert.Description>
+              <Button size="xs" variant="outline" onClick={handleCopyRecoveryKey}>
+                Copy
+              </Button>
+            </Alert.Root>
+          )}
         </ConfigSection>
 
         {/* Auto-Ingest Section */}

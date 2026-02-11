@@ -1,7 +1,11 @@
 import { Router } from "itty-router";
 import { db } from "./db";
 import type { ServerConfig } from "./db";
-import { invalidateConfigCache, loadConfigFromDatabase } from "./config";
+import {
+  getConfig,
+  invalidateConfigCache,
+  loadConfigFromDatabase,
+} from "./config";
 import {
   reinitializeFirebase,
   testFirebaseConnection,
@@ -14,6 +18,61 @@ import { restartScheduler } from "./scheduler";
 import { testOpenAIConnection } from "./reports";
 
 const router = Router({ base: "/api/config" });
+
+function buildOpenAIModelsUrl(endpoint?: string): string {
+  const fallback = "https://api.openai.com/v1/models";
+  if (!endpoint) return fallback;
+
+  const raw = endpoint.trim();
+  if (!raw) return fallback;
+  const normalized = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+
+  const url = new URL(normalized);
+  const path = url.pathname.replace(/\/+$/, "");
+  if (path.endsWith("/v1/models")) return url.toString();
+
+  const segments = path.split("/").filter(Boolean);
+  const v1Index = segments.lastIndexOf("v1");
+  const basePath =
+    v1Index >= 0
+      ? `/${segments.slice(0, v1Index + 1).join("/")}`
+      : path
+        ? `${path}/v1`
+        : "/v1";
+
+  url.pathname = `${basePath}/models`;
+  url.search = "";
+  url.hash = "";
+  return url.toString();
+}
+
+function extractOpenAIModels(payload: unknown): string[] {
+  if (!payload || typeof payload !== "object") return [];
+  const data = (payload as { data?: unknown }).data;
+  if (!Array.isArray(data)) return [];
+  const ids = data
+    .map((item) =>
+      item && typeof item === "object"
+        ? (item as { id?: unknown }).id
+        : undefined,
+    )
+    .filter((id): id is string => typeof id === "string");
+  return [...new Set(ids)].sort((a, b) => a.localeCompare(b));
+}
+
+function openAIErrorMessage(payload: unknown, fallback: string): string {
+  if (payload && typeof payload === "object") {
+    const error = (payload as { error?: unknown }).error;
+    if (typeof error === "string") return error;
+    if (error && typeof error === "object") {
+      const message = (error as { message?: unknown }).message;
+      if (typeof message === "string" && message.trim().length > 0) {
+        return message;
+      }
+    }
+  }
+  return fallback;
+}
 
 /**
  * Mask sensitive values for display.
@@ -298,6 +357,86 @@ router.post("/test-openai", async () => {
     return Response.json(result);
   } catch (error) {
     return Response.json({ success: false, error: String(error) });
+  }
+});
+
+/**
+ * List available OpenAI-compatible models from /v1/models.
+ */
+router.get("/openai-models", async (req) => {
+  const apiKey = getConfig("OPENAI_API_KEY");
+  if (!apiKey) {
+    return Response.json(
+      {
+        success: false,
+        models: [],
+        error: "OpenAI API key not configured",
+      },
+      { status: 400 },
+    );
+  }
+
+  const endpointOverride = new URL(req.url).searchParams.get("endpoint");
+
+  let modelsUrl: string;
+  try {
+    modelsUrl = buildOpenAIModelsUrl(endpointOverride || getConfig("OPENAI_ENDPOINT"));
+  } catch {
+    return Response.json(
+      {
+        success: false,
+        models: [],
+        error: "Invalid OpenAI endpoint URL",
+      },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const response = await fetch(modelsUrl, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        Accept: "application/json",
+      },
+    });
+
+    const rawText = await response.text();
+    let payload: unknown = null;
+    try {
+      payload = rawText ? JSON.parse(rawText) : null;
+    } catch {
+      payload = null;
+    }
+
+    if (!response.ok) {
+      return Response.json(
+        {
+          success: false,
+          models: [],
+          error: openAIErrorMessage(
+            payload,
+            `Model listing failed: HTTP ${response.status}`,
+          ),
+        },
+        { status: response.status },
+      );
+    }
+
+    return Response.json({
+      success: true,
+      models: extractOpenAIModels(payload),
+      endpoint: modelsUrl,
+    });
+  } catch (error) {
+    return Response.json(
+      {
+        success: false,
+        models: [],
+        error: `Failed to fetch models: ${String(error)}`,
+      },
+      { status: 502 },
+    );
   }
 });
 

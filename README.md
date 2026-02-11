@@ -263,6 +263,7 @@ The app uses **MobX State Tree (MST)** for state management:
 
 - Frontend changes → localStorage → MST snapshot
 - Backend mutations → in-memory → JSON file write
+- Optional at-rest encryption for `db.json` (via runtime recovery key)
 - Middleware triggers persistence on non-GET requests
 
 ## Configuration
@@ -309,6 +310,14 @@ This means values can be configured either via environment variables or through 
 | ----------------- | -------- | ------- | -------------------------------------------------------- |
 | `AUTO_INGEST_DIR` | ❌ No    | -       | Directory path to watch for automatic document ingestion |
 
+#### Database Encryption
+
+| Variable                      | Required | Default | Description                                                                         |
+| ----------------------------- | -------- | ------- | ----------------------------------------------------------------------------------- |
+| `PROSEVA_DB_ENCRYPTION_KEY`   | ❌ No    | -       | Optional startup key for decrypting/encrypting `db.json` (AES-256-GCM + PBKDF2).   |
+
+If `PROSEVA_DB_ENCRYPTION_KEY` is not set, the app can still be unlocked by entering a recovery key in the Settings page or startup unlock prompt.
+
 #### Example `.env` File
 
 ```env
@@ -331,6 +340,9 @@ EVALUATION_TIMEZONE=America/New_York
 
 # Auto-Ingestion (optional)
 AUTO_INGEST_DIR=/path/to/documents/folder
+
+# Optional startup DB encryption key
+PROSEVA_DB_ENCRYPTION_KEY=your-recovery-key
 ```
 
 ### Configuration Priority

@@ -25,11 +25,13 @@ import EstatePlanning from "./pages/EstatePlanning";
 import NotFound from "./pages/NotFound";
 import { Toaster } from "./components/ui/toaster";
 import { StoreProvider } from "./store/StoreContext";
+import { DbRecoveryGate } from "./components/security/DbRecoveryGate";
 
 function App() {
   return (
     <StoreProvider>
       <Toaster />
+      <DbRecoveryGate />
       <Routes>
         <Route element={<AppShell />}>
           <Route path="/" element={<Dashboard />} />

@@ -1,14 +1,39 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { Database } from "./db";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  Database,
+  clearDbEncryptionPassphrase,
+  hasDbEncryptionPassphrase,
+  setDbEncryptionPassphrase,
+} from "./db";
 import { InMemoryAdapter } from "./persistence";
 
 describe("Database", () => {
   let adapter: InMemoryAdapter;
   let database: Database;
+  const originalEncryptionKey = process.env.PROSEVA_DB_ENCRYPTION_KEY;
 
   beforeEach(() => {
+    if (originalEncryptionKey) {
+      setDbEncryptionPassphrase(originalEncryptionKey);
+    } else {
+      clearDbEncryptionPassphrase();
+    }
+    delete process.env.PROSEVA_DB_ENCRYPTION_KEY;
     adapter = new InMemoryAdapter();
     database = new Database(adapter);
+  });
+
+  afterEach(() => {
+    if (originalEncryptionKey) {
+      setDbEncryptionPassphrase(originalEncryptionKey);
+    } else {
+      clearDbEncryptionPassphrase();
+    }
+    if (originalEncryptionKey === undefined) {
+      delete process.env.PROSEVA_DB_ENCRYPTION_KEY;
+    } else {
+      process.env.PROSEVA_DB_ENCRYPTION_KEY = originalEncryptionKey;
+    }
   });
 
   it("initializes with empty collections", () => {
@@ -67,6 +92,76 @@ describe("Database", () => {
       const saveSpy = vi.spyOn(adapter, "save");
       database.flush();
       expect(saveSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("encryption", () => {
+    it("encrypts persisted payloads when key is configured", () => {
+      setDbEncryptionPassphrase("test-encryption-key");
+      database.cases.set("1", { id: "1", name: "Encrypted" } as any);
+      database.flush();
+
+      const raw = adapter.load();
+      expect(raw).toHaveProperty("__proseva_encrypted");
+      expect(raw.cases).toBeUndefined();
+    });
+
+    it("decrypts previously encrypted payloads with the same key", () => {
+      setDbEncryptionPassphrase("test-encryption-key");
+      database.cases.set("1", { id: "1", name: "Encrypted" } as any);
+      database.flush();
+
+      const db2 = new Database(adapter);
+      expect(db2.cases.get("1")).toEqual({ id: "1", name: "Encrypted" });
+    });
+
+    it("enters locked mode when reading encrypted data without a key", () => {
+      setDbEncryptionPassphrase("test-encryption-key");
+      database.cases.set("1", { id: "1", name: "Encrypted" } as any);
+      database.flush();
+
+      clearDbEncryptionPassphrase();
+      const lockedDb = new Database(adapter);
+      expect(lockedDb.isLocked()).toBe(true);
+      expect(lockedDb.securityStatus().lockReason).toBe("missing_key");
+    });
+
+    it("enters locked mode when decryption key does not match", () => {
+      setDbEncryptionPassphrase("test-encryption-key");
+      database.cases.set("1", { id: "1", name: "Encrypted" } as any);
+      database.flush();
+
+      setDbEncryptionPassphrase("wrong-key");
+      const lockedDb = new Database(adapter);
+      expect(lockedDb.isLocked()).toBe(true);
+      expect(lockedDb.securityStatus().lockReason).toBe("invalid_key");
+    });
+
+    it("unlocks with recovery key after starting in locked mode", () => {
+      setDbEncryptionPassphrase("test-encryption-key");
+      database.cases.set("1", { id: "1", name: "Encrypted" } as any);
+      database.flush();
+
+      clearDbEncryptionPassphrase();
+      const lockedDb = new Database(adapter);
+      expect(lockedDb.isLocked()).toBe(true);
+
+      lockedDb.applyRecoveryKey("test-encryption-key");
+      expect(lockedDb.isLocked()).toBe(false);
+      expect(lockedDb.cases.get("1")).toEqual({ id: "1", name: "Encrypted" });
+      expect(hasDbEncryptionPassphrase()).toBe(true);
+    });
+
+    it("rejects invalid recovery key when locked", () => {
+      setDbEncryptionPassphrase("test-encryption-key");
+      database.cases.set("1", { id: "1", name: "Encrypted" } as any);
+      database.flush();
+
+      clearDbEncryptionPassphrase();
+      const lockedDb = new Database(adapter);
+      expect(() => lockedDb.applyRecoveryKey("wrong-key")).toThrow(
+        "Invalid recovery key.",
+      );
     });
   });
 });
