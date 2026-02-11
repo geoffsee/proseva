@@ -5,11 +5,16 @@ import {
   InMemoryAdapter,
 } from "./persistence";
 import {
-  createCipheriv,
-  createDecipheriv,
-  pbkdf2Sync,
-  randomBytes,
-} from "node:crypto";
+  type DatabaseSnapshot,
+  type EncryptionFailureReason,
+  DatabaseEncryptionError,
+  normalizePassphrase,
+  setPassphrase as setEncryptionPassphrase,
+  hasPassphrase as hasEncryptionPassphrase,
+  isEncryptedSnapshot,
+  decryptSnapshot,
+  encryptSnapshot,
+} from "./encryption";
 export type { PersistenceAdapter };
 
 export type Case = {
@@ -94,25 +99,22 @@ export type Note = {
   updatedAt: string;
 };
 
-// Device tokens for FCM push notifications
 export type DeviceToken = {
   id: string;
-  token: string; // FCM registration token
+  token: string;
   platform: "ios" | "android" | "web";
   createdAt: string;
   active: boolean;
 };
 
-// Phone numbers for SMS
 export type SmsRecipient = {
   id: string;
-  phone: string; // E.164 format: +15551234567
+  phone: string;
   name?: string;
   createdAt: string;
   active: boolean;
 };
 
-// Deadline summary for evaluations
 export type DeadlineSummary = {
   id: string;
   title: string;
@@ -124,16 +126,15 @@ export type DeadlineSummary = {
   daysUntil?: number;
 };
 
-// Daily evaluation results
 export type Evaluation = {
   id: string;
   createdAt: string;
   status: "pending" | "analyzing" | "sending" | "sent" | "failed";
   analysis: {
     overdueDeadlines: DeadlineSummary[];
-    upcomingDeadlines: DeadlineSummary[]; // Next 7 days
+    upcomingDeadlines: DeadlineSummary[];
     tomorrowActions: string[];
-    aiSummary: string; // AI-generated strategic summary
+    aiSummary: string;
   };
   notification: {
     title: string;
@@ -172,7 +173,6 @@ export type Evidence = {
   updatedAt: string;
 };
 
-// Server configuration (singleton record)
 export type ServerConfig = {
   id: "singleton";
   createdAt: string;
@@ -357,190 +357,6 @@ const COLLECTION_KEYS: (keyof Collections)[] = [
   "researchAttachments",
 ];
 
-const DB_ENCRYPTION_KEY_ENV_VAR = "PROSEVA_DB_ENCRYPTION_KEY";
-const DB_ENCRYPTION_PAYLOAD_KEY = "__proseva_encrypted";
-const DB_ENCRYPTION_ALGORITHM = "aes-256-gcm";
-const DB_ENCRYPTION_KEY_BYTES = 32;
-const DB_ENCRYPTION_SALT_BYTES = 16;
-const DB_ENCRYPTION_IV_BYTES = 12;
-const DB_ENCRYPTION_KDF_ITERATIONS = 310_000;
-
-type DatabaseSnapshot = Record<string, Record<string, unknown>>;
-
-type EncryptedDatabaseEnvelope = {
-  version: 1;
-  algorithm: typeof DB_ENCRYPTION_ALGORITHM;
-  kdf: "pbkdf2-sha256";
-  iterations: number;
-  salt: string;
-  iv: string;
-  authTag: string;
-  ciphertext: string;
-};
-
-type EncryptionFailureReason = "missing_key" | "invalid_key";
-
-class DatabaseEncryptionError extends Error {
-  reason: EncryptionFailureReason;
-
-  constructor(reason: EncryptionFailureReason, message: string) {
-    super(message);
-    this.reason = reason;
-  }
-}
-
-function toBase64(value: Uint8Array): string {
-  return Buffer.from(value).toString("base64");
-}
-
-function fromBase64(value: string): Buffer {
-  return Buffer.from(value, "base64");
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function isDatabaseSnapshot(value: unknown): value is DatabaseSnapshot {
-  if (!isRecord(value)) return false;
-  return Object.values(value).every((entry) => isRecord(entry));
-}
-
-function normalizePassphrase(raw: string | undefined): string | undefined {
-  if (!raw) return undefined;
-  const trimmed = raw.trim();
-  if (
-    trimmed.toLowerCase() === "undefined" ||
-    trimmed.toLowerCase() === "null"
-  ) {
-    return undefined;
-  }
-  return trimmed.length > 0 ? trimmed : undefined;
-}
-
-let runtimeDbEncryptionPassphrase = normalizePassphrase(
-  process.env[DB_ENCRYPTION_KEY_ENV_VAR],
-);
-
-function dbEncryptionPassphrase(): string | undefined {
-  return runtimeDbEncryptionPassphrase;
-}
-
-export function setDbEncryptionPassphrase(passphrase: string): void {
-  runtimeDbEncryptionPassphrase = normalizePassphrase(passphrase);
-}
-
-export function clearDbEncryptionPassphrase(): void {
-  runtimeDbEncryptionPassphrase = undefined;
-}
-
-export function hasDbEncryptionPassphrase(): boolean {
-  return dbEncryptionPassphrase() !== undefined;
-}
-
-function isEncryptedEnvelope(value: unknown): value is EncryptedDatabaseEnvelope {
-  if (!isRecord(value)) return false;
-  return (
-    value.version === 1 &&
-    value.algorithm === DB_ENCRYPTION_ALGORITHM &&
-    value.kdf === "pbkdf2-sha256" &&
-    typeof value.iterations === "number" &&
-    typeof value.salt === "string" &&
-    typeof value.iv === "string" &&
-    typeof value.authTag === "string" &&
-    typeof value.ciphertext === "string"
-  );
-}
-
-function isEncryptedSnapshot(input: DatabaseSnapshot): boolean {
-  return isEncryptedEnvelope(input[DB_ENCRYPTION_PAYLOAD_KEY]);
-}
-
-function decryptSnapshot(
-  input: DatabaseSnapshot,
-  passphraseOverride?: string,
-): DatabaseSnapshot {
-  const maybeEnvelope = input[DB_ENCRYPTION_PAYLOAD_KEY];
-  if (!isEncryptedEnvelope(maybeEnvelope)) return input;
-
-  const passphrase = normalizePassphrase(passphraseOverride)
-    ?? dbEncryptionPassphrase();
-  if (!passphrase) {
-    throw new DatabaseEncryptionError(
-      "missing_key",
-      `Database is encrypted. Set ${DB_ENCRYPTION_KEY_ENV_VAR} to decrypt it.`,
-    );
-  }
-
-  const salt = fromBase64(maybeEnvelope.salt);
-  const iv = fromBase64(maybeEnvelope.iv);
-  const authTag = fromBase64(maybeEnvelope.authTag);
-  const ciphertext = fromBase64(maybeEnvelope.ciphertext);
-
-  const key = pbkdf2Sync(
-    passphrase,
-    salt,
-    maybeEnvelope.iterations,
-    DB_ENCRYPTION_KEY_BYTES,
-    "sha256",
-  );
-
-  let parsed: unknown;
-  try {
-    const decipher = createDecipheriv(DB_ENCRYPTION_ALGORITHM, key, iv);
-    decipher.setAuthTag(authTag);
-    const plaintext = Buffer.concat([
-      decipher.update(ciphertext),
-      decipher.final(),
-    ]);
-    parsed = JSON.parse(plaintext.toString("utf8"));
-  } catch {
-    throw new DatabaseEncryptionError(
-      "invalid_key",
-      `Failed to decrypt database. Check ${DB_ENCRYPTION_KEY_ENV_VAR}.`,
-    );
-  }
-
-  if (!isDatabaseSnapshot(parsed)) {
-    throw new Error("Decrypted database payload is invalid.");
-  }
-
-  return parsed;
-}
-
-function encryptSnapshot(input: DatabaseSnapshot): DatabaseSnapshot {
-  const passphrase = dbEncryptionPassphrase();
-  if (!passphrase) return input;
-
-  const salt = randomBytes(DB_ENCRYPTION_SALT_BYTES);
-  const iv = randomBytes(DB_ENCRYPTION_IV_BYTES);
-  const key = pbkdf2Sync(
-    passphrase,
-    salt,
-    DB_ENCRYPTION_KDF_ITERATIONS,
-    DB_ENCRYPTION_KEY_BYTES,
-    "sha256",
-  );
-
-  const cipher = createCipheriv(DB_ENCRYPTION_ALGORITHM, key, iv);
-  const plaintext = Buffer.from(JSON.stringify(input), "utf8");
-  const ciphertext = Buffer.concat([cipher.update(plaintext), cipher.final()]);
-  const authTag = cipher.getAuthTag();
-
-  const envelope: EncryptedDatabaseEnvelope = {
-    version: 1,
-    algorithm: DB_ENCRYPTION_ALGORITHM,
-    kdf: "pbkdf2-sha256",
-    iterations: DB_ENCRYPTION_KDF_ITERATIONS,
-    salt: toBase64(salt),
-    iv: toBase64(iv),
-    authTag: toBase64(authTag),
-    ciphertext: toBase64(ciphertext),
-  };
-
-  return { [DB_ENCRYPTION_PAYLOAD_KEY]: envelope };
-}
-
 function toMaps(raw: DatabaseSnapshot): Collections {
   const maps: any = {};
   for (const key of COLLECTION_KEYS) {
@@ -549,9 +365,7 @@ function toMaps(raw: DatabaseSnapshot): Collections {
   return maps;
 }
 
-function fromMaps(
-  collections: Collections,
-): DatabaseSnapshot {
+function fromMaps(collections: Collections): DatabaseSnapshot {
   const out: any = {};
   for (const key of COLLECTION_KEYS) {
     out[key] = Object.fromEntries(collections[key]);
@@ -559,22 +373,40 @@ function fromMaps(
   return out;
 }
 
+function assignMaps(target: Database, maps: Collections): void {
+  target.cases = maps.cases;
+  target.contacts = maps.contacts;
+  target.deadlines = maps.deadlines;
+  target.finances = maps.finances;
+  target.evidences = maps.evidences;
+  target.filings = maps.filings;
+  target.notes = maps.notes;
+  target.deviceTokens = maps.deviceTokens;
+  target.smsRecipients = maps.smsRecipients;
+  target.evaluations = maps.evaluations;
+  target.serverConfig = maps.serverConfig;
+  target.estatePlans = maps.estatePlans;
+  target.embeddings = maps.embeddings;
+  target.researchCases = maps.researchCases;
+  target.researchAttachments = maps.researchAttachments;
+}
+
 export class Database {
-  cases: Map<string, Case>;
-  contacts: Map<string, Contact>;
-  deadlines: Map<string, Deadline>;
-  finances: Map<string, FinancialEntry>;
-  evidences: Map<string, Evidence>;
-  filings: Map<string, Filing>;
-  notes: Map<string, Note>;
-  deviceTokens: Map<string, DeviceToken>;
-  smsRecipients: Map<string, SmsRecipient>;
-  evaluations: Map<string, Evaluation>;
-  serverConfig: Map<string, ServerConfig>;
-  estatePlans: Map<string, EstatePlan>;
-  embeddings: Map<string, Embedding>;
-  researchCases: Map<string, ResearchCase>;
-  researchAttachments: Map<string, ResearchAttachment>;
+  cases!: Map<string, Case>;
+  contacts!: Map<string, Contact>;
+  deadlines!: Map<string, Deadline>;
+  finances!: Map<string, FinancialEntry>;
+  evidences!: Map<string, Evidence>;
+  filings!: Map<string, Filing>;
+  notes!: Map<string, Note>;
+  deviceTokens!: Map<string, DeviceToken>;
+  smsRecipients!: Map<string, SmsRecipient>;
+  evaluations!: Map<string, Evaluation>;
+  serverConfig!: Map<string, ServerConfig>;
+  estatePlans!: Map<string, EstatePlan>;
+  embeddings!: Map<string, Embedding>;
+  researchCases!: Map<string, ResearchCase>;
+  researchAttachments!: Map<string, ResearchAttachment>;
 
   private adapter: PersistenceAdapter;
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -583,56 +415,31 @@ export class Database {
   private lockedSnapshot: DatabaseSnapshot | null = null;
   private encryptedAtRest = false;
 
-  constructor(adapter: PersistenceAdapter) {
+  private constructor(adapter: PersistenceAdapter) {
     this.adapter = adapter;
+    assignMaps(this, toMaps({}));
+  }
+
+  static async create(adapter: PersistenceAdapter): Promise<Database> {
+    const db = new Database(adapter);
     const raw = adapter.load();
-    this.encryptedAtRest = isEncryptedSnapshot(raw);
+    db.encryptedAtRest = isEncryptedSnapshot(raw);
 
     let data: DatabaseSnapshot;
     try {
-      data = decryptSnapshot(raw);
+      data = await decryptSnapshot(raw);
     } catch (error) {
       if (error instanceof DatabaseEncryptionError) {
-        this.locked = true;
-        this.lockReason = error.reason;
-        this.lockedSnapshot = raw;
-        const emptyMaps = toMaps({});
-        this.cases = emptyMaps.cases;
-        this.contacts = emptyMaps.contacts;
-        this.deadlines = emptyMaps.deadlines;
-        this.finances = emptyMaps.finances;
-        this.evidences = emptyMaps.evidences;
-        this.filings = emptyMaps.filings;
-        this.notes = emptyMaps.notes;
-        this.deviceTokens = emptyMaps.deviceTokens;
-        this.smsRecipients = emptyMaps.smsRecipients;
-        this.evaluations = emptyMaps.evaluations;
-        this.serverConfig = emptyMaps.serverConfig;
-        this.estatePlans = emptyMaps.estatePlans;
-        this.embeddings = emptyMaps.embeddings;
-        this.researchCases = emptyMaps.researchCases;
-        this.researchAttachments = emptyMaps.researchAttachments;
-        return;
+        db.locked = true;
+        db.lockReason = error.reason;
+        db.lockedSnapshot = raw;
+        return db;
       }
       throw error;
     }
 
-    const maps = toMaps(data);
-    this.cases = maps.cases;
-    this.contacts = maps.contacts;
-    this.deadlines = maps.deadlines;
-    this.finances = maps.finances;
-    this.evidences = maps.evidences;
-    this.filings = maps.filings;
-    this.notes = maps.notes;
-    this.deviceTokens = maps.deviceTokens;
-    this.smsRecipients = maps.smsRecipients;
-    this.evaluations = maps.evaluations;
-    this.serverConfig = maps.serverConfig;
-    this.estatePlans = maps.estatePlans;
-    this.embeddings = maps.embeddings;
-    this.researchCases = maps.researchCases;
-    this.researchAttachments = maps.researchAttachments;
+    assignMaps(db, toMaps(data));
+    return db;
   }
 
   isLocked(): boolean {
@@ -648,12 +455,12 @@ export class Database {
     return {
       locked: this.locked,
       encryptedAtRest: this.encryptedAtRest,
-      keyLoaded: hasDbEncryptionPassphrase(),
+      keyLoaded: hasEncryptionPassphrase(),
       lockReason: this.lockReason,
     };
   }
 
-  applyRecoveryKey(recoveryKey: string): void {
+  async applyRecoveryKey(recoveryKey: string): Promise<void> {
     const normalized = normalizePassphrase(recoveryKey);
     if (!normalized) throw new Error("Recovery key is required.");
 
@@ -664,7 +471,7 @@ export class Database {
 
       let decrypted: DatabaseSnapshot;
       try {
-        decrypted = decryptSnapshot(this.lockedSnapshot, normalized);
+        decrypted = await decryptSnapshot(this.lockedSnapshot, normalized);
       } catch (error) {
         if (error instanceof DatabaseEncryptionError) {
           throw new Error("Invalid recovery key.");
@@ -672,23 +479,8 @@ export class Database {
         throw error;
       }
 
-      setDbEncryptionPassphrase(normalized);
-      const maps = toMaps(decrypted);
-      this.cases = maps.cases;
-      this.contacts = maps.contacts;
-      this.deadlines = maps.deadlines;
-      this.finances = maps.finances;
-      this.evidences = maps.evidences;
-      this.filings = maps.filings;
-      this.notes = maps.notes;
-      this.deviceTokens = maps.deviceTokens;
-      this.smsRecipients = maps.smsRecipients;
-      this.evaluations = maps.evaluations;
-      this.serverConfig = maps.serverConfig;
-      this.estatePlans = maps.estatePlans;
-      this.embeddings = maps.embeddings;
-      this.researchCases = maps.researchCases;
-      this.researchAttachments = maps.researchAttachments;
+      await setEncryptionPassphrase(normalized);
+      assignMaps(this, toMaps(decrypted));
 
       this.locked = false;
       this.lockReason = null;
@@ -697,7 +489,7 @@ export class Database {
       return;
     }
 
-    setDbEncryptionPassphrase(normalized);
+    await setEncryptionPassphrase(normalized);
   }
 
   /** Debounced write — coalesces rapid mutations into a single disk write. */
@@ -705,21 +497,29 @@ export class Database {
     if (this.locked) return;
     if (this.saveTimeout) clearTimeout(this.saveTimeout);
     this.saveTimeout = setTimeout(() => {
-      const toSave = encryptSnapshot(fromMaps(this));
-      this.encryptedAtRest = isEncryptedSnapshot(toSave);
-      this.adapter.save(toSave);
-      this.saveTimeout = null;
+      void this.persistAsync();
     }, 100);
   }
 
-  /** Flush synchronously (useful for graceful shutdown). */
-  flush(): void {
+  private async persistAsync(): Promise<void> {
+    try {
+      const toSave = await encryptSnapshot(fromMaps(this));
+      this.encryptedAtRest = isEncryptedSnapshot(toSave);
+      this.adapter.save(toSave);
+    } catch (err) {
+      console.error("Failed to persist database:", err);
+    }
+    this.saveTimeout = null;
+  }
+
+  /** Flush to disk. Use for graceful shutdown. */
+  async flush(): Promise<void> {
     if (this.locked) return;
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout);
       this.saveTimeout = null;
     }
-    const toSave = encryptSnapshot(fromMaps(this));
+    const toSave = await encryptSnapshot(fromMaps(this));
     this.encryptedAtRest = isEncryptedSnapshot(toSave);
     this.adapter.save(toSave);
   }
@@ -736,8 +536,23 @@ function createDefaultAdapter(): PersistenceAdapter {
   }
 }
 
-export let db = new Database(createDefaultAdapter());
+export let db: Database;
 
-export function resetDb(adapter: PersistenceAdapter): void {
-  db = new Database(adapter);
+/** Initialize the database. Must be called (and awaited) before handling requests. */
+export async function initDb(
+  adapter: PersistenceAdapter = createDefaultAdapter(),
+): Promise<Database> {
+  db = await Database.create(adapter);
+  return db;
 }
+
+export async function resetDb(adapter: PersistenceAdapter): Promise<void> {
+  db = await Database.create(adapter);
+}
+
+// Re-export encryption utilities for backward compatibility
+export {
+  setPassphrase as setDbEncryptionPassphrase,
+  clearPassphrase as clearDbEncryptionPassphrase,
+  hasPassphrase as hasDbEncryptionPassphrase,
+} from "./encryption";

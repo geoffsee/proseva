@@ -1,3 +1,11 @@
+import { initDb } from "./db";
+import { InMemoryAdapter } from "./persistence";
+
+// Initialize the database with an in-memory adapter before any tests run.
+// Individual test files that use setupTestServer() will call freshDb() to
+// reset the database per-test, but this ensures db is never undefined.
+await initDb(new InMemoryAdapter());
+
 // Suppress known harmless Node.js deprecation warnings that pollute CI output
 const _originalEmit = process.emit;
 // @ts-expect-error - overriding emit to filter noisy warnings

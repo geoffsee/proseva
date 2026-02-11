@@ -4,7 +4,9 @@ import {
   clearDbEncryptionPassphrase,
   hasDbEncryptionPassphrase,
   setDbEncryptionPassphrase,
+  type Case,
 } from "./db";
+import type { DatabaseSnapshot } from "./encryption";
 import { InMemoryAdapter } from "./persistence";
 
 describe("Database", () => {
@@ -12,20 +14,20 @@ describe("Database", () => {
   let database: Database;
   const originalEncryptionKey = process.env.PROSEVA_DB_ENCRYPTION_KEY;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     if (originalEncryptionKey) {
-      setDbEncryptionPassphrase(originalEncryptionKey);
+      await setDbEncryptionPassphrase(originalEncryptionKey);
     } else {
       clearDbEncryptionPassphrase();
     }
     delete process.env.PROSEVA_DB_ENCRYPTION_KEY;
     adapter = new InMemoryAdapter();
-    database = new Database(adapter);
+    database = await Database.create(adapter);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     if (originalEncryptionKey) {
-      setDbEncryptionPassphrase(originalEncryptionKey);
+      await setDbEncryptionPassphrase(originalEncryptionKey);
     } else {
       clearDbEncryptionPassphrase();
     }
@@ -45,7 +47,7 @@ describe("Database", () => {
     expect(database.filings.size).toBe(0);
   });
 
-  it("loads existing data from adapter", () => {
+  it("loads existing data from adapter", async () => {
     adapter.save({
       cases: { "1": { id: "1", name: "Test" } },
       contacts: {},
@@ -54,7 +56,7 @@ describe("Database", () => {
       evidences: {},
       filings: {},
     });
-    const db2 = new Database(adapter);
+    const db2 = await Database.create(adapter);
     expect(db2.cases.size).toBe(1);
     expect(db2.cases.get("1")).toEqual({ id: "1", name: "Test" });
   });
@@ -62,7 +64,7 @@ describe("Database", () => {
   describe("persist", () => {
     it("debounces saves to the adapter", async () => {
       const saveSpy = vi.spyOn(adapter, "save");
-      database.cases.set("1", { id: "1", name: "A" } as any);
+      database.cases.set("1", { id: "1", name: "A" } as Case);
       database.persist();
       database.persist();
       database.persist();
@@ -70,96 +72,96 @@ describe("Database", () => {
       // Not saved yet (debounced)
       expect(saveSpy).not.toHaveBeenCalled();
 
-      // Wait for debounce
-      await new Promise((r) => setTimeout(r, 150));
+      // Wait for debounce + async encrypt
+      await new Promise((r) => setTimeout(r, 250));
       expect(saveSpy).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("flush", () => {
-    it("saves immediately and clears pending timeout", () => {
+    it("saves immediately and clears pending timeout", async () => {
       const saveSpy = vi.spyOn(adapter, "save");
-      database.cases.set("1", { id: "1", name: "A" } as any);
+      database.cases.set("1", { id: "1", name: "A" } as Case);
       database.persist(); // schedule debounced save
-      database.flush(); // force immediate save
+      await database.flush(); // force immediate save
 
       expect(saveSpy).toHaveBeenCalledTimes(1);
       const saved = saveSpy.mock.calls[0][0];
       expect(saved.cases).toHaveProperty("1");
     });
 
-    it("saves even without a pending persist", () => {
+    it("saves even without a pending persist", async () => {
       const saveSpy = vi.spyOn(adapter, "save");
-      database.flush();
+      await database.flush();
       expect(saveSpy).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("encryption", () => {
-    it("encrypts persisted payloads when key is configured", () => {
-      setDbEncryptionPassphrase("test-encryption-key");
-      database.cases.set("1", { id: "1", name: "Encrypted" } as any);
-      database.flush();
+    it("encrypts persisted payloads when key is configured", async () => {
+      await setDbEncryptionPassphrase("test-encryption-key");
+      database.cases.set("1", { id: "1", name: "Encrypted" } as Case);
+      await database.flush();
 
       const raw = adapter.load();
-      expect(raw).toHaveProperty("__proseva_encrypted");
+      expect(raw).toHaveProperty("__proseva_encrypted_v2");
       expect(raw.cases).toBeUndefined();
     });
 
-    it("decrypts previously encrypted payloads with the same key", () => {
-      setDbEncryptionPassphrase("test-encryption-key");
-      database.cases.set("1", { id: "1", name: "Encrypted" } as any);
-      database.flush();
+    it("decrypts previously encrypted payloads with the same key", async () => {
+      await setDbEncryptionPassphrase("test-encryption-key");
+      database.cases.set("1", { id: "1", name: "Encrypted" } as Case);
+      await database.flush();
 
-      const db2 = new Database(adapter);
+      const db2 = await Database.create(adapter);
       expect(db2.cases.get("1")).toEqual({ id: "1", name: "Encrypted" });
     });
 
-    it("enters locked mode when reading encrypted data without a key", () => {
-      setDbEncryptionPassphrase("test-encryption-key");
-      database.cases.set("1", { id: "1", name: "Encrypted" } as any);
-      database.flush();
+    it("enters locked mode when reading encrypted data without a key", async () => {
+      await setDbEncryptionPassphrase("test-encryption-key");
+      database.cases.set("1", { id: "1", name: "Encrypted" } as Case);
+      await database.flush();
 
       clearDbEncryptionPassphrase();
-      const lockedDb = new Database(adapter);
+      const lockedDb = await Database.create(adapter);
       expect(lockedDb.isLocked()).toBe(true);
       expect(lockedDb.securityStatus().lockReason).toBe("missing_key");
     });
 
-    it("enters locked mode when decryption key does not match", () => {
-      setDbEncryptionPassphrase("test-encryption-key");
-      database.cases.set("1", { id: "1", name: "Encrypted" } as any);
-      database.flush();
+    it("enters locked mode when decryption key does not match", async () => {
+      await setDbEncryptionPassphrase("test-encryption-key");
+      database.cases.set("1", { id: "1", name: "Encrypted" } as Case);
+      await database.flush();
 
-      setDbEncryptionPassphrase("wrong-key");
-      const lockedDb = new Database(adapter);
+      await setDbEncryptionPassphrase("wrong-key");
+      const lockedDb = await Database.create(adapter);
       expect(lockedDb.isLocked()).toBe(true);
       expect(lockedDb.securityStatus().lockReason).toBe("invalid_key");
     });
 
-    it("unlocks with recovery key after starting in locked mode", () => {
-      setDbEncryptionPassphrase("test-encryption-key");
-      database.cases.set("1", { id: "1", name: "Encrypted" } as any);
-      database.flush();
+    it("unlocks with recovery key after starting in locked mode", async () => {
+      await setDbEncryptionPassphrase("test-encryption-key");
+      database.cases.set("1", { id: "1", name: "Encrypted" } as Case);
+      await database.flush();
 
       clearDbEncryptionPassphrase();
-      const lockedDb = new Database(adapter);
+      const lockedDb = await Database.create(adapter);
       expect(lockedDb.isLocked()).toBe(true);
 
-      lockedDb.applyRecoveryKey("test-encryption-key");
+      await lockedDb.applyRecoveryKey("test-encryption-key");
       expect(lockedDb.isLocked()).toBe(false);
       expect(lockedDb.cases.get("1")).toEqual({ id: "1", name: "Encrypted" });
       expect(hasDbEncryptionPassphrase()).toBe(true);
     });
 
-    it("rejects invalid recovery key when locked", () => {
-      setDbEncryptionPassphrase("test-encryption-key");
-      database.cases.set("1", { id: "1", name: "Encrypted" } as any);
-      database.flush();
+    it("rejects invalid recovery key when locked", async () => {
+      await setDbEncryptionPassphrase("test-encryption-key");
+      database.cases.set("1", { id: "1", name: "Encrypted" } as Case);
+      await database.flush();
 
       clearDbEncryptionPassphrase();
-      const lockedDb = new Database(adapter);
-      expect(() => lockedDb.applyRecoveryKey("wrong-key")).toThrow(
+      const lockedDb = await Database.create(adapter);
+      await expect(lockedDb.applyRecoveryKey("wrong-key")).rejects.toThrow(
         "Invalid recovery key.",
       );
     });
@@ -169,16 +171,16 @@ describe("Database", () => {
 describe("InMemoryAdapter", () => {
   it("round-trips data", () => {
     const adapter = new InMemoryAdapter();
-    const data = { cases: { "1": { id: "1" } } };
-    adapter.save(data as any);
+    const data = { cases: { "1": { id: "1" } } } as DatabaseSnapshot;
+    adapter.save(data);
     const loaded = adapter.load();
     expect(loaded).toEqual(data);
   });
 
   it("returns cloned data (no shared references)", () => {
     const adapter = new InMemoryAdapter();
-    const data = { cases: { "1": { id: "1" } } };
-    adapter.save(data as any);
+    const data = { cases: { "1": { id: "1" } } } as DatabaseSnapshot;
+    adapter.save(data);
     const a = adapter.load();
     const b = adapter.load();
     expect(a).not.toBe(b);

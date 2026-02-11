@@ -442,6 +442,7 @@ export type DbSecurityStatus = {
   encryptedAtRest: boolean;
   keyLoaded: boolean;
   lockReason: "missing_key" | "invalid_key" | null;
+  passphraseConfigured: boolean;
 };
 
 export type OpenAIModelsResponse = {
@@ -518,6 +519,26 @@ export const configApi = {
 export const securityApi = {
   status: async (): Promise<DbSecurityStatus> => {
     const res = await fetch("/api/security/status");
+    return res.json();
+  },
+  setupPassphrase: async (
+    passphrase: string,
+  ): Promise<{ success: boolean; error?: string }> => {
+    const res = await fetch("/api/security/setup-passphrase", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ passphrase }),
+    });
+    return res.json();
+  },
+  verifyPassphrase: async (
+    passphrase: string,
+  ): Promise<{ valid: boolean; error?: string }> => {
+    const res = await fetch("/api/security/verify-passphrase", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ passphrase }),
+    });
     return res.json();
   },
   applyRecoveryKey: async (

@@ -8,7 +8,7 @@ let baseUrl: string;
 
 export function setupTestServer() {
   beforeAll(async () => {
-    freshDb();
+    await freshDb();
     server = createServer(async (req, res) => {
       const url = `http://localhost${req.url}`;
       const headers = new Headers();
@@ -51,8 +51,8 @@ export function setupTestServer() {
     await new Promise<void>((resolve) => server.close(() => resolve()));
   });
 
-  beforeEach(() => {
-    freshDb();
+  beforeEach(async () => {
+    await freshDb();
   });
 
   return {
@@ -62,8 +62,8 @@ export function setupTestServer() {
   };
 }
 
-export function freshDb() {
-  resetDb(new InMemoryAdapter());
+export async function freshDb() {
+  await resetDb(new InMemoryAdapter());
 }
 
 export const api = {

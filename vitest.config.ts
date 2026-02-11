@@ -1,11 +1,19 @@
-/// <reference types="vitest/config" />
 import { defineConfig } from "vitest/config";
+import { resolve } from "path";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      "idb-repo": resolve(
+        import.meta.dirname ?? __dirname,
+        "node_modules/idb-repo/dist/index-browser.js",
+      ),
+    },
+  },
   test: {
-    exclude: ["node_modules/**", "e2e/**"],
+    exclude: ["node_modules/**", "e2e/**", "server/**"],
     environment: "happy-dom",
     globals: true,
     setupFiles: "./src/test-setup.ts",

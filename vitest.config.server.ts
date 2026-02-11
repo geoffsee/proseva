@@ -1,6 +1,15 @@
 import { defineConfig } from "vitest/config";
+import { resolve } from "path";
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      "idb-repo": resolve(
+        import.meta.dirname ?? __dirname,
+        "node_modules/idb-repo/dist/index-node.js",
+      ),
+    },
+  },
   test: {
     include: ["server/src/**/*.test.ts"],
     globals: true,

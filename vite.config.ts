@@ -5,6 +5,11 @@ import path from "path";
 
 // https://vite.dev/config/
 export default defineConfig({
+  resolve: {
+    alias: {
+      "idb-repo": path.resolve(__dirname, "node_modules/idb-repo/dist/index-browser.js"),
+    },
+  },
   server: {
     proxy: {
       "/api": "http://localhost:3001",

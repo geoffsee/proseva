@@ -57,8 +57,8 @@ describe("cosine_similarity_dataspace", () => {
 describe("embeddings collection in Database", () => {
   let db: Database;
 
-  beforeEach(() => {
-    db = new Database(new InMemoryAdapter());
+  beforeEach(async () => {
+    db = await Database.create(new InMemoryAdapter());
   });
 
   it("starts empty", () => {
@@ -78,9 +78,9 @@ describe("embeddings collection in Database", () => {
     expect(db.embeddings.get("emb-1")).toEqual(entry);
   });
 
-  it("persists and reloads embeddings via adapter", () => {
+  it("persists and reloads embeddings via adapter", async () => {
     const adapter = new InMemoryAdapter();
-    const db1 = new Database(adapter);
+    const db1 = await Database.create(adapter);
 
     db1.embeddings.set("emb-1", {
       id: "emb-1",
@@ -88,9 +88,9 @@ describe("embeddings collection in Database", () => {
       content: "Test content",
       embedding: [0.5, 0.6],
     });
-    db1.flush();
+    await db1.flush();
 
-    const db2 = new Database(adapter);
+    const db2 = await Database.create(adapter);
     expect(db2.embeddings.size).toBe(1);
     expect(db2.embeddings.get("emb-1")!.content).toBe("Test content");
   });

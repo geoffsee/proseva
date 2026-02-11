@@ -4,6 +4,7 @@ import { readFile, writeFile, mkdir, readdir, stat } from "fs/promises";
 import OpenAI from "openai";
 import {
   db,
+  initDb,
   type Case,
   type Party,
   type Filing,
@@ -68,6 +69,8 @@ const { preflight, corsify } = cors();
 const ALLOWED_WHEN_DB_LOCKED = new Set([
   "/api/security/status",
   "/api/security/recovery-key",
+  "/api/security/setup-passphrase",
+  "/api/security/verify-passphrase",
 ]);
 
 const requireUnlockedDatabase = (request: Request) => {
@@ -122,6 +125,9 @@ export const router = AutoRouter({
   after: [persistAfterMutation, corsify],
   base: "/api",
 });
+
+// Initialize the database before handling any requests.
+await initDb();
 
 // Kick off optional bulk ingestion when AUTO_INGEST_DIR is set.
 void maybeAutoIngestFromEnv().catch((err) =>
@@ -255,14 +261,12 @@ async function maybeAutoIngestFromEnv(): Promise<void> {
   ingestionStatus.lastRunFinished = new Date().toISOString();
 }
 
-process.on("beforeExit", () => db.flush());
+process.on("beforeExit", () => void db.flush());
 process.on("SIGINT", () => {
-  db.flush();
-  process.exit(0);
+  void db.flush().then(() => process.exit(0));
 });
 process.on("SIGTERM", () => {
-  db.flush();
-  process.exit(0);
+  void db.flush().then(() => process.exit(0));
 });
 
 const json201 = (data: unknown) =>
