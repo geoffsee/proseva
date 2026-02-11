@@ -10,6 +10,7 @@
     "croner": "^9.0.0",
     "firebase-admin": "^13.0.2",
     "itty-router": "^5.0.0",
+    "mst-graph": "^0.2.1",
     "openai": "^6.17.0",
     "twilio": "^5.4.3"
   }

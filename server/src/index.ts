@@ -51,6 +51,7 @@ import {
   generateFinancialReport,
   generateChronologyReport,
 } from "./reports.js";
+import { analyzeCaseGraph } from "./chat-graph";
 
 const __dir =
   import.meta.dir ??
@@ -692,7 +693,7 @@ router
 
 You do NOT provide legal advice — you provide legal information and guidance. Always remind users to verify information with their local court clerk when appropriate.
 
-You have access to tools that let you look up the user's cases, deadlines, contacts, finances, and documents. Use them to give contextual, data-driven answers whenever relevant.`;
+You have access to tools that let you look up the user's cases, deadlines, contacts, finances, documents, and case graph relationships. Use them to give contextual, data-driven answers whenever relevant.`;
 
     const tools: OpenAI.ChatCompletionTool[] = [
       {
@@ -829,53 +830,101 @@ You have access to tools that let you look up the user's cases, deadlines, conta
           },
         },
       },
+      {
+        type: "function",
+        function: {
+          name: "AnalyzeCaseGraph",
+          description:
+            "Analyze cross-entity case relationships using a knowledge graph. Use this for case overviews, bottleneck analysis, and identifying what records are most connected.",
+          parameters: {
+            type: "object",
+            properties: {
+              caseId: {
+                type: "string",
+                description: "Optional case ID to scope graph analysis to one case",
+              },
+              topK: {
+                type: "number",
+                description:
+                  "How many highest-connectivity nodes to return (1-20, default 8)",
+              },
+            },
+            required: [],
+          },
+        },
+      },
     ];
 
     const baseDir = join(appRoot, "case-data/case-documents-app");
     const indexPath = join(baseDir, "index.json");
+    const parseStringArg = (value: unknown): string | undefined => {
+      if (typeof value !== "string") return undefined;
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : undefined;
+    };
+    const parseNumberArg = (value: unknown): number | undefined => {
+      if (typeof value === "number" && Number.isFinite(value)) return value;
+      if (typeof value === "string" && value.trim().length > 0) {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : undefined;
+      }
+      return undefined;
+    };
+    const parseBooleanArg = (value: unknown): boolean | undefined => {
+      if (typeof value === "boolean") return value;
+      if (value === "true") return true;
+      if (value === "false") return false;
+      return undefined;
+    };
+    const loadDocumentEntries = async (): Promise<DocumentEntry[]> => {
+      try {
+        const raw = await readFile(indexPath, "utf-8");
+        return JSON.parse(raw) as DocumentEntry[];
+      } catch {
+        return [];
+      }
+    };
 
     const executeTool = async (
       name: string,
-      args: Record<string, string>,
+      args: Record<string, unknown>,
     ): Promise<string> => {
       switch (name) {
         case "GetCases":
           return JSON.stringify([...db.cases.values()]);
         case "GetDeadlines": {
+          const caseId = parseStringArg(args.caseId);
           let deadlines = [...db.deadlines.values()];
-          if (args.caseId)
-            deadlines = deadlines.filter((d) => d.caseId === args.caseId);
+          if (caseId) deadlines = deadlines.filter((d) => d.caseId === caseId);
           return JSON.stringify(deadlines);
         }
         case "GetContacts": {
+          const caseId = parseStringArg(args.caseId);
           let contacts = [...db.contacts.values()];
-          if (args.caseId)
-            contacts = contacts.filter((c) => c.caseId === args.caseId);
+          if (caseId) contacts = contacts.filter((c) => c.caseId === caseId);
           return JSON.stringify(contacts);
         }
         case "GetFinances":
           return JSON.stringify([...db.finances.values()]);
         case "GetDocuments": {
-          try {
-            const raw = await readFile(indexPath, "utf-8");
-            const entries: DocumentEntry[] = JSON.parse(raw);
-            return JSON.stringify(
-              entries.map(({ id, title, category, pages }) => ({
-                id,
-                title,
-                category,
-                pages,
-              })),
-            );
-          } catch {
-            return JSON.stringify([]);
-          }
+          const entries = await loadDocumentEntries();
+          return JSON.stringify(
+            entries.map(({ id, title, category, pageCount }) => ({
+              id,
+              title,
+              category,
+              pages: pageCount,
+            })),
+          );
         }
         case "GetDocumentText": {
+          const documentId = parseStringArg(args.id);
+          if (!documentId) {
+            return JSON.stringify({ error: "Document ID is required" });
+          }
           try {
-            const raw = await readFile(indexPath, "utf-8");
-            const entries: DocumentEntry[] = JSON.parse(raw);
-            const doc = entries.find((e) => e.id === args.id);
+            const entries = await loadDocumentEntries();
+            const doc = entries.find((e) => e.id === documentId);
             if (!doc) return JSON.stringify({ error: "Document not found" });
             const textPath = join(baseDir, doc.textFile);
             const text = await readFile(textPath, "utf-8");
@@ -903,10 +952,16 @@ You have access to tools that let you look up the user's cases, deadlines, conta
             const timelineRaw = await readFile(timelinePath, "utf-8");
             const timelineData = JSON.parse(timelineRaw);
             let events: TimelineEvent[] = timelineData.events || [];
+            const query = parseStringArg(args.query);
+            const party = parseStringArg(args.party);
+            const caseNumber = parseStringArg(args.caseNumber);
+            const isCritical = parseBooleanArg(args.isCritical);
+            const startDate = parseStringArg(args.startDate);
+            const endDate = parseStringArg(args.endDate);
 
             // Apply filters
-            if (args.query) {
-              const q = args.query.toLowerCase();
+            if (query) {
+              const q = query.toLowerCase();
               events = events.filter(
                 (e: TimelineEvent) =>
                   e.title?.toLowerCase().includes(q) ||
@@ -914,24 +969,28 @@ You have access to tools that let you look up the user's cases, deadlines, conta
                   e.party?.toLowerCase().includes(q),
               );
             }
-            if (args.party) {
-              events = events.filter((e: TimelineEvent) => e.party === args.party);
+            if (party) {
+              events = events.filter((e: TimelineEvent) => e.party === party);
             }
-            if (args.caseNumber) {
+            if (caseNumber) {
               events = events.filter(
-                (e: TimelineEvent) => e.case?.number === args.caseNumber,
+                (e: TimelineEvent) => e.case?.number === caseNumber,
               );
             }
-            if (args.isCritical !== undefined) {
+            if (isCritical !== undefined) {
               events = events.filter(
-                (e: TimelineEvent) => e.isCritical === args.isCritical,
+                (e: TimelineEvent) => e.isCritical === isCritical,
               );
             }
-            if (args.startDate) {
-              events = events.filter((e: TimelineEvent) => e.date && e.date >= args.startDate);
+            if (startDate) {
+              events = events.filter(
+                (e: TimelineEvent) => e.date && e.date >= startDate,
+              );
             }
-            if (args.endDate) {
-              events = events.filter((e: TimelineEvent) => e.date && e.date <= args.endDate);
+            if (endDate) {
+              events = events.filter(
+                (e: TimelineEvent) => e.date && e.date <= endDate,
+              );
             }
 
             return JSON.stringify({
@@ -952,10 +1011,14 @@ You have access to tools that let you look up the user's cases, deadlines, conta
         }
         case "SearchKnowledge": {
           try {
-            const topK = Number(args.topK) || 3;
+            const query = parseStringArg(args.query);
+            if (!query) {
+              return JSON.stringify({ error: "Query is required" });
+            }
+            const topK = parseNumberArg(args.topK) ?? 3;
             const embResponse = await openai.embeddings.create({
               model: getConfig("EMBEDDINGS_MODEL") || "text-embedding-3-small",
-              input: args.query,
+              input: query,
             });
             const queryVec = embResponse.data[0].embedding;
             const records = Array.from(db.embeddings.values());
@@ -984,6 +1047,25 @@ You have access to tools that let you look up the user's cases, deadlines, conta
           } catch {
             return JSON.stringify({ error: "Knowledge search failed" });
           }
+        }
+        case "AnalyzeCaseGraph": {
+          const entries = await loadDocumentEntries();
+          const result = analyzeCaseGraph(
+            {
+              cases: [...db.cases.values()],
+              deadlines: [...db.deadlines.values()],
+              contacts: [...db.contacts.values()],
+              filings: [...db.filings.values()],
+              evidences: [...db.evidences.values()],
+              notes: [...db.notes.values()],
+              documents: entries,
+            },
+            {
+              caseId: parseStringArg(args.caseId),
+              topK: parseNumberArg(args.topK),
+            },
+          );
+          return JSON.stringify(result);
         }
         default:
           return JSON.stringify({ error: "Unknown tool" });

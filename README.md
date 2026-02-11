@@ -408,6 +408,7 @@ Tools available to the AI:
 - `get_finances` - View financial data
 - `search_timeline` - Search case events
 - `search_knowledge` - Semantic document search
+- `analyze_case_graph` - Graph-based relationship and connectivity analysis across case records
 
 ## Virginia-Specific Features
 

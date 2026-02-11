@@ -341,6 +341,75 @@ describe("Chat API", () => {
     expect(body.reply).toBe("No timeline.");
   });
 
+  it("handles AnalyzeCaseGraph tool", async () => {
+    db.cases.set("c1", {
+      id: "c1",
+      name: "Custody Matter",
+      caseNumber: "JA-123",
+      court: "Juvenile Court",
+      caseType: "custody",
+      status: "active",
+      parties: [
+        { id: "p1", name: "Alice", role: "Petitioner", contact: "alice@example.com" },
+      ],
+      filings: [],
+      notes: "",
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+    });
+    db.deadlines.set("d1", {
+      id: "d1",
+      caseId: "c1",
+      title: "Initial filing",
+      date: "2024-05-01",
+      type: "filing",
+      completed: false,
+    });
+
+    mockCreate
+      .mockResolvedValueOnce({
+        choices: [
+          {
+            finish_reason: "tool_calls",
+            message: {
+              content: null,
+              tool_calls: [
+                {
+                  id: "call_1",
+                  function: {
+                    name: "AnalyzeCaseGraph",
+                    arguments: '{"caseId":"c1","topK":3}',
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [{ finish_reason: "stop", message: { content: "Graph complete." } }],
+      });
+
+    const res = await api.post(
+      "/api/chat",
+      {
+        messages: [{ role: "user", content: "Analyze my case graph" }],
+      },
+      ctx.baseUrl,
+    );
+    const body = await res.json();
+    expect(body.reply).toBe("Graph complete.");
+    expect(mockCreate).toHaveBeenCalledTimes(2);
+
+    const secondCall = mockCreate.mock.calls[1]?.[0] as {
+      messages?: Array<{ role: string; content?: string }>;
+    };
+    const toolMessage = secondCall.messages?.find((m) => m.role === "tool");
+    expect(toolMessage?.content).toContain('"caseId":"c1"');
+    expect(toolMessage?.content).toContain('"openDeadlines":1');
+    expect(toolMessage?.content).toContain('"topConnectedNodes"');
+  });
+
   it("handles unknown tool gracefully", async () => {
     mockCreate
       .mockResolvedValueOnce({
