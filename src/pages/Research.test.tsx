@@ -165,9 +165,7 @@ describe("Research", () => {
 
   it("renders toggle sidebar button", () => {
     render(<Research />);
-    expect(
-      screen.getByTestId("toggle-sidebar"),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("toggle-sidebar")).toBeInTheDocument();
   });
 
   it("renders clear chat button", () => {

@@ -117,10 +117,7 @@ router.post("/recovery-key", async (req) => {
     const message =
       error instanceof Error ? error.message : "Failed to apply recovery key.";
     const status = message === "Invalid recovery key." ? 401 : 400;
-    return Response.json(
-      { success: false, error: message },
-      { status },
-    );
+    return Response.json({ success: false, error: message }, { status });
   }
 });
 

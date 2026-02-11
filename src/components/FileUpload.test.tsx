@@ -98,13 +98,11 @@ describe("FileUpload", () => {
   });
 
   it("shows error message on upload failure", async () => {
-    global.fetch = vi
-      .fn()
-      .mockResolvedValue({
-        ok: false,
-        status: 500,
-        text: () => Promise.resolve("Server error"),
-      });
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+      text: () => Promise.resolve("Server error"),
+    });
 
     render(<FileUpload />);
     fireEvent.change(screen.getByTestId("file-input"), {

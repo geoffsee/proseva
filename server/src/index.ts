@@ -217,7 +217,9 @@ async function maybeAutoIngestFromEnv(): Promise<void> {
       await stat(join(categoryDir, filename));
       ingestionStatus.skipped += 1;
       continue;
-    } catch { /* file doesn't exist yet, proceed with ingestion */ }
+    } catch {
+      /* file doesn't exist yet, proceed with ingestion */
+    }
 
     const buffer = await readFile(filePath);
     const { entry, text } = await ingestPdfBuffer(
@@ -353,7 +355,8 @@ router
       "status",
       "notes",
     ] as const) {
-      if (body[key] !== undefined) (c as Record<string, unknown>)[key] = body[key];
+      if (body[key] !== undefined)
+        (c as Record<string, unknown>)[key] = body[key];
     }
     c.updatedAt = new Date().toISOString();
     return c;
@@ -447,7 +450,8 @@ router
       "notes",
       "caseId",
     ] as const) {
-      if (body[key] !== undefined) (c as Record<string, unknown>)[key] = body[key];
+      if (body[key] !== undefined)
+        (c as Record<string, unknown>)[key] = body[key];
     }
     return c;
   })
@@ -487,7 +491,8 @@ router
       "completed",
       "caseId",
     ] as const) {
-      if (body[key] !== undefined) (d as Record<string, unknown>)[key] = body[key];
+      if (body[key] !== undefined)
+        (d as Record<string, unknown>)[key] = body[key];
     }
     return d;
   })
@@ -535,7 +540,8 @@ router
       "date",
       "description",
     ] as const) {
-      if (body[key] !== undefined) (e as Record<string, unknown>)[key] = body[key];
+      if (body[key] !== undefined)
+        (e as Record<string, unknown>)[key] = body[key];
     }
     return e;
   })
@@ -595,7 +601,8 @@ router
       "notes",
       "updatedAt",
     ] as const) {
-      if (body[key] !== undefined) (e as Record<string, unknown>)[key] = body[key];
+      if (body[key] !== undefined)
+        (e as Record<string, unknown>)[key] = body[key];
     }
     return e;
   })
@@ -629,7 +636,8 @@ router
     if (!f) return notFound();
     const body = await req.json();
     for (const key of ["title", "date", "type", "notes", "caseId"] as const) {
-      if (body[key] !== undefined) (f as Record<string, unknown>)[key] = body[key];
+      if (body[key] !== undefined)
+        (f as Record<string, unknown>)[key] = body[key];
     }
     return f;
   })
@@ -674,7 +682,8 @@ router
       "caseId",
       "isPinned",
     ] as const) {
-      if (body[key] !== undefined) (n as Record<string, unknown>)[key] = body[key];
+      if (body[key] !== undefined)
+        (n as Record<string, unknown>)[key] = body[key];
     }
     n.updatedAt = new Date().toISOString();
     return n;
@@ -919,7 +928,9 @@ You have access to tools that let you look up the user's cases, deadlines, conta
               );
             }
             if (args.party) {
-              events = events.filter((e: TimelineEvent) => e.party === args.party);
+              events = events.filter(
+                (e: TimelineEvent) => e.party === args.party,
+              );
             }
             if (args.caseNumber) {
               events = events.filter(
@@ -932,10 +943,14 @@ You have access to tools that let you look up the user's cases, deadlines, conta
               );
             }
             if (args.startDate) {
-              events = events.filter((e: TimelineEvent) => e.date && e.date >= args.startDate);
+              events = events.filter(
+                (e: TimelineEvent) => e.date && e.date >= args.startDate,
+              );
             }
             if (args.endDate) {
-              events = events.filter((e: TimelineEvent) => e.date && e.date <= args.endDate);
+              events = events.filter(
+                (e: TimelineEvent) => e.date && e.date <= args.endDate,
+              );
             }
 
             return JSON.stringify({
@@ -1058,10 +1073,7 @@ You have access to tools that let you look up the user's cases, deadlines, conta
 
   // --- Documents ---
   .get("/documents", async () => {
-    const indexPath = join(
-      appRoot,
-      "case-data/case-documents-app/index.json",
-    );
+    const indexPath = join(appRoot, "case-data/case-documents-app/index.json");
     try {
       const raw = await readFile(indexPath, "utf-8");
       return new Response(raw, {
@@ -1092,7 +1104,9 @@ You have access to tools that let you look up the user's cases, deadlines, conta
     try {
       const raw = await readFile(indexPath, "utf-8");
       existingEntries = JSON.parse(raw);
-    } catch { /* index file doesn't exist yet */ }
+    } catch {
+      /* index file doesn't exist yet */
+    }
 
     const newEntries: DocumentEntry[] = [];
 
@@ -1195,7 +1209,9 @@ You have access to tools that let you look up the user's cases, deadlines, conta
       try {
         const raw = await readFile(indexPath, "utf-8");
         existingEntries = JSON.parse(raw);
-      } catch { /* index file doesn't exist yet */ }
+      } catch {
+        /* index file doesn't exist yet */
+      }
 
       // Find all PDFs in directory recursively
       const { readdirSync, statSync } = await import("fs");
@@ -1427,7 +1443,8 @@ router
       "guardianPhone",
       "notes",
     ] as const) {
-      if (body[key] !== undefined) (plan as Record<string, unknown>)[key] = body[key];
+      if (body[key] !== undefined)
+        (plan as Record<string, unknown>)[key] = body[key];
     }
     plan.updatedAt = new Date().toISOString();
     return plan;
@@ -1535,7 +1552,8 @@ router
       "signedDate",
       "notes",
     ] as const) {
-      if (body[key] !== undefined) (doc as Record<string, unknown>)[key] = body[key];
+      if (body[key] !== undefined)
+        (doc as Record<string, unknown>)[key] = body[key];
     }
     doc.updatedAt = new Date().toISOString();
     plan.updatedAt = new Date().toISOString();
@@ -1558,12 +1576,17 @@ router.all("/security/*", securityRouter.fetch);
 // Research agent chat endpoint
 router.post("/research/agent/chat", async (request: Request) => {
   try {
-    const body = (await request.json()) as { messages?: Array<{ role: string; content: string }> };
+    const body = (await request.json()) as {
+      messages?: Array<{ role: string; content: string }>;
+    };
     if (!body.messages || !Array.isArray(body.messages)) {
-      return new Response(JSON.stringify({ error: "messages array is required" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "messages array is required" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
     }
     const result = await handleResearchChat(
       body.messages.map((m) => ({

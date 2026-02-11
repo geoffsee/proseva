@@ -33,7 +33,10 @@ interface TimelineEvent {
   metadata?: Record<string, string>;
 }
 
-const SOURCE_COLORS: Record<EventSource, { bg: string; border: string; palette: string }> = {
+const SOURCE_COLORS: Record<
+  EventSource,
+  { bg: string; border: string; palette: string }
+> = {
   deadline: { bg: "orange.500/20", border: "orange.500", palette: "orange" },
   filing: { bg: "blue.500/20", border: "blue.500", palette: "blue" },
   evidence: { bg: "green.500/20", border: "green.500", palette: "green" },
@@ -52,8 +55,18 @@ const SOURCE_LABELS: Record<EventSource, string> = {
 };
 
 const MONTHS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 
 function tryParseDate(dateStr: string): Date | null {
@@ -101,7 +114,11 @@ const Timeline = observer(function Timeline() {
         details: d.description || undefined,
         isCritical: d.priority === "high" || d.urgency === "overdue",
         caseId: d.caseId || undefined,
-        metadata: { type: d.type, priority: d.priority, status: d.completed ? "completed" : d.urgency },
+        metadata: {
+          type: d.type,
+          priority: d.priority,
+          status: d.completed ? "completed" : d.urgency,
+        },
       });
     }
 
@@ -235,7 +252,8 @@ const Timeline = observer(function Timeline() {
 
     const marks: { label: string; pct: number }[] = [];
     const totalMs = finalEnd.getTime() - start.getTime();
-    if (totalMs <= 0) return { rangeStart: start, rangeEnd: finalEnd, rulerMarks: marks };
+    if (totalMs <= 0)
+      return { rangeStart: start, rangeEnd: finalEnd, rulerMarks: marks };
 
     const startYear = start.getFullYear();
     const endYear = finalEnd.getFullYear();
@@ -278,7 +296,14 @@ const Timeline = observer(function Timeline() {
     setEndDateFilter("");
   };
 
-  const sources: EventSource[] = ["deadline", "filing", "evidence", "case", "finance", "task"];
+  const sources: EventSource[] = [
+    "deadline",
+    "filing",
+    "evidence",
+    "case",
+    "finance",
+    "task",
+  ];
 
   // Find case name by id for display
   const caseNameMap = useMemo(() => {

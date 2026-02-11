@@ -55,7 +55,9 @@ describe("Sidebar", () => {
     expect(
       screen.getByRole("link", { name: /Doc Manager/ }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /ProSeVA AI/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /ProSeVA AI/ }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Reports/ })).toBeInTheDocument();
   });
 

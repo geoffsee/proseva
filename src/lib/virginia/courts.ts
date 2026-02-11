@@ -3,7 +3,10 @@ import courtsData from "../../../static/va-courts.json";
 export interface CourtInfo {
   name: string;
   locality: string;
-  type: "General District" | "Juvenile & Domestic Relations" | "Combined District";
+  type:
+    | "General District"
+    | "Juvenile & Domestic Relations"
+    | "Combined District";
   district: string;
   clerk: string | null;
   phone: string | null;
@@ -29,7 +32,9 @@ export const VIRGINIA_COURTS: CourtInfo[] = courtsData.map((c) => ({
   phones: c.phones,
   fax: c.fax,
   email: c.email,
-  address: [c.address, `${c.city}, ${c.state} ${c.zip}`].filter(Boolean).join(", "),
+  address: [c.address, `${c.city}, ${c.state} ${c.zip}`]
+    .filter(Boolean)
+    .join(", "),
   city: c.city ?? "",
   state: c.state ?? "VA",
   zip: c.zip ?? "",

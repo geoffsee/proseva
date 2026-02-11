@@ -35,12 +35,7 @@ vi.mock("../components/documents/TemplateSelector", () => ({
 }));
 
 vi.mock("../components/documents/TemplateForm", () => ({
-  TemplateForm: ({
-    fieldValues,
-    onFieldChange,
-    onBack,
-    onPreview,
-  }: any) => (
+  TemplateForm: ({ fieldValues, onFieldChange, onBack, onPreview }: any) => (
     <div>
       <input
         data-testid="field-fullName"

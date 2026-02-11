@@ -7,11 +7,41 @@ import { RootStore } from "../store/RootStore";
 // Mock the API module
 vi.mock("../lib/api", () => ({
   api: {
-    cases: { list: vi.fn().mockResolvedValue([]), create: vi.fn(), update: vi.fn(), delete: vi.fn(), addParty: vi.fn(), removeParty: vi.fn(), addFiling: vi.fn(), removeFiling: vi.fn() },
-    deadlines: { list: vi.fn().mockResolvedValue([]), create: vi.fn(), update: vi.fn(), delete: vi.fn(), toggleComplete: vi.fn() },
-    filings: { list: vi.fn().mockResolvedValue([]), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
-    evidences: { list: vi.fn().mockResolvedValue([]), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
-    finances: { list: vi.fn().mockResolvedValue([]), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
+    cases: {
+      list: vi.fn().mockResolvedValue([]),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      addParty: vi.fn(),
+      removeParty: vi.fn(),
+      addFiling: vi.fn(),
+      removeFiling: vi.fn(),
+    },
+    deadlines: {
+      list: vi.fn().mockResolvedValue([]),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      toggleComplete: vi.fn(),
+    },
+    filings: {
+      list: vi.fn().mockResolvedValue([]),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    evidences: {
+      list: vi.fn().mockResolvedValue([]),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    finances: {
+      list: vi.fn().mockResolvedValue([]),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
     contacts: { list: vi.fn().mockResolvedValue([]) },
     documents: { list: vi.fn().mockResolvedValue([]) },
   },

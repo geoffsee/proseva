@@ -59,7 +59,8 @@ export const ResearchStore = types
         });
 
         if (!res.ok) throw new Error(`Research API error: ${res.status}`);
-        const data: { reply: string; toolResults: ToolResultData[] } = yield res.json();
+        const data: { reply: string; toolResults: ToolResultData[] } =
+          yield res.json();
         replyText = data.reply;
         toolResults = data.toolResults || [];
       } catch {

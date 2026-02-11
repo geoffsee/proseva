@@ -69,7 +69,7 @@ function initDataDir(): void {
 function startServer(): ChildProcess {
   const dataDir = getDataDir();
   const env: Record<string, string> = {
-    ...process.env as Record<string, string>,
+    ...(process.env as Record<string, string>),
     PROSEVA_DATA_DIR: dataDir,
     PORT: String(SERVER_PORT),
   };
@@ -95,10 +95,7 @@ function startServer(): ChildProcess {
   });
 }
 
-async function waitForServer(
-  maxRetries = 30,
-  delayMs = 500,
-): Promise<boolean> {
+async function waitForServer(maxRetries = 30, delayMs = 500): Promise<boolean> {
   for (let i = 0; i < maxRetries; i++) {
     try {
       const response = await fetch(`${SERVER_URL}/api/cases`);
