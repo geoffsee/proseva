@@ -43,8 +43,8 @@ describe("security API", () => {
   it("blocks non-security routes when db is locked and unlocks with valid recovery key", async () => {
     const adapter = new InMemoryAdapter();
 
-    setDbEncryptionPassphrase("LOCKED-DB-KEY");
-    const seededDb = new Database(adapter);
+    await setDbEncryptionPassphrase("LOCKED-DB-KEY");
+    const seededDb = await Database.create(adapter);
     seededDb.cases.set("case-1", {
       id: "case-1",
       name: "Locked Case",
@@ -58,10 +58,10 @@ describe("security API", () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
-    seededDb.flush();
+    await seededDb.flush();
 
     clearDbEncryptionPassphrase();
-    resetDb(adapter);
+    await resetDb(adapter);
 
     const lockedCases = await api.get("/api/cases", ctx.baseUrl);
     expect(lockedCases.status).toBe(423);

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { createRootStore } from "./RootStore";
 import type { IRootStore } from "./RootStore";
 import * as apiModule from "../lib/api";
@@ -26,35 +26,8 @@ vi.spyOn(apiModule.api.filings, "create").mockResolvedValue(null);
 vi.spyOn(apiModule.api.filings, "update").mockResolvedValue(null);
 vi.spyOn(apiModule.api.filings, "delete").mockResolvedValue(undefined);
 
-// Mock localStorage
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
-
-  return {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => {
-      store[key] = value.toString();
-    },
-    removeItem: (key: string) => {
-      delete store[key];
-    },
-    clear: () => {
-      store = {};
-    },
-  };
-})();
-
 beforeEach(() => {
-  Object.defineProperty(window, "localStorage", {
-    value: localStorageMock,
-    writable: true,
-  });
-  localStorage.clear();
   vi.clearAllMocks();
-});
-
-afterEach(() => {
-  localStorage.clear();
 });
 
 describe("RootStore", () => {
@@ -73,7 +46,7 @@ describe("RootStore", () => {
       expect(store.filingStore).toBeDefined();
     });
 
-    it("initializes empty stores when no localStorage data exists", () => {
+    it("initializes with empty collections", () => {
       const store = createRootStore();
       expect(store.caseStore.cases).toHaveLength(0);
       expect(store.deadlineStore.deadlines).toHaveLength(0);
@@ -86,156 +59,16 @@ describe("RootStore", () => {
       expect(store.filingStore.filings).toHaveLength(0);
     });
 
-    it("loads cases from localStorage", () => {
-      const now = new Date().toISOString();
-      const testCases = [
-        {
-          id: "1",
-          name: "Test Case",
-          parties: [],
-          filings: [],
-          createdAt: now,
-          updatedAt: now,
-        },
-      ];
-      localStorage.setItem("cases", JSON.stringify(testCases));
-
+    it("initializes deadlines with default filter values", () => {
       const store = createRootStore();
-      expect(store.caseStore.cases).toHaveLength(1);
-      expect(store.caseStore.cases[0].name).toBe("Test Case");
-    });
-
-    it("loads deadlines from localStorage with filters", () => {
-      const testDeadlines = [
-        {
-          id: "1",
-          title: "Deadline 1",
-          date: "2025-02-01",
-          type: "filing",
-          urgency: "high",
-          caseId: "case1",
-        },
-      ];
-      localStorage.setItem("deadlines", JSON.stringify(testDeadlines));
-
-      const store = createRootStore();
-      expect(store.deadlineStore.deadlines).toHaveLength(1);
-      expect(store.deadlineStore.deadlines[0].title).toBe("Deadline 1");
       expect(store.deadlineStore.selectedType).toBe("all");
       expect(store.deadlineStore.selectedUrgency).toBe("all");
       expect(store.deadlineStore.selectedCaseId).toBe("all");
       expect(store.deadlineStore.searchQuery).toBe("");
     });
 
-    it("loads finances from localStorage", () => {
-      const testFinances = [
-        {
-          id: "1",
-          description: "Fee",
-          amount: 500,
-          date: "2025-01-01",
-          category: "income",
-          subcategory: "retainer",
-        },
-      ];
-      localStorage.setItem("finances", JSON.stringify(testFinances));
-
+    it("initializes evidences with default filter values", () => {
       const store = createRootStore();
-      expect(store.financeStore.entries).toHaveLength(1);
-      expect(store.financeStore.entries[0].description).toBe("Fee");
-    });
-
-    it("loads contacts from localStorage", () => {
-      const testContacts = [
-        {
-          id: "1",
-          name: "John Doe",
-          email: "john@example.com",
-          phone: "555-1234",
-          role: "attorney",
-        },
-      ];
-      localStorage.setItem("contacts", JSON.stringify(testContacts));
-
-      const store = createRootStore();
-      expect(store.contactStore.contacts).toHaveLength(1);
-      expect(store.contactStore.contacts[0].name).toBe("John Doe");
-    });
-
-    it("loads chat messages from localStorage", () => {
-      const testMessages = [
-        {
-          id: "1",
-          text: "Hello",
-          createdAt: new Date().toISOString(),
-          role: "user",
-        },
-      ];
-      localStorage.setItem("chat", JSON.stringify(testMessages));
-
-      const store = createRootStore();
-      expect(store.chatStore.messages).toHaveLength(1);
-    });
-
-    it("loads notes from localStorage", () => {
-      const testNotes = [
-        {
-          id: "1",
-          title: "Note",
-          content: "Content",
-          category: "general",
-          tags: [],
-          caseId: "case1",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ];
-      localStorage.setItem("notes", JSON.stringify(testNotes));
-
-      const store = createRootStore();
-      expect(store.noteStore.notes).toHaveLength(1);
-    });
-
-    it("loads tasks from localStorage", () => {
-      const now = new Date().toISOString();
-      const testTasks = [
-        {
-          id: "1",
-          title: "Task",
-          description: "Do it",
-          status: "todo",
-          priority: "medium",
-          dueDate: null,
-          createdAt: now,
-          updatedAt: now,
-        },
-      ];
-      localStorage.setItem("tasks", JSON.stringify(testTasks));
-
-      const store = createRootStore();
-      expect(store.taskStore.tasks).toHaveLength(1);
-    });
-
-    it("loads evidences from localStorage with filters", () => {
-      const now = new Date().toISOString();
-      const testEvidences = [
-        {
-          id: "1",
-          title: "Evidence",
-          type: "document",
-          caseId: "case1",
-          relevance: "high",
-          admissible: true,
-          tags: [],
-          chain: [],
-          createdAt: now,
-          updatedAt: now,
-        },
-      ];
-      localStorage.setItem("evidences", JSON.stringify(testEvidences));
-
-      const store = createRootStore();
-      expect(store.evidenceStore.evidences).toHaveLength(1);
       expect(store.evidenceStore.selectedType).toBe("all");
       expect(store.evidenceStore.selectedRelevance).toBe("all");
       expect(store.evidenceStore.selectedCaseId).toBe("all");
@@ -243,20 +76,8 @@ describe("RootStore", () => {
       expect(store.evidenceStore.searchQuery).toBe("");
     });
 
-    it("loads filings from localStorage with filters", () => {
-      const testFilings = [
-        {
-          id: "1",
-          caseId: "case1",
-          title: "Filing",
-          date: "2025-01-01",
-          type: "motion",
-        },
-      ];
-      localStorage.setItem("filings", JSON.stringify(testFilings));
-
+    it("initializes filings with default filter values", () => {
       const store = createRootStore();
-      expect(store.filingStore.filings).toHaveLength(1);
       expect(store.filingStore.selectedType).toBe("all");
       expect(store.filingStore.selectedCaseId).toBe("all");
       expect(store.filingStore.searchQuery).toBe("");
@@ -264,18 +85,14 @@ describe("RootStore", () => {
       expect(store.filingStore.dateTo).toBe("");
     });
 
-    it("persists case changes to localStorage", () => {
+    it("supports store mutations", () => {
       const store = createRootStore();
       store.caseStore.addCase({ name: "New Case" });
-
-      const stored = localStorage.getItem("cases");
-      expect(stored).toBeDefined();
-      const parsed = JSON.parse(stored!);
-      expect(parsed).toHaveLength(1);
-      expect(parsed[0].name).toBe("New Case");
+      expect(store.caseStore.cases).toHaveLength(1);
+      expect(store.caseStore.cases[0].name).toBe("New Case");
     });
 
-    it("persists deadline changes to localStorage", () => {
+    it("supports deadline mutations", () => {
       const store = createRootStore();
       store.deadlineStore.addDeadline({
         title: "New Deadline",
@@ -283,14 +100,10 @@ describe("RootStore", () => {
         type: "filing",
         caseId: "case1",
       });
-
-      const stored = localStorage.getItem("deadlines");
-      expect(stored).toBeDefined();
-      const parsed = JSON.parse(stored!);
-      expect(parsed).toHaveLength(1);
+      expect(store.deadlineStore.deadlines).toHaveLength(1);
     });
 
-    it("persists finance changes to localStorage", () => {
+    it("supports finance mutations", () => {
       const store = createRootStore();
       store.financeStore.addEntry({
         description: "Test Fee",
@@ -299,14 +112,10 @@ describe("RootStore", () => {
         category: "income",
         subcategory: "retainer",
       });
-
-      const stored = localStorage.getItem("finances");
-      expect(stored).toBeDefined();
-      const parsed = JSON.parse(stored!);
-      expect(parsed).toHaveLength(1);
+      expect(store.financeStore.entries).toHaveLength(1);
     });
 
-    it("persists contact changes to localStorage", () => {
+    it("supports contact mutations", () => {
       const store = createRootStore();
       store.contactStore.addContact({
         name: "Jane Doe",
@@ -314,36 +123,10 @@ describe("RootStore", () => {
         phone: "555-5678",
         role: "witness",
       });
-
-      const stored = localStorage.getItem("contacts");
-      expect(stored).toBeDefined();
-      const parsed = JSON.parse(stored!);
-      expect(parsed).toHaveLength(1);
+      expect(store.contactStore.contacts).toHaveLength(1);
     });
 
-    it("loads persisted chat messages on store creation", () => {
-      const testMessages = [
-        {
-          id: "1",
-          text: "Message 1",
-          role: "user" as const,
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: "2",
-          text: "Message 2",
-          role: "assistant" as const,
-          createdAt: new Date().toISOString(),
-        },
-      ];
-      localStorage.setItem("chat", JSON.stringify(testMessages));
-
-      const store = createRootStore();
-      expect(store.chatStore.messages).toHaveLength(2);
-      expect(store.chatStore.messages[0].text).toBe("Message 1");
-    });
-
-    it("persists note changes to localStorage", () => {
+    it("supports note mutations", () => {
       const store = createRootStore();
       store.noteStore.addNote({
         title: "Test Note",
@@ -351,27 +134,19 @@ describe("RootStore", () => {
         category: "general",
         caseId: "case1",
       });
-
-      const stored = localStorage.getItem("notes");
-      expect(stored).toBeDefined();
-      const parsed = JSON.parse(stored!);
-      expect(parsed).toHaveLength(1);
+      expect(store.noteStore.notes).toHaveLength(1);
     });
 
-    it("persists task changes to localStorage", () => {
+    it("supports task mutations", () => {
       const store = createRootStore();
       store.taskStore.addTask({
         title: "Test Task",
         description: "Do something",
       });
-
-      const stored = localStorage.getItem("tasks");
-      expect(stored).toBeDefined();
-      const parsed = JSON.parse(stored!);
-      expect(parsed).toHaveLength(1);
+      expect(store.taskStore.tasks).toHaveLength(1);
     });
 
-    it("persists evidence changes to localStorage", () => {
+    it("supports evidence mutations", () => {
       const store = createRootStore();
       store.evidenceStore.addEvidence({
         title: "Test Evidence",
@@ -380,14 +155,10 @@ describe("RootStore", () => {
         relevance: "high",
         admissible: true,
       });
-
-      const stored = localStorage.getItem("evidences");
-      expect(stored).toBeDefined();
-      const parsed = JSON.parse(stored!);
-      expect(parsed).toHaveLength(1);
+      expect(store.evidenceStore.evidences).toHaveLength(1);
     });
 
-    it("persists filing changes to localStorage", () => {
+    it("supports filing mutations", () => {
       const store = createRootStore();
       store.filingStore.addFiling({
         caseId: "case1",
@@ -395,23 +166,7 @@ describe("RootStore", () => {
         date: "2025-01-01",
         type: "motion",
       });
-
-      const stored = localStorage.getItem("filings");
-      expect(stored).toBeDefined();
-      const parsed = JSON.parse(stored!);
-      expect(parsed).toHaveLength(1);
-    });
-
-    it("handles corrupt JSON gracefully", () => {
-      localStorage.setItem("cases", "invalid json {");
-      const store = createRootStore();
-      expect(store.caseStore.cases).toHaveLength(0);
-    });
-
-    it("handles null localStorage values gracefully", () => {
-      localStorage.removeItem("cases");
-      const store = createRootStore();
-      expect(store.caseStore.cases).toHaveLength(0);
+      expect(store.filingStore.filings).toHaveLength(1);
     });
   });
 

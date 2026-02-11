@@ -1,7 +1,8 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import type { IRootStore } from "./RootStore";
-import { createRootStore } from "./RootStore";
+import { createRootStore, hydrateStore } from "./RootStore";
+import { Box, Spinner, Text, VStack } from "@chakra-ui/react";
 
 const StoreContext = createContext<IRootStore | null>(null);
 
@@ -10,15 +11,6 @@ let _store: IRootStore | undefined;
 function getStore(): IRootStore {
   if (!_store) {
     _store = createRootStore();
-    // Load data from API
-    _store.documentStore.loadDocuments();
-    _store.caseStore.loadCases();
-    _store.deadlineStore.loadDeadlines();
-    _store.contactStore.loadContacts();
-    _store.financeStore.loadEntries();
-    _store.evidenceStore.loadEvidences();
-    _store.filingStore.loadFilings();
-    _store.estatePlanStore.loadPlans();
   }
   return _store;
 }
@@ -30,8 +22,50 @@ export function StoreProvider({
   children: ReactNode;
   store?: IRootStore;
 }) {
+  const resolvedStore = store ?? getStore();
+  const [isReady, setIsReady] = useState(
+    // If a custom store is provided (e.g., in tests), skip hydration
+    store != null,
+  );
+
+  useEffect(() => {
+    if (store) return; // Custom store — already ready
+
+    let cancelled = false;
+    void hydrateStore(resolvedStore).then(() => {
+      if (cancelled) return;
+      // Load data from API after hydration so local data shows first
+      resolvedStore.documentStore.loadDocuments();
+      resolvedStore.caseStore.loadCases();
+      resolvedStore.deadlineStore.loadDeadlines();
+      resolvedStore.contactStore.loadContacts();
+      resolvedStore.financeStore.loadEntries();
+      resolvedStore.evidenceStore.loadEvidences();
+      resolvedStore.filingStore.loadFilings();
+      resolvedStore.estatePlanStore.loadPlans();
+      setIsReady(true);
+    });
+    return () => { cancelled = true; };
+  }, [resolvedStore, store]);
+
+  if (!isReady) {
+    return (
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        minH="100vh"
+      >
+        <VStack gap={4}>
+          <Spinner size="lg" />
+          <Text color="fg.muted">Loading your data...</Text>
+        </VStack>
+      </Box>
+    );
+  }
+
   return (
-    <StoreContext.Provider value={store ?? getStore()}>
+    <StoreContext.Provider value={resolvedStore}>
       {children}
     </StoreContext.Provider>
   );
