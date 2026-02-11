@@ -11,7 +11,15 @@ const CACHE_TTL = 5000; // 5 seconds
  * Returns the singleton config record or null if not set.
  */
 export function loadConfigFromDatabase(): ServerConfig | null {
-  const config = db.serverConfig.get("singleton");
+  // During module startup, getConfig() can be called before initDb() has set
+  // the exported db instance. In that case, treat DB config as unavailable and
+  // fall back to environment variables.
+  const serverConfig = (db as any)?.serverConfig as
+    | Map<string, ServerConfig>
+    | undefined;
+  if (!serverConfig) return null;
+
+  const config = serverConfig.get("singleton");
   if (config) {
     configCache = config;
     cacheTimestamp = Date.now();
