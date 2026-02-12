@@ -1,10 +1,18 @@
-import { types, flow } from "mobx-state-tree";
+import { types, flow, type Instance } from "mobx-state-tree";
 import { v4 as uuidv4 } from "uuid";
 import {
+  BeneficiaryModel,
+  EstateAssetModel,
+  EstateDocumentModel,
   EstatePlanModel,
 } from "./models/EstatePlanModel";
 import type { EstatePlanType } from "../lib/api";
 import { api } from "../lib/api";
+
+type EstatePlanInstance = Instance<typeof EstatePlanModel>;
+type BeneficiaryInstance = Instance<typeof BeneficiaryModel>;
+type EstateAssetInstance = Instance<typeof EstateAssetModel>;
+type EstateDocumentInstance = Instance<typeof EstateDocumentModel>;
 
 export const EstatePlanStore = types
   .model("EstatePlanStore", {
@@ -73,7 +81,7 @@ export const EstatePlanStore = types
       try {
         const plans: EstatePlanType[] = yield api.estatePlans.list();
         if (plans && Array.isArray(plans)) {
-          self.plans.replace(plans as any);
+          self.plans.replace(plans as unknown as EstatePlanInstance[]);
         }
       } catch (error) {
         console.error("Failed to load estate plans from API:", error);
@@ -111,7 +119,7 @@ export const EstatePlanStore = types
         createdAt: now,
         updatedAt: now,
       };
-      self.plans.push(newPlan as any);
+      self.plans.push(newPlan as unknown as EstatePlanInstance);
       yield api.estatePlans.create(newPlan);
     }),
     updatePlan: flow(function* (id: string, updates: Partial<EstatePlanType>) {
@@ -155,7 +163,7 @@ export const EstatePlanStore = types
           address: data.address ?? "",
           notes: data.notes ?? "",
         };
-        plan.beneficiaries.push(b as any);
+        plan.beneficiaries.push(b as unknown as BeneficiaryInstance);
         plan.updatedAt = new Date().toISOString();
         yield api.estatePlans.addBeneficiary(planId, b as Record<string, unknown>);
       }
@@ -197,7 +205,7 @@ export const EstatePlanStore = types
           beneficiaryIds: data.beneficiaryIds ?? [],
           notes: data.notes ?? "",
         };
-        plan.assets.push(a as any);
+        plan.assets.push(a as unknown as EstateAssetInstance);
         plan.updatedAt = new Date().toISOString();
         yield api.estatePlans.addAsset(planId, a as Record<string, unknown>);
       }
@@ -241,7 +249,7 @@ export const EstatePlanStore = types
           createdAt: now,
           updatedAt: now,
         };
-        plan.documents.push(doc as any);
+        plan.documents.push(doc as unknown as EstateDocumentInstance);
         plan.updatedAt = now;
         yield api.estatePlans.addDocument(planId, doc as Record<string, unknown>);
       }

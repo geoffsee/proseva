@@ -1,9 +1,11 @@
-import { types, flow } from "mobx-state-tree";
+import { types, flow, type Instance } from "mobx-state-tree";
 import { v4 as uuidv4 } from "uuid";
 import { DeadlineModel } from "./models/DeadlineModel";
 import type { Deadline } from "../lib/api";
 import { api } from "../lib/api";
 import { parseLocalDate } from "../lib/dateUtils";
+
+type DeadlineInstance = Instance<typeof DeadlineModel>;
 
 export const DeadlineStore = types
   .model("DeadlineStore", {
@@ -94,7 +96,7 @@ export const DeadlineStore = types
       try {
         const deadlines: Deadline[] | null = yield api.deadlines.list();
         if (deadlines && Array.isArray(deadlines)) {
-          self.deadlines.replace(deadlines as any);
+          self.deadlines.replace(deadlines as unknown as DeadlineInstance[]);
         }
       } catch (error) {
         console.error("Failed to load deadlines from API:", error);
@@ -118,7 +120,7 @@ export const DeadlineStore = types
         caseId: d.caseId ?? "",
         description: d.description ?? "",
         priority: d.priority ?? "medium",
-      } as any);
+      } as unknown as DeadlineInstance);
       yield api.deadlines.create(d);
     }),
     updateDeadline: flow(function* (

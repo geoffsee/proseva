@@ -1,8 +1,14 @@
-import { types, flow } from "mobx-state-tree";
+import { types, flow, type Instance } from "mobx-state-tree";
 import { v4 as uuidv4 } from "uuid";
-import { EvidenceModel } from "./models/EvidenceModel";
+import {
+  ChainOfCustodyEntryModel,
+  EvidenceModel,
+} from "./models/EvidenceModel";
 import type { Evidence } from "../lib/api";
 import { api } from "../lib/api";
+
+type EvidenceInstance = Instance<typeof EvidenceModel>;
+type ChainOfCustodyEntryInstance = Instance<typeof ChainOfCustodyEntryModel>;
 
 export const EvidenceStore = types
   .model("EvidenceStore", {
@@ -86,7 +92,7 @@ export const EvidenceStore = types
       try {
         const evidences: Evidence[] | null = yield api.evidences.list();
         if (evidences && Array.isArray(evidences)) {
-          self.evidences.replace(evidences as any);
+          self.evidences.replace(evidences as unknown as EvidenceInstance[]);
         }
       } catch (error) {
         console.error("Failed to load evidences from API:", error);
@@ -133,7 +139,7 @@ export const EvidenceStore = types
         createdAt: now,
         updatedAt: now,
       };
-      self.evidences.push(newEvidence as any);
+      self.evidences.push(newEvidence as unknown as EvidenceInstance);
       yield api.evidences.create(newEvidence);
     }),
     updateEvidence: flow(function* (
@@ -173,7 +179,7 @@ export const EvidenceStore = types
           purpose: entry.purpose,
           notes: entry.notes ?? "",
         };
-        e.chain.push(chainEntry as any);
+        e.chain.push(chainEntry as unknown as ChainOfCustodyEntryInstance);
         e.updatedAt = new Date().toISOString();
         yield api.evidences.update(evidenceId, {
           chain: e.chain.map((c) => ({ ...c })),

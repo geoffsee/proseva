@@ -1,4 +1,4 @@
-import { types, flow } from "mobx-state-tree";
+import { types, flow, type Instance } from "mobx-state-tree";
 import { api } from "../lib/api";
 import type {
   EvaluationType,
@@ -83,6 +83,11 @@ const SchedulerStatusModel = types.model("SchedulerStatus", {
   }),
 });
 
+type EvaluationInstance = Instance<typeof EvaluationModel>;
+type DeviceTokenInstance = Instance<typeof DeviceTokenModel>;
+type SmsRecipientInstance = Instance<typeof SmsRecipientModel>;
+type SchedulerStatusInstance = Instance<typeof SchedulerStatusModel>;
+
 export const EvaluationStore = types
   .model("EvaluationStore", {
     evaluations: types.array(EvaluationModel),
@@ -117,7 +122,9 @@ export const EvaluationStore = types
       self.isLoading = true;
       try {
         const evaluations: EvaluationType[] = yield api.evaluations.list();
-        self.evaluations.replace(evaluations as any);
+        self.evaluations.replace(
+          evaluations as unknown as EvaluationInstance[],
+        );
       } catch (error) {
         console.error("Failed to load evaluations:", error);
       } finally {
@@ -128,7 +135,7 @@ export const EvaluationStore = types
     const loadDeviceTokens = flow(function* loadDeviceTokens() {
       try {
         const tokens: DeviceToken[] = yield api.deviceTokens.list();
-        self.deviceTokens.replace(tokens as any);
+        self.deviceTokens.replace(tokens as unknown as DeviceTokenInstance[]);
       } catch (error) {
         console.error("Failed to load device tokens:", error);
       }
@@ -137,7 +144,9 @@ export const EvaluationStore = types
     const loadSmsRecipients = flow(function* loadSmsRecipients() {
       try {
         const recipients: SmsRecipient[] = yield api.smsRecipients.list();
-        self.smsRecipients.replace(recipients as any);
+        self.smsRecipients.replace(
+          recipients as unknown as SmsRecipientInstance[],
+        );
       } catch (error) {
         console.error("Failed to load SMS recipients:", error);
       }
@@ -146,7 +155,7 @@ export const EvaluationStore = types
     const loadSchedulerStatus = flow(function* loadSchedulerStatus() {
       try {
         const status: SchedulerStatus = yield api.scheduler.status();
-        self.schedulerStatus = status as any;
+        self.schedulerStatus = status as unknown as SchedulerStatusInstance;
       } catch (error) {
         console.error("Failed to load scheduler status:", error);
       }
@@ -195,7 +204,7 @@ export const EvaluationStore = types
           token,
           platform,
         });
-        self.deviceTokens.push(newToken as any);
+        self.deviceTokens.push(newToken as unknown as DeviceTokenInstance);
         return newToken;
       } catch (error) {
         console.error("Failed to add device token:", error);
@@ -225,7 +234,9 @@ export const EvaluationStore = types
           phone,
           name,
         });
-        self.smsRecipients.push(newRecipient as any);
+        self.smsRecipients.push(
+          newRecipient as unknown as SmsRecipientInstance,
+        );
         return newRecipient;
       } catch (error) {
         console.error("Failed to add SMS recipient:", error);

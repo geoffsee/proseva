@@ -1,8 +1,10 @@
-import { types, flow } from "mobx-state-tree";
+import { types, flow, type Instance } from "mobx-state-tree";
 import { v4 as uuidv4 } from "uuid";
 import { ContactModel } from "./models/ContactModel";
 import type { Contact } from "../lib/api";
 import { api } from "../lib/api";
+
+type ContactInstance = Instance<typeof ContactModel>;
 
 export const ContactStore = types
   .model("ContactStore", {
@@ -37,7 +39,7 @@ export const ContactStore = types
       try {
         const contacts: Contact[] | null = yield api.contacts.list();
         if (contacts && Array.isArray(contacts)) {
-          self.contacts.replace(contacts as any);
+          self.contacts.replace(contacts as unknown as ContactInstance[]);
         }
       } catch (error) {
         console.error("Failed to load contacts from API:", error);
@@ -70,7 +72,7 @@ export const ContactStore = types
         address: c.address ?? "",
         notes: c.notes ?? "",
         caseId: c.caseId ?? "",
-      } as any);
+      } as unknown as ContactInstance);
       yield api.contacts.create(c);
     }),
     updateContact: flow(function* (

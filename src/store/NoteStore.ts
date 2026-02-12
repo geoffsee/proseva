@@ -1,8 +1,10 @@
-import { types, flow } from "mobx-state-tree";
+import { types, flow, type Instance } from "mobx-state-tree";
 import { v4 as uuidv4 } from "uuid";
 import { NoteModel } from "./models/NoteModel";
 import type { Note } from "../lib/api";
 import { api } from "../lib/api";
+
+type NoteInstance = Instance<typeof NoteModel>;
 
 export const NoteStore = types
   .model("NoteStore", {
@@ -94,7 +96,7 @@ export const NoteStore = types
       try {
         const notes: Note[] | null = yield api.notes.list();
         if (notes && Array.isArray(notes)) {
-          self.notes.replace(notes as any);
+          self.notes.replace(notes as unknown as NoteInstance[]);
         }
       } catch (error) {
         console.error("Failed to load notes from API:", error);
@@ -121,7 +123,7 @@ export const NoteStore = types
         updatedAt: now,
         isPinned: n.isPinned ?? false,
       };
-      self.notes.push(newNote as any);
+      self.notes.push(newNote as unknown as NoteInstance);
       yield api.notes.create(n);
       return newNote.id;
     }),
