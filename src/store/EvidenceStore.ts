@@ -1,6 +1,7 @@
 import { types, flow } from "mobx-state-tree";
 import { v4 as uuidv4 } from "uuid";
-import { EvidenceModel, type Evidence } from "./models/EvidenceModel";
+import { EvidenceModel } from "./models/EvidenceModel";
+import type { Evidence } from "../types";
 import { api } from "../lib/api";
 
 export const EvidenceStore = types
@@ -85,7 +86,6 @@ export const EvidenceStore = types
       try {
         const evidences = (yield api.evidences.list()) as Evidence[];
         if (evidences && Array.isArray(evidences)) {
-          // @ts-expect-error - MST array replace type mismatch with plain array
           self.evidences.replace(evidences);
         }
       } catch (error) {

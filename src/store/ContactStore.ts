@@ -1,6 +1,7 @@
 import { types, flow } from "mobx-state-tree";
 import { v4 as uuidv4 } from "uuid";
-import { ContactModel, type Contact } from "./models/ContactModel";
+import { ContactModel } from "./models/ContactModel";
+import type { Contact } from "../types";
 import { api } from "../lib/api";
 
 export const ContactStore = types
@@ -36,7 +37,6 @@ export const ContactStore = types
       try {
         const contacts = (yield api.contacts.list()) as Contact[];
         if (contacts && Array.isArray(contacts)) {
-          // @ts-expect-error - MST array replace type mismatch with plain array
           self.contacts.replace(contacts);
         }
       } catch (error) {

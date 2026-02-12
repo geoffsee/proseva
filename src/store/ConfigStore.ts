@@ -140,7 +140,7 @@ export const ConfigStore = types
       try {
         yield api.config.update(updates);
         // Reload to get updated values
-        yield self.loadConfig();
+        yield (self as { loadConfig: () => unknown }).loadConfig();
       } catch (error) {
         self.error = String(error);
         console.error("Failed to update config:", error);
@@ -155,7 +155,7 @@ export const ConfigStore = types
       try {
         yield api.config.reset();
         // Reload to get environment values
-        yield self.loadConfig();
+        yield (self as { loadConfig: () => unknown }).loadConfig();
       } catch (error) {
         self.error = String(error);
         console.error("Failed to reset config:", error);
@@ -170,7 +170,7 @@ export const ConfigStore = types
       try {
         yield api.config.deleteKey(group, key);
         // Reload to get updated values
-        yield self.loadConfig();
+        yield (self as { loadConfig: () => unknown }).loadConfig();
       } catch (error) {
         self.error = String(error);
         console.error("Failed to delete config key:", error);

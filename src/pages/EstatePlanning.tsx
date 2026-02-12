@@ -198,7 +198,7 @@ const EstatePlanning = observer(function EstatePlanning() {
     // For simplicity, clicking edit on a document just shows the content
     // Could open a dialog to edit status/notes
     if (!selectedPlanId || !selectedPlan) return;
-    const doc = selectedPlan.documents.find((d) => d.id === docId);
+    const doc = selectedPlan.documents.find((d: { id: string }) => d.id === docId);
     if (doc) {
       // Cycle to next status as a quick edit
       const statusOrder = [

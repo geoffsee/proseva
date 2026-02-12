@@ -158,10 +158,10 @@ export const EvaluationStore = types
 
     loadAll: flow(function* () {
       yield Promise.all([
-        self.loadEvaluations(),
-        self.loadDeviceTokens(),
-        self.loadSmsRecipients(),
-        self.loadSchedulerStatus(),
+        (self as { loadEvaluations: () => unknown }).loadEvaluations(),
+        (self as { loadDeviceTokens: () => unknown }).loadDeviceTokens(),
+        (self as { loadSmsRecipients: () => unknown }).loadSmsRecipients(),
+        (self as { loadSchedulerStatus: () => unknown }).loadSchedulerStatus(),
       ]);
     }),
 
@@ -174,7 +174,7 @@ export const EvaluationStore = types
           smsSent: boolean;
         } = yield api.evaluations.trigger();
         // Reload evaluations to get the new one
-        yield self.loadEvaluations();
+        yield (self as { loadEvaluations: () => unknown }).loadEvaluations();
         return result;
       } catch (error) {
         console.error("Failed to trigger evaluation:", error);

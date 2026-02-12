@@ -1,10 +1,14 @@
+import { types, flow } from "mobx-state-tree";
+import { v4 as uuidv4 } from "uuid";
 import {
   EstatePlanModel,
-  type EstatePlan,
-  type Beneficiary,
-  type EstateAsset,
-  type EstateDocument,
 } from "./models/EstatePlanModel";
+import type {
+  EstatePlan,
+  Beneficiary,
+  EstateAsset,
+  EstateDocument,
+} from "../types";
 import { api } from "../lib/api";
 
 export const EstatePlanStore = types
@@ -74,7 +78,6 @@ export const EstatePlanStore = types
       try {
         const plans = (yield api.estatePlans.list()) as EstatePlan[];
         if (plans && Array.isArray(plans)) {
-          // @ts-expect-error - MST array replace type mismatch with plain array
           self.plans.replace(plans);
         }
       } catch (error) {
@@ -113,7 +116,6 @@ export const EstatePlanStore = types
         createdAt: now,
         updatedAt: now,
       };
-      // @ts-expect-error - MST array push type mismatch
       self.plans.push(newPlan);
       yield api.estatePlans.create(newPlan);
     }),
@@ -158,7 +160,6 @@ export const EstatePlanStore = types
           address: data.address ?? "",
           notes: data.notes ?? "",
         };
-        // @ts-expect-error - MST array push type mismatch
         plan.beneficiaries.push(b);
         plan.updatedAt = new Date().toISOString();
         yield api.estatePlans.addBeneficiary(planId, b);
@@ -201,7 +202,6 @@ export const EstatePlanStore = types
           beneficiaryIds: data.beneficiaryIds ?? [],
           notes: data.notes ?? "",
         };
-        // @ts-expect-error - MST array push type mismatch
         plan.assets.push(a);
         plan.updatedAt = new Date().toISOString();
         yield api.estatePlans.addAsset(planId, a);
@@ -246,7 +246,6 @@ export const EstatePlanStore = types
           createdAt: now,
           updatedAt: now,
         };
-        // @ts-expect-error - MST array push type mismatch
         plan.documents.push(doc);
         plan.updatedAt = now;
         yield api.estatePlans.addDocument(planId, doc);

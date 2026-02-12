@@ -1,6 +1,7 @@
 import { types, flow } from "mobx-state-tree";
 import { v4 as uuidv4 } from "uuid";
-import { NoteModel, type Note } from "./models/NoteModel";
+import { NoteModel } from "./models/NoteModel";
+import type { Note } from "../types";
 import { api } from "../lib/api";
 
 export const NoteStore = types
@@ -93,7 +94,6 @@ export const NoteStore = types
       try {
         const notes = (yield api.notes.list()) as Note[];
         if (notes && Array.isArray(notes)) {
-          // @ts-expect-error - MST array replace type mismatch with plain array
           self.notes.replace(notes);
         }
       } catch (error) {

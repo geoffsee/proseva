@@ -22,7 +22,6 @@ export const FinanceStore = types
       try {
         const entries = (yield api.finances.list()) as FinancialEntry[];
         if (entries && Array.isArray(entries)) {
-          // @ts-expect-error - MST array replace type mismatch with plain array
           self.entries.replace(entries);
         }
       } catch (error) {

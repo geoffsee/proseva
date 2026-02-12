@@ -41,6 +41,19 @@ export function PassphraseGate({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const initializeWithExistingToken = useCallback(async (token: string) => {
+    // Try to verify the token is still valid by making a test API call.
+    // This will throw if the token is expired/invalid.
+    await securityApi.status(token);
+
+    // Token is valid, but we still need the passphrase to decrypt the keys store.
+    // So we can't fully initialize here. Just set the token and return.
+    // The user will still need to enter their passphrase.
+    throw new Error(
+      "Token exists but passphrase still required for encryption keys",
+    );
+  }, []);
+
   useEffect(() => {
     if (isTestMode) {
       setState("ready");
@@ -92,20 +105,6 @@ export function PassphraseGate({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, [isTestMode, initializeWithExistingToken]);
-
-  const initializeWithExistingToken = useCallback(
-    async (token: string) => {
-      // Try to verify the token is still valid by making a test API call
-      // This will throw if the token is expired/invalid
-      await securityApi.status(token);
-
-      // Token is valid, but we still need the passphrase to decrypt the keys store
-      // So we can't fully initialize here. Just set the token and return.
-      // The user will still need to enter their passphrase.
-      throw new Error("Token exists but passphrase still required for encryption keys");
-    },
-    [],
-  );
 
   const initializeStores = useCallback(
     async (pwd: string, isFirstRun: boolean) => {
