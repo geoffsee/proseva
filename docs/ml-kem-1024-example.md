@@ -31,12 +31,21 @@ PROSEVA_USE_ML_KEM=true
 The keypair is stored in `server/data/ml-kem-keys/` and is automatically persisted across server restarts. This directory is already excluded from git via `.gitignore`.
 
 **Security:**
-1. **File Permissions**: The storage backend creates files with secure permissions
-2. **Location**: `server/data/ml-kem-keys/` is created automatically
-3. **Backup**: Back up the entire `server/data/` directory (includes both database and keypair)
-4. **Access Control**: Standard filesystem permissions protect the keypair store
+1. **Automatic Encryption**: When you set up a passphrase through the app (via PassphraseGate), the keypair store is automatically encrypted using PassphraseEncryptionProvider (PBKDF2 + AES-256-GCM)
+2. **File Permissions**: The storage backend creates files with secure permissions
+3. **Location**: `server/data/ml-kem-keys/` is created automatically
+4. **Backup**: Back up the entire `server/data/` directory (includes both database and keypair)
+5. **Access Control**: Standard filesystem permissions protect the keypair store
 
-**Important**: Loss of the `server/data/ml-kem-keys/` directory means loss of the keypair, which makes previously encrypted data unrecoverable. Always include this directory in your backup strategy.
+**Advanced**: You can also set `PROSEVA_DB_ENCRYPTION_KEY` as an environment variable to encrypt the keypair at server startup (useful for headless deployments):
+
+```bash
+export PROSEVA_DB_ENCRYPTION_KEY=your-secure-passphrase
+export PROSEVA_USE_ML_KEM=true
+npm start
+```
+
+**Important**: Loss of the `server/data/ml-kem-keys/` directory or the passphrase means loss of the keypair, which makes previously encrypted data unrecoverable. Always include this directory in your backup strategy.
 
 ## How It Works
 
@@ -117,11 +126,11 @@ The implementation uses the `wasm-pqc-subtle` library for cryptographic operatio
 ## Security Considerations
 
 1. **Key Persistence**: The ML-KEM keypair is automatically persisted to `server/data/ml-kem-keys/` using idb-repo's file-based storage. The keypair is loaded on server restart, ensuring encrypted data remains accessible.
-2. **Key Storage**: The keypair store is in `server/data/ml-kem-keys/` with secure file permissions. For enhanced security, consider:
-   - Encrypting the entire `server/data/` directory at rest
+2. **Layered Encryption**: When you set up a passphrase through the app, it's automatically used to encrypt the keypair store (PBKDF2 + AES-256-GCM). This provides defense-in-depth: the ML-KEM keypair (which encrypts your database) is itself encrypted with your passphrase.
+3. **Key Storage**: The keypair store is in `server/data/ml-kem-keys/` with secure file permissions. For enhanced security, consider:
    - Using encrypted filesystems (LUKS, BitLocker, FileVault)
    - Cloud key management services (AWS KMS, Azure Key Vault) for enterprise deployments
-3. **Key Backup**: Back up the entire `server/data/` directory (includes both database and keypair). Loss of the keypair means permanent data loss.
+4. **Key Backup**: Back up the entire `server/data/` directory (includes both database and keypair). Loss of the keypair or passphrase means permanent data loss.
 4. **WASM Security**: The WebAssembly module is loaded from the trusted `wasm-pqc-subtle` npm package.
 5. **No Side Channels**: The implementation is constant-time to prevent timing attacks.
 6. **NIST Standardized**: ML-KEM is a NIST-approved post-quantum algorithm (FIPS 203).
