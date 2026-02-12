@@ -263,19 +263,17 @@ The app uses **MobX State Tree (MST)** for state management:
 
 - Frontend changes → localStorage → MST snapshot
 - Backend mutations → in-memory → JSON file write
-- Optional at-rest encryption for `db.json` (via runtime recovery key)
-- Post-quantum ML-KEM-1024 encryption available (set `PROSEVA_USE_ML_KEM=true`)
+- All data encrypted at rest with post-quantum ML-KEM-1024
 - Middleware triggers persistence on non-GET requests
 
 ### Encryption
 
-The server supports multiple encryption formats with automatic detection:
+All databases are encrypted at rest using **ML-KEM-1024** post-quantum encryption:
 
-- **V3 (ML-KEM-1024)**: Post-quantum encryption using NIST-standardized ML-KEM-1024 (FIPS 203) key encapsulation mechanism combined with AES-256-GCM for data encryption. Provides protection against quantum computing attacks. Enable with `PROSEVA_USE_ML_KEM=true`.
-- **V2 (PBKDF2)**: Passphrase-based encryption using PBKDF2 key derivation + AES-256-GCM. Enabled when `PROSEVA_DB_ENCRYPTION_KEY` is set.
-- **V1 (Legacy)**: Legacy format supported for reading existing databases only.
-
-All formats are automatically detected during decryption, providing seamless backward compatibility.
+- **ML-KEM-1024 + AES-256-GCM**: Uses NIST-standardized ML-KEM-1024 (FIPS 203) key encapsulation mechanism combined with AES-256-GCM for data encryption
+- **Post-quantum secure**: Provides protection against attacks from both classical and quantum computers
+- **Automatic keypair management**: ML-KEM keypairs are automatically generated and persisted in `server/data/ml-kem-keys/`
+- **Optional passphrase protection**: Keypairs can be encrypted with a passphrase for additional security
 
 ## Configuration
 
@@ -325,18 +323,14 @@ This means values can be configured either via environment variables or through 
 
 | Variable                        | Required | Default | Description                                                                                                                         |
 | ------------------------------- | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `PROSEVA_DB_ENCRYPTION_KEY`     | ❌ No    | -       | Optional startup key for decrypting/encrypting `db.json` (AES-256-GCM + PBKDF2).                                                    |
-| `PROSEVA_USE_ML_KEM`            | ❌ No    | `false` | Enable post-quantum ML-KEM-1024 encryption for database. Uses ML-KEM-1024 key encapsulation + AES-256-GCM.                          |
-| `PROSEVA_ML_KEM_KEYPAIR_FILE`   | ❌ No    | -       | Path to file for persisting ML-KEM-1024 keypair. Required for production use to decrypt data after server restart (mode: 0600).    |
+| `PROSEVA_DB_ENCRYPTION_KEY`     | ❌ No    | -       | Optional passphrase for encrypting the ML-KEM keypair store. Provides additional security layer for the encryption keys.           |
 
-The database supports three encryption formats:
-- **V3 (ML-KEM-1024)**: Post-quantum encryption using ML-KEM-1024 key encapsulation mechanism + AES-256-GCM. Enabled with `PROSEVA_USE_ML_KEM=true`.
-- **V2 (PBKDF2)**: Passphrase-based encryption using PBKDF2 + AES-256-GCM. Used when `PROSEVA_DB_ENCRYPTION_KEY` is set.
-- **V1 (Legacy)**: Legacy hand-rolled AES-256-GCM format. Read-only for backward compatibility.
+All databases are encrypted using ML-KEM-1024 (post-quantum) + AES-256-GCM:
+- **Keypair storage**: ML-KEM keypairs are automatically persisted to `server/data/ml-kem-keys/`
+- **Passphrase protection**: Set `PROSEVA_DB_ENCRYPTION_KEY` to encrypt the keypair store with a passphrase
+- **Backup**: Always include `server/data/ml-kem-keys/` in your backup strategy
 
-**Important**: When using ML-KEM-1024 encryption in production, you **must** set `PROSEVA_ML_KEM_KEYPAIR_FILE` to persist the keypair. Without persistence, encrypted data cannot be decrypted after server restart.
-
-If `PROSEVA_DB_ENCRYPTION_KEY` is not set and ML-KEM is disabled, the app can still be unlocked by entering a recovery key in the Settings page or startup unlock prompt.
+**Important**: Loss of the `server/data/ml-kem-keys/` directory means loss of the encryption keys, making encrypted data unrecoverable.
 
 #### Example `.env` File
 
@@ -361,10 +355,8 @@ EVALUATION_TIMEZONE=America/New_York
 # Auto-Ingestion (optional)
 AUTO_INGEST_DIR=/path/to/documents/folder
 
-# Database encryption (optional)
-PROSEVA_DB_ENCRYPTION_KEY=your-recovery-key
-PROSEVA_USE_ML_KEM=true
-PROSEVA_ML_KEM_KEYPAIR_FILE=/path/to/secure/mlkem-keypair.json
+# Database encryption (optional - encrypts the ML-KEM keypair store)
+PROSEVA_DB_ENCRYPTION_KEY=your-secure-passphrase
 ```
 
 ### Configuration Priority

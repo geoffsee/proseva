@@ -1,30 +1,16 @@
-# ML-KEM-1024 Encryption Example
+# ML-KEM-1024 Encryption
 
-This document demonstrates how to use ML-KEM-1024 post-quantum encryption in proseva.
+This document describes the ML-KEM-1024 post-quantum encryption used in proseva.
 
 ## Overview
 
 ML-KEM-1024 (Module-Lattice-Based Key Encapsulation Mechanism) is a NIST-standardized post-quantum cryptographic algorithm (FIPS 203) that provides protection against attacks from quantum computers.
 
-## Enabling ML-KEM-1024
-
-Set the environment variable before starting the server:
-
-```bash
-export PROSEVA_USE_ML_KEM=true
-npm start
-```
-
-Or add it to your `.env` file:
-
-```env
-PROSEVA_USE_ML_KEM=true
-```
-
-**That's it!** The server automatically:
+**All databases are automatically encrypted with ML-KEM-1024.** The server automatically:
 - Generates an ML-KEM-1024 keypair on first launch
 - Persists it to `server/data/ml-kem-keys/` using an idb-repo KV store
 - Loads the keypair on subsequent restarts
+- Encrypts all data using the keypair
 
 ### Keypair Storage
 
@@ -41,7 +27,7 @@ The keypair is stored in `server/data/ml-kem-keys/` and is automatically persist
 
 ```bash
 export PROSEVA_DB_ENCRYPTION_KEY=your-secure-passphrase
-export PROSEVA_USE_ML_KEM=true
+# ML-KEM is enabled by default, no need to set PROSEVA_USE_ML_KEM=true
 npm start
 ```
 
@@ -93,18 +79,13 @@ When ML-KEM-1024 is enabled, the encrypted database contains:
 
 Note: The public key is not stored in the envelope to reduce storage overhead. The server loads its persisted keypair from `server/data/ml-kem-keys/` on startup and uses it for all encryption/decryption operations.
 
-## Backward Compatibility
+## Encryption Format
 
-The system automatically detects and supports three encryption formats:
+The system uses a single encryption format:
 
-- **V3 (ML-KEM-1024)**: Post-quantum encryption
-- **V2 (PBKDF2)**: Passphrase-based encryption
-- **V1 (Legacy)**: Legacy format (read-only)
-
-You can migrate from V2 to V3 by:
-1. Enabling `PROSEVA_USE_ML_KEM=true`
-2. Reading an existing V2 encrypted database (automatic decryption)
-3. Saving the database (automatic encryption with V3)
+- **ML-KEM-1024 + AES-256-GCM**: All databases are encrypted using this post-quantum secure format
+- **Envelope format**: `{ __proseva_encrypted_v3: { algorithm, kemCiphertext, iv, authTag, ciphertext } }`
+- **No legacy support**: Only ML-KEM-1024 encryption is supported
 
 ## Performance
 
