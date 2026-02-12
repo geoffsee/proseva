@@ -1,7 +1,7 @@
 import { types, flow } from "mobx-state-tree";
 import { v4 as uuidv4 } from "uuid";
 import { EvidenceModel } from "./models/EvidenceModel";
-import type { Evidence } from "../types";
+import type { Evidence } from "../lib/api";
 import { api } from "../lib/api";
 
 export const EvidenceStore = types
@@ -84,9 +84,9 @@ export const EvidenceStore = types
   .actions((self) => ({
     loadEvidences: flow(function* () {
       try {
-        const evidences = (yield api.evidences.list()) as Evidence[];
+        const evidences: Evidence[] | null = yield api.evidences.list();
         if (evidences && Array.isArray(evidences)) {
-          self.evidences.replace(evidences);
+          self.evidences.replace(evidences as any);
         }
       } catch (error) {
         console.error("Failed to load evidences from API:", error);
@@ -133,8 +133,7 @@ export const EvidenceStore = types
         createdAt: now,
         updatedAt: now,
       };
-      // @ts-expect-error - MST array push type mismatch with plain object snapshot
-      self.evidences.push(newEvidence);
+      self.evidences.push(newEvidence as any);
       yield api.evidences.create(newEvidence);
     }),
     updateEvidence: flow(function* (
@@ -174,8 +173,7 @@ export const EvidenceStore = types
           purpose: entry.purpose,
           notes: entry.notes ?? "",
         };
-        // @ts-expect-error - MST array push type mismatch with plain object snapshot
-        e.chain.push(chainEntry);
+        e.chain.push(chainEntry as any);
         e.updatedAt = new Date().toISOString();
         yield api.evidences.update(evidenceId, {
           chain: e.chain.map((c) => ({ ...c })),

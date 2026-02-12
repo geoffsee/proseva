@@ -1,7 +1,7 @@
 import { types, flow } from "mobx-state-tree";
 import { v4 as uuidv4 } from "uuid";
 import { FilingModel } from "./models/FilingModel";
-import type { Filing } from "../types";
+import type { Filing } from "../lib/api";
 import { api } from "../lib/api";
 
 export const FilingStore = types
@@ -52,9 +52,9 @@ export const FilingStore = types
   .actions((self) => ({
     loadFilings: flow(function* () {
       try {
-        const filings = (yield api.filings.list()) as Filing[];
+        const filings: Filing[] | null = yield api.filings.list();
         if (filings && Array.isArray(filings)) {
-          self.filings.replace(filings);
+          self.filings.replace(filings as any);
         }
       } catch (error) {
         console.error("Failed to load filings from API:", error);
@@ -74,7 +74,7 @@ export const FilingStore = types
         type: f.type ?? "",
         notes: f.notes ?? "",
         caseId: f.caseId ?? "",
-      });
+      } as any);
       yield api.filings.create(f);
     }),
     updateFiling: flow(function* (

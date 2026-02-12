@@ -1,7 +1,7 @@
 import { types, flow } from "mobx-state-tree";
 import { v4 as uuidv4 } from "uuid";
 import { NoteModel } from "./models/NoteModel";
-import type { Note } from "../types";
+import type { Note } from "../lib/api";
 import { api } from "../lib/api";
 
 export const NoteStore = types
@@ -92,9 +92,9 @@ export const NoteStore = types
 
     loadNotes: flow(function* () {
       try {
-        const notes = (yield api.notes.list()) as Note[];
+        const notes: Note[] | null = yield api.notes.list();
         if (notes && Array.isArray(notes)) {
-          self.notes.replace(notes);
+          self.notes.replace(notes as any);
         }
       } catch (error) {
         console.error("Failed to load notes from API:", error);
@@ -121,7 +121,7 @@ export const NoteStore = types
         updatedAt: now,
         isPinned: n.isPinned ?? false,
       };
-      self.notes.push(newNote);
+      self.notes.push(newNote as any);
       yield api.notes.create(n);
       return newNote.id;
     }),

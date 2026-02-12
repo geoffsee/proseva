@@ -119,12 +119,13 @@ export const ConfigStore = types
     isTesting: false,
     error: types.maybeNull(types.string),
   })
-  .actions((self) => ({
-    loadConfig: flow(function* () {
+  .actions((self) => {
+    const loadConfig = flow(function* loadConfig() {
       self.isLoading = true;
       self.error = null;
       try {
-        const config: SnapshotIn<typeof ServerConfigModel> = yield api.config.get();
+        const config: SnapshotIn<typeof ServerConfigModel> =
+          yield api.config.get();
         self.config = ServerConfigModel.create(config);
       } catch (error) {
         self.error = String(error);
@@ -132,54 +133,59 @@ export const ConfigStore = types
       } finally {
         self.isLoading = false;
       }
-    }),
+    });
 
-    updateConfig: flow(function* (updates: Partial<ServerConfig>) {
+    const updateConfig = flow(function* updateConfig(
+      updates: Partial<ServerConfig>,
+    ) {
       self.isLoading = true;
       self.error = null;
       try {
         yield api.config.update(updates);
         // Reload to get updated values
-        yield (self as { loadConfig: () => unknown }).loadConfig();
+        yield loadConfig();
       } catch (error) {
         self.error = String(error);
         console.error("Failed to update config:", error);
       } finally {
         self.isLoading = false;
       }
-    }),
+    });
 
-    resetConfig: flow(function* () {
+    const resetConfig = flow(function* resetConfig() {
       self.isLoading = true;
       self.error = null;
       try {
         yield api.config.reset();
         // Reload to get environment values
-        yield (self as { loadConfig: () => unknown }).loadConfig();
+        yield loadConfig();
       } catch (error) {
         self.error = String(error);
         console.error("Failed to reset config:", error);
       } finally {
         self.isLoading = false;
       }
-    }),
+    });
 
-    deleteConfigKey: flow(function* (group: string, key: string) {
+    const deleteConfigKey = flow(function* deleteConfigKey(
+      group: string,
+      key: string,
+    ) {
       self.isLoading = true;
       self.error = null;
       try {
         yield api.config.deleteKey(group, key);
         // Reload to get updated values
-        yield (self as { loadConfig: () => unknown }).loadConfig();
+        yield loadConfig();
       } catch (error) {
         self.error = String(error);
         console.error("Failed to delete config key:", error);
       } finally {
         self.isLoading = false;
       }
-    }),
+    });
 
-    testFirebase: flow(function* () {
+    const testFirebase = flow(function* testFirebase() {
       self.isTesting = true;
       self.error = null;
       try {
@@ -196,9 +202,9 @@ export const ConfigStore = types
       } finally {
         self.isTesting = false;
       }
-    }),
+    });
 
-    testTwilio: flow(function* (testPhone: string) {
+    const testTwilio = flow(function* testTwilio(testPhone: string) {
       self.isTesting = true;
       self.error = null;
       try {
@@ -215,9 +221,9 @@ export const ConfigStore = types
       } finally {
         self.isTesting = false;
       }
-    }),
+    });
 
-    testOpenAI: flow(function* () {
+    const testOpenAI = flow(function* testOpenAI() {
       self.isTesting = true;
       self.error = null;
       try {
@@ -234,9 +240,11 @@ export const ConfigStore = types
       } finally {
         self.isTesting = false;
       }
-    }),
+    });
 
-    reinitializeService: flow(function* (service: string) {
+    const reinitializeService = flow(function* reinitializeService(
+      service: string,
+    ) {
       self.isLoading = true;
       self.error = null;
       try {
@@ -247,5 +255,16 @@ export const ConfigStore = types
       } finally {
         self.isLoading = false;
       }
-    }),
-  }));
+    });
+
+    return {
+      loadConfig,
+      updateConfig,
+      resetConfig,
+      deleteConfigKey,
+      testFirebase,
+      testTwilio,
+      testOpenAI,
+      reinitializeService,
+    };
+  });

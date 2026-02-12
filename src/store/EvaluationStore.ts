@@ -112,69 +112,71 @@ export const EvaluationStore = types
       return self.evaluations.find((e) => e.id === id) ?? null;
     },
   }))
-  .actions((self) => ({
-    loadEvaluations: flow(function* () {
+  .actions((self) => {
+    const loadEvaluations = flow(function* loadEvaluations() {
       self.isLoading = true;
       try {
         const evaluations: EvaluationType[] = yield api.evaluations.list();
-        // @ts-expect-error - MST array replace type mismatch with plain array
-        self.evaluations.replace(evaluations);
+        self.evaluations.replace(evaluations as any);
       } catch (error) {
         console.error("Failed to load evaluations:", error);
       } finally {
         self.isLoading = false;
       }
-    }),
+    });
 
-    loadDeviceTokens: flow(function* () {
+    const loadDeviceTokens = flow(function* loadDeviceTokens() {
       try {
         const tokens: DeviceToken[] = yield api.deviceTokens.list();
-        // @ts-expect-error - MST array replace type mismatch with plain array
-        self.deviceTokens.replace(tokens);
+        self.deviceTokens.replace(tokens as any);
       } catch (error) {
         console.error("Failed to load device tokens:", error);
       }
-    }),
+    });
 
-    loadSmsRecipients: flow(function* () {
+    const loadSmsRecipients = flow(function* loadSmsRecipients() {
       try {
         const recipients: SmsRecipient[] = yield api.smsRecipients.list();
-        // @ts-expect-error - MST array replace type mismatch with plain array
-        self.smsRecipients.replace(recipients);
+        self.smsRecipients.replace(recipients as any);
       } catch (error) {
         console.error("Failed to load SMS recipients:", error);
       }
-    }),
+    });
 
-    loadSchedulerStatus: flow(function* () {
+    const loadSchedulerStatus = flow(function* loadSchedulerStatus() {
       try {
         const status: SchedulerStatus = yield api.scheduler.status();
-        // @ts-expect-error - MST model assignment type mismatch
-        self.schedulerStatus = status;
+        self.schedulerStatus = status as any;
       } catch (error) {
         console.error("Failed to load scheduler status:", error);
       }
-    }),
+    });
 
-    loadAll: flow(function* () {
+    const loadAll = flow(function* loadAll() {
       yield Promise.all([
-        (self as { loadEvaluations: () => unknown }).loadEvaluations(),
-        (self as { loadDeviceTokens: () => unknown }).loadDeviceTokens(),
-        (self as { loadSmsRecipients: () => unknown }).loadSmsRecipients(),
-        (self as { loadSchedulerStatus: () => unknown }).loadSchedulerStatus(),
+        loadEvaluations(),
+        loadDeviceTokens(),
+        loadSmsRecipients(),
+        loadSchedulerStatus(),
       ]);
-    }),
+    });
 
-    triggerEvaluation: flow(function* () {
+    type TriggerResult = {
+      evaluationId: string;
+      pushSent: boolean;
+      smsSent: boolean;
+    };
+
+    const triggerEvaluation = flow(function* triggerEvaluation(): Generator<
+      PromiseLike<unknown>,
+      TriggerResult,
+      unknown
+    > {
       self.isTriggering = true;
       try {
-        const result: {
-          evaluationId: string;
-          pushSent: boolean;
-          smsSent: boolean;
-        } = yield api.evaluations.trigger();
+        const result = (yield api.evaluations.trigger()) as TriggerResult;
         // Reload evaluations to get the new one
-        yield (self as { loadEvaluations: () => unknown }).loadEvaluations();
+        yield loadEvaluations();
         return result;
       } catch (error) {
         console.error("Failed to trigger evaluation:", error);
@@ -182,9 +184,9 @@ export const EvaluationStore = types
       } finally {
         self.isTriggering = false;
       }
-    }),
+    });
 
-    addDeviceToken: flow(function* (
+    const addDeviceToken = flow(function* addDeviceToken(
       token: string,
       platform: "ios" | "android" | "web",
     ) {
@@ -193,16 +195,15 @@ export const EvaluationStore = types
           token,
           platform,
         });
-        // @ts-expect-error - MST array push type mismatch
-        self.deviceTokens.push(newToken);
+        self.deviceTokens.push(newToken as any);
         return newToken;
       } catch (error) {
         console.error("Failed to add device token:", error);
         throw error;
       }
-    }),
+    });
 
-    removeDeviceToken: flow(function* (id: string) {
+    const removeDeviceToken = flow(function* removeDeviceToken(id: string) {
       try {
         yield api.deviceTokens.delete(id);
         const idx = self.deviceTokens.findIndex((t) => t.id === id);
@@ -213,24 +214,26 @@ export const EvaluationStore = types
         console.error("Failed to remove device token:", error);
         throw error;
       }
-    }),
+    });
 
-    addSmsRecipient: flow(function* (phone: string, name?: string) {
+    const addSmsRecipient = flow(function* addSmsRecipient(
+      phone: string,
+      name?: string,
+    ) {
       try {
         const newRecipient: SmsRecipient = yield api.smsRecipients.create({
           phone,
           name,
         });
-        // @ts-expect-error - MST array push type mismatch
-        self.smsRecipients.push(newRecipient);
+        self.smsRecipients.push(newRecipient as any);
         return newRecipient;
       } catch (error) {
         console.error("Failed to add SMS recipient:", error);
         throw error;
       }
-    }),
+    });
 
-    removeSmsRecipient: flow(function* (id: string) {
+    const removeSmsRecipient = flow(function* removeSmsRecipient(id: string) {
       try {
         yield api.smsRecipients.delete(id);
         const idx = self.smsRecipients.findIndex((r) => r.id === id);
@@ -241,7 +244,20 @@ export const EvaluationStore = types
         console.error("Failed to remove SMS recipient:", error);
         throw error;
       }
-    }),
-  }));
+    });
+
+    return {
+      loadEvaluations,
+      loadDeviceTokens,
+      loadSmsRecipients,
+      loadSchedulerStatus,
+      loadAll,
+      triggerEvaluation,
+      addDeviceToken,
+      removeDeviceToken,
+      addSmsRecipient,
+      removeSmsRecipient,
+    };
+  });
 
 export type IEvaluationStore = ReturnType<typeof EvaluationStore.create>;

@@ -22,6 +22,17 @@ import { EstateDocumentWizard } from "../components/estate/EstateDocumentWizard"
 
 type View = "overview" | "plan-detail" | "draft-document";
 
+const DOCUMENT_STATUS_ORDER = [
+  "not-started",
+  "draft",
+  "review",
+  "signed",
+  "notarized",
+  "filed",
+] as const;
+
+type DocumentStatus = (typeof DOCUMENT_STATUS_ORDER)[number];
+
 const INITIAL_PLAN_FORM: PlanFormData = {
   title: "",
   testatorName: "",
@@ -198,21 +209,13 @@ const EstatePlanning = observer(function EstatePlanning() {
     // For simplicity, clicking edit on a document just shows the content
     // Could open a dialog to edit status/notes
     if (!selectedPlanId || !selectedPlan) return;
-    const doc = selectedPlan.documents.find((d: { id: string }) => d.id === docId);
+    const doc = selectedPlan.documents.find((d) => d.id === docId);
     if (doc) {
       // Cycle to next status as a quick edit
-      const statusOrder = [
-        "not-started",
-        "draft",
-        "review",
-        "signed",
-        "notarized",
-        "filed",
-      ];
-      const idx = statusOrder.indexOf(doc.status);
-      if (idx >= 0 && idx < statusOrder.length - 1) {
+      const idx = DOCUMENT_STATUS_ORDER.indexOf(doc.status as DocumentStatus);
+      if (idx >= 0 && idx < DOCUMENT_STATUS_ORDER.length - 1) {
         estatePlanStore.updateEstateDocument(selectedPlanId, docId, {
-          status: statusOrder[idx + 1],
+          status: DOCUMENT_STATUS_ORDER[idx + 1],
         });
       }
     }
@@ -226,7 +229,7 @@ const EstatePlanning = observer(function EstatePlanning() {
   const handleDocumentStatusChange = async (docId: string, status: string) => {
     if (!selectedPlanId) return;
     await estatePlanStore.updateEstateDocument(selectedPlanId, docId, {
-      status,
+      status: status as DocumentStatus,
     });
   };
 

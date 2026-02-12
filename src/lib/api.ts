@@ -14,6 +14,7 @@ export type Contact = components["schemas"]["Contact"];
 export type Deadline = components["schemas"]["Deadline"];
 export type FinancialEntry = components["schemas"]["FinancialEntry"];
 export type Evidence = components["schemas"]["Evidence"];
+export type Note = components["schemas"]["Note"];
 export type DocumentEntry = components["schemas"]["DocumentEntry"];
 
 // --- Token Management ---

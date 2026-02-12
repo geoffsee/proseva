@@ -3,12 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import {
   EstatePlanModel,
 } from "./models/EstatePlanModel";
-import type {
-  EstatePlan,
-  Beneficiary,
-  EstateAsset,
-  EstateDocument,
-} from "../types";
+import type { EstatePlanType } from "../lib/api";
 import { api } from "../lib/api";
 
 export const EstatePlanStore = types
@@ -76,9 +71,9 @@ export const EstatePlanStore = types
   .actions((self) => ({
     loadPlans: flow(function* () {
       try {
-        const plans = (yield api.estatePlans.list()) as EstatePlan[];
+        const plans: EstatePlanType[] = yield api.estatePlans.list();
         if (plans && Array.isArray(plans)) {
-          self.plans.replace(plans);
+          self.plans.replace(plans as any);
         }
       } catch (error) {
         console.error("Failed to load estate plans from API:", error);
@@ -97,10 +92,10 @@ export const EstatePlanStore = types
       notes?: string;
     }) {
       const now = new Date().toISOString();
-      const newPlan: EstatePlan = {
+      const newPlan: EstatePlanType = {
         id: uuidv4(),
         title: data.title,
-        status: "planning" as const,
+        status: "planning",
         testatorName: data.testatorName ?? "",
         testatorDateOfBirth: data.testatorDateOfBirth ?? "",
         testatorAddress: data.testatorAddress ?? "",
@@ -116,10 +111,10 @@ export const EstatePlanStore = types
         createdAt: now,
         updatedAt: now,
       };
-      self.plans.push(newPlan);
+      self.plans.push(newPlan as any);
       yield api.estatePlans.create(newPlan);
     }),
-    updatePlan: flow(function* (id: string, updates: Partial<EstatePlan>) {
+    updatePlan: flow(function* (id: string, updates: Partial<EstatePlanType>) {
       const plan = self.plans.find((p) => p.id === id);
       if (plan) {
         Object.assign(plan, {
@@ -150,7 +145,7 @@ export const EstatePlanStore = types
     ) {
       const plan = self.plans.find((p) => p.id === planId);
       if (plan) {
-        const b: Beneficiary = {
+        const b: EstatePlanType["beneficiaries"][number] = {
           id: uuidv4(),
           name: data.name,
           relationship: data.relationship ?? "",
@@ -160,9 +155,9 @@ export const EstatePlanStore = types
           address: data.address ?? "",
           notes: data.notes ?? "",
         };
-        plan.beneficiaries.push(b);
+        plan.beneficiaries.push(b as any);
         plan.updatedAt = new Date().toISOString();
-        yield api.estatePlans.addBeneficiary(planId, b);
+        yield api.estatePlans.addBeneficiary(planId, b as Record<string, unknown>);
       }
     }),
     removeBeneficiary: flow(function* (planId: string, beneficiaryId: string) {
@@ -191,10 +186,10 @@ export const EstatePlanStore = types
     ) {
       const plan = self.plans.find((p) => p.id === planId);
       if (plan) {
-        const a: EstateAsset = {
+        const a: EstatePlanType["assets"][number] = {
           id: uuidv4(),
           name: data.name,
-          category: (data.category as EstateAsset["category"]) ?? "other",
+          category: data.category ?? "other",
           estimatedValue: data.estimatedValue ?? 0,
           ownershipType: data.ownershipType ?? "",
           accountNumber: data.accountNumber ?? "",
@@ -202,9 +197,9 @@ export const EstatePlanStore = types
           beneficiaryIds: data.beneficiaryIds ?? [],
           notes: data.notes ?? "",
         };
-        plan.assets.push(a);
+        plan.assets.push(a as any);
         plan.updatedAt = new Date().toISOString();
-        yield api.estatePlans.addAsset(planId, a);
+        yield api.estatePlans.addAsset(planId, a as Record<string, unknown>);
       }
     }),
     removeAsset: flow(function* (planId: string, assetId: string) {
@@ -232,11 +227,11 @@ export const EstatePlanStore = types
       const plan = self.plans.find((p) => p.id === planId);
       if (plan) {
         const now = new Date().toISOString();
-        const doc: EstateDocument = {
+        const doc: EstatePlanType["documents"][number] = {
           id: uuidv4(),
-          type: (data.type as EstateDocument["type"]) ?? "other",
+          type: data.type ?? "other",
           title: data.title,
-          status: (data.status as EstateDocument["status"]) ?? "not-started",
+          status: data.status ?? "not-started",
           content: data.content ?? "",
           fieldValues: data.fieldValues ?? {},
           templateId: data.templateId ?? "",
@@ -246,15 +241,15 @@ export const EstatePlanStore = types
           createdAt: now,
           updatedAt: now,
         };
-        plan.documents.push(doc);
+        plan.documents.push(doc as any);
         plan.updatedAt = now;
-        yield api.estatePlans.addDocument(planId, doc);
+        yield api.estatePlans.addDocument(planId, doc as Record<string, unknown>);
       }
     }),
     updateEstateDocument: flow(function* (
       planId: string,
       docId: string,
-      updates: Partial<EstateDocument>,
+      updates: Partial<EstatePlanType["documents"][number]>,
     ) {
       const plan = self.plans.find((p) => p.id === planId);
       if (plan) {
@@ -265,7 +260,11 @@ export const EstatePlanStore = types
             updatedAt: new Date().toISOString(),
           });
           plan.updatedAt = new Date().toISOString();
-          yield api.estatePlans.updateDocument(planId, docId, updates);
+          yield api.estatePlans.updateDocument(
+            planId,
+            docId,
+            updates as Record<string, unknown>,
+          );
         }
       }
     }),

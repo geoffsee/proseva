@@ -1,7 +1,7 @@
 import { types, flow } from "mobx-state-tree";
 import { v4 as uuidv4 } from "uuid";
 import { CaseModel } from "./models/CaseModel";
-import type { Case } from "../types";
+import type { Case } from "../lib/api";
 import { api } from "../lib/api";
 
 export const CaseStore = types
@@ -11,9 +11,9 @@ export const CaseStore = types
   .actions((self) => ({
     loadCases: flow(function* () {
       try {
-        const cases = (yield api.cases.list()) as Case[];
+        const cases: Case[] | null = yield api.cases.list();
         if (cases && Array.isArray(cases)) {
-          self.cases.replace(cases);
+          self.cases.replace(cases as any);
         }
       } catch (error) {
         console.error("Failed to load cases from API:", error);
@@ -41,7 +41,7 @@ export const CaseStore = types
         filings: [],
         createdAt: now,
         updatedAt: now,
-      });
+      } as any);
       yield api.cases.create(c);
       return id;
     }),
