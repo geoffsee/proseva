@@ -149,6 +149,10 @@ async function getOrGenerateKeyPair(): Promise<MlKemKeyPair> {
 
   const store = await getKeypairStore();
 
+  // Check if keypair store has existing data
+  const allKeys = await store.list();
+  const hasExistingData = allKeys.keys.length > 0;
+
   // Try to load existing keypair from KV store
   const pubArr = await kvGetJson<number[]>(store, "publicKey");
   const secArr = await kvGetJson<number[]>(store, "secretKey");
@@ -162,7 +166,18 @@ async function getOrGenerateKeyPair(): Promise<MlKemKeyPair> {
     return serverKeyPair;
   }
 
-  // Generate new keypair
+  // If store has data but we couldn't decrypt it, abort
+  if (hasExistingData) {
+    throw new DatabaseEncryptionError(
+      "invalid_key",
+      "ML-KEM keypair store exists but cannot be decrypted. " +
+      "This likely means the passphrase has changed. " +
+      "Refusing to overwrite existing keypair to prevent data loss. " +
+      "If you need to reset encryption, manually delete server/data/ml-kem-keys/",
+    );
+  }
+
+  // Generate new keypair (only if no existing data)
   const keypair = ml_kem_1024_generate_keypair();
   serverKeyPair = {
     publicKey: keypair.public_key,
@@ -173,7 +188,7 @@ async function getOrGenerateKeyPair(): Promise<MlKemKeyPair> {
   try {
     await store.put("publicKey", Array.from(serverKeyPair.publicKey));
     await store.put("secretKey", Array.from(serverKeyPair.secretKey));
-    console.log("Saved ML-KEM keypair to store");
+    console.log("Generated and saved new ML-KEM keypair to store");
   } catch (err) {
     console.error("Failed to save ML-KEM keypair:", err);
   }
@@ -446,7 +461,8 @@ async function decryptV3Snapshot(input: DatabaseSnapshot): Promise<DatabaseSnaps
       decipher.final(),
     ]);
     parsed = JSON.parse(plaintext.toString("utf8"));
-  } catch (err) {
+  } catch (err: unknown) {
+    void err;
     throw new DatabaseEncryptionError(
       "invalid_key",
       `Failed to decrypt database. AES decryption failed.`,

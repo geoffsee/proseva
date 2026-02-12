@@ -45,7 +45,10 @@ export PROSEVA_USE_ML_KEM=true
 npm start
 ```
 
-**Important**: Loss of the `server/data/ml-kem-keys/` directory or the passphrase means loss of the keypair, which makes previously encrypted data unrecoverable. Always include this directory in your backup strategy.
+**Important**:
+- Loss of the `server/data/ml-kem-keys/` directory or the passphrase means loss of the keypair, which makes previously encrypted data unrecoverable
+- Always include this directory in your backup strategy
+- **Passphrase Protection**: If the server detects an existing keypair that can't be decrypted (wrong passphrase), it will refuse to start and display an error instead of overwriting the keypair. This prevents accidental data loss.
 
 ## How It Works
 
@@ -131,10 +134,11 @@ The implementation uses the `wasm-pqc-subtle` library for cryptographic operatio
    - Using encrypted filesystems (LUKS, BitLocker, FileVault)
    - Cloud key management services (AWS KMS, Azure Key Vault) for enterprise deployments
 4. **Key Backup**: Back up the entire `server/data/` directory (includes both database and keypair). Loss of the keypair or passphrase means permanent data loss.
-4. **WASM Security**: The WebAssembly module is loaded from the trusted `wasm-pqc-subtle` npm package.
-5. **No Side Channels**: The implementation is constant-time to prevent timing attacks.
-6. **NIST Standardized**: ML-KEM is a NIST-approved post-quantum algorithm (FIPS 203).
-7. **Forward Secrecy**: Each encryption uses a fresh shared secret derived via ML-KEM encapsulation.
+5. **Overwrite Protection**: The server refuses to generate a new keypair if an existing keypair store is detected but cannot be decrypted. This prevents accidental data loss from passphrase mismatches. To intentionally reset encryption, manually delete `server/data/ml-kem-keys/`.
+6. **WASM Security**: The WebAssembly module is loaded from the trusted `wasm-pqc-subtle` npm package.
+7. **No Side Channels**: The implementation is constant-time to prevent timing attacks.
+8. **NIST Standardized**: ML-KEM is a NIST-approved post-quantum algorithm (FIPS 203).
+9. **Forward Secrecy**: Each encryption uses a fresh shared secret derived via ML-KEM encapsulation.
 
 ### Production Key Management Recommendations
 
