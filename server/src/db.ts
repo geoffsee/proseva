@@ -435,6 +435,7 @@ export class Database {
     try {
       data = await decryptSnapshot(raw);
     } catch (error) {
+
       if (error instanceof DatabaseEncryptionError) {
         db.locked = true;
         db.lockReason = error.reason;

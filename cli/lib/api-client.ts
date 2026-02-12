@@ -4,6 +4,7 @@ import type { paths } from "./api-types";
 export interface ApiClientConfig {
   baseUrl: string;
   verbose?: boolean;
+  token?: string;
 }
 
 /**
@@ -12,11 +13,31 @@ export interface ApiClientConfig {
 export class ApiClient {
   private client: ReturnType<typeof createClient<paths>>;
   private verbose: boolean;
+  private token?: string;
 
   constructor(config: ApiClientConfig) {
     this.verbose = config.verbose || false;
+    this.token = config.token;
     this.client = createClient<paths>({
       baseUrl: config.baseUrl,
+      headers: this.token
+        ? {
+            Authorization: `Bearer ${this.token}`,
+          }
+        : undefined,
+    });
+  }
+
+  /**
+   * Update the authorization token
+   */
+  setToken(token: string): void {
+    this.token = token;
+    this.client = createClient<paths>({
+      baseUrl: this.client.baseUrl,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
   }
 

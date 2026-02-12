@@ -24,9 +24,12 @@ export const STORAGE_KEYS = {
 const MLKEM_PUBLIC_KEY = "mlkem-public-key";
 const MLKEM_SECRET_KEY = "mlkem-secret-key";
 const KEYS_STORE_SALT_STORAGE_KEY = "proseva-keys-store-salt";
+const AUTH_STORE_DEVICE_KEY = "proseva-auth-device-key";
+const AUTH_TOKEN_KEY = "auth-token";
 
 let _keysStore: KVNamespace | null = null;
 let _dataStore: KVNamespace | null = null;
+let _authStore: KVNamespace | null = null;
 let _forceMemory = false;
 
 function encodeBytes(bytes: Uint8Array): string {
@@ -130,6 +133,79 @@ export function getKeysStore(): KVNamespace {
 }
 
 /**
+ * Get or generate the device-specific encryption key for the auth store.
+ * This key is stored in localStorage and used to encrypt the JWT token.
+ */
+function getDeviceAuthKey(): Uint8Array {
+  const existing = localStorage.getItem(AUTH_STORE_DEVICE_KEY);
+  if (existing) {
+    const decoded = decodeBytes(existing);
+    if (decoded && decoded.length === 32) {
+      return decoded;
+    }
+  }
+
+  // Generate new 256-bit key
+  const key = crypto.getRandomValues(new Uint8Array(32));
+  localStorage.setItem(AUTH_STORE_DEVICE_KEY, encodeBytes(key));
+  return key;
+}
+
+/**
+ * Initialize the auth KV store with device-specific encryption.
+ * This store holds the JWT token and can be initialized before user login.
+ */
+export async function initAuthStore(): Promise<KVNamespace> {
+  if (_authStore) return _authStore;
+
+  const deviceKey = getDeviceAuthKey();
+  const provider = new WebCryptoEncryptionProvider(deviceKey);
+  await provider.initialize();
+
+  _authStore = createKV({
+    dbName: "proseva-auth",
+    encryptionProvider: provider,
+    forceMemory: _forceMemory,
+  });
+
+  return _authStore;
+}
+
+/**
+ * Get the initialized auth store. Throws if not yet initialized.
+ */
+export function getAuthStore(): KVNamespace {
+  if (!_authStore)
+    throw new Error("Auth store not initialized. Call initAuthStore() first.");
+  return _authStore;
+}
+
+/**
+ * Store JWT token in encrypted auth store.
+ */
+export async function saveAuthToken(token: string): Promise<void> {
+  const store = getAuthStore();
+  await store.put(AUTH_TOKEN_KEY, token);
+}
+
+/**
+ * Load JWT token from encrypted auth store.
+ */
+export async function loadAuthToken(): Promise<string | null> {
+  const store = getAuthStore();
+  const token = await store.get(AUTH_TOKEN_KEY);
+  return typeof token === "string" ? token : null;
+}
+
+/**
+ * Clear JWT token from encrypted auth store.
+ */
+export async function clearAuthToken(): Promise<void> {
+  const store = getAuthStore();
+  await store.delete(AUTH_TOKEN_KEY);
+}
+
+/**
  * First-time setup: generate ML-KEM keypair and store it in the keys store.
  * Requires initKeysStore() to have been called first.
  */
@@ -213,5 +289,9 @@ export async function resetKV(): Promise<void> {
   if (_dataStore) {
     await _dataStore.close().catch(() => {});
     _dataStore = null;
+  }
+  if (_authStore) {
+    await _authStore.close().catch(() => {});
+    _authStore = null;
   }
 }

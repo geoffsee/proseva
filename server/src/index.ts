@@ -42,6 +42,7 @@ import {
 } from "./notifications";
 import { configRouter } from "./config-api";
 import { securityRouter } from "./security-api";
+import { authRouter, verifyToken } from "./auth-api";
 import { getConfig } from "./config";
 import { researchRouter } from "./research";
 import { handleResearchChat } from "./research-agent";
@@ -71,6 +72,15 @@ const ALLOWED_WHEN_DB_LOCKED = new Set([
   "/api/security/recovery-key",
   "/api/security/setup-passphrase",
   "/api/security/verify-passphrase",
+  "/api/auth/login",
+]);
+
+const UNAUTHENTICATED_ROUTES = new Set([
+  "/api/security/status",
+  "/api/security/recovery-key",
+  "/api/security/setup-passphrase",
+  "/api/security/verify-passphrase",
+  "/api/auth/login",
 ]);
 
 const requireUnlockedDatabase = (request: Request) => {
@@ -91,6 +101,66 @@ const requireUnlockedDatabase = (request: Request) => {
       headers: { "content-type": "application/json" },
     },
   );
+};
+
+const requireAuthentication = async (request: Request) => {
+  if (request.method === "OPTIONS") return;
+
+  const pathname = new URL(request.url).pathname;
+
+  // Skip authentication for allowed routes
+  if (UNAUTHENTICATED_ROUTES.has(pathname)) return;
+
+  // Get Authorization header
+  const authHeader = request.headers.get("Authorization");
+
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({
+        error: "Authentication required. Please provide a valid Bearer token.",
+        code: "AUTH_REQUIRED",
+      }),
+      {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      },
+    );
+  }
+
+  // Verify Bearer token format
+  const match = authHeader.match(/^Bearer (.+)$/);
+  if (!match) {
+    return new Response(
+      JSON.stringify({
+        error: "Invalid Authorization header format. Use 'Bearer <token>'.",
+        code: "INVALID_AUTH_HEADER",
+      }),
+      {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      },
+    );
+  }
+
+  const token = match[1];
+
+  // Verify token
+  const valid = await verifyToken(token);
+  if (!valid) {
+    return new Response(
+      JSON.stringify({
+        error: "Invalid or expired token.",
+        code: "INVALID_TOKEN",
+      }),
+      {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      },
+    );
+  }
+
+  // Token is valid, continue
+  return;
 };
 
 const persistAfterMutation = (response: Response, request: Request) => {
@@ -121,7 +191,7 @@ const ingestionStatus: IngestionStatus = {
 };
 
 export const router = AutoRouter({
-  before: [preflight, requireUnlockedDatabase],
+  before: [preflight, requireAuthentication, requireUnlockedDatabase],
   after: [persistAfterMutation, corsify],
   base: "/api",
 });
@@ -1569,6 +1639,7 @@ router
 // Mount config router
 router.all("/config/*", configRouter.fetch);
 router.all("/security/*", securityRouter.fetch);
+router.all("/auth/*", authRouter.fetch);
 
 // Research agent chat endpoint
 router.post("/research/agent/chat", async (request: Request) => {
