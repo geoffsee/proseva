@@ -71,8 +71,8 @@ export PROSEVA_ML_KEM_KEYPAIR_FILE=/etc/proseva/secrets/mlkem-keypair.json
 
 - **Post-Quantum Security**: Resistant to attacks from both classical and quantum computers
 - **NIST Level 5 Security**: Approximately 256-bit classical security
-- **Key Encapsulation**: No key management required - keys are automatically generated per encryption
-- **Forward Secrecy**: Each encryption uses a fresh shared secret
+- **Automatic Shared Secrets**: Each encryption automatically generates a fresh shared secret via ML-KEM encapsulation (keypair itself must be managed)
+- **Forward Secrecy**: Each encryption uses a unique shared secret derived from the server's persisted keypair
 
 ## Encrypted Data Format
 
