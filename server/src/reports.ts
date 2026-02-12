@@ -165,15 +165,20 @@ async function generateAISummary(
 
     // Get the configured prompt template and substitute values
     const promptTemplate = getCaseSummaryPrompt();
-    const prompt = promptTemplate
-      .replace("{caseName}", caseData.name)
-      .replace("{caseType}", caseData.caseType || "N/A")
-      .replace("{status}", caseData.status)
-      .replace("{totalDeadlines}", String(deadlines.length))
-      .replace("{pendingDeadlines}", String(pendingDeadlines.length))
-      .replace("{totalEvidence}", String(evidence.length))
-      .replace("{highRelevanceEvidence}", String(highRelevanceEvidence.length))
-      .replace("{totalFilings}", String(filings.length));
+    const replacements: Record<string, string> = {
+      "{caseName}": caseData.name,
+      "{caseType}": caseData.caseType || "N/A",
+      "{status}": caseData.status,
+      "{totalDeadlines}": String(deadlines.length),
+      "{pendingDeadlines}": String(pendingDeadlines.length),
+      "{totalEvidence}": String(evidence.length),
+      "{highRelevanceEvidence}": String(highRelevanceEvidence.length),
+      "{totalFilings}": String(filings.length),
+    };
+    const prompt = promptTemplate.replace(
+      /\{caseName\}|\{caseType\}|\{status\}|\{totalDeadlines\}|\{pendingDeadlines\}|\{totalEvidence\}|\{highRelevanceEvidence\}|\{totalFilings\}/g,
+      (match) => replacements[match] || match,
+    );
 
     const completion = await openai.chat.completions.create({
       model: getConfig("TEXT_MODEL_SMALL") || "gpt-4o-mini",
