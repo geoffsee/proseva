@@ -204,6 +204,20 @@ router.get("/", () => {
         ? "database"
         : "environment",
     },
+    prompts: {
+      chatSystemPrompt: config?.prompts?.chatSystemPrompt,
+      caseSummaryPrompt: config?.prompts?.caseSummaryPrompt,
+      evaluatorPrompt: config?.prompts?.evaluatorPrompt,
+      chatSystemPromptSource: config?.prompts?.chatSystemPrompt
+        ? "database"
+        : "default",
+      caseSummaryPromptSource: config?.prompts?.caseSummaryPrompt
+        ? "database"
+        : "default",
+      evaluatorPromptSource: config?.prompts?.evaluatorPrompt
+        ? "database"
+        : "default",
+    },
   };
 
   return Response.json(response);
@@ -249,6 +263,9 @@ router.patch("/", async (req) => {
         ...config.legalResearch,
         ...updates.legalResearch,
       };
+    }
+    if (updates.prompts) {
+      config.prompts = { ...config.prompts, ...updates.prompts };
     }
 
     // Save to database
