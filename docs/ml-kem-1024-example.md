@@ -8,59 +8,47 @@ ML-KEM-1024 (Module-Lattice-Based Key Encapsulation Mechanism) is a NIST-standar
 
 ## Enabling ML-KEM-1024
 
-Set the environment variables before starting the server:
+Set the environment variable before starting the server:
 
 ```bash
 export PROSEVA_USE_ML_KEM=true
-export PROSEVA_ML_KEM_KEYPAIR_FILE=/path/to/secure/mlkem-keypair.json
 npm start
 ```
 
-Or add them to your `.env` file:
+Or add it to your `.env` file:
 
 ```env
 PROSEVA_USE_ML_KEM=true
-PROSEVA_ML_KEM_KEYPAIR_FILE=/path/to/secure/mlkem-keypair.json
 ```
 
-**Important**: The `PROSEVA_ML_KEM_KEYPAIR_FILE` setting is required for production use. Without it:
-- A new keypair is generated on each server restart
-- Data encrypted with the old keypair cannot be decrypted
-- This results in permanent data loss
+**That's it!** The server automatically:
+- Generates an ML-KEM-1024 keypair on first launch
+- Persists it to `server/data/ml-kem-keys/` using an idb-repo KV store
+- Loads the keypair on subsequent restarts
 
-### Keypair File Security
+### Keypair Storage
 
-The keypair file contains both the public and secret keys and should be protected:
+The keypair is stored in `server/data/ml-kem-keys/` and is automatically persisted across server restarts. This directory is already excluded from git via `.gitignore`.
 
-1. **File Permissions**: The file is automatically created with mode `0600` (read/write for owner only)
-2. **Storage Location**: Store in a secure directory with restricted access
-3. **Backup**: Keep encrypted backups of the keypair file in a secure location
-4. **Access Control**: Limit access to the file to the server process user only
+**Security:**
+1. **File Permissions**: The storage backend creates files with secure permissions
+2. **Location**: `server/data/ml-kem-keys/` is created automatically
+3. **Backup**: Back up the entire `server/data/` directory (includes both database and keypair)
+4. **Access Control**: Standard filesystem permissions protect the keypair store
 
-Example secure setup:
-
-```bash
-# Create a secure directory
-sudo mkdir -p /etc/proseva/secrets
-sudo chmod 700 /etc/proseva/secrets
-
-# Set the environment variable
-export PROSEVA_ML_KEM_KEYPAIR_FILE=/etc/proseva/secrets/mlkem-keypair.json
-
-# On first run, the keypair will be generated and saved with 0600 permissions
-# Make sure to backup this file securely!
-```
+**Important**: Loss of the `server/data/ml-kem-keys/` directory means loss of the keypair, which makes previously encrypted data unrecoverable. Always include this directory in your backup strategy.
 
 ## How It Works
 
 ### Encryption Process
 
-1. **Key Generation**: Server generates an ML-KEM-1024 keypair (1568-byte public key, 3168-byte secret key)
-2. **Encapsulation**: For each encryption operation:
+1. **Key Generation**: On first launch, the server generates an ML-KEM-1024 keypair (1568-byte public key, 3168-byte secret key) and persists it to `server/data/ml-kem-keys/` via idb-repo
+2. **Key Loading**: On subsequent launches, the server loads the keypair from the persisted store
+3. **Encapsulation**: For each encryption operation:
    - Generate a random shared secret (32 bytes) using ML-KEM encapsulation with the public key
    - This produces a ciphertext (1568 bytes) that can only be decrypted with the secret key
-3. **Data Encryption**: Use the shared secret as an AES-256-GCM key to encrypt the database
-4. **Storage**: Store both the ML-KEM ciphertext and the AES-encrypted data
+4. **Data Encryption**: Use the shared secret as an AES-256-GCM key to encrypt the database
+5. **Storage**: Store both the ML-KEM ciphertext and the AES-encrypted data
 
 ### Decryption Process
 
@@ -91,7 +79,7 @@ When ML-KEM-1024 is enabled, the encrypted database contains:
 }
 ```
 
-Note: The public key is not stored in the envelope to reduce storage overhead. The server uses its persisted keypair for all encryption operations.
+Note: The public key is not stored in the envelope to reduce storage overhead. The server loads its persisted keypair from `server/data/ml-kem-keys/` on startup and uses it for all encryption/decryption operations.
 
 ## Backward Compatibility
 
@@ -116,22 +104,24 @@ ML-KEM-1024 operations are fast:
 
 ## Implementation Details
 
-The implementation uses the `wasm-pqc-subtle` library, which provides WebAssembly bindings to the Rust `ml-kem` crate:
+The implementation uses the `wasm-pqc-subtle` library for cryptographic operations and `idb-repo` for keypair persistence:
 
-- **Library**: wasm-pqc-subtle v0.1.4
+- **Crypto Library**: wasm-pqc-subtle v0.1.4 (WebAssembly bindings to Rust `ml-kem` crate)
+- **Storage Library**: idb-repo v1.3.0 (file-based KV store using `NodeFileSystemStorageBackend`)
 - **Algorithm**: ML-KEM-1024 (FIPS 203)
 - **Key Sizes**: 1568 bytes (public), 3168 bytes (secret)
 - **Ciphertext Size**: 1568 bytes
 - **Shared Secret Size**: 32 bytes (perfect for AES-256)
+- **Keypair Location**: `server/data/ml-kem-keys/` (auto-created on first launch)
 
 ## Security Considerations
 
-1. **Key Persistence**: The ML-KEM keypair MUST be persisted in production using `PROSEVA_ML_KEM_KEYPAIR_FILE`. Without persistence, encrypted data cannot be decrypted after server restart.
-2. **Key Storage**: The keypair file should be stored in a secure location with restricted permissions (0600). Consider using:
-   - Encrypted filesystems
-   - Hardware Security Modules (HSMs) for enterprise deployments
-   - Cloud key management services (AWS KMS, Azure Key Vault, etc.)
-3. **Key Backup**: Maintain secure, encrypted backups of the keypair file. Loss of the keypair means permanent data loss.
+1. **Key Persistence**: The ML-KEM keypair is automatically persisted to `server/data/ml-kem-keys/` using idb-repo's file-based storage. The keypair is loaded on server restart, ensuring encrypted data remains accessible.
+2. **Key Storage**: The keypair store is in `server/data/ml-kem-keys/` with secure file permissions. For enhanced security, consider:
+   - Encrypting the entire `server/data/` directory at rest
+   - Using encrypted filesystems (LUKS, BitLocker, FileVault)
+   - Cloud key management services (AWS KMS, Azure Key Vault) for enterprise deployments
+3. **Key Backup**: Back up the entire `server/data/` directory (includes both database and keypair). Loss of the keypair means permanent data loss.
 4. **WASM Security**: The WebAssembly module is loaded from the trusted `wasm-pqc-subtle` npm package.
 5. **No Side Channels**: The implementation is constant-time to prevent timing attacks.
 6. **NIST Standardized**: ML-KEM is a NIST-approved post-quantum algorithm (FIPS 203).
@@ -141,11 +131,11 @@ The implementation uses the `wasm-pqc-subtle` library, which provides WebAssembl
 
 For production environments, consider:
 
-1. **Environment-specific keypairs**: Use different keypairs for dev/staging/production
-2. **Key rotation**: Implement a key rotation strategy (though this requires re-encrypting all data)
-3. **Access logging**: Monitor access to the keypair file
-4. **Principle of least privilege**: Only the server process should have read access to the keypair file
-5. **Disaster recovery**: Document and test the process for restoring from keypair backups
+1. **Backup Strategy**: Include `server/data/ml-kem-keys/` in your backup rotation
+2. **Environment Isolation**: Use separate `server/data/` directories for dev/staging/production
+3. **Access Logging**: Monitor access to the `server/data/` directory
+4. **Principle of Least Privilege**: Only the server process should have access to `server/data/`
+5. **Disaster Recovery**: Document and test the process for restoring from backups (both database and keypair)
 
 ## Testing
 
