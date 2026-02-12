@@ -165,6 +165,66 @@ describe("Database", () => {
         "Invalid recovery key.",
       );
     });
+
+    describe("ML-KEM-1024", () => {
+      const originalMlKemSetting = process.env.PROSEVA_USE_ML_KEM;
+
+      beforeEach(() => {
+        process.env.PROSEVA_USE_ML_KEM = "true";
+      });
+
+      afterEach(() => {
+        if (originalMlKemSetting === undefined) {
+          delete process.env.PROSEVA_USE_ML_KEM;
+        } else {
+          process.env.PROSEVA_USE_ML_KEM = originalMlKemSetting;
+        }
+      });
+
+      it("encrypts data using ML-KEM-1024 when enabled", async () => {
+        database.cases.set("1", { id: "1", name: "ML-KEM Encrypted" } as Case);
+        await database.flush();
+
+        const raw = adapter.load();
+        expect(raw).toHaveProperty("__proseva_encrypted_v3");
+        expect(raw.__proseva_encrypted_v3).toHaveProperty("kemCiphertext");
+        expect(raw.__proseva_encrypted_v3).toHaveProperty("publicKey");
+        expect(raw.__proseva_encrypted_v3).toHaveProperty("algorithm", "ml-kem-1024-aes-256-gcm");
+        expect(raw.cases).toBeUndefined();
+      });
+
+      it("decrypts ML-KEM-1024 encrypted data", async () => {
+        database.cases.set("1", { id: "1", name: "ML-KEM Test" } as Case);
+        await database.flush();
+
+        const db2 = await Database.create(adapter);
+        expect(db2.cases.get("1")).toEqual({ id: "1", name: "ML-KEM Test" });
+      });
+
+      it("round-trips data with ML-KEM-1024 encryption", async () => {
+        const testData = {
+          id: "test-123",
+          name: "Complex Test Case",
+          caseNumber: "2024-CV-001",
+          court: "Circuit Court",
+          caseType: "civil",
+          status: "active" as const,
+          parties: [
+            { id: "p1", name: "John Doe", role: "Plaintiff", contact: "john@example.com" }
+          ],
+          filings: [],
+          notes: "Test notes with special characters: éñ™£",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        database.cases.set(testData.id, testData as Case);
+        await database.flush();
+
+        const db2 = await Database.create(adapter);
+        expect(db2.cases.get(testData.id)).toEqual(testData);
+      });
+    });
   });
 });
 
