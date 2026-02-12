@@ -291,7 +291,7 @@ export function snapshotExistingData() {
 
 export function executeTool(
   name: string,
-  args: Record<string, any>,
+  args: Record<string, unknown>,
   state: { selectedCaseId?: string },
 ): ToolExecutionResult {
   const pickCaseId = (explicit?: string): string | undefined =>
@@ -310,9 +310,10 @@ export function executeTool(
       };
     }
     case "create_case": {
+      const caseNumber = args.caseNumber as string | undefined;
       const existing = [...db.cases.values()].find(
         (c) =>
-          c.caseNumber && args.caseNumber && c.caseNumber === args.caseNumber,
+          c.caseNumber && caseNumber && c.caseNumber === caseNumber,
       );
       if (existing) {
         state.selectedCaseId = existing.id;
@@ -324,14 +325,14 @@ export function executeTool(
       const now = nowIso();
       const c: Case = {
         id: randomUUID(),
-        name: args.name ?? "New Case",
-        caseNumber: args.caseNumber ?? "",
-        court: args.court ?? "",
-        caseType: args.caseType ?? "",
+        name: (args.name as string) ?? "New Case",
+        caseNumber: (args.caseNumber as string) ?? "",
+        court: (args.court as string) ?? "",
+        caseType: (args.caseType as string) ?? "",
         status: (args.status as Case["status"]) ?? "active",
         parties: [],
         filings: [],
-        notes: args.notes ?? "",
+        notes: (args.notes as string) ?? "",
         createdAt: now,
         updatedAt: now,
       };
@@ -340,19 +341,21 @@ export function executeTool(
       return { message: `Created case ${c.id}`, selectedCaseId: c.id };
     }
     case "add_party": {
-      const caseId = pickCaseId(args.caseId);
+      const caseId = pickCaseId(args.caseId as string | undefined);
       if (!caseId) return { message: "No case selected for party" };
       const c = db.cases.get(caseId);
       if (!c) return { message: `Case ${caseId} not found` };
+      const name = args.name as string;
+      const role = args.role as string;
       const exists = c.parties.find(
-        (p) => p.name === args.name && p.role === args.role,
+        (p) => p.name === name && p.role === role,
       );
       if (exists) return { message: `Party already exists on case ${caseId}` };
       const party: Party = {
         id: randomUUID(),
-        name: args.name,
-        role: args.role,
-        contact: args.contact ?? "",
+        name,
+        role,
+        contact: (args.contact as string) ?? "",
       };
       c.parties.push(party);
       c.updatedAt = nowIso();
@@ -362,11 +365,13 @@ export function executeTool(
       };
     }
     case "create_filing": {
-      const caseId = pickCaseId(args.caseId) ?? "";
+      const caseId = pickCaseId(args.caseId as string | undefined) ?? "";
+      const title = args.title as string;
+      const date = args.date as string | undefined;
       const existing = [...db.filings.values()].find(
         (f) =>
-          f.title === args.title &&
-          (!args.date || f.date === args.date) &&
+          f.title === title &&
+          (!date || f.date === date) &&
           f.caseId === caseId,
       );
       if (existing)
@@ -376,10 +381,10 @@ export function executeTool(
         };
       const filing: Filing = {
         id: randomUUID(),
-        title: args.title,
-        date: args.date ?? "",
-        type: args.type ?? "",
-        notes: args.notes ?? "",
+        title,
+        date: date ?? "",
+        type: (args.type as string) ?? "",
+        notes: (args.notes as string) ?? "",
         caseId,
       };
       db.filings.set(filing.id, filing);
@@ -395,10 +400,12 @@ export function executeTool(
       };
     }
     case "create_deadline": {
-      const caseId = pickCaseId(args.caseId) ?? "";
+      const caseId = pickCaseId(args.caseId as string | undefined) ?? "";
+      const title = args.title as string;
+      const date = args.date as string;
       const existing = [...db.deadlines.values()].find(
         (d) =>
-          d.title === args.title && d.date === args.date && d.caseId === caseId,
+          d.title === title && d.date === date && d.caseId === caseId,
       );
       if (existing)
         return {
@@ -408,10 +415,10 @@ export function executeTool(
       const deadline: Deadline = {
         id: randomUUID(),
         caseId,
-        title: args.title,
-        date: args.date,
+        title,
+        date,
         type: (args.type as Deadline["type"]) ?? "other",
-        completed: args.completed ?? false,
+        completed: (args.completed as boolean) ?? false,
       };
       db.deadlines.set(deadline.id, deadline);
       if (caseId) state.selectedCaseId = caseId;
@@ -421,10 +428,12 @@ export function executeTool(
       };
     }
     case "create_contact": {
-      const caseId = pickCaseId(args.caseId) ?? "";
+      const caseId = pickCaseId(args.caseId as string | undefined) ?? "";
+      const name = args.name as string;
+      const role = args.role as string;
       const existing = [...db.contacts.values()].find(
         (c) =>
-          c.name === args.name && c.role === args.role && c.caseId === caseId,
+          c.name === name && c.role === role && c.caseId === caseId,
       );
       if (existing)
         return {
@@ -433,13 +442,13 @@ export function executeTool(
         };
       const contact: Contact = {
         id: randomUUID(),
-        name: args.name,
-        role: args.role,
-        organization: args.organization ?? "",
-        phone: args.phone ?? "",
-        email: args.email ?? "",
-        address: args.address ?? "",
-        notes: args.notes ?? "",
+        name,
+        role,
+        organization: (args.organization as string) ?? "",
+        phone: (args.phone as string) ?? "",
+        email: (args.email as string) ?? "",
+        address: (args.address as string) ?? "",
+        notes: (args.notes as string) ?? "",
         caseId,
       };
       db.contacts.set(contact.id, contact);
@@ -450,22 +459,22 @@ export function executeTool(
       };
     }
     case "create_evidence": {
-      const caseId = pickCaseId(args.caseId) ?? "";
+      const caseId = pickCaseId(args.caseId as string | undefined) ?? "";
       const evidence: Evidence = {
         id: randomUUID(),
         caseId,
         exhibitNumber: "",
-        title: args.title,
-        description: args.description ?? "",
+        title: (args.title as string),
+        description: (args.description as string) ?? "",
         type: (args.type as Evidence["type"]) ?? "document",
-        fileUrl: args.fileUrl ?? "",
-        dateCollected: args.dateCollected ?? "",
-        location: args.location ?? "",
-        tags: Array.isArray(args.tags) ? args.tags : [],
+        fileUrl: (args.fileUrl as string) ?? "",
+        dateCollected: (args.dateCollected as string) ?? "",
+        location: (args.location as string) ?? "",
+        tags: Array.isArray(args.tags) ? (args.tags as string[]) : [],
         relevance: (args.relevance as Evidence["relevance"]) ?? "medium",
-        admissible: args.admissible ?? false,
+        admissible: (args.admissible as boolean) ?? false,
         chain: [],
-        notes: args.notes ?? "",
+        notes: (args.notes as string) ?? "",
         createdAt: nowIso(),
         updatedAt: nowIso(),
       };
@@ -477,16 +486,16 @@ export function executeTool(
       };
     }
     case "create_note": {
-      const caseId = pickCaseId(args.caseId) ?? "";
+      const caseId = pickCaseId(args.caseId as string | undefined) ?? "";
       const now = nowIso();
       const note: Note = {
         id: crypto.randomUUID(),
-        title: args.title,
-        content: args.content,
+        title: (args.title as string),
+        content: (args.content as string),
         category: (args.category as Note["category"]) ?? "case-notes",
-        tags: Array.isArray(args.tags) ? args.tags : [],
+        tags: Array.isArray(args.tags) ? (args.tags as string[]) : [],
         caseId,
-        isPinned: args.isPinned ?? false,
+        isPinned: (args.isPinned as boolean) ?? false,
         createdAt: now,
         updatedAt: now,
       };
@@ -544,7 +553,7 @@ export async function autoPopulateFromDocument(
       for (const toolCall of choice.message.tool_calls) {
         try {
           const args = toolCall.function.arguments
-            ? JSON.parse(toolCall.function.arguments)
+            ? (JSON.parse(toolCall.function.arguments) as Record<string, unknown>)
             : {};
           const result = executeTool(toolCall.function.name, args, state);
           if (result.selectedCaseId)
@@ -555,8 +564,9 @@ export async function autoPopulateFromDocument(
             tool_call_id: toolCall.id,
             content: JSON.stringify(result),
           });
-        } catch (err: any) {
-          const errorMsg = `Tool ${toolCall.function.name} failed: ${err?.message ?? err}`;
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          const errorMsg = `Tool ${toolCall.function.name} failed: ${message}`;
           log.push(errorMsg);
           messages.push({
             role: "tool",

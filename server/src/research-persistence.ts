@@ -9,10 +9,10 @@ interface PersistenceManager {
     setActiveCase(userEmail: string, caseId: string): Promise<void>;
     updateCase(caseId: string, updates: Partial<ResearchCase>): Promise<void>;
     deleteCase(userEmail: string, caseId: string): Promise<void>;
-    addSavedSearch(caseId: string, search: any): Promise<void>;
-    addSummary(caseId: string, summary: any): Promise<void>;
-    addDocument(caseId: string, document: any): Promise<void>;
-    addGeneratedDocument(caseId: string, doc: any): Promise<void>;
+    addSavedSearch(caseId: string, search: unknown): Promise<void>;
+    addSummary(caseId: string, summary: unknown): Promise<void>;
+    addDocument(caseId: string, document: unknown): Promise<void>;
+    addGeneratedDocument(caseId: string, doc: unknown): Promise<void>;
   };
   attachments: {
     saveForUser(
@@ -27,9 +27,7 @@ interface PersistenceManager {
   };
 }
 
-export function createPersistenceManager(
-  _kvStorage?: string,
-): PersistenceManager {
+export function createPersistenceManager(): PersistenceManager {
   return {
     paralegal: {
       async saveCase(_userEmail: string, caseData: ResearchCase) {
@@ -77,7 +75,7 @@ export function createPersistenceManager(
         db.persist();
       },
 
-      async addSavedSearch(caseId: string, search: any) {
+      async addSavedSearch(caseId: string, search: unknown) {
         const c = db.researchCases.get(caseId);
         if (!c) return;
         c.savedSearches.push(search);
@@ -85,7 +83,7 @@ export function createPersistenceManager(
         db.persist();
       },
 
-      async addSummary(caseId: string, summary: any) {
+      async addSummary(caseId: string, summary: unknown) {
         const c = db.researchCases.get(caseId);
         if (!c) return;
         c.summaries.push(summary);
@@ -93,7 +91,7 @@ export function createPersistenceManager(
         db.persist();
       },
 
-      async addDocument(caseId: string, document: any) {
+      async addDocument(caseId: string, document: unknown) {
         const c = db.researchCases.get(caseId);
         if (!c) return;
         c.documents.push(document);
@@ -101,7 +99,7 @@ export function createPersistenceManager(
         db.persist();
       },
 
-      async addGeneratedDocument(caseId: string, doc: any) {
+      async addGeneratedDocument(caseId: string, doc: unknown) {
         const c = db.researchCases.get(caseId);
         if (!c) return;
         if (!c.generatedDocuments) c.generatedDocuments = [];

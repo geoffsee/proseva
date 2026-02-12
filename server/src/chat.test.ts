@@ -8,8 +8,15 @@ vi.mock("openai", () => ({
   },
 }));
 
+interface MockFs {
+  readFile: any;
+  writeFile: any;
+  mkdir: any;
+  [key: string]: any;
+}
+
 vi.mock("fs/promises", async (importOriginal) => {
-  const actual = (await importOriginal()) as any;
+  const actual = (await importOriginal()) as Record<string, unknown>;
   return {
     ...actual,
     default: actual,
@@ -19,8 +26,8 @@ vi.mock("fs/promises", async (importOriginal) => {
   };
 });
 
-import { setupTestServer, api, freshDb } from "./test-helpers";
-import { db } from "./db";
+import { setupTestServer, api } from "./test-helpers";
+import { db, type Contact } from "./db";
 
 const ctx = setupTestServer();
 
@@ -158,7 +165,17 @@ describe("Chat API", () => {
   });
 
   it("handles GetContacts tool with caseId filter", async () => {
-    db.contacts.set("ct1", { id: "ct1", caseId: "c1", name: "John" } as any);
+    db.contacts.set("ct1", {
+      id: "ct1",
+      caseId: "c1",
+      name: "John",
+      role: "Witness",
+      organization: "",
+      phone: "",
+      email: "",
+      address: "",
+      notes: "",
+    } as Contact);
 
     mockCreate
       .mockResolvedValueOnce({

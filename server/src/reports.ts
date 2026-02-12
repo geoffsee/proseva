@@ -1,5 +1,12 @@
 import OpenAI from "openai";
-import { db } from "./db";
+import {
+  db,
+  type Deadline,
+  type Evidence,
+  type Filing,
+  type Contact,
+  type Case,
+} from "./db";
 import { getConfig } from "./config";
 import { getCaseSummaryPrompt } from "./prompts";
 
@@ -40,7 +47,7 @@ function formatDate(dateStr: string): string {
 }
 
 // Format deadlines as a table
-function formatDeadlinesTable(deadlines: any[]): string {
+function formatDeadlinesTable(deadlines: Deadline[]): string {
   if (deadlines.length === 0) {
     return "No deadlines found.";
   }
@@ -58,7 +65,7 @@ function formatDeadlinesTable(deadlines: any[]): string {
 
 // Format evidence as a list
 function formatEvidenceList(
-  evidence: any[],
+  evidence: Evidence[],
   includeChainOfCustody: boolean = false,
 ): string {
   if (evidence.length === 0) {
@@ -87,7 +94,7 @@ function formatEvidenceList(
 }
 
 // Format filings as a table
-function formatFilingsTable(filings: any[]): string {
+function formatFilingsTable(filings: Filing[]): string {
   if (filings.length === 0) {
     return "No filings found.";
   }
@@ -106,7 +113,7 @@ function formatFilingsTable(filings: any[]): string {
 }
 
 // Format contacts as a list
-function formatContactsList(contacts: any[]): string {
+function formatContactsList(contacts: Contact[]): string {
   if (contacts.length === 0) {
     return "No contacts found.";
   }
@@ -123,7 +130,7 @@ function formatContactsList(contacts: any[]): string {
 }
 
 // Format case overview
-function formatCaseOverview(caseData: any): string {
+function formatCaseOverview(caseData: Case): string {
   let result = `**Case Name:** ${caseData.name}\n`;
   result += `**Case Number:** ${caseData.caseNumber || "N/A"}\n`;
   result += `**Court:** ${caseData.court || "N/A"}\n`;
@@ -140,10 +147,10 @@ function formatCaseOverview(caseData: any): string {
 
 // AI summary generation
 async function generateAISummary(
-  caseData: any,
-  deadlines: any[],
-  evidence: any[],
-  filings: any[],
+  caseData: Case,
+  deadlines: Deadline[],
+  evidence: Evidence[],
+  filings: Filing[],
 ): Promise<string> {
   const apiKey = getConfig("OPENAI_API_KEY");
   const endpoint = getConfig("OPENAI_ENDPOINT");
@@ -556,7 +563,8 @@ export async function testOpenAIConnection(): Promise<{
 
     const response = completion.choices[0].message.content || "";
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message || String(error) };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
   }
 }

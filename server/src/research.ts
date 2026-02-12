@@ -386,9 +386,32 @@ interface LegiScanSearchResponse {
   alert?: { message: string };
 }
 
+interface LegiScanText {
+  doc_id?: number;
+  docId?: number;
+  date: string;
+  url: string;
+  state_link: string;
+  mime: string;
+}
+
 interface LegiScanBillDetailResponse {
   status: string;
-  bill: any;
+  bill?: {
+    bill_id: number;
+    title: string;
+    bill_number: string;
+    state: string;
+    status: string;
+    last_action: string;
+    last_action_date: string;
+    session: { name: string; session_name?: string };
+    session_name?: string;
+    url: string;
+    state_link: string;
+    description: string;
+    texts: LegiScanText[];
+  };
   alert?: { message: string };
 }
 
@@ -396,6 +419,54 @@ interface LegiScanBillTextResponse {
   status: string;
   text?: { doc: string; mime: string };
   bill?: { text: { doc: string; mime: string } };
+}
+
+interface CourtListenerDocketSearchResult {
+  docket_id?: number;
+  id?: number;
+  caseName?: string;
+  case_name?: string;
+  court: string;
+  date_filed?: string;
+  date_terminated?: string;
+  docket_number?: string;
+  cause?: string;
+  nature_of_suit?: string;
+  assigned_to_str?: string;
+  snippet: string;
+  absolute_url: string;
+}
+
+interface CourtListenerDocketSearchResponse {
+  count: number;
+  results: CourtListenerDocketSearchResult[];
+}
+
+interface CourtListenerCourt {
+  id: string;
+  full_name?: string;
+  short_name?: string;
+  jurisdiction: string;
+  in_use: boolean;
+}
+
+interface CourtListenerCourtsResponse {
+  count: number;
+  results: CourtListenerCourt[];
+}
+
+interface StatuteSearchResult {
+  id: string;
+  title: string;
+  citation: string;
+  section: string;
+  code: string;
+  jurisdiction: string;
+  snippet: string;
+  url: string;
+  lastAction: string;
+  lastActionDate: string;
+  relevance: number;
 }
 
 function createResearchRouter() {
@@ -905,7 +976,7 @@ function createResearchRouter() {
         throw new Error(`CourtListener API returned ${response.status}`);
       }
 
-      const data = (await response.json()) as any;
+      const data = (await response.json()) as CourtListenerDocketResponse;
 
       console.log(`[ResearchRouter ${requestId}] Loaded docket: ${data.id}`);
 
@@ -927,20 +998,20 @@ function createResearchRouter() {
           jurisdictionType: data.jurisdiction_type || "",
           assignedTo: data.assigned_to_str || "",
           referredTo: data.referred_to_str || "",
-          parties: (data.parties || []).map((party: any) => ({
+          parties: (data.parties || []).map((party) => ({
             name: party.name || "",
             type: party.party_type?.name || party.type || "",
-            attorneys: (party.attorneys || []).map((atty: any) => ({
+            attorneys: (party.attorneys || []).map((atty) => ({
               name: atty.name || "",
               contact: atty.contact_raw || "",
               roles: (atty.roles || [])
-                .map((r: any) => r.role || r)
+                .map((r) => (typeof r === "string" ? r : r.role))
                 .filter(Boolean),
             })),
           })),
           docketEntries: (data.docket_entries || [])
             .slice(0, 50)
-            .map((entry: any) => ({
+            .map((entry) => ({
               id: entry.id?.toString() || "",
               dateEntered: formatDate(entry.date_entered),
               dateFiled: formatDate(entry.date_filed),
@@ -1112,24 +1183,24 @@ function createResearchRouter() {
         throw new Error(`CourtListener API returned ${response.status}`);
       }
 
-      const data = (await response.json()) as any;
+      const data = (await response.json()) as CourtListenerDocketSearchResponse;
       console.log(
         `[ResearchRouter ${requestId}] CourtListener returned ${data.results?.length || 0} dockets`,
       );
 
-      const results = (data.results || []).map((docket: any) => ({
+      const results = (data.results || []).map((docket) => ({
         id: docket.docket_id?.toString() || docket.id?.toString() || "",
         caseName: docket.caseName || docket.case_name || "Unknown Case",
         court: COURT_NAMES[docket.court] || docket.court || "",
         courtId: docket.court || "",
-        dateFiled: formatDate(docket.dateFiled || docket.date_filed),
+        dateFiled: formatDate(docket.date_filed || null),
         dateTerminated: formatDate(
-          docket.dateTerminated || docket.date_terminated,
+          docket.date_terminated || null,
         ),
-        docketNumber: docket.docketNumber || docket.docket_number || "",
+        docketNumber: docket.docket_number || "",
         cause: docket.cause || "",
-        suitNature: docket.suitNature || docket.nature_of_suit || "",
-        assignedTo: docket.assignedTo || docket.assigned_to_str || "",
+        suitNature: docket.nature_of_suit || "",
+        assignedTo: docket.assigned_to_str || "",
         snippet: docket.snippet || "",
         absoluteUrl: docket.absolute_url
           ? `https://www.courtlistener.com${docket.absolute_url}`
@@ -1248,16 +1319,23 @@ function createResearchRouter() {
         throw new Error(`CourtListener API returned ${response.status}`);
       }
 
-      const data = (await response.json()) as any;
+      const data = (await response.json()) as CourtListenerCourtsResponse;
 
       // Group courts by jurisdiction type
-      const federalAppellate: any[] = [];
-      const federalDistrict: any[] = [];
-      const stateCourts: any[] = [];
-      const otherCourts: any[] = [];
+      interface GroupedCourt {
+        id: string;
+        name: string;
+        shortName: string;
+        jurisdiction: string;
+        inUse: boolean;
+      }
+      const federalAppellate: GroupedCourt[] = [];
+      const federalDistrict: GroupedCourt[] = [];
+      const stateCourts: GroupedCourt[] = [];
+      const otherCourts: GroupedCourt[] = [];
 
-      (data.results || []).forEach((court: any) => {
-        const courtData = {
+      (data.results || []).forEach((court) => {
+        const courtData: GroupedCourt = {
           id: court.id,
           name: court.full_name || court.short_name || court.id,
           shortName: court.short_name || court.id,
@@ -1422,14 +1500,14 @@ function createResearchRouter() {
         throw new Error(`CourtListener API returned ${response.status}`);
       }
 
-      const data = (await response.json()) as any;
+      const data = (await response.json()) as CourtListenerSearchResponse;
 
-      const results = (data.results || []).map((opinion: any) => ({
-        id: opinion.id?.toString() || "",
+      const results = (data.results || []).map((opinion) => ({
+        id: opinion.id?.toString() || opinion.cluster_id?.toString() || "",
         caseName: opinion.caseName || opinion.case_name || "Unknown Case",
         citation: opinion.citation || citation,
         court: COURT_NAMES[opinion.court] || opinion.court || "",
-        dateFiled: formatDate(opinion.dateFiled || opinion.date_filed),
+        dateFiled: formatDate(opinion.dateFiled || opinion.date_filed || null),
         absoluteUrl: opinion.absolute_url
           ? `https://www.courtlistener.com${opinion.absolute_url}`
           : "",
@@ -1625,7 +1703,7 @@ function createResearchRouter() {
         throw new Error(`LegiScan API returned ${response.status}`);
       }
 
-      const data = (await response.json()) as any;
+      const data = (await response.json()) as LegiScanSearchResponse;
 
       if (data.status === "ERROR") {
         throw new Error(data.alert?.message || "LegiScan API error");
@@ -1633,7 +1711,7 @@ function createResearchRouter() {
 
       // Transform LegiScan response
       const searchResults = data.searchresult || {};
-      const results: any[] = [];
+      const results: StatuteSearchResult[] = [];
 
       // LegiScan returns results as numbered keys
       for (const key of Object.keys(searchResults)) {
@@ -1662,7 +1740,7 @@ function createResearchRouter() {
       const totalCount =
         typeof summary.count === "number"
           ? summary.count
-          : parseInt(summary.count || "0", 10);
+          : parseInt((summary.count as string) || "0", 10);
       const hasMore = totalCount
         ? page * limit < totalCount
         : results.length === limit;
@@ -1833,16 +1911,19 @@ function createResearchRouter() {
         throw new Error(`LegiScan API returned ${billResponse.status}`);
       }
 
-      const billData = (await billResponse.json()) as any;
+      const billData = (await billResponse.json()) as LegiScanBillDetailResponse;
       if (billData.status === "ERROR") {
         throw new Error(billData.alert?.message || "LegiScan API error");
       }
 
-      const bill = billData.bill || {};
+      const bill = billData.bill;
+      if (!bill) {
+        throw new Error("Bill data not found");
+      }
       const texts = Array.isArray(bill.texts) ? bill.texts : [];
       const sortedTexts = texts
-        .filter((text: any) => text && (text.doc_id || text.docId))
-        .sort((a: any, b: any) => {
+        .filter((text) => text && (text.doc_id || text.docId))
+        .sort((a, b) => {
           const dateA = new Date(a.date || 0).getTime();
           const dateB = new Date(b.date || 0).getTime();
           return dateB - dateA;
@@ -1878,11 +1959,11 @@ function createResearchRouter() {
         });
 
         if (billTextResponse.ok) {
-          const billTextData = (await billTextResponse.json()) as any;
+          const billTextData = (await billTextResponse.json()) as LegiScanBillTextResponse;
           if (billTextData.status !== "ERROR") {
             const textPayload =
-              billTextData.text || billTextData.bill?.text || billTextData;
-            const encoded = textPayload?.doc || textPayload?.text || "";
+              billTextData.text || billTextData.bill?.text;
+            const encoded = textPayload?.doc || "";
             const payloadMime = textPayload?.mime || textMime;
             const isTextMime =
               payloadMime?.startsWith("text/") ||

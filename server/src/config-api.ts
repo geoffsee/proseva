@@ -310,17 +310,23 @@ router.delete("/:group/:key", (req) => {
 
   // Remove specific key
   if (group === "firebase" && config.firebase) {
-    delete (config.firebase as any)[key];
+    const firebase = config.firebase as Record<string, unknown>;
+    delete firebase[key];
   } else if (group === "twilio" && config.twilio) {
-    delete (config.twilio as any)[key];
+    const twilio = config.twilio as Record<string, unknown>;
+    delete twilio[key];
   } else if (group === "scheduler" && config.scheduler) {
-    delete (config.scheduler as any)[key];
+    const scheduler = config.scheduler as Record<string, unknown>;
+    delete scheduler[key];
   } else if (group === "ai" && config.ai) {
-    delete (config.ai as any)[key];
+    const ai = config.ai as Record<string, unknown>;
+    delete ai[key];
   } else if (group === "autoIngest" && config.autoIngest) {
-    delete (config.autoIngest as any)[key];
+    const autoIngest = config.autoIngest as Record<string, unknown>;
+    delete autoIngest[key];
   } else if (group === "legalResearch" && config.legalResearch) {
-    delete (config.legalResearch as any)[key];
+    const legalResearch = config.legalResearch as Record<string, unknown>;
+    delete legalResearch[key];
   }
 
   config.updatedAt = new Date().toISOString();

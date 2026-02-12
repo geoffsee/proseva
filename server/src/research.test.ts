@@ -1,7 +1,28 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { setupTestServer, api } from "./test-helpers";
 
 const ctx = setupTestServer();
+
+interface TestResearchCase {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
+interface TestState {
+  code: string;
+  name: string;
+}
+
+interface TestCollection {
+  code: string;
+  name: string;
+}
+
+interface TestSpecialty {
+  code: string;
+  name: string;
+}
 
 describe("Research API", () => {
   describe("Case Management Endpoints", () => {
@@ -49,12 +70,11 @@ describe("Research API", () => {
       });
 
       it("sets created case as active", async () => {
-        const res1 = await api.post(
+        await api.post(
           "/api/research/cases",
           { name: "Case 1" },
           ctx.baseUrl,
         );
-        const case1 = (await res1.json()).case;
 
         const res2 = await api.post(
           "/api/research/cases",
@@ -65,8 +85,8 @@ describe("Research API", () => {
 
         // Get both cases to verify only case2 is active
         const casesRes = await api.get("/api/research/cases", ctx.baseUrl);
-        const cases = (await casesRes.json()).cases;
-        const activeCases = cases.filter((c: any) => c.isActive);
+        const cases = (await casesRes.json()).cases as TestResearchCase[];
+        const activeCases = cases.filter((c) => c.isActive);
         expect(activeCases.length).toBe(1);
         expect(activeCases[0].id).toBe(case2.id);
       });
@@ -87,9 +107,10 @@ describe("Research API", () => {
         const res = await api.get("/api/research/cases", ctx.baseUrl);
         expect(res.status).toBe(200);
         const data = await res.json();
-        expect(data.cases.length).toBe(2);
-        expect(data.cases.map((c: any) => c.name)).toContain("Case 1");
-        expect(data.cases.map((c: any) => c.name)).toContain("Case 2");
+        const cases = data.cases as TestResearchCase[];
+        expect(cases.length).toBe(2);
+        expect(cases.map((c) => c.name)).toContain("Case 1");
+        expect(cases.map((c) => c.name)).toContain("Case 2");
       });
 
       it("marks the active case correctly", async () => {
@@ -109,9 +130,9 @@ describe("Research API", () => {
 
         // case2 should be active
         let casesRes = await api.get("/api/research/cases", ctx.baseUrl);
-        let cases = (await casesRes.json()).cases;
-        expect(cases.find((c: any) => c.id === case1Id).isActive).toBe(false);
-        expect(cases.find((c: any) => c.id === case2Id).isActive).toBe(true);
+        let cases = (await casesRes.json()).cases as TestResearchCase[];
+        expect(cases.find((c) => c.id === case1Id)?.isActive).toBe(false);
+        expect(cases.find((c) => c.id === case2Id)?.isActive).toBe(true);
 
         // Activate case1
         await api.post(
@@ -122,9 +143,9 @@ describe("Research API", () => {
 
         // Now case1 should be active
         casesRes = await api.get("/api/research/cases", ctx.baseUrl);
-        cases = (await casesRes.json()).cases;
-        expect(cases.find((c: any) => c.id === case1Id).isActive).toBe(true);
-        expect(cases.find((c: any) => c.id === case2Id).isActive).toBe(false);
+        cases = (await casesRes.json()).cases as TestResearchCase[];
+        expect(cases.find((c) => c.id === case1Id)?.isActive).toBe(true);
+        expect(cases.find((c) => c.id === case2Id)?.isActive).toBe(false);
       });
     });
 
@@ -227,9 +248,9 @@ describe("Research API", () => {
 
         // Verify case1 is now active
         const casesRes = await api.get("/api/research/cases", ctx.baseUrl);
-        const cases = (await casesRes.json()).cases;
-        expect(cases.find((c: any) => c.id === case1Id).isActive).toBe(true);
-        expect(cases.find((c: any) => c.id === case2Id).isActive).toBe(false);
+        const cases = (await casesRes.json()).cases as TestResearchCase[];
+        expect(cases.find((c) => c.id === case1Id)?.isActive).toBe(true);
+        expect(cases.find((c) => c.id === case2Id)?.isActive).toBe(false);
       });
     });
   });
@@ -342,15 +363,15 @@ describe("Research API", () => {
       it("includes US federal jurisdiction", async () => {
         const res = await api.get("/api/research/statutes/states", ctx.baseUrl);
         const data = await res.json();
-        const usState = data.states.find((s: any) => s.code === "US");
+        const usState = (data.states as TestState[]).find((s) => s.code === "US");
         expect(usState).toBeDefined();
-        expect(usState.name).toContain("Congress");
+        expect(usState?.name).toContain("Congress");
       });
 
       it("includes all US states", async () => {
         const res = await api.get("/api/research/statutes/states", ctx.baseUrl);
         const data = await res.json();
-        const stateCodes = data.states.map((s: any) => s.code);
+        const stateCodes = (data.states as TestState[]).map((s) => s.code);
         expect(stateCodes).toContain("CA");
         expect(stateCodes).toContain("NY");
         expect(stateCodes).toContain("TX");
@@ -376,7 +397,7 @@ describe("Research API", () => {
           ctx.baseUrl,
         );
         const data = await res.json();
-        const collection = data.collections[0];
+        const collection = (data.collections as TestCollection[])[0];
         expect(collection.code).toBeDefined();
         expect(collection.name).toBeDefined();
         expect(collection.description).toBeDefined();
@@ -388,7 +409,7 @@ describe("Research API", () => {
           ctx.baseUrl,
         );
         const data = await res.json();
-        const codes = data.collections.map((c: any) => c.code);
+        const codes = (data.collections as TestCollection[]).map((c) => c.code);
         expect(codes).toContain("BILLS");
         expect(codes).toContain("CFR");
         expect(codes).toContain("FR");
@@ -426,7 +447,7 @@ describe("Research API", () => {
           ctx.baseUrl,
         );
         const data = await res.json();
-        const specialty = data.specialties[0];
+        const specialty = (data.specialties as TestSpecialty[])[0];
         expect(specialty.code).toBeDefined();
         expect(specialty.name).toBeDefined();
       });
@@ -437,7 +458,7 @@ describe("Research API", () => {
           ctx.baseUrl,
         );
         const data = await res.json();
-        const codes = data.specialties.map((s: any) => s.code);
+        const codes = (data.specialties as TestSpecialty[]).map((s) => s.code);
         expect(codes).toContain("bankruptcy");
         expect(codes).toContain("divorce");
         expect(codes).toContain("criminal");

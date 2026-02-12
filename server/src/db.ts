@@ -366,7 +366,8 @@ const COLLECTION_KEYS: (keyof Collections)[] = [
 function toMaps(raw: Partial<DatabaseSnapshot>): Collections {
   const maps = {} as Collections;
   for (const key of COLLECTION_KEYS) {
-    maps[key] = new Map(Object.entries(raw[key] ?? {})) as any;
+    const data = raw[key] || {};
+    maps[key] = new Map(Object.entries(data)) as any; // Still need one cast for the Map constructor due to generic Map type
   }
   return maps;
 }
@@ -374,7 +375,8 @@ function toMaps(raw: Partial<DatabaseSnapshot>): Collections {
 function fromMaps(collections: Collections): DatabaseSnapshot {
   const out = {} as DatabaseSnapshot;
   for (const key of COLLECTION_KEYS) {
-    (out as any)[key] = Object.fromEntries(collections[key]);
+    const data = Object.fromEntries(collections[key]);
+    (out as Record<string, Record<string, unknown>>)[key] = data;
   }
   return out;
 }

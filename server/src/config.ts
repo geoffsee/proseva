@@ -14,11 +14,11 @@ export function loadConfigFromDatabase(): ServerConfig | null {
   // During module startup, getConfig() can be called before initDb() has set
   // the exported db instance. In that case, treat DB config as unavailable and
   // fall back to environment variables.
-  const serverConfig = (db as any)?.serverConfig as
-    | Map<string, ServerConfig>
-    | undefined;
-  if (!serverConfig) return null;
+  if (!db || typeof db !== "object" || !("serverConfig" in db)) {
+    return null;
+  }
 
+  const serverConfig = db.serverConfig as Map<string, ServerConfig>;
   const config = serverConfig.get("singleton");
   if (config) {
     configCache = config;

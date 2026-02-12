@@ -37,6 +37,11 @@ function initializeFirebase(): admin.app.App | null {
   }
 }
 
+interface FirebaseError {
+  code?: string;
+  message?: string;
+}
+
 /**
  * Send push notification to all active device tokens
  */
@@ -91,17 +96,18 @@ export async function sendPushNotification(payload: {
       await messaging.send(message);
       sent++;
       console.log(`[firebase] Sent to ${tokenRecord.platform} device`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       failed++;
+      const fbError = error as FirebaseError;
       console.error(
         `[firebase] Failed to send to device ${tokenRecord.id}:`,
-        error.message,
+        fbError.message || String(error),
       );
 
       // Deactivate invalid tokens
       if (
-        error.code === "messaging/registration-token-not-registered" ||
-        error.code === "messaging/invalid-registration-token"
+        fbError.code === "messaging/registration-token-not-registered" ||
+        fbError.code === "messaging/invalid-registration-token"
       ) {
         tokenRecord.active = false;
         db.persist();
@@ -229,7 +235,8 @@ export async function testFirebaseConnection(): Promise<{
     });
 
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message || String(error) };
+  } catch (error: unknown) {
+    const fbError = error as FirebaseError;
+    return { success: false, error: fbError.message || String(error) };
   }
 }

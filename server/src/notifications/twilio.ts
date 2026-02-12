@@ -31,6 +31,11 @@ function initializeTwilio(): Twilio.Twilio | null {
   }
 }
 
+interface TwilioError {
+  code?: number;
+  message?: string;
+}
+
 /**
  * Send SMS to all active recipients
  */
@@ -67,15 +72,16 @@ export async function sendSms(message: string): Promise<{
       });
       sent++;
       console.log(`[twilio] Sent SMS to ${recipient.name || recipient.phone}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       failed++;
+      const twError = error as TwilioError;
       console.error(
         `[twilio] Failed to send to ${recipient.phone}:`,
-        error.message,
+        twError.message || String(error),
       );
 
       // Deactivate invalid numbers
-      if (error.code === 21211 || error.code === 21614) {
+      if (twError.code === 21211 || twError.code === 21614) {
         // Invalid phone number or unsubscribed
         recipient.active = false;
         db.persist();
@@ -237,7 +243,8 @@ export async function testTwilioConnection(
     });
 
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message || String(error) };
+  } catch (error: unknown) {
+    const twError = error as TwilioError;
+    return { success: false, error: twError.message || String(error) };
   }
 }
