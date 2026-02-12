@@ -100,15 +100,18 @@ const persistAfterMutation = (response: Response, request: Request) => {
   return response;
 };
 
-// Routes that don't require Bearer token authentication
+// Routes that don't require Bearer token authentication via middleware
 // Security routes allow initial setup and DB unlock before auth is configured
+// Auth endpoints handle their own validation:
+//   - /api/auth/login: Cannot require token to obtain token
+//   - /api/auth/verify: Validates the token itself (requires token in request)
 const ROUTES_WITHOUT_AUTH = new Set([
   "/api/security/status",
   "/api/security/recovery-key",
   "/api/security/setup-passphrase",
   "/api/security/verify-passphrase",
-  "/api/auth/login", // Login endpoint itself cannot require auth
-  "/api/auth/verify", // Verification endpoint for checking token validity
+  "/api/auth/login",
+  "/api/auth/verify",
 ]);
 
 const requireBearerToken = async (request: Request) => {

@@ -4,7 +4,10 @@ import { randomBytes } from "crypto";
 
 const PASSPHRASE_HASH_KEY = "passphrase_hash";
 const AUTH_TOKENS_KEY = "auth_tokens";
-const DEFAULT_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+// Default token TTL: 24 hours
+// This is configurable via the ttl parameter in the login request
+// Consider shorter TTLs (1-2 hours) with refresh tokens for higher security environments
+const DEFAULT_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 
 // Bcrypt costs for different use cases
 // Higher cost for passphrases (used less frequently, stored long-term)

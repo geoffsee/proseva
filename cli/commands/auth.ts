@@ -84,7 +84,8 @@ async function login(passphrase?: string): Promise<void> {
   }
 
   try {
-    // Call login endpoint (note: this will bypass auth since it's in ROUTES_WITHOUT_AUTH)
+    // Call login endpoint
+    // Note: Login endpoint is intentionally unauthenticated to allow users to obtain a token
     const response = await client.post("/auth/login", {
       body: { passphrase },
     });
