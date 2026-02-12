@@ -212,6 +212,12 @@ export type ServerConfig = {
     govInfoApiKey?: string;
     serpapiBase?: string;
   };
+
+  prompts?: {
+    chatSystemPrompt?: string;
+    caseSummaryPrompt?: string;
+    evaluatorPrompt?: string;
+  };
 };
 
 export type Beneficiary = {

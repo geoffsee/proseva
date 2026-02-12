@@ -103,3 +103,66 @@ describe("config API openai-models", () => {
     );
   });
 });
+
+describe("config API prompts", () => {
+  beforeEach(() => {
+    resetDb(new InMemoryAdapter());
+  });
+
+  it("returns default prompt sources when no custom prompts configured", async () => {
+    const response = await configRouter.fetch(
+      new Request("http://localhost/api/config"),
+    );
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.prompts.chatSystemPromptSource).toBe("default");
+    expect(body.prompts.caseSummaryPromptSource).toBe("default");
+    expect(body.prompts.evaluatorPromptSource).toBe("default");
+  });
+
+  it("updates prompts configuration", async () => {
+    const customChatPrompt = "Custom chat prompt";
+    const customCaseSummaryPrompt = "Custom case summary: {caseName}";
+
+    const response = await configRouter.fetch(
+      new Request("http://localhost/api/config", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          prompts: {
+            chatSystemPrompt: customChatPrompt,
+            caseSummaryPrompt: customCaseSummaryPrompt,
+          },
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.success).toBe(true);
+    expect(body.config.prompts?.chatSystemPrompt).toBe(customChatPrompt);
+    expect(body.config.prompts?.caseSummaryPrompt).toBe(customCaseSummaryPrompt);
+  });
+
+  it("returns database source for configured prompts", async () => {
+    await configRouter.fetch(
+      new Request("http://localhost/api/config", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          prompts: {
+            chatSystemPrompt: "Custom chat prompt",
+          },
+        }),
+      }),
+    );
+
+    const response = await configRouter.fetch(
+      new Request("http://localhost/api/config"),
+    );
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.prompts.chatSystemPromptSource).toBe("database");
+    expect(body.prompts.caseSummaryPromptSource).toBe("default");
+  });
+});
