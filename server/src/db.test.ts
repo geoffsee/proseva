@@ -188,7 +188,6 @@ describe("Database", () => {
         const raw = adapter.load();
         expect(raw).toHaveProperty("__proseva_encrypted_v3");
         expect(raw.__proseva_encrypted_v3).toHaveProperty("kemCiphertext");
-        expect(raw.__proseva_encrypted_v3).toHaveProperty("publicKey");
         expect(raw.__proseva_encrypted_v3).toHaveProperty("algorithm", "ml-kem-1024-aes-256-gcm");
         expect(raw.cases).toBeUndefined();
       });

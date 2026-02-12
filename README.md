@@ -323,15 +323,18 @@ This means values can be configured either via environment variables or through 
 
 #### Database Encryption
 
-| Variable                    | Required | Default | Description                                                                                               |
-| --------------------------- | -------- | ------- | --------------------------------------------------------------------------------------------------------- |
-| `PROSEVA_DB_ENCRYPTION_KEY` | ❌ No    | -       | Optional startup key for decrypting/encrypting `db.json` (AES-256-GCM + PBKDF2).                          |
-| `PROSEVA_USE_ML_KEM`        | ❌ No    | `false` | Enable post-quantum ML-KEM-1024 encryption for database. Uses ML-KEM-1024 key encapsulation + AES-256-GCM. |
+| Variable                        | Required | Default | Description                                                                                                                         |
+| ------------------------------- | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `PROSEVA_DB_ENCRYPTION_KEY`     | ❌ No    | -       | Optional startup key for decrypting/encrypting `db.json` (AES-256-GCM + PBKDF2).                                                    |
+| `PROSEVA_USE_ML_KEM`            | ❌ No    | `false` | Enable post-quantum ML-KEM-1024 encryption for database. Uses ML-KEM-1024 key encapsulation + AES-256-GCM.                          |
+| `PROSEVA_ML_KEM_KEYPAIR_FILE`   | ❌ No    | -       | Path to file for persisting ML-KEM-1024 keypair. Required for production use to decrypt data after server restart (mode: 0600).    |
 
 The database supports three encryption formats:
 - **V3 (ML-KEM-1024)**: Post-quantum encryption using ML-KEM-1024 key encapsulation mechanism + AES-256-GCM. Enabled with `PROSEVA_USE_ML_KEM=true`.
 - **V2 (PBKDF2)**: Passphrase-based encryption using PBKDF2 + AES-256-GCM. Used when `PROSEVA_DB_ENCRYPTION_KEY` is set.
 - **V1 (Legacy)**: Legacy hand-rolled AES-256-GCM format. Read-only for backward compatibility.
+
+**Important**: When using ML-KEM-1024 encryption in production, you **must** set `PROSEVA_ML_KEM_KEYPAIR_FILE` to persist the keypair. Without persistence, encrypted data cannot be decrypted after server restart.
 
 If `PROSEVA_DB_ENCRYPTION_KEY` is not set and ML-KEM is disabled, the app can still be unlocked by entering a recovery key in the Settings page or startup unlock prompt.
 
@@ -361,6 +364,7 @@ AUTO_INGEST_DIR=/path/to/documents/folder
 # Database encryption (optional)
 PROSEVA_DB_ENCRYPTION_KEY=your-recovery-key
 PROSEVA_USE_ML_KEM=true
+PROSEVA_ML_KEM_KEYPAIR_FILE=/path/to/secure/mlkem-keypair.json
 ```
 
 ### Configuration Priority
