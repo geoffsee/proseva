@@ -56,12 +56,7 @@ To reset all configuration including prompts:
 curl -X POST http://localhost:3001/api/config/reset
 ```
 
-Or delete specific prompt overrides:
-
-```bash
-# Delete a specific prompt override
-curl -X DELETE http://localhost:3001/api/config/prompts/chatSystemPrompt
-```
+This will remove all custom configuration overrides, reverting all prompts back to their defaults.
 
 ## Prompt Templates
 

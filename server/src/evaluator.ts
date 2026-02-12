@@ -166,9 +166,14 @@ async function generateAiSummary(data: {
 
     // Get the configured prompt template and substitute values
     const promptTemplate = getEvaluatorPrompt();
-    const prompt = promptTemplate
-      .replace("{overdueText}", overdueText)
-      .replace("{upcomingText}", upcomingText);
+    const replacements: Record<string, string> = {
+      "{overdueText}": overdueText,
+      "{upcomingText}": upcomingText,
+    };
+    const prompt = promptTemplate.replace(
+      /\{overdueText\}|\{upcomingText\}/g,
+      (match) => replacements[match] || match,
+    );
 
     const completion = await openai.chat.completions.create({
       model: getConfig("TEXT_MODEL_SMALL") || "gpt-4o-mini",
