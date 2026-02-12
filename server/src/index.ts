@@ -42,6 +42,7 @@ import {
 } from "./notifications";
 import { configRouter } from "./config-api";
 import { securityRouter } from "./security-api";
+import { authRouter, verifyBearerToken } from "./auth-api";
 import { getConfig } from "./config";
 import { researchRouter } from "./research";
 import { handleResearchChat } from "./research-agent";
@@ -70,6 +71,7 @@ const ALLOWED_WHEN_DB_LOCKED = new Set([
   "/api/security/recovery-key",
   "/api/security/setup-passphrase",
   "/api/security/verify-passphrase",
+  "/api/auth/login",
 ]);
 
 const requireUnlockedDatabase = (request: Request) => {
@@ -97,6 +99,58 @@ const persistAfterMutation = (response: Response, request: Request) => {
   return response;
 };
 
+const ROUTES_WITHOUT_AUTH = new Set([
+  "/api/security/status",
+  "/api/security/recovery-key",
+  "/api/security/setup-passphrase",
+  "/api/security/verify-passphrase",
+  "/api/auth/login",
+  "/api/auth/verify",
+]);
+
+const requireBearerToken = async (request: Request) => {
+  if (request.method === "OPTIONS") return;
+
+  const pathname = new URL(request.url).pathname;
+  
+  // Skip auth for specific routes
+  if (ROUTES_WITHOUT_AUTH.has(pathname)) return;
+
+  // Extract token from Authorization header
+  const authHeader = request.headers.get("Authorization");
+  const token = authHeader?.startsWith("Bearer ")
+    ? authHeader.substring(7)
+    : "";
+
+  if (!token) {
+    return new Response(
+      JSON.stringify({
+        error: "Missing authentication token. Use POST /api/auth/login to obtain a token.",
+        code: "UNAUTHORIZED",
+      }),
+      {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      },
+    );
+  }
+
+  const valid = await verifyBearerToken(token);
+  if (!valid) {
+    return new Response(
+      JSON.stringify({
+        error: "Invalid or expired authentication token.",
+        code: "UNAUTHORIZED",
+      }),
+      {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      },
+    );
+  }
+};
+
+
 type IngestionStatus = {
   active: boolean;
   directory: string;
@@ -120,7 +174,7 @@ const ingestionStatus: IngestionStatus = {
 };
 
 export const router = AutoRouter({
-  before: [preflight, requireUnlockedDatabase],
+  before: [preflight, requireUnlockedDatabase, requireBearerToken],
   after: [persistAfterMutation, corsify],
   base: "/api",
 });
@@ -1572,6 +1626,7 @@ router
 // Mount config router
 router.all("/config/*", configRouter.fetch);
 router.all("/security/*", securityRouter.fetch);
+router.all("/auth/*", authRouter.fetch);
 
 // Research agent chat endpoint
 router.post("/research/agent/chat", async (request: Request) => {

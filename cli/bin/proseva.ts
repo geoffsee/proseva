@@ -8,6 +8,7 @@ import { configCommand } from "../commands/config";
 import { dbCommand } from "../commands/db";
 import { notificationsCommand } from "../commands/notifications";
 import { scanCommand } from "../commands/scan";
+import { authCommand, loadToken } from "../commands/auth";
 import chalk from "chalk";
 
 const program = new Command();
@@ -23,16 +24,20 @@ program
   )
   .option("--json", "Output as JSON")
   .option("--verbose", "Verbose logging")
-  .hook("preAction", (thisCommand) => {
+  .hook("preAction", async (thisCommand) => {
     // Make options available globally
     const opts = thisCommand.optsWithGlobals();
     (global as any).cliOptions = opts;
+
+    // Load saved token
+    const token = await loadToken();
 
     // Create API client
     const apiUrl = opts.apiUrl.replace(/\/$/, ""); // Remove trailing slash
     (global as any).apiClient = new ApiClient({
       baseUrl: `${apiUrl}/api`,
       verbose: opts.verbose,
+      token: token || undefined,
     });
   });
 
@@ -236,6 +241,42 @@ notifications
   .action(async () => {
     try {
       await notificationsCommand.test();
+    } catch (error) {
+      handleError(error);
+    }
+  });
+
+// Auth commands
+const auth = program.command("auth").description("Authentication management");
+
+auth
+  .command("login [passphrase]")
+  .description("Login and obtain authentication token")
+  .action(async (passphrase) => {
+    try {
+      await authCommand.login(passphrase);
+    } catch (error) {
+      handleError(error);
+    }
+  });
+
+auth
+  .command("logout")
+  .description("Logout and clear saved token")
+  .action(async () => {
+    try {
+      await authCommand.logout();
+    } catch (error) {
+      handleError(error);
+    }
+  });
+
+auth
+  .command("status")
+  .description("Check authentication status")
+  .action(async () => {
+    try {
+      await authCommand.status();
     } catch (error) {
       handleError(error);
     }
