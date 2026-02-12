@@ -101,17 +101,37 @@ let serverKeyPair: MlKemKeyPair | null = null;
 let keypairStore: KVNamespace | null = null;
 let _keypairForceMemory = false;
 
+/**
+ * Enable in-memory storage for keypair during tests.
+ * Must be called before the keypair store is initialized.
+ */
 export function setKeypairForceMemory(force: boolean): void {
   _keypairForceMemory = force;
 }
 
-function getKeypairStore(): KVNamespace {
-  if (!keypairStore) {
-    keypairStore = createKV({
-      dbName: DEFAULT_KEYPAIR_STORE_DIR,
-      forceMemory: _keypairForceMemory,
-    });
+/**
+ * Reset keypair store. Call this when the passphrase changes
+ * to ensure the store is recreated with the new encryption provider.
+ */
+function resetKeypairStore(): void {
+  keypairStore = null;
+}
+
+async function getKeypairStore(): Promise<KVNamespace> {
+  if (keypairStore) return keypairStore;
+
+  // If a passphrase is available, encrypt the keypair store
+  let encryptionProvider: PassphraseEncryptionProvider | undefined;
+  if (runtimePassphrase) {
+    encryptionProvider = await PassphraseEncryptionProvider.create(runtimePassphrase);
   }
+
+  keypairStore = createKV({
+    dbName: DEFAULT_KEYPAIR_STORE_DIR,
+    forceMemory: _keypairForceMemory,
+    encryptionProvider,
+  });
+
   return keypairStore;
 }
 
@@ -127,7 +147,7 @@ async function getOrGenerateKeyPair(): Promise<MlKemKeyPair> {
 
   ensureWasmInit();
 
-  const store = getKeypairStore();
+  const store = await getKeypairStore();
 
   // Try to load existing keypair from KV store
   const pubArr = await kvGetJson<number[]>(store, "publicKey");
@@ -194,11 +214,15 @@ export async function setPassphrase(passphrase: string): Promise<void> {
   } else {
     provider = null;
   }
+  // Reset keypair store so it gets recreated with the new encryption provider
+  resetKeypairStore();
 }
 
 export function clearPassphrase(): void {
   runtimePassphrase = undefined;
   provider = null;
+  // Reset keypair store so it gets recreated without encryption
+  resetKeypairStore();
 }
 
 export function hasPassphrase(): boolean {
