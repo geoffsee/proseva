@@ -1,5 +1,9 @@
 import { initDb } from "./db";
 import { InMemoryAdapter } from "./persistence";
+import { setKeypairForceMemory } from "./encryption";
+
+// Use in-memory KV store for ML-KEM keypair during tests.
+setKeypairForceMemory(true);
 
 // Initialize the database with an in-memory adapter before any tests run.
 // Individual test files that use setupTestServer() will call freshDb() to
