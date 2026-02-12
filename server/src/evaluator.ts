@@ -7,6 +7,7 @@ import {
   type Evaluation,
 } from "./db";
 import { getConfig } from "./config";
+import { getEvaluatorPrompt } from "./prompts";
 
 /**
  * Parse an ISO date string (YYYY-MM-DD) as a local date without timezone conversion
@@ -163,18 +164,11 @@ async function generateAiSummary(data: {
             .join("\n")}`
         : "No upcoming deadlines in the next 7 days.";
 
-    const prompt = `You are a legal assistant helping a pro se litigant manage their case deadlines. Provide a brief, actionable summary (2-3 sentences max) based on the following deadline status:
-
-${overdueText}
-
-${upcomingText}
-
-Focus on:
-1. Most critical items requiring immediate attention
-2. Any patterns or priorities to consider
-3. Specific next steps for tomorrow
-
-Keep it concise and direct. No fluff.`;
+    // Get the configured prompt template and substitute values
+    const promptTemplate = getEvaluatorPrompt();
+    const prompt = promptTemplate
+      .replace("{overdueText}", overdueText)
+      .replace("{upcomingText}", upcomingText);
 
     const completion = await openai.chat.completions.create({
       model: getConfig("TEXT_MODEL_SMALL") || "gpt-4o-mini",

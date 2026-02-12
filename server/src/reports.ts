@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { db } from "./db";
 import { getConfig } from "./config";
+import { getCaseSummaryPrompt } from "./prompts";
 
 interface ReportConfig {
   type: "case-summary" | "evidence-analysis" | "financial" | "chronology";
@@ -162,21 +163,17 @@ async function generateAISummary(
       (e) => e.relevance === "high",
     );
 
-    const prompt = `As a legal case analyst, provide a concise strategic summary:
-
-Case: ${caseData.name}
-Type: ${caseData.caseType || "N/A"}
-Status: ${caseData.status}
-Deadlines: ${deadlines.length} total (${pendingDeadlines.length} pending)
-Evidence: ${evidence.length} items (${highRelevanceEvidence.length} high relevance)
-Filings: ${filings.length} documents
-
-Provide:
-1. Case strength assessment (2-3 sentences)
-2. Key upcoming deadlines to prioritize
-3. Evidence gaps or recommendations
-
-Keep it concise and actionable for a pro se litigant.`;
+    // Get the configured prompt template and substitute values
+    const promptTemplate = getCaseSummaryPrompt();
+    const prompt = promptTemplate
+      .replace("{caseName}", caseData.name)
+      .replace("{caseType}", caseData.caseType || "N/A")
+      .replace("{status}", caseData.status)
+      .replace("{totalDeadlines}", String(deadlines.length))
+      .replace("{pendingDeadlines}", String(pendingDeadlines.length))
+      .replace("{totalEvidence}", String(evidence.length))
+      .replace("{highRelevanceEvidence}", String(highRelevanceEvidence.length))
+      .replace("{totalFilings}", String(filings.length));
 
     const completion = await openai.chat.completions.create({
       model: getConfig("TEXT_MODEL_SMALL") || "gpt-4o-mini",
