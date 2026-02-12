@@ -23,12 +23,17 @@ export interface GenerationOptions {
   motionType?: string;
 }
 
+interface CaseData {
+  name: string;
+  contextItems?: Array<{ title?: string; id?: string }>;
+}
+
 export class LegalDocumentGenerator {
   private openai: OpenAI;
-  private caseData: any;
+  private caseData: CaseData;
   private template: DocumentTemplate;
 
-  constructor(openai: OpenAI, caseData: any, template: DocumentTemplate) {
+  constructor(openai: OpenAI, caseData: CaseData, template: DocumentTemplate) {
     this.openai = openai;
     this.caseData = caseData;
     this.template = template;
@@ -70,7 +75,7 @@ export class LegalDocumentGenerator {
         "\nResearch context:",
         ...this.caseData.contextItems
           .slice(0, 10)
-          .map((item: any) => `- ${item.title || item.id}`),
+          .map((item) => `- ${item.title || item.id}`),
       );
     }
 

@@ -17,8 +17,7 @@ async function stats(): Promise<void> {
 
   try {
     // Fetch all entity counts in parallel
-    const [cases, deadlines, contacts, finances, evidences, filings, notes] =
-      await Promise.all([
+    const results = await Promise.all([
         client.get("/cases"),
         client.get("/deadlines"),
         client.get("/contacts"),
@@ -26,7 +25,9 @@ async function stats(): Promise<void> {
         client.get("/evidences"),
         client.get("/filings"),
         client.get("/notes"),
-      ]) as Array<any[] | null | undefined>;
+      ]) as Array<unknown[] | null | undefined>;
+
+    const [cases, deadlines, contacts, finances, evidences, filings, notes] = results;
 
     spinner.stop();
 
@@ -88,8 +89,7 @@ async function exportData(format: string): Promise<void> {
 
   try {
     // Fetch all data in parallel
-    const [cases, deadlines, contacts, finances, evidences, filings, notes] =
-      await Promise.all([
+    const results = await Promise.all([
         client.get("/cases"),
         client.get("/deadlines"),
         client.get("/contacts"),
@@ -97,7 +97,9 @@ async function exportData(format: string): Promise<void> {
         client.get("/evidences"),
         client.get("/filings"),
         client.get("/notes"),
-      ]) as any[][];
+      ]) as unknown[][];
+
+    const [cases, deadlines, contacts, finances, evidences, filings, notes] = results;
 
     const data = {
       cases: cases || [],

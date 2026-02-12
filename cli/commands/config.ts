@@ -17,7 +17,7 @@ async function get(key?: string): Promise<void> {
   const client = globalThis.apiClient;
   const outputJson = globalThis.cliOptions.json;
 
-  const config = await client.get("/config") as Record<string, any>;
+  const config = await client.get("/config") as Record<string, unknown>;
 
   if (outputJson) {
     console.log(formatJson(config));
@@ -31,7 +31,7 @@ async function get(key?: string): Promise<void> {
       printError(`Key not found: ${key}`);
       process.exit(1);
     }
-    console.log(formatConfigValue(value));
+    console.log(formatConfigValue(value as string));
     return;
   }
 
@@ -107,7 +107,7 @@ async function set(key: string, value: string): Promise<void> {
         [group]: {
           [field]: parsedValue,
         },
-      } as any,
+      } as Record<string, unknown>,
     });
 
     spinner.succeed(`Set ${key} = ${value}`);
@@ -148,8 +148,8 @@ async function reset(group?: string): Promise<void> {
   try {
     if (group) {
       // Delete specific group
-      const config = (await client.get("/config")) as Record<string, any>;
-      const groupConfig = config[group];
+      const config = (await client.get("/config")) as Record<string, unknown>;
+      const groupConfig = config[group] as Record<string, unknown>;
 
       if (!groupConfig) {
         spinner.fail(`Group not found: ${group}`);
@@ -196,7 +196,7 @@ async function test(service: string): Promise<void> {
   const spinner = ora(`Testing ${service} connection...`).start();
 
   try {
-    let result: any;
+    let result: unknown;
     if (service === "firebase") {
       result = await client.post("/config/test-firebase", {});
     } else if (service === "twilio") {
@@ -215,15 +215,17 @@ async function test(service: string): Promise<void> {
       return;
     }
 
-    if (result?.success) {
+    const typedResult = result as { success?: boolean; message?: string; error?: string } | undefined;
+
+    if (typedResult?.success) {
       spinner.succeed(`${service} connection successful`);
-      if (result?.message) {
-        console.log(chalk.gray(result.message));
+      if (typedResult?.message) {
+        console.log(chalk.gray(typedResult.message));
       }
     } else {
       spinner.fail(`${service} connection failed`);
-      if (result?.error) {
-        printError(result.error);
+      if (typedResult?.error) {
+        printError(typedResult.error);
       }
       process.exit(1);
     }
@@ -251,22 +253,24 @@ async function reinit(service: string): Promise<void> {
   const spinner = ora(`Reinitializing ${service}...`).start();
 
   try {
-    const result = (await client.post(
+    const result = await client.post(
       `/config/reinitialize/${service}` as any,
       {},
-    )) as any;
+    );
+
+    const typedResult = result as { success?: boolean; error?: string } | undefined;
 
     if (outputJson) {
-      console.log(formatJson(result));
+      console.log(formatJson(typedResult));
       return;
     }
 
-    if (result?.success) {
+    if (typedResult?.success) {
       spinner.succeed(`${service} reinitialized successfully`);
     } else {
       spinner.fail(`Failed to reinitialize ${service}`);
-      if (result?.error) {
-        printError(result.error);
+      if (typedResult?.error) {
+        printError(typedResult.error);
       }
       process.exit(1);
     }
@@ -280,7 +284,7 @@ async function reinit(service: string): Promise<void> {
  * Helper: Print a configuration item with source
  */
 function printConfigItem(
-  config: Record<string, any>,
+  config: Record<string, unknown>,
   path: string,
   label: string,
   sensitive = false,
@@ -289,8 +293,8 @@ function printConfigItem(
   const sourceKey = path + "Source";
   const source = getNestedValue(config, sourceKey);
 
-  const formattedValue = formatConfigValue(value, sensitive);
-  const formattedSource = source ? formatSource(source as string) : "";
+  const formattedValue = formatConfigValue(value as string, sensitive);
+  const formattedSource = source ? formatSource(source as "database" | "environment") : "";
 
   console.log(
     `  ${chalk.gray(label + ":")} ${formattedValue} ${formattedSource}`,
@@ -300,8 +304,8 @@ function printConfigItem(
 /**
  * Helper: Get nested value from object by path
  */
-function getNestedValue(obj: any, path: string): any {
-  return path.split(".").reduce((acc, part) => acc?.[part], obj);
+function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+  return path.split(".").reduce((acc, part) => (acc as Record<string, unknown> | undefined)?.[part], obj);
 }
 
 export const configCommand = {

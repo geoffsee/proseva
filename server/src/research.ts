@@ -211,6 +211,193 @@ const COURT_NAMES: Record<string, string> = {
   cafc: "Federal Circuit Court of Appeals",
 };
 
+// --- Research Interfaces ---
+
+interface OpinionSearchResult {
+  id: string;
+  caseName: string;
+  citation: string;
+  court: string;
+  courtId: string;
+  dateFiled: string;
+  dateArgued: string;
+  docketNumber: string;
+  snippet: string;
+  absoluteUrl: string;
+  status: string;
+  suitNature: string;
+}
+
+interface CourtListenerSearchResult {
+  id: number;
+  cluster_id?: number;
+  caseName?: string;
+  case_name?: string;
+  citation?: string;
+  neutral_cite?: string;
+  lexis_cite?: string;
+  west_cite?: string;
+  court: string;
+  dateFiled?: string;
+  date_filed?: string;
+  dateArgued?: string;
+  date_argued?: string;
+  docketNumber?: string;
+  docket_number?: string;
+  snippet: string;
+  absolute_url: string;
+  status: string;
+  nature_of_suit: string;
+}
+
+interface CourtListenerSearchResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: CourtListenerSearchResult[];
+}
+
+interface OpinionDetails {
+  id: string;
+  caseName: string;
+  court: string;
+  courtId: string;
+  dateFiled: string;
+  docketNumber: string;
+  judges: string;
+  plainText: string;
+  htmlWithCitations: string;
+  citations: string[];
+  citesCases: string[];
+  absoluteUrl: string;
+  disclaimer: string;
+  source: string;
+}
+
+interface CourtListenerOpinionResponse {
+  id: number;
+  case_name: string;
+  court: string;
+  date_filed: string;
+  docket_number: string;
+  judges: string;
+  plain_text: string;
+  html_with_citations: string;
+  citations: string[];
+  opinions_cited: string[];
+  absolute_url: string;
+}
+
+interface DocketAttorney {
+  name: string;
+  contact: string;
+  roles: string[];
+}
+
+interface DocketParty {
+  name: string;
+  type: string;
+  attorneys: DocketAttorney[];
+}
+
+interface DocketEntry {
+  id: string;
+  dateEntered: string;
+  dateFiled: string;
+  entryNumber: string;
+  description: string;
+}
+
+interface DocketDetails {
+  id: string;
+  caseName: string;
+  court: string;
+  courtId: string;
+  dateFiled: string;
+  dateTerminated: string;
+  dateLastFiling: string;
+  docketNumber: string;
+  docketNumberCore: string;
+  cause: string;
+  natureOfSuit: string;
+  juryDemand: string;
+  jurisdictionType: string;
+  assignedTo: string;
+  referredTo: string;
+  parties: DocketParty[];
+  docketEntries: DocketEntry[];
+  absoluteUrl: string;
+  pacerUrl: string;
+  disclaimer: string;
+  source: string;
+}
+
+interface CourtListenerDocketResponse {
+  id: number;
+  case_name: string;
+  court: string;
+  date_filed: string;
+  date_terminated: string;
+  date_last_filing: string;
+  docket_number: string;
+  docket_number_core: string;
+  cause: string;
+  nature_of_suit: string;
+  jury_demand: string;
+  jurisdiction_type: string;
+  assigned_to_str: string;
+  referred_to_str: string;
+  parties: Array<{
+    name: string;
+    party_type?: { name: string };
+    type?: string;
+    attorneys: Array<{
+      name: string;
+      contact_raw: string;
+      roles: Array<{ role: string } | string>;
+    }>;
+  }>;
+  docket_entries: Array<{
+    id: number;
+    date_entered: string;
+    date_filed: string;
+    entry_number: string;
+    description: string;
+  }>;
+  absolute_url: string;
+  pacer_url: string;
+}
+
+interface LegiScanBill {
+  bill_id: number;
+  bill_number: string;
+  title: string;
+  state: string;
+  bill_type_id: number;
+  url: string;
+  last_action: string;
+  last_action_date: string;
+  relevance: number;
+}
+
+interface LegiScanSearchResponse {
+  status: string;
+  searchresult: Record<string, any>;
+  alert?: { message: string };
+}
+
+interface LegiScanBillDetailResponse {
+  status: string;
+  bill: any;
+  alert?: { message: string };
+}
+
+interface LegiScanBillTextResponse {
+  status: string;
+  text?: { doc: string; mime: string };
+  bill?: { text: { doc: string; mime: string } };
+}
+
 function createResearchRouter() {
   const router = AutoRouter();
 
@@ -373,13 +560,13 @@ function createResearchRouter() {
         throw new Error(`CourtListener API returned ${response.status}`);
       }
 
-      const data = (await response.json()) as any;
+      const data = (await response.json()) as CourtListenerSearchResponse;
       console.log(
         `[ResearchRouter ${requestId}] CourtListener returned ${data.results?.length || 0} opinions`,
       );
 
       // Transform CourtListener response to our format
-      const results = (data.results || []).map((opinion: any) => ({
+      const results: OpinionSearchResult[] = (data.results || []).map((opinion) => ({
         id: opinion.id?.toString() || opinion.cluster_id?.toString() || "",
         caseName: opinion.caseName || opinion.case_name || "Unknown Case",
         citation:
@@ -390,15 +577,15 @@ function createResearchRouter() {
           "",
         court: COURT_NAMES[opinion.court] || opinion.court || "",
         courtId: opinion.court || "",
-        dateFiled: formatDate(opinion.dateFiled || opinion.date_filed),
-        dateArgued: formatDate(opinion.dateArgued || opinion.date_argued),
+        dateFiled: formatDate(opinion.dateFiled || opinion.date_filed || null),
+        dateArgued: formatDate(opinion.dateArgued || opinion.date_argued || null),
         docketNumber: opinion.docketNumber || opinion.docket_number || "",
         snippet: opinion.snippet || "",
         absoluteUrl: opinion.absolute_url
           ? `https://www.courtlistener.com${opinion.absolute_url}`
           : "",
         status: opinion.status || "",
-        suitNature: opinion.suitNature || opinion.nature_of_suit || "",
+        suitNature: opinion.nature_of_suit || "",
       }));
 
       return new Response(
@@ -554,7 +741,7 @@ function createResearchRouter() {
         throw new Error(`CourtListener API returned ${response.status}`);
       }
 
-      const data = (await response.json()) as any;
+      const data = (await response.json()) as CourtListenerOpinionResponse;
 
       console.log(`[ResearchRouter ${requestId}] Loaded opinion: ${data.id}`);
 

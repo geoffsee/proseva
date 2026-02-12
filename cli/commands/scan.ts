@@ -26,8 +26,9 @@ export async function scanCommand(
   }
 
   // Verify OpenAI is configured
-  const config = (await client.get("/config")) as any;
-  if (!config?.ai?.openaiApiKey) {
+  const config = (await client.get("/config")) as Record<string, unknown>;
+  const aiConfig = config?.ai as Record<string, unknown> | undefined;
+  if (!aiConfig?.openaiApiKey) {
     printError("OpenAI API key not configured");
     printError("Run: proseva config set ai.openaiApiKey <key>");
     process.exit(1);
@@ -39,8 +40,8 @@ export async function scanCommand(
     const result = (await client.post("/ingest/scan", {
       body: {
         directory,
-      } as any,
-    })) as any;
+      } as Record<string, unknown>,
+    })) as Record<string, unknown>;
 
     spinner.succeed("Scan completed");
 
@@ -49,7 +50,13 @@ export async function scanCommand(
       return;
     }
 
-    const { added, skipped, errors, startedAt, finishedAt } = result;
+    const { added, skipped, errors, startedAt, finishedAt } = result as {
+      added: number;
+      skipped: number;
+      errors: number;
+      startedAt: string;
+      finishedAt: string;
+    };
 
     console.log();
     if (added > 0) {

@@ -9,15 +9,12 @@ import {
   printSection,
 } from "../lib/formatters";
 
-/**
- * Device tokens (FCM)
- */
 const devices = {
   async list(): Promise<void> {
     const client = globalThis.apiClient;
     const outputJson = globalThis.cliOptions.json;
 
-    const tokens = (await client.get("/device-tokens")) as any[];
+    const tokens = (await client.get("/device-tokens")) as Array<Record<string, unknown>>;
 
     if (outputJson) {
       console.log(formatJson(tokens));
@@ -37,10 +34,10 @@ const devices = {
 
     tokens.forEach((token) => {
       table.push([
-        token.id?.slice(0, 8) || "—",
-        token.platform || "—",
-        token.token?.slice(0, 20) + "..." || "—",
-        new Date(token.createdAt).toLocaleDateString() || "—",
+        (token.id as string)?.slice(0, 8) || "—",
+        (token.platform as string) || "—",
+        (token.token as string)?.slice(0, 20) + "..." || "—",
+        new Date(token.createdAt as string).toLocaleDateString() || "—",
       ]);
     });
 
@@ -63,15 +60,15 @@ const devices = {
           token,
           platform: options.platform || "web",
           name: options.name,
-        } as any,
-      })) as any;
+        } as Record<string, unknown>,
+      })) as Record<string, unknown>;
 
       spinner.succeed("Device token added");
 
       if (outputJson) {
         console.log(formatJson(result));
       } else {
-        printSuccess(`Token ID: ${result?.id}`);
+        printSuccess(`Token ID: ${result.id}`);
       }
     } catch (error) {
       spinner.fail("Failed to add device token");
@@ -86,7 +83,7 @@ const devices = {
     const spinner = ora("Removing device token...").start();
 
     try {
-      await client.delete(`/device-tokens/${id}` as any);
+      await client.delete(`/device-tokens/${id}` as "/device-tokens/{id}");
       spinner.succeed("Device token removed");
 
       if (!outputJson) {
@@ -107,7 +104,7 @@ const sms = {
     const client = globalThis.apiClient;
     const outputJson = globalThis.cliOptions.json;
 
-    const recipients = (await client.get("/sms-recipients")) as any[];
+    const recipients = (await client.get("/sms-recipients")) as Array<Record<string, unknown>>;
 
     if (outputJson) {
       console.log(formatJson(recipients));
@@ -128,11 +125,11 @@ const sms = {
     recipients.forEach((recipient) => {
       const active = recipient.active ? chalk.green("✓") : chalk.gray("○");
       table.push([
-        recipient.id?.slice(0, 8) || "—",
-        recipient.name || "—",
-        formatPhone(recipient.phone) || "—",
+        (recipient.id as string)?.slice(0, 8) || "—",
+        (recipient.name as string) || "—",
+        formatPhone(recipient.phone as string) || "—",
         active,
-        new Date(recipient.createdAt).toLocaleDateString() || "—",
+        new Date(recipient.createdAt as string).toLocaleDateString() || "—",
       ]);
     });
 
@@ -160,16 +157,16 @@ const sms = {
         body: {
           phone,
           name: options.name,
-        } as any,
-      })) as any;
+        } as Record<string, unknown>,
+      })) as Record<string, unknown>;
 
       spinner.succeed("SMS recipient added");
 
       if (outputJson) {
         console.log(formatJson(result));
       } else {
-        printSuccess(`Recipient ID: ${result?.id}`);
-        printSuccess(`Phone: ${formatPhone(result?.phone)}`);
+        printSuccess(`Recipient ID: ${result.id}`);
+        printSuccess(`Phone: ${formatPhone(result.phone as string)}`);
       }
     } catch (error) {
       spinner.fail("Failed to add SMS recipient");
@@ -184,7 +181,7 @@ const sms = {
     const spinner = ora("Removing SMS recipient...").start();
 
     try {
-      await client.delete(`/sms-recipients/${id}` as any);
+      await client.delete(`/sms-recipients/${id}` as "/sms-recipients/{id}");
       spinner.succeed("SMS recipient removed");
 
       if (!outputJson) {
@@ -207,7 +204,7 @@ async function test(): Promise<void> {
   const spinner = ora("Triggering test evaluation...").start();
 
   try {
-    const result = (await client.post("/evaluations/trigger", {})) as any;
+    const result = (await client.post("/evaluations/trigger", {})) as Record<string, unknown>;
 
     spinner.succeed("Test evaluation triggered");
 
@@ -215,12 +212,12 @@ async function test(): Promise<void> {
       console.log(formatJson(result));
     } else {
       printSection("Evaluation Result");
-      console.log(chalk.gray("Status:"), result?.status || "—");
-      console.log(chalk.gray("Overdue:"), result?.overdue || 0);
-      console.log(chalk.gray("Upcoming:"), result?.upcoming || 0);
+      console.log(chalk.gray("Status:"), result.status || "—");
+      console.log(chalk.gray("Overdue:"), result.overdue || 0);
+      console.log(chalk.gray("Upcoming:"), result.upcoming || 0);
       console.log(
         chalk.gray("Sent:"),
-        result?.sent ? chalk.green("✓") : chalk.gray("○"),
+        result.sent ? chalk.green("✓") : chalk.gray("○"),
       );
       console.log();
     }

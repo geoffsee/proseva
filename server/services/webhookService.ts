@@ -5,14 +5,14 @@ export interface WebhookConfig {
 
 export function createDocumentGeneratedPayload(
   documentId: string,
-  metadata: any,
-): any {
+  metadata: Record<string, unknown>,
+): Record<string, unknown> {
   return { event: "document.generated", documentId, metadata };
 }
 
 export async function triggerWebhookWithRetry(
   config: WebhookConfig,
-  payload: any,
+  payload: Record<string, unknown>,
   maxRetries = 3,
 ): Promise<{ success: boolean; error?: string }> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {

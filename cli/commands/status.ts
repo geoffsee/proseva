@@ -51,7 +51,7 @@ async function displayStatus(
     client.get("/cases"),
     client.get("/deadlines"),
     client.get("/contacts"),
-  ])) as [any, any, any, any[] | null, any[] | null, any[] | null, any[] | null];
+  ])) as [Record<string, unknown>, Record<string, unknown>, Record<string, unknown>, Array<Record<string, unknown>> | null, unknown[] | null, unknown[] | null, unknown[] | null];
 
   if (outputJson) {
     console.log(
@@ -88,10 +88,11 @@ async function displayStatus(
   printSection("Services");
 
   // Firebase
-  const firebaseConfigured = !!config?.firebase?.projectId;
+  const firebaseConfig = config?.firebase as Record<string, unknown> | undefined;
+  const firebaseConfigured = !!firebaseConfig?.projectId;
   const deviceCount = await client
     .get("/device-tokens")
-    .then((tokens: any) => (tokens as any[])?.length || 0)
+    .then((tokens) => (tokens as unknown[])?.length || 0)
     .catch(() => 0);
   console.log(
     formatServiceStatus(
@@ -102,10 +103,11 @@ async function displayStatus(
   );
 
   // Twilio
-  const twilioConfigured = !!config?.twilio?.accountSid;
+  const twilioConfig = config?.twilio as Record<string, unknown> | undefined;
+  const twilioConfigured = !!twilioConfig?.accountSid;
   const smsCount = await client
     .get("/sms-recipients")
-    .then((recipients: any) => (recipients as any[])?.length || 0)
+    .then((recipients) => (recipients as unknown[])?.length || 0)
     .catch(() => 0);
   console.log(
     formatServiceStatus(
@@ -116,28 +118,30 @@ async function displayStatus(
   );
 
   // Scheduler
-  const schedulerEnabled = schedulerStatus?.enabled || false;
-  const nextRun = schedulerStatus?.nextRun;
+  const schedulerEnabled = (schedulerStatus as Record<string, unknown>)?.enabled as boolean || false;
+  const nextRun = (schedulerStatus as Record<string, unknown>)?.nextRun as string;
   console.log(
     formatServiceStatus(
       "Scheduler",
       schedulerEnabled,
-      nextRun ? `Next: ${formatDate(nextRun as string)}` : undefined,
+      nextRun ? `Next: ${formatDate(nextRun)}` : undefined,
     ),
   );
 
   // OpenAI
-  const openaiConfigured = !!config?.ai?.openaiApiKey;
+  const aiConfig = config?.ai as Record<string, unknown> | undefined;
+  const openaiConfigured = !!aiConfig?.openaiApiKey;
   console.log(formatServiceStatus("OpenAI", openaiConfigured));
 
   // Auto-Ingest
-  const autoIngestConfigured = !!config?.autoIngest?.directory;
+  const autoIngestConfig = config?.autoIngest as Record<string, unknown> | undefined;
+  const autoIngestConfigured = !!autoIngestConfig?.directory;
   console.log(
     formatServiceStatus(
       "Auto-Ingest",
       autoIngestConfigured,
       autoIngestConfigured
-        ? (ingestStatus as any)?.directory
+        ? (ingestStatus as Record<string, unknown>)?.directory as string
         : "Not configured",
     ),
   );
@@ -146,12 +150,12 @@ async function displayStatus(
   if (evaluations && Array.isArray(evaluations) && evaluations.length > 0) {
     printSection("Recent Evaluations");
     evaluations.slice(0, 5).forEach((evaluation) => {
-      const date = new Date(evaluation.createdAt).toLocaleString();
+      const date = new Date(evaluation.createdAt as string).toLocaleString();
       const status = evaluation.sent
         ? chalk.green("Sent")
         : chalk.yellow("Pending");
       const summary = evaluation.summary
-        ? chalk.gray(`(${evaluation.summary})`)
+        ? chalk.gray(`(${evaluation.summary as string})`)
         : "";
       console.log(`• ${date} - ${status} ${summary}`);
     });
