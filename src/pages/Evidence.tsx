@@ -188,9 +188,9 @@ const EvidencePage = observer(function EvidencePage() {
           ) : (
             <EvidenceList
               evidences={filteredEvidences as unknown as Evidence[]}
-              onEdit={handleEdit as any}
+              onEdit={handleEdit}
               onDelete={(id) => evidenceStore.deleteEvidence(id)}
-              getCaseName={getCaseName as (caseId: string) => string}
+              getCaseName={getCaseName}
             />
           )}
         </GridItem>

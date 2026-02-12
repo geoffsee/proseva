@@ -159,7 +159,9 @@ async function reset(group?: string): Promise<void> {
       // Delete each key in the group
       for (const key of Object.keys(groupConfig)) {
         if (!key.endsWith("Source")) {
-          await client.delete(`/config/${group}/${key}` as any);
+          await client.delete(
+            `/config/${group}/${key}` as "/config/{group}/{key}",
+          );
         }
       }
     } else {
@@ -254,7 +256,7 @@ async function reinit(service: string): Promise<void> {
 
   try {
     const result = await client.post(
-      `/config/reinitialize/${service}` as any,
+      `/config/reinitialize/${service}` as "/config/reinitialize/{service}",
       {},
     );
 

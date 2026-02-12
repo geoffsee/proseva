@@ -85,8 +85,8 @@ export default function FileUpload({
       }
       setFiles([]);
       onUploadComplete?.();
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Upload failed");
     } finally {
       setUploading(false);
     }

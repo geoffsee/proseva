@@ -285,7 +285,7 @@ const EstatePlanning = observer(function EstatePlanning() {
         </HStack>
 
         <EstatePlanList
-          plans={estatePlanStore.filteredPlans as any}
+          plans={estatePlanStore.filteredPlans}
           onSelect={handleSelectPlan}
           onNewPlan={handleNewPlan}
         />
@@ -317,7 +317,7 @@ const EstatePlanning = observer(function EstatePlanning() {
     return (
       <>
         <EstatePlanDetail
-          plan={selectedPlan as any}
+          plan={selectedPlan}
           onBack={() => {
             setView("overview");
             setSelectedPlanId(null);

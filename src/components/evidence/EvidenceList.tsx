@@ -6,7 +6,7 @@ interface EvidenceListProps {
   evidences: Evidence[];
   onEdit: (evidence: Evidence) => void;
   onDelete: (id: string) => void;
-  getCaseName?: (caseId: string) => string;
+  getCaseName?: (caseId: string) => string | undefined;
 }
 
 export function EvidenceList({

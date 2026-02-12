@@ -148,7 +148,7 @@ export async function takeScreenshot(
  */
 export async function getPageSnapshot(
   page: Page,
-): Promise<any> {
+): Promise<Awaited<ReturnType<Page["accessibility"]["snapshot"]>>> {
   return await page.accessibility.snapshot({
     interestingOnly: false,
     root: null,

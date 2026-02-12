@@ -94,7 +94,7 @@ const SavedSearchSchema = z.object({
     .enum(["opinions", "regulations", "bills", "documents"])
     .optional()
     .default("opinions"),
-  filters: z.record(z.any()).optional(),
+  filters: z.record(z.unknown()).optional(),
   resultCount: z.coerce.number().int().min(0).optional(),
 });
 
@@ -271,26 +271,6 @@ interface CourtListenerOpinionResponse {
   absolute_url: string;
 }
 
-interface DocketAttorney {
-  name: string;
-  contact: string;
-  roles: string[];
-}
-
-interface DocketParty {
-  name: string;
-  type: string;
-  attorneys: DocketAttorney[];
-}
-
-interface DocketEntry {
-  id: string;
-  dateEntered: string;
-  dateFiled: string;
-  entryNumber: string;
-  description: string;
-}
-
 interface CourtListenerDocketResponse {
   id: number;
   case_name: string;
@@ -343,8 +323,98 @@ interface StatuteSearchResult {
 
 interface LegiScanSearchResponse {
   status: string;
-  searchresult: Record<string, any>;
+  searchresult: Record<string, unknown>;
   alert?: { message: string };
+}
+
+interface OpenAlexWork {
+  id?: string;
+  title?: string;
+  authorships?: Array<{ author?: { display_name?: string } }>;
+  publication_year?: number;
+  abstract_inverted_index?: Record<string, number[]>;
+  open_access?: { oa_url?: string; is_oa?: boolean };
+  primary_location?: {
+    pdf_url?: string;
+    landing_page_url?: string;
+    source?: { display_name?: string };
+  };
+  doi?: string;
+  cited_by_count?: number;
+}
+
+interface OpenAlexResponse {
+  results?: OpenAlexWork[];
+  meta?: { count?: number };
+}
+
+interface GovInfoSearchItem {
+  packageId?: string;
+  title?: string;
+  collectionCode?: string;
+  dateIssued?: string;
+  lastModified?: string;
+  category?: string;
+  branch?: string;
+  governmentAuthor?: string;
+  suDocClassNumber?: string;
+  congress?: string;
+  session?: string;
+  docType?: string;
+  pages?: number;
+  download?: {
+    pdfLink?: string;
+    xmlLink?: string;
+    txtLink?: string;
+  };
+  detailsLink?: string;
+}
+
+interface GovInfoSearchResponse {
+  results?: GovInfoSearchItem[];
+  count?: number;
+}
+
+interface GovInfoPackageSummaryResponse {
+  packageId?: string;
+  title?: string;
+  collectionCode?: string;
+  dateIssued?: string;
+  lastModified?: string;
+  category?: string;
+  branch?: string;
+  governmentAuthor1?: string;
+  governmentAuthor2?: string;
+  publisher?: string;
+  suDocClassNumber?: string;
+  congress?: string;
+  session?: string;
+  pages?: number;
+  download?: Record<string, unknown>;
+  related?: unknown[];
+  otherIdentifier?: Record<string, unknown>;
+}
+
+interface SerpApiLocalResult {
+  place_id?: string;
+  title?: string;
+  address?: string;
+  phone?: string;
+  website?: string;
+  type?: string;
+  rating?: number | null;
+  reviews?: number;
+  thumbnail?: string;
+}
+
+interface SerpApiOrganicResult {
+  title?: string;
+  link?: string;
+}
+
+interface SerpApiResponse {
+  organic_results?: SerpApiOrganicResult[];
+  local_results?: { places?: SerpApiLocalResult[] };
 }
 
 interface LegiScanText {
@@ -2420,7 +2490,7 @@ function createResearchRouter() {
         });
       }
 
-      const updates: any = {};
+      const updates: { name?: string; description?: string } = {};
       if (validated.data.name !== undefined)
         updates.name = validated.data.name.trim();
       if (validated.data.description !== undefined)
@@ -2866,7 +2936,7 @@ Respond in JSON format:
 
         const aiSummary = {
           id: generateUniqueId("summary"),
-          sourceType: body.sourceType as any,
+          sourceType: body.sourceType,
           sourceId: body.sourceId,
           sourceTitle: body.title,
           summary: summaryData.summary,
@@ -3348,13 +3418,13 @@ Respond in JSON format:
         throw new Error(`OpenAlex returned ${response.status}`);
       }
 
-      const data = (await response.json()) as any;
+      const data = (await response.json()) as OpenAlexResponse;
 
       // Transform OpenAlex response
-      const results = (data.results || []).map((work: any, index: number) => {
+      const results = (data.results || []).map((work, index: number) => {
         // Extract authors
         const authors = (work.authorships || [])
-          .map((a: any) => a.author?.display_name)
+          .map((a) => a.author?.display_name)
           .filter(Boolean)
           .slice(0, 5)
           .join(", ");
@@ -3483,7 +3553,7 @@ Respond in JSON format:
    */
   router.get(
     "/api/research/govinfo/search",
-    async (request: Request & { user?: any }) => {
+    async (request: Request) => {
       const requestId =
         request.headers.get("X-Request-Id") || crypto.randomUUID();
       const url = new URL(request.url);
@@ -3592,10 +3662,10 @@ Respond in JSON format:
           throw new Error(`GovInfo API returned ${response.status}`);
         }
 
-        const data = (await response.json()) as any;
+        const data = (await response.json()) as GovInfoSearchResponse;
 
         // Transform GovInfo response
-        const results = (data.results || []).map((item: any, index: number) => {
+        const results = (data.results || []).map((item, index: number) => {
           const collectionCode = item.collectionCode || "";
           const collectionName =
             GOVINFO_COLLECTIONS[collectionCode] || collectionCode;
@@ -3712,7 +3782,7 @@ Respond in JSON format:
   // Get specific GovInfo package details
   router.get(
     "/api/research/govinfo/package/:packageId",
-    async (request: Request & { user?: any }) => {
+    async (request: Request) => {
       const requestId =
         request.headers.get("X-Request-Id") || crypto.randomUUID();
       const url = new URL(request.url);
@@ -3746,7 +3816,7 @@ Respond in JSON format:
           throw new Error(`GovInfo API returned ${response.status}`);
         }
 
-        const data = (await response.json()) as any;
+        const data = (await response.json()) as GovInfoPackageSummaryResponse;
 
         return new Response(
           JSON.stringify({
@@ -3943,7 +4013,7 @@ Respond in JSON format:
    */
   router.get(
     "/api/research/lawyers/search",
-    async (request: Request & { user?: any }) => {
+    async (request: Request) => {
       const requestId =
         request.headers.get("X-Request-Id") || crypto.randomUUID();
       const url = new URL(request.url);
@@ -4002,13 +4072,13 @@ Respond in JSON format:
           throw new Error(`SerpAPI returned ${response.status}`);
         }
 
-        const data = (await response.json()) as any;
-        const organic = (data.organic_results || []) as any[];
-        const localResults = (data.local_results?.places || []) as any[];
+        const data = (await response.json()) as SerpApiResponse;
+        const organic = data.organic_results || [];
+        const localResults = data.local_results?.places || [];
 
         // Merge local pack results (richer data) with organic results
         const results = [
-          ...localResults.slice(0, limit).map((place: any, index: number) => ({
+          ...localResults.slice(0, limit).map((place, index: number) => ({
             id: place.place_id || `lawyer_local_${Date.now()}_${index}`,
             name: place.title || "Unknown",
             firm: place.title || "",
@@ -4031,7 +4101,7 @@ Respond in JSON format:
           })),
           ...organic
             .slice(0, Math.max(0, limit - localResults.length))
-            .map((item: any, index: number) => ({
+            .map((item, index: number) => ({
               id: `lawyer_organic_${Date.now()}_${index}`,
               name: item.title || "Unknown",
               firm: "",
@@ -4322,9 +4392,17 @@ Respond in JSON format:
           `[ResearchRouter ${requestId}] Generating ${template} in ${format} format with ${options?.citationStyle || "bluebook"} citations`,
         );
 
+        const generatorCaseData: ConstructorParameters<
+          typeof LegalDocumentGenerator
+        >[1] = {
+          name: caseData.name,
+          contextItems: Array.isArray(caseData.contextItems)
+            ? (caseData.contextItems as Array<{ title?: string; id?: string }>)
+            : [],
+        };
         const generator = new LegalDocumentGenerator(
           openai,
-          caseData as any,
+          generatorCaseData,
           template as DocumentTemplate,
         );
         const content = await generator.generate(options as GenerationOptions);

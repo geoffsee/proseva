@@ -291,7 +291,7 @@ async function decryptV3Snapshot(input: DatabaseSnapshot): Promise<DatabaseSnaps
 
   try {
     sharedSecret = ml_kem_1024_decapsulate(keypair.secretKey, kemCiphertext);
-  } catch (err) {
+  } catch {
     throw new DatabaseEncryptionError(
       "invalid_key",
       `Failed to decrypt database with ML-KEM-1024.`,

@@ -133,7 +133,8 @@ export const EvidenceStore = types
         createdAt: now,
         updatedAt: now,
       };
-      self.evidences.push(newEvidence as any);
+      // @ts-expect-error - MST array push type mismatch with plain object snapshot
+      self.evidences.push(newEvidence);
       yield api.evidences.create(newEvidence);
     }),
     updateEvidence: flow(function* (
@@ -173,7 +174,8 @@ export const EvidenceStore = types
           purpose: entry.purpose,
           notes: entry.notes ?? "",
         };
-        e.chain.push(chainEntry as any);
+        // @ts-expect-error - MST array push type mismatch with plain object snapshot
+        e.chain.push(chainEntry);
         e.updatedAt = new Date().toISOString();
         yield api.evidences.update(evidenceId, {
           chain: e.chain.map((c) => ({ ...c })),

@@ -5,6 +5,9 @@ import { db } from "./db";
 const PASSPHRASE_HASH_KEY = "passphrase_hash";
 const JWT_SECRET_KEY = "jwt_secret";
 const DEFAULT_TOKEN_TTL = "24h"; // 24 hours
+type ServerConfigValue = typeof db.serverConfig extends Map<string, infer TValue>
+  ? TValue
+  : never;
 
 /**
  * Get or generate JWT secret key
@@ -19,7 +22,7 @@ function getJwtSecret(): Uint8Array {
     const randomBytes = crypto.getRandomValues(new Uint8Array(32));
     const secretBase64 = Buffer.from(randomBytes).toString("base64");
     secret = { secret: secretBase64 };
-    db.serverConfig.set(JWT_SECRET_KEY, secret as any);
+    db.serverConfig.set(JWT_SECRET_KEY, secret as unknown as ServerConfigValue);
     db.persist();
   }
 
