@@ -1,5 +1,5 @@
 import { Router } from "itty-router";
-import { db } from "./db";
+import { db, setDbEncryptionPassphrase } from "./db";
 
 const PASSPHRASE_HASH_KEY = "passphrase_hash";
 
@@ -46,6 +46,9 @@ router.post("/setup-passphrase", async (req) => {
     db.serverConfig.set(PASSPHRASE_HASH_KEY, { hash } as any);
     db.persist();
 
+    // Use this passphrase for encrypting the database and keypair store
+    await setDbEncryptionPassphrase(passphrase);
+
     return Response.json({ success: true });
   } catch (error) {
     const message =
@@ -84,6 +87,9 @@ router.post("/verify-passphrase", async (req) => {
         { status: 401 },
       );
     }
+
+    // Apply this passphrase for encrypting the database and keypair store
+    await setDbEncryptionPassphrase(passphrase);
 
     return Response.json({ valid: true });
   } catch (error) {
