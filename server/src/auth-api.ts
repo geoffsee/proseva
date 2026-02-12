@@ -7,7 +7,6 @@ const AUTH_TOKENS_KEY = "auth_tokens";
 const DEFAULT_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 type AuthToken = {
-  token: string;
   hash: string;
   expiresAt: string;
   createdAt: string;
@@ -120,7 +119,6 @@ router.post("/login", async (req) => {
     const expiresAt = new Date(now.getTime() + ttl);
 
     const authToken: AuthToken = {
-      token: tokenHash,
       hash: tokenHash,
       expiresAt: expiresAt.toISOString(),
       createdAt: now.toISOString(),

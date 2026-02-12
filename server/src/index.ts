@@ -66,12 +66,13 @@ const appRoot = process.env.PROSEVA_DATA_DIR ?? join(__dir, "../..");
 
 const { preflight, corsify } = cors();
 
+// Routes allowed when database is encrypted and locked
 const ALLOWED_WHEN_DB_LOCKED = new Set([
   "/api/security/status",
   "/api/security/recovery-key",
   "/api/security/setup-passphrase",
   "/api/security/verify-passphrase",
-  "/api/auth/login",
+  "/api/auth/login", // Allow login after DB unlock to obtain auth token
 ]);
 
 const requireUnlockedDatabase = (request: Request) => {
@@ -99,13 +100,15 @@ const persistAfterMutation = (response: Response, request: Request) => {
   return response;
 };
 
+// Routes that don't require Bearer token authentication
+// Security routes allow initial setup and DB unlock before auth is configured
 const ROUTES_WITHOUT_AUTH = new Set([
   "/api/security/status",
   "/api/security/recovery-key",
   "/api/security/setup-passphrase",
   "/api/security/verify-passphrase",
-  "/api/auth/login",
-  "/api/auth/verify",
+  "/api/auth/login", // Login endpoint itself cannot require auth
+  "/api/auth/verify", // Verification endpoint for checking token validity
 ]);
 
 const requireBearerToken = async (request: Request) => {

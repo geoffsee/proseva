@@ -128,7 +128,7 @@ async function logout(): Promise<void> {
   const outputJson = (global as any).cliOptions.json;
 
   try {
-    // Load token
+    // Load token to check if we're logged in
     const token = await loadToken();
 
     if (!token) {
@@ -140,19 +140,14 @@ async function logout(): Promise<void> {
       return;
     }
 
-    // Call logout endpoint with token
-    // Note: We need to manually add the Authorization header since the client doesn't have it yet
-    const apiUrl = (global as any).cliOptions.apiUrl.replace(/\/$/, "");
-    const response = await fetch(`${apiUrl}/api/auth/logout`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok && response.status !== 401) {
-      throw new Error(`Logout failed: ${response.statusText}`);
+    // Call logout endpoint using API client (which has the token)
+    try {
+      await client.post("/auth/logout", {});
+    } catch (apiError: any) {
+      // If 401, token already invalid - that's fine
+      if (apiError.status !== 401) {
+        throw apiError;
+      }
     }
 
     // Clear saved token
@@ -182,6 +177,7 @@ async function logout(): Promise<void> {
  * Check token status
  */
 async function status(): Promise<void> {
+  const client = (global as any).apiClient as ApiClient;
   const outputJson = (global as any).cliOptions.json;
 
   try {
@@ -198,16 +194,8 @@ async function status(): Promise<void> {
       process.exit(1);
     }
 
-    // Verify token with server
-    const apiUrl = (global as any).cliOptions.apiUrl.replace(/\/$/, "");
-    const response = await fetch(`${apiUrl}/api/auth/verify`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const data = await response.json();
+    // Verify token with server using API client
+    const data = await client.get("/auth/verify");
 
     if (outputJson) {
       console.log(formatJson(data));

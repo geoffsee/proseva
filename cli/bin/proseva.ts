@@ -251,7 +251,9 @@ const auth = program.command("auth").description("Authentication management");
 
 auth
   .command("login [passphrase]")
-  .description("Login and obtain authentication token")
+  .description(
+    "Login and obtain authentication token. WARNING: Passing passphrase as argument exposes it in shell history. Use interactive prompt instead.",
+  )
   .action(async (passphrase) => {
     try {
       await authCommand.login(passphrase);
