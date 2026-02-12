@@ -635,8 +635,10 @@ export const configApi = {
 };
 
 export const securityApi = {
-  status: async (): Promise<DbSecurityStatus> => {
-    const res = await fetch("/api/security/status");
+  status: async (token?: string): Promise<DbSecurityStatus> => {
+    const res = await fetch("/api/security/status", {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
     return res.json();
   },
   setupPassphrase: async (

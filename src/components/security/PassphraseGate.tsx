@@ -97,7 +97,7 @@ export function PassphraseGate({ children }: { children: ReactNode }) {
     async (token: string) => {
       // Try to verify the token is still valid by making a test API call
       // This will throw if the token is expired/invalid
-      await securityApi.status();
+      await securityApi.status(token);
 
       // Token is valid, but we still need the passphrase to decrypt the keys store
       // So we can't fully initialize here. Just set the token and return.
