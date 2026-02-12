@@ -341,6 +341,61 @@ describe("Chat API", () => {
     expect(body.reply).toBe("No timeline.");
   });
 
+  it("bootstraps compressed graph context and does not expose graph as a tool", async () => {
+    db.cases.set("c1", {
+      id: "c1",
+      name: "Custody Matter",
+      caseNumber: "JA-123",
+      court: "Juvenile Court",
+      caseType: "custody",
+      status: "active",
+      parties: [
+        { id: "p1", name: "Alice", role: "Petitioner", contact: "alice@example.com" },
+      ],
+      filings: [],
+      notes: "",
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+    });
+    db.deadlines.set("d1", {
+      id: "d1",
+      caseId: "c1",
+      title: "Initial filing",
+      date: "2024-05-01",
+      type: "filing",
+      completed: false,
+    });
+
+    mockCreate.mockResolvedValueOnce({
+      choices: [{ finish_reason: "stop", message: { content: "Graph complete." } }],
+    });
+
+    const res = await api.post(
+      "/api/chat",
+      {
+        messages: [{ role: "user", content: "Analyze my case graph" }],
+      },
+      ctx.baseUrl,
+    );
+    const body = await res.json();
+    expect(body.reply).toBe("Graph complete.");
+    expect(mockCreate).toHaveBeenCalledTimes(1);
+
+    const firstCall = mockCreate.mock.calls[0]?.[0] as {
+      tools?: Array<{ function: { name: string } }>;
+      messages?: Array<{ role: string; content?: string }>;
+    };
+    const toolNames = firstCall.tools?.map((tool) => tool.function.name) ?? [];
+    expect(toolNames).not.toContain("AnalyzeCaseGraph");
+
+    const systemMessage = firstCall.messages?.find((message) => message.role === "system");
+    expect(systemMessage?.content).toContain(
+      "Graph context bootstrap (compressed JSON snapshot):",
+    );
+    expect(systemMessage?.content).toContain('"priorityCases"');
+    expect(systemMessage?.content).toContain('"openDeadlineCount":1');
+  });
+
   it("handles unknown tool gracefully", async () => {
     mockCreate
       .mockResolvedValueOnce({

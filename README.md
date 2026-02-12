@@ -423,6 +423,10 @@ Tools available to the AI:
 - `search_timeline` - Search case events
 - `search_knowledge` - Semantic document search
 
+The chat system also bootstraps each request with a compressed case-graph snapshot (connectivity, bottlenecks, and priority case load) in system context.
+
+The chat system also bootstraps each request with a compressed case-graph snapshot (connectivity, bottlenecks, and priority case load) in system context.
+
 ## Virginia-Specific Features
 
 - **Custody Formulas** - Guidelines for custody calculations

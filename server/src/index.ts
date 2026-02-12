@@ -54,6 +54,7 @@ import {
   generateFinancialReport,
   generateChronologyReport,
 } from "./reports.js";
+import { analyzeCaseGraph, compressCaseGraphForPrompt } from "./chat-graph";
 
 const __dir =
   import.meta.dir ??
@@ -772,7 +773,7 @@ router
     };
     const openai = new OpenAI();
 
-    const systemPrompt = getChatSystemPrompt();
+    const baseSystemPrompt = getChatSystemPrompt();
 
     const tools: OpenAI.ChatCompletionTool[] = [
       {
@@ -913,49 +914,109 @@ router
 
     const baseDir = join(appRoot, "case-data/case-documents-app");
     const indexPath = join(baseDir, "index.json");
+    const parseStringArg = (value: unknown): string | undefined => {
+      if (typeof value !== "string") return undefined;
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : undefined;
+    };
+    const parseNumberArg = (value: unknown): number | undefined => {
+      if (typeof value === "number" && Number.isFinite(value)) return value;
+      if (typeof value === "string" && value.trim().length > 0) {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : undefined;
+      }
+      return undefined;
+    };
+    const parseBooleanArg = (value: unknown): boolean | undefined => {
+      if (typeof value === "boolean") return value;
+      if (value === "true") return true;
+      if (value === "false") return false;
+      return undefined;
+    };
+    let documentEntriesCache: DocumentEntry[] | null = null;
+    const loadDocumentEntries = async (): Promise<DocumentEntry[]> => {
+      if (documentEntriesCache) return documentEntriesCache;
+      try {
+        const raw = await readFile(indexPath, "utf-8");
+        documentEntriesCache = JSON.parse(raw) as DocumentEntry[];
+        return documentEntriesCache;
+      } catch {
+        documentEntriesCache = [];
+        return [];
+      }
+    };
+    const documentEntries = await loadDocumentEntries();
+    const graphSnapshotText = (() => {
+      try {
+        const graphAnalysis = analyzeCaseGraph(
+          {
+            cases: [...db.cases.values()],
+            deadlines: [...db.deadlines.values()],
+            contacts: [...db.contacts.values()],
+            filings: [...db.filings.values()],
+            evidences: [...db.evidences.values()],
+            notes: [...db.notes.values()],
+            documents: documentEntries,
+          },
+          { topK: 10 },
+        );
+        const compressedGraph = compressCaseGraphForPrompt(graphAnalysis, {
+          maxCases: 4,
+          maxNodes: 6,
+        });
+        return JSON.stringify(compressedGraph);
+      } catch (error) {
+        console.warn("[chat] Graph bootstrap failed", error);
+        return JSON.stringify({ warning: "Graph context unavailable" });
+      }
+    })();
+    const systemPrompt = `${baseSystemPrompt}
+
+Graph context bootstrap (compressed JSON snapshot):
+${graphSnapshotText}
+
+Treat this snapshot as baseline context for case connectivity and bottlenecks. Use tools for exact record-level lookups when needed.`;
 
     const executeTool = async (
       name: string,
-      args: Record<string, string>,
+      args: Record<string, unknown>,
     ): Promise<string> => {
       switch (name) {
         case "GetCases":
           return JSON.stringify([...db.cases.values()]);
         case "GetDeadlines": {
+          const caseId = parseStringArg(args.caseId);
           let deadlines = [...db.deadlines.values()];
-          if (args.caseId)
-            deadlines = deadlines.filter((d) => d.caseId === args.caseId);
+          if (caseId) deadlines = deadlines.filter((d) => d.caseId === caseId);
           return JSON.stringify(deadlines);
         }
         case "GetContacts": {
+          const caseId = parseStringArg(args.caseId);
           let contacts = [...db.contacts.values()];
-          if (args.caseId)
-            contacts = contacts.filter((c) => c.caseId === args.caseId);
+          if (caseId) contacts = contacts.filter((c) => c.caseId === caseId);
           return JSON.stringify(contacts);
         }
         case "GetFinances":
           return JSON.stringify([...db.finances.values()]);
         case "GetDocuments": {
-          try {
-            const raw = await readFile(indexPath, "utf-8");
-            const entries: DocumentEntry[] = JSON.parse(raw);
-            return JSON.stringify(
-              entries.map(({ id, title, category, pages }) => ({
-                id,
-                title,
-                category,
-                pages,
-              })),
-            );
-          } catch {
-            return JSON.stringify([]);
-          }
+          const entries = await loadDocumentEntries();
+          return JSON.stringify(
+            entries.map(({ id, title, category, pageCount }) => ({
+              id,
+              title,
+              category,
+              pages: pageCount,
+            })),
+          );
         }
         case "GetDocumentText": {
+          const documentId = parseStringArg(args.id);
+          if (!documentId) {
+            return JSON.stringify({ error: "Document ID is required" });
+          }
           try {
-            const raw = await readFile(indexPath, "utf-8");
-            const entries: DocumentEntry[] = JSON.parse(raw);
-            const doc = entries.find((e) => e.id === args.id);
+            const entries = await loadDocumentEntries();
+            const doc = entries.find((e) => e.id === documentId);
             if (!doc) return JSON.stringify({ error: "Document not found" });
             const textPath = join(baseDir, doc.textFile);
             const text = await readFile(textPath, "utf-8");
@@ -983,10 +1044,16 @@ router
             const timelineRaw = await readFile(timelinePath, "utf-8");
             const timelineData = JSON.parse(timelineRaw);
             let events: TimelineEvent[] = timelineData.events || [];
+            const query = parseStringArg(args.query);
+            const party = parseStringArg(args.party);
+            const caseNumber = parseStringArg(args.caseNumber);
+            const isCritical = parseBooleanArg(args.isCritical);
+            const startDate = parseStringArg(args.startDate);
+            const endDate = parseStringArg(args.endDate);
 
             // Apply filters
-            if (args.query) {
-              const q = args.query.toLowerCase();
+            if (query) {
+              const q = query.toLowerCase();
               events = events.filter(
                 (e: TimelineEvent) =>
                   e.title?.toLowerCase().includes(q) ||
@@ -994,29 +1061,29 @@ router
                   e.party?.toLowerCase().includes(q),
               );
             }
-            if (args.party) {
+            if (party) {
               events = events.filter(
-                (e: TimelineEvent) => e.party === args.party,
+                (e: TimelineEvent) => e.party === party,
               );
             }
-            if (args.caseNumber) {
+            if (caseNumber) {
               events = events.filter(
-                (e: TimelineEvent) => e.case?.number === args.caseNumber,
+                (e: TimelineEvent) => e.case?.number === caseNumber,
               );
             }
-            if (args.isCritical !== undefined) {
+            if (isCritical !== undefined) {
               events = events.filter(
-                (e: TimelineEvent) => e.isCritical === args.isCritical,
+                (e: TimelineEvent) => e.isCritical === isCritical,
               );
             }
-            if (args.startDate) {
+            if (startDate) {
               events = events.filter(
-                (e: TimelineEvent) => e.date && e.date >= args.startDate,
+                (e: TimelineEvent) => e.date && e.date >= startDate,
               );
             }
-            if (args.endDate) {
+            if (endDate) {
               events = events.filter(
-                (e: TimelineEvent) => e.date && e.date <= args.endDate,
+                (e: TimelineEvent) => e.date && e.date <= endDate,
               );
             }
 
@@ -1038,10 +1105,14 @@ router
         }
         case "SearchKnowledge": {
           try {
-            const topK = Number(args.topK) || 3;
+            const query = parseStringArg(args.query);
+            if (!query) {
+              return JSON.stringify({ error: "Query is required" });
+            }
+            const topK = parseNumberArg(args.topK) ?? 3;
             const embResponse = await openai.embeddings.create({
               model: getConfig("EMBEDDINGS_MODEL") || "text-embedding-3-small",
-              input: args.query,
+              input: query,
             });
             const queryVec = embResponse.data[0].embedding;
             const records = Array.from(db.embeddings.values());

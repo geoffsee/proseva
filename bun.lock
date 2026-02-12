@@ -14,6 +14,7 @@
         "itty-router": "^5.0.22",
         "jose": "^6.1.3",
         "mobx": "^6.15.0",
+        "mst-graph": "^0.2.1",
         "next-themes": "^0.4.6",
         "openai": "^6.17.0",
         "openapi-fetch": "^0.15.0",
@@ -1473,6 +1474,8 @@
     "mobx-state-tree": ["mobx-state-tree@7.0.2", "", { "dependencies": { "ts-essentials": "^9.4.1" }, "peerDependencies": { "mobx": "^6.3.0" } }, "sha512-Qmqgo2Ho1/JRTquo0EWw0ZA/k4wTUNPMIBg98ALGN1V/0Gupic7dg4GDYUhNbiLsYHpp48VgpaCDpDIKV+jNkQ=="],
 
     "ms": ["ms@2.1.3", "", {}, "sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA=="],
+
+    "mst-graph": ["mst-graph@0.2.1", "", { "dependencies": { "mobx": "^6.15.0", "mobx-state-tree": "^7.0.2", "openai": "^6.8.1", "wasm-similarity": "^1.0.9" }, "peerDependencies": { "typescript": "^5" } }, "sha512-K+X0IR1yv3qrf+Vp1ooYy18eXd0QD2Ct801UwDW9Dxvxv2vwfvrBTJpxcYsSDxhFZwfnBkbTXvUxptEpDWMHww=="],
 
     "msw": ["msw@2.12.10", "", { "dependencies": { "@inquirer/confirm": "^5.0.0", "@mswjs/interceptors": "^0.41.2", "@open-draft/deferred-promise": "^2.2.0", "@types/statuses": "^2.0.6", "cookie": "^1.0.2", "graphql": "^16.12.0", "headers-polyfill": "^4.0.2", "is-node-process": "^1.2.0", "outvariant": "^1.4.3", "path-to-regexp": "^6.3.0", "picocolors": "^1.1.1", "rettime": "^0.10.1", "statuses": "^2.0.2", "strict-event-emitter": "^0.5.1", "tough-cookie": "^6.0.0", "type-fest": "^5.2.0", "until-async": "^3.0.2", "yargs": "^17.7.2" }, "peerDependencies": { "typescript": ">= 4.8.x" }, "optionalPeers": ["typescript"], "bin": { "msw": "cli/index.js" } }, "sha512-G3VUymSE0/iegFnuipujpwyTM2GuZAKXNeerUSrG2+Eg391wW63xFs5ixWsK9MWzr1AGoSkYGmyAzNgbR3+urw=="],
 

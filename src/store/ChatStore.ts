@@ -1,6 +1,7 @@
 import { types, flow } from "mobx-state-tree";
 import { v4 as uuidv4 } from "uuid";
 import { ChatMessageModel } from "./models/ChatMessageModel";
+import * as apiModule from "../lib/api";
 
 export const ChatStore = types
   .model("ChatStore", {
@@ -24,17 +25,22 @@ export const ChatStore = types
         const apiMessages = self.messages
           .filter((m) => m.role === "user" || m.role === "assistant")
           .map((m) => ({ role: m.role, content: m.text }));
+        const token: string | null = yield apiModule.getAuthToken();
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        if (token) headers.Authorization = `Bearer ${token}`;
 
         const res: Response = yield fetch("/api/chat", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ messages: apiMessages }),
         });
 
         if (!res.ok) throw new Error(`Chat API error: ${res.status}`);
         const data: { reply: string } = yield res.json();
         replyText = data.reply;
-      } catch (err) {
+      } catch {
         replyText =
           "Sorry, I couldn't reach the AI service. Please make sure the server is running and your OpenAI API key is set.";
       }
