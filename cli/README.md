@@ -12,10 +12,25 @@ bun link
 
 ## Usage
 
+### Authentication
+
+The server requires authentication via Bearer token. First, login with your configured passphrase:
+
+```bash
+# Login and save authentication token
+proseva auth login
+
+# Check authentication status
+proseva auth status
+
+# Logout when done
+proseva auth logout
+```
+
 ### Basic Commands
 
 ```bash
-# Show server status
+# Show server status (requires authentication)
 proseva status
 
 # View configuration
@@ -69,6 +84,39 @@ proseva --verbose config test openai
 ```
 
 ## Commands
+
+### `proseva auth`
+
+Authentication management commands:
+
+#### `auth login [passphrase]`
+
+Login and obtain authentication token. If passphrase is not provided, you will be prompted to enter it securely.
+
+Examples:
+
+```bash
+proseva auth login                      # Prompt for passphrase
+proseva auth login my-secret-passphrase # Login with passphrase
+```
+
+The token is saved to `~/.proseva/credentials` and automatically used for subsequent commands.
+
+#### `auth logout`
+
+Logout and clear saved authentication token.
+
+```bash
+proseva auth logout
+```
+
+#### `auth status`
+
+Check authentication status and verify token validity.
+
+```bash
+proseva auth status
+```
 
 ### `proseva status`
 
@@ -266,6 +314,9 @@ bun run dev config get
 ### Initial Server Setup
 
 ```bash
+# First, login to authenticate
+proseva auth login
+
 # Set OpenAI API key
 proseva config set ai.openaiApiKey sk-...
 
@@ -313,6 +364,9 @@ proseva db export json > backup-$(date +%Y%m%d).json
 ```bash
 # Connect to production server
 export PROSEVA_API_URL=https://proseva.example.com
+
+# Login with passphrase
+proseva auth login
 
 # Update configuration
 proseva config set scheduler.timezone "America/Chicago"
