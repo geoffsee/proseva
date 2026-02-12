@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ChatStore } from "./ChatStore";
+import * as apiModule from "../lib/api";
 
 function createStore() {
   return ChatStore.create({ messages: [] });
@@ -7,6 +8,7 @@ function createStore() {
 
 beforeEach(() => {
   vi.restoreAllMocks();
+  vi.spyOn(apiModule, "getAuthToken").mockResolvedValue(null);
 });
 
 function mockFetch(reply: string) {
@@ -46,6 +48,27 @@ describe("ChatStore", () => {
     expect(fetchMock).toHaveBeenCalledWith("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      body: expect.stringContaining('"hello"'),
+    });
+  });
+
+  it("adds Authorization header when auth token exists", async () => {
+    vi.spyOn(apiModule, "getAuthToken").mockResolvedValue("test-token");
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ reply: "response" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const store = createStore();
+    await store.sendMessage("hello");
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer test-token",
+      },
       body: expect.stringContaining('"hello"'),
     });
   });

@@ -1,6 +1,7 @@
 import { types, flow } from "mobx-state-tree";
 import { v4 as uuidv4 } from "uuid";
 import { ResearchMessageModel } from "./models/ResearchMessageModel";
+import * as apiModule from "../lib/api.ts";
 
 interface ToolResultData {
   toolName: string;
@@ -47,14 +48,21 @@ export const ResearchStore = types
       let replyText: string;
       let toolResults: ToolResultData[] = [];
 
+
       try {
         const apiMessages = self.messages
           .filter((m) => m.role === "user" || m.role === "assistant")
           .map((m) => ({ role: m.role, content: m.text }));
 
+        const token: string | null = yield apiModule.getAuthToken();
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        if (token) headers.Authorization = `Bearer ${token}`;
+
         const res: Response = yield fetch("/api/research/agent/chat", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ messages: apiMessages }),
         });
 
