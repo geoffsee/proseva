@@ -33,7 +33,7 @@
     "croner": "^10.0.1",
     "date-fns": "^4.1.0",
     "firebase-admin": "^13.6.1",
-    "idb-repo": "^1.1.2",
+    "idb-repo": "^1.3.0",
     "itty-router": "^5.0.22",
     "mobx": "^6.15.0",
     "mst-graph": "^0.2.1",
