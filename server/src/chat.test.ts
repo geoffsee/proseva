@@ -341,7 +341,7 @@ describe("Chat API", () => {
     expect(body.reply).toBe("No timeline.");
   });
 
-  it("handles AnalyzeCaseGraph tool", async () => {
+  it("bootstraps compressed graph context and does not expose graph as a tool", async () => {
     db.cases.set("c1", {
       id: "c1",
       name: "Custody Matter",
@@ -366,29 +366,9 @@ describe("Chat API", () => {
       completed: false,
     });
 
-    mockCreate
-      .mockResolvedValueOnce({
-        choices: [
-          {
-            finish_reason: "tool_calls",
-            message: {
-              content: null,
-              tool_calls: [
-                {
-                  id: "call_1",
-                  function: {
-                    name: "AnalyzeCaseGraph",
-                    arguments: '{"caseId":"c1","topK":3}',
-                  },
-                },
-              ],
-            },
-          },
-        ],
-      })
-      .mockResolvedValueOnce({
-        choices: [{ finish_reason: "stop", message: { content: "Graph complete." } }],
-      });
+    mockCreate.mockResolvedValueOnce({
+      choices: [{ finish_reason: "stop", message: { content: "Graph complete." } }],
+    });
 
     const res = await api.post(
       "/api/chat",
@@ -399,15 +379,21 @@ describe("Chat API", () => {
     );
     const body = await res.json();
     expect(body.reply).toBe("Graph complete.");
-    expect(mockCreate).toHaveBeenCalledTimes(2);
+    expect(mockCreate).toHaveBeenCalledTimes(1);
 
-    const secondCall = mockCreate.mock.calls[1]?.[0] as {
+    const firstCall = mockCreate.mock.calls[0]?.[0] as {
+      tools?: Array<{ function: { name: string } }>;
       messages?: Array<{ role: string; content?: string }>;
     };
-    const toolMessage = secondCall.messages?.find((m) => m.role === "tool");
-    expect(toolMessage?.content).toContain('"caseId":"c1"');
-    expect(toolMessage?.content).toContain('"openDeadlines":1');
-    expect(toolMessage?.content).toContain('"topConnectedNodes"');
+    const toolNames = firstCall.tools?.map((tool) => tool.function.name) ?? [];
+    expect(toolNames).not.toContain("AnalyzeCaseGraph");
+
+    const systemMessage = firstCall.messages?.find((message) => message.role === "system");
+    expect(systemMessage?.content).toContain(
+      "Graph context bootstrap (compressed JSON snapshot):",
+    );
+    expect(systemMessage?.content).toContain('"priorityCases"');
+    expect(systemMessage?.content).toContain('"openDeadlineCount":1');
   });
 
   it("handles unknown tool gracefully", async () => {

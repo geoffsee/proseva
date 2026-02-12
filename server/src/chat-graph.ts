@@ -88,6 +88,39 @@ export interface AnalyzeCaseGraphResult {
   warning?: string;
 }
 
+export interface CompressCaseGraphOptions {
+  maxCases?: number;
+  maxNodes?: number;
+}
+
+export interface CompressedCaseGraphSnapshot {
+  scope: AnalyzeCaseGraphResult["scope"];
+  totals: AnalyzeCaseGraphResult["totals"];
+  openDeadlineCount: number;
+  priorityCases: Array<{
+    caseId: string;
+    caseNumber: string;
+    caseName: string;
+    status: Case["status"];
+    connectivity: number;
+    openDeadlines: number;
+    recordCount: number;
+  }>;
+  bottlenecks: Array<{
+    caseId: string;
+    caseNumber: string;
+    caseName: string;
+    openDeadlines: number;
+  }>;
+  hotNodes: Array<{
+    nodeId: string;
+    entity: string;
+    label: string;
+    degree: number;
+  }>;
+  warning?: string;
+}
+
 type GraphNode = {
   id: string;
   entity: GraphEntity;
@@ -357,6 +390,63 @@ export function analyzeCaseGraph(
   };
 }
 
+export function compressCaseGraphForPrompt(
+  result: AnalyzeCaseGraphResult,
+  options: CompressCaseGraphOptions = {},
+): CompressedCaseGraphSnapshot {
+  const maxCases = clampLimit(options.maxCases, 4, 1, 8);
+  const maxNodes = clampLimit(options.maxNodes, 6, 1, 12);
+  const sortedCases = [...result.caseSummaries].sort((left, right) => {
+    const openDeadlineDelta = right.counts.openDeadlines - left.counts.openDeadlines;
+    if (openDeadlineDelta !== 0) return openDeadlineDelta;
+
+    const connectivityDelta = right.connectivity - left.connectivity;
+    if (connectivityDelta !== 0) return connectivityDelta;
+
+    const recordDelta = countCaseRecords(right) - countCaseRecords(left);
+    if (recordDelta !== 0) return recordDelta;
+
+    return left.caseId.localeCompare(right.caseId);
+  });
+
+  return {
+    scope: result.scope,
+    totals: result.totals,
+    openDeadlineCount: result.caseSummaries.reduce(
+      (sum, summary) => sum + summary.counts.openDeadlines,
+      0,
+    ),
+    priorityCases: sortedCases.slice(0, maxCases).map((summary) => ({
+      caseId: summary.caseId,
+      caseNumber: summary.caseNumber,
+      caseName: summary.caseName,
+      status: summary.status,
+      connectivity: summary.connectivity,
+      openDeadlines: summary.counts.openDeadlines,
+      recordCount: countCaseRecords(summary),
+    })),
+    bottlenecks: sortedCases
+      .filter((summary) => summary.counts.openDeadlines > 0)
+      .slice(0, 3)
+      .map((summary) => ({
+        caseId: summary.caseId,
+        caseNumber: summary.caseNumber,
+        caseName: summary.caseName,
+        openDeadlines: summary.counts.openDeadlines,
+      })),
+    hotNodes: result.topConnectedNodes
+      .filter((node) => node.entity !== "Workspace")
+      .slice(0, maxNodes)
+      .map((node) => ({
+        nodeId: node.nodeId,
+        entity: node.entity,
+        label: node.label,
+        degree: node.degree,
+      })),
+    warning: result.warning,
+  };
+}
+
 function registerSchema(store: ReturnType<typeof createKnowledgeGraph>) {
   const entities: Array<{ id: GraphEntity; label: string }> = [
     { id: "Workspace", label: "Workspace" },
@@ -419,5 +509,28 @@ function clampTopK(value?: number): number {
   if (typeof value !== "number" || !Number.isFinite(value)) return 8;
   if (value < 1) return 1;
   if (value > 20) return 20;
+  return Math.floor(value);
+}
+
+function countCaseRecords(summary: CaseGraphSummary): number {
+  return (
+    summary.counts.deadlines +
+    summary.counts.contacts +
+    summary.counts.filings +
+    summary.counts.evidences +
+    summary.counts.notes +
+    summary.counts.documents
+  );
+}
+
+function clampLimit(
+  value: number | undefined,
+  fallback: number,
+  min: number,
+  max: number,
+): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
+  if (value < min) return min;
+  if (value > max) return max;
   return Math.floor(value);
 }

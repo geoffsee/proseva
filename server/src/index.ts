@@ -51,7 +51,7 @@ import {
   generateFinancialReport,
   generateChronologyReport,
 } from "./reports.js";
-import { analyzeCaseGraph } from "./chat-graph";
+import { analyzeCaseGraph, compressCaseGraphForPrompt } from "./chat-graph";
 
 const __dir =
   import.meta.dir ??
@@ -689,11 +689,11 @@ router
     };
     const openai = new OpenAI();
 
-    const systemPrompt = `You are a knowledgeable legal assistant for pro se (self-represented) litigants in Virginia, writing in the style of Alan Dershowitz — vigorous, direct, and intellectually fearless. Frame legal issues as arguments, not summaries. Take positions on strategy, challenge weak reasoning, and use vivid analogies to make complex procedural points accessible. Be assertive and occasionally provocative, but always grounded in the law. Write with the confidence of someone who has argued before the Supreme Court and the clarity of someone who teaches first-year law students.
+    const baseSystemPrompt = `You are a knowledgeable legal assistant for pro se (self-represented) litigants in Virginia, writing in the style of Alan Dershowitz — vigorous, direct, and intellectually fearless. Frame legal issues as arguments, not summaries. Take positions on strategy, challenge weak reasoning, and use vivid analogies to make complex procedural points accessible. Be assertive and occasionally provocative, but always grounded in the law. Write with the confidence of someone who has argued before the Supreme Court and the clarity of someone who teaches first-year law students.
 
 You do NOT provide legal advice — you provide legal information and guidance. Always remind users to verify information with their local court clerk when appropriate.
 
-You have access to tools that let you look up the user's cases, deadlines, contacts, finances, documents, and case graph relationships. Use them to give contextual, data-driven answers whenever relevant.`;
+You have access to tools that let you look up the user's cases, deadlines, contacts, finances, and documents. Use them to give contextual, data-driven answers whenever relevant.`;
 
     const tools: OpenAI.ChatCompletionTool[] = [
       {
@@ -830,29 +830,6 @@ You have access to tools that let you look up the user's cases, deadlines, conta
           },
         },
       },
-      {
-        type: "function",
-        function: {
-          name: "AnalyzeCaseGraph",
-          description:
-            "Analyze cross-entity case relationships using a knowledge graph. Use this for case overviews, bottleneck analysis, and identifying what records are most connected.",
-          parameters: {
-            type: "object",
-            properties: {
-              caseId: {
-                type: "string",
-                description: "Optional case ID to scope graph analysis to one case",
-              },
-              topK: {
-                type: "number",
-                description:
-                  "How many highest-connectivity nodes to return (1-20, default 8)",
-              },
-            },
-            required: [],
-          },
-        },
-      },
     ];
 
     const baseDir = join(appRoot, "case-data/case-documents-app");
@@ -876,14 +853,49 @@ You have access to tools that let you look up the user's cases, deadlines, conta
       if (value === "false") return false;
       return undefined;
     };
+    let documentEntriesCache: DocumentEntry[] | null = null;
     const loadDocumentEntries = async (): Promise<DocumentEntry[]> => {
+      if (documentEntriesCache) return documentEntriesCache;
       try {
         const raw = await readFile(indexPath, "utf-8");
-        return JSON.parse(raw) as DocumentEntry[];
+        documentEntriesCache = JSON.parse(raw) as DocumentEntry[];
+        return documentEntriesCache;
       } catch {
+        documentEntriesCache = [];
         return [];
       }
     };
+    const documentEntries = await loadDocumentEntries();
+    const graphSnapshotText = (() => {
+      try {
+        const graphAnalysis = analyzeCaseGraph(
+          {
+            cases: [...db.cases.values()],
+            deadlines: [...db.deadlines.values()],
+            contacts: [...db.contacts.values()],
+            filings: [...db.filings.values()],
+            evidences: [...db.evidences.values()],
+            notes: [...db.notes.values()],
+            documents: documentEntries,
+          },
+          { topK: 10 },
+        );
+        const compressedGraph = compressCaseGraphForPrompt(graphAnalysis, {
+          maxCases: 4,
+          maxNodes: 6,
+        });
+        return JSON.stringify(compressedGraph);
+      } catch (error) {
+        console.warn("[chat] Graph bootstrap failed", error);
+        return JSON.stringify({ warning: "Graph context unavailable" });
+      }
+    })();
+    const systemPrompt = `${baseSystemPrompt}
+
+Graph context bootstrap (compressed JSON snapshot):
+${graphSnapshotText}
+
+Treat this snapshot as baseline context for case connectivity and bottlenecks. Use tools for exact record-level lookups when needed.`;
 
     const executeTool = async (
       name: string,
@@ -1047,25 +1059,6 @@ You have access to tools that let you look up the user's cases, deadlines, conta
           } catch {
             return JSON.stringify({ error: "Knowledge search failed" });
           }
-        }
-        case "AnalyzeCaseGraph": {
-          const entries = await loadDocumentEntries();
-          const result = analyzeCaseGraph(
-            {
-              cases: [...db.cases.values()],
-              deadlines: [...db.deadlines.values()],
-              contacts: [...db.contacts.values()],
-              filings: [...db.filings.values()],
-              evidences: [...db.evidences.values()],
-              notes: [...db.notes.values()],
-              documents: entries,
-            },
-            {
-              caseId: parseStringArg(args.caseId),
-              topK: parseNumberArg(args.topK),
-            },
-          );
-          return JSON.stringify(result);
         }
         default:
           return JSON.stringify({ error: "Unknown tool" });

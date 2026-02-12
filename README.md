@@ -408,7 +408,8 @@ Tools available to the AI:
 - `get_finances` - View financial data
 - `search_timeline` - Search case events
 - `search_knowledge` - Semantic document search
-- `analyze_case_graph` - Graph-based relationship and connectivity analysis across case records
+
+The chat system also bootstraps each request with a compressed case-graph snapshot (connectivity, bottlenecks, and priority case load) in system context.
 
 ## Virginia-Specific Features
 
