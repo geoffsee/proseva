@@ -10,6 +10,7 @@ import {
   Button,
   Spinner,
   Alert,
+  Textarea,
 } from "@chakra-ui/react";
 import {
   FiBell,
@@ -19,6 +20,7 @@ import {
   FiAlertTriangle,
   FiKey,
   FiSearch,
+  FiMessageSquare,
 } from "react-icons/fi";
 import { useStore } from "../store/StoreContext";
 import { toaster } from "../components/ui/toaster";
@@ -79,6 +81,10 @@ const Config = observer(() => {
   const [legiscanApiKey, setLegiscanApiKey] = useState("");
   const [govInfoApiKey, setGovInfoApiKey] = useState("");
   const [serpapiBase, setSerpapiBase] = useState("");
+
+  const [chatSystemPrompt, setChatSystemPrompt] = useState("");
+  const [caseSummaryPrompt, setCaseSummaryPrompt] = useState("");
+  const [evaluatorPrompt, setEvaluatorPrompt] = useState("");
 
   const [hasChanges, setHasChanges] = useState(false);
   const [dbSecurityStatus, setDbSecurityStatus] =
@@ -149,6 +155,12 @@ const Config = observer(() => {
       setLegiscanApiKey(configStore.config.legalResearch?.legiscanApiKey || "");
       setGovInfoApiKey(configStore.config.legalResearch?.govInfoApiKey || "");
       setSerpapiBase(configStore.config.legalResearch?.serpapiBase || "");
+
+      setChatSystemPrompt(configStore.config.prompts?.chatSystemPrompt || "");
+      setCaseSummaryPrompt(
+        configStore.config.prompts?.caseSummaryPrompt || "",
+      );
+      setEvaluatorPrompt(configStore.config.prompts?.evaluatorPrompt || "");
     }
   }, [configStore.config]);
 
@@ -183,6 +195,11 @@ const Config = observer(() => {
           legiscanApiKey: legiscanApiKey || undefined,
           govInfoApiKey: govInfoApiKey || undefined,
           serpapiBase: serpapiBase || undefined,
+        },
+        prompts: {
+          chatSystemPrompt: chatSystemPrompt || undefined,
+          caseSummaryPrompt: caseSummaryPrompt || undefined,
+          evaluatorPrompt: evaluatorPrompt || undefined,
         },
       });
 
@@ -400,6 +417,13 @@ const Config = observer(() => {
   const encryptionStatus = dbSecurityStatus?.encryptedAtRest
     ? "database"
     : "environment";
+
+  const promptsStatus =
+    configStore.config?.prompts?.chatSystemPromptSource === "database" ||
+    configStore.config?.prompts?.caseSummaryPromptSource === "database" ||
+    configStore.config?.prompts?.evaluatorPromptSource === "database"
+      ? "database"
+      : "environment";
 
   const modelOptions = Array.from(
     new Set([...availableModels, ...selectedModels]),
@@ -713,6 +737,113 @@ const Config = observer(() => {
           <Text fontSize="sm" color="gray.600">
             Used for AI-powered case summaries, reports, and chat
           </Text>
+        </ConfigSection>
+
+        {/* AI Prompts Section */}
+        <ConfigSection
+          title="AI Prompts"
+          icon={<FiMessageSquare />}
+          status={promptsStatus}
+        >
+          <Text fontSize="sm" color="gray.600" mb={3}>
+            Customize the system prompts used by AI features. Leave blank to use
+            defaults. Changes take effect immediately.
+          </Text>
+
+          <Box>
+            <HStack justify="space-between" mb={1}>
+              <Text fontSize="sm" fontWeight="medium">
+                Chat System Prompt
+              </Text>
+              {configStore.config?.prompts?.chatSystemPromptSource && (
+                <Text fontSize="xs" color="gray.500">
+                  Source: {configStore.config.prompts.chatSystemPromptSource}
+                </Text>
+              )}
+            </HStack>
+            <Textarea
+              value={chatSystemPrompt}
+              onChange={(e) => {
+                setChatSystemPrompt(e.target.value);
+                setHasChanges(true);
+              }}
+              placeholder="Default: Knowledgeable legal assistant for pro se litigants in Virginia, writing in the style of Alan Dershowitz..."
+              rows={6}
+              fontFamily="monospace"
+              fontSize="sm"
+            />
+            <Text fontSize="xs" color="gray.500" mt={1}>
+              Used by the AI chat assistant when responding to user queries
+            </Text>
+          </Box>
+
+          <Box>
+            <HStack justify="space-between" mb={1}>
+              <Text fontSize="sm" fontWeight="medium">
+                Case Summary Prompt
+              </Text>
+              {configStore.config?.prompts?.caseSummaryPromptSource && (
+                <Text fontSize="xs" color="gray.500">
+                  Source: {configStore.config.prompts.caseSummaryPromptSource}
+                </Text>
+              )}
+            </HStack>
+            <Textarea
+              value={caseSummaryPrompt}
+              onChange={(e) => {
+                setCaseSummaryPrompt(e.target.value);
+                setHasChanges(true);
+              }}
+              placeholder="Default: Provide concise strategic summary with case assessment, key deadlines, and evidence gaps..."
+              rows={6}
+              fontFamily="monospace"
+              fontSize="sm"
+            />
+            <Text fontSize="xs" color="gray.500" mt={1}>
+              Template for case summaries. Supports placeholders: {"{caseName}"}
+              , {"{caseType}"}, {"{status}"}, {"{totalDeadlines}"}
+            </Text>
+          </Box>
+
+          <Box>
+            <HStack justify="space-between" mb={1}>
+              <Text fontSize="sm" fontWeight="medium">
+                Evaluator Prompt
+              </Text>
+              {configStore.config?.prompts?.evaluatorPromptSource && (
+                <Text fontSize="xs" color="gray.500">
+                  Source: {configStore.config.prompts.evaluatorPromptSource}
+                </Text>
+              )}
+            </HStack>
+            <Textarea
+              value={evaluatorPrompt}
+              onChange={(e) => {
+                setEvaluatorPrompt(e.target.value);
+                setHasChanges(true);
+              }}
+              placeholder="Default: Provide brief, actionable summary of deadline status focusing on critical items..."
+              rows={6}
+              fontFamily="monospace"
+              fontSize="sm"
+            />
+            <Text fontSize="xs" color="gray.500" mt={1}>
+              Template for deadline evaluations. Supports placeholders:{" "}
+              {"{overdueText}"}, {"{upcomingText}"}
+            </Text>
+          </Box>
+
+          <Alert.Root status="info">
+            <Alert.Indicator />
+            <Alert.Description>
+              See{" "}
+              <Text as="span" fontWeight="bold">
+                docs/hot-swap-prompts.md
+              </Text>{" "}
+              for detailed information about prompt customization, placeholders,
+              and best practices.
+            </Alert.Description>
+          </Alert.Root>
         </ConfigSection>
 
         {/* Legal Research APIs Section */}

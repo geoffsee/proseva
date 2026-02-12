@@ -87,6 +87,21 @@ const LegalResearchConfigModel = types.model("LegalResearchConfig", {
   ),
 });
 
+const PromptsConfigModel = types.model("PromptsConfig", {
+  chatSystemPrompt: types.maybeNull(types.string),
+  caseSummaryPrompt: types.maybeNull(types.string),
+  evaluatorPrompt: types.maybeNull(types.string),
+  chatSystemPromptSource: types.maybeNull(
+    types.enumeration(["database", "default"]),
+  ),
+  caseSummaryPromptSource: types.maybeNull(
+    types.enumeration(["database", "default"]),
+  ),
+  evaluatorPromptSource: types.maybeNull(
+    types.enumeration(["database", "default"]),
+  ),
+});
+
 const ServerConfigModel = types.model("ServerConfigModel", {
   firebase: types.maybeNull(FirebaseConfigModel),
   twilio: types.maybeNull(TwilioConfigModel),
@@ -94,6 +109,7 @@ const ServerConfigModel = types.model("ServerConfigModel", {
   ai: types.maybeNull(AIConfigModel),
   autoIngest: types.maybeNull(AutoIngestConfigModel),
   legalResearch: types.maybeNull(LegalResearchConfigModel),
+  prompts: types.maybeNull(PromptsConfigModel),
 });
 
 export const ConfigStore = types
