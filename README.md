@@ -42,6 +42,16 @@ AI case management software designed to help self-represented litigants (pro se)
 - **Estate Planning** - Asset and beneficiary tracking for estate management
 - **App Settings** - Customizable legal settings and preferences
 
+### 🔒 Security & Encryption
+
+- **Post-Quantum Encryption** - ML-KEM-1024 (post-quantum resistant) for all frontend data storage
+- **Two-Tier KV Storage** - Passphrase-encrypted keys store protects ML-KEM keypair
+- **Zero-Knowledge Architecture** - Data encrypted client-side; passphrase never leaves your device
+- **Encrypted at Rest** - All data stored in encrypted IndexedDB (frontend) and optionally encrypted JSON (backend)
+- **PBKDF2 Key Derivation** - Industry-standard key derivation with salt persistence
+- **WebCrypto Fallback** - Automatic fallback to AES-256 when wasm unavailable
+- **Migration Support** - Seamless migration from legacy localStorage to encrypted storage
+
 ### 🔔 Notifications
 
 - **Device Token Management** - Register devices for push notifications
@@ -53,7 +63,8 @@ AI case management software designed to help self-represented litigants (pro se)
 ### Frontend
 
 - **Framework**: React 19 with React Router 7
-- **State Management**: MobX State Tree (MST) with localStorage persistence
+- **State Management**: MobX State Tree (MST) with encrypted IndexedDB persistence (idb-repo)
+- **Encryption**: ML-KEM-1024 post-quantum encryption for data, PBKDF2 + AES-256-GCM for keys
 - **UI Components**: Chakra UI
 - **Styling**: Emotion CSS-in-JS
 - **Build Tool**: Vite
@@ -232,14 +243,18 @@ bun run preview
 
 ## State Management
 
-The app uses **MobX State Tree (MST)** for state management:
+The app uses **MobX State Tree (MST)** for state management with encrypted persistence:
 
 - **Observable state** - Automatic change tracking
-- **localStorage persistence** - Automatic saving via `onSnapshot()`
+- **Encrypted persistence** - Data stored in IndexedDB via `idb-repo` with post-quantum ML-KEM-1024 encryption
+- **Two-tier KV storage** - Passphrase-encrypted keys store protects ML-KEM keypair; ML-KEM encrypts all app data
 - **Type-safe stores** - Full TypeScript support
 - **Computed values** - Derived state and reactions
+- **Migration support** - Automatic migration from legacy localStorage to encrypted KV storage
 
 ### Key Stores
+
+All stores are automatically encrypted and persisted to IndexedDB via the two-tier KV system:
 
 - **CaseStore** - Case CRUD operations
 - **DeadlineStore** - Deadline management and evaluation
@@ -254,16 +269,42 @@ The app uses **MobX State Tree (MST)** for state management:
 
 ### Storage Strategy
 
-- **Frontend**: localStorage (automatic via MST snapshots)
+- **Frontend**: Encrypted IndexedDB via `idb-repo` (two-tier KV storage with post-quantum ML-KEM-1024 encryption)
 - **Backend**: JSON file (`server/data/db.json`)
 - **Backups**: Automated backups in `server/data/backups/`
 - **Embeddings**: Semantic search vectors in `server/data/embeddings-database.json`
 
+### Encryption Architecture
+
+#### Frontend Encryption (Two-Tier KV Storage)
+
+1. **Keys Store** (`proseva-keys` IndexedDB):
+   - Encrypted with user's passphrase via PBKDF2 + AES-256-GCM
+   - Stores ML-KEM-1024 keypair (public and secret keys)
+   - Salt persisted in localStorage for consistent key derivation
+
+2. **Data Store** (`proseva-data` IndexedDB):
+   - Encrypted with ML-KEM-1024 post-quantum encryption
+   - Stores all application data (cases, deadlines, evidence, etc.)
+   - WebCrypto fallback when wasm is unavailable
+
+3. **Security Flow**:
+   - First run: User creates passphrase → ML-KEM keypair generated → both KV stores initialized
+   - Subsequent runs: User enters passphrase → keys store decrypted → ML-KEM keys loaded → data store unlocked
+   - All data encrypted at rest; no plaintext in IndexedDB
+
+#### Backend Encryption
+
+- **Optional at-rest encryption** for `server/data/db.json`
+- **V2 format**: Uses `idb-repo`'s PassphraseEncryptionProvider (PBKDF2 + AES-256-GCM)
+- **Backward compatible**: Can read legacy v1 encrypted databases
+- **Environment key**: Set `PROSEVA_DB_ENCRYPTION_KEY` to auto-decrypt on startup
+- **Settings UI**: Alternative unlock via Settings page or startup prompt
+
 ### Persistence
 
-- Frontend changes → localStorage → MST snapshot
-- Backend mutations → in-memory → JSON file write
-- Optional at-rest encryption for `db.json` (via runtime recovery key)
+- Frontend changes → MobX State Tree → encrypted KV storage
+- Backend mutations → in-memory → JSON file write (optionally encrypted)
 - Middleware triggers persistence on non-GET requests
 
 ## Configuration
@@ -312,11 +353,11 @@ This means values can be configured either via environment variables or through 
 
 #### Database Encryption
 
-| Variable                    | Required | Default | Description                                                                      |
-| --------------------------- | -------- | ------- | -------------------------------------------------------------------------------- |
-| `PROSEVA_DB_ENCRYPTION_KEY` | ❌ No    | -       | Optional startup key for decrypting/encrypting `db.json` (AES-256-GCM + PBKDF2). |
+| Variable                    | Required | Default | Description                                                                                                                  |
+| --------------------------- | -------- | ------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `PROSEVA_DB_ENCRYPTION_KEY` | ❌ No    | -       | Optional startup key for decrypting/encrypting backend `server/data/db.json` (PBKDF2 + AES-256-GCM via idb-repo PassphraseEncryptionProvider). |
 
-If `PROSEVA_DB_ENCRYPTION_KEY` is not set, the app can still be unlocked by entering a recovery key in the Settings page or startup unlock prompt.
+**Note**: This environment variable is for **backend** database encryption only. Frontend data is always encrypted using the user's passphrase with post-quantum ML-KEM-1024 encryption (see "Database" section for details). If `PROSEVA_DB_ENCRYPTION_KEY` is not set, the backend can still be unlocked by entering a recovery key in the Settings page or startup unlock prompt.
 
 #### Example `.env` File
 
@@ -538,11 +579,13 @@ Outputs:
 - Reset database: `./reset-db.sh`
 - Verify backups exist in `server/data/backups/`
 
-### localStorage Issues
+### Data Persistence Issues
 
-- Check browser's localStorage is enabled
-- Clear localStorage and reload: DevTools > Application > Clear Storage
-- Verify localStorage keys in `RootStore.ts` STORAGE_KEYS
+- **Frontend encryption**: All data stored in encrypted IndexedDB via `idb-repo`
+- **Passphrase required**: Enter your passphrase on startup to unlock encrypted data
+- **Clear encrypted data**: DevTools > Application > IndexedDB > Delete `proseva-data` and `proseva-keys`
+- **Lost passphrase**: Data cannot be recovered without the passphrase (by design)
+- **Migration**: Legacy localStorage data is automatically migrated to encrypted KV storage on first passphrase setup
 
 ## Resources
 
