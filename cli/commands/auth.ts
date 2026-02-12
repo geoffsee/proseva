@@ -85,7 +85,8 @@ async function login(passphrase?: string): Promise<void> {
 
   try {
     // Call login endpoint
-    // Note: Login endpoint is intentionally unauthenticated to allow users to obtain a token
+    // Note: Excluded from Bearer token middleware (cannot require token to obtain token)
+    // Still requires database to be unlocked
     const response = await client.post("/auth/login", {
       body: { passphrase },
     });

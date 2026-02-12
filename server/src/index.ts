@@ -104,7 +104,7 @@ const persistAfterMutation = (response: Response, request: Request) => {
 // Security routes allow initial setup and DB unlock before auth is configured
 // Auth endpoints handle their own validation:
 //   - /api/auth/login: Cannot require token to obtain token
-//   - /api/auth/verify: Validates the token itself (requires token in request)
+//   - /api/auth/verify: Must accept invalid/expired tokens to return status (handles auth internally)
 const ROUTES_WITHOUT_AUTH = new Set([
   "/api/security/status",
   "/api/security/recovery-key",
