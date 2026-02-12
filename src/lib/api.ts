@@ -1,6 +1,11 @@
 import createClient from "openapi-fetch";
 import type { paths, components } from "./api-types.js";
 import type { ReportConfig } from "../types";
+import {
+  saveAuthToken as kvSaveAuthToken,
+  loadAuthToken as kvLoadAuthToken,
+  clearAuthToken as kvClearAuthToken,
+} from "./kv";
 
 export type Case = components["schemas"]["Case"];
 export type Party = components["schemas"]["Party"];
@@ -11,15 +16,85 @@ export type FinancialEntry = components["schemas"]["FinancialEntry"];
 export type Evidence = components["schemas"]["Evidence"];
 export type DocumentEntry = components["schemas"]["DocumentEntry"];
 
-export const client = createClient<paths>({ baseUrl: "/api" });
+// --- Token Management ---
+export async function setAuthToken(token: string): Promise<void> {
+  try {
+    await kvSaveAuthToken(token);
+  } catch (error) {
+    console.error("Failed to store auth token:", error);
+  }
+}
+
+export async function getAuthToken(): Promise<string | null> {
+  try {
+    return await kvLoadAuthToken();
+  } catch (error) {
+    console.error("Failed to retrieve auth token:", error);
+    return null;
+  }
+}
+
+export async function clearAuthToken(): Promise<void> {
+  try {
+    await kvClearAuthToken();
+  } catch (error) {
+    console.error("Failed to clear auth token:", error);
+  }
+}
+
+// Create client and configure with middleware for dynamic auth headers
+export const client = createClient<paths>({
+  baseUrl: "/api",
+});
+
+// Add middleware to inject auth token on every request
+client.use({
+  async onRequest({ request }) {
+    const token = await getAuthToken();
+    if (token) {
+      request.headers.set("Authorization", `Bearer ${token}`);
+    }
+    return request;
+  },
+});
+
+// Helper to create fetch headers with auth token
+async function getAuthHeaders(additional?: HeadersInit): Promise<HeadersInit> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...Object.fromEntries(new Headers(additional || {}).entries()),
+  };
+  const token = await getAuthToken();
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return headers;
+}
 
 // --- Convenience wrappers preserving the existing api.* interface ---
+
+// Authentication expiration callback
+let onAuthExpired: (() => void) | null = null;
+
+export function setAuthExpiredCallback(callback: () => void): void {
+  onAuthExpired = callback;
+}
 
 async function unwrap<T>(
   promise: Promise<{ data?: T; error?: unknown; response: Response }>,
 ): Promise<T | null> {
   try {
     const { data, error, response } = await promise;
+
+    // Handle authentication errors
+    if (response.status === 401) {
+      await clearAuthToken();
+      if (onAuthExpired) {
+        onAuthExpired();
+      }
+      throw new Error("Authentication required. Please log in again.");
+    }
+
     if (response.status === 404) return null;
     if (response.status === 204) return null;
     if (!response.ok || error)
@@ -254,7 +329,9 @@ export const searchApi = {
     if (options?.caseId) {
       params.set("caseId", options.caseId);
     }
-    const res = await fetch(`/api/search?${params.toString()}`);
+    const res = await fetch(`/api/search?${params.toString()}`, {
+      headers: await getAuthHeaders(),
+    });
     return res.json();
   },
 };
@@ -322,7 +399,9 @@ export type SchedulerStatus = {
 
 export const deviceTokensApi = {
   list: async (): Promise<DeviceToken[]> => {
-    const res = await fetch("/api/device-tokens");
+    const res = await fetch("/api/device-tokens", {
+      headers: await getAuthHeaders(),
+    });
     return res.json();
   },
   create: async (data: {
@@ -331,19 +410,24 @@ export const deviceTokensApi = {
   }): Promise<DeviceToken> => {
     const res = await fetch("/api/device-tokens", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await getAuthHeaders(),
       body: JSON.stringify(data),
     });
     return res.json();
   },
   delete: async (id: string): Promise<void> => {
-    await fetch(`/api/device-tokens/${id}`, { method: "DELETE" });
+    await fetch(`/api/device-tokens/${id}`, {
+      method: "DELETE",
+      headers: await getAuthHeaders(),
+    });
   },
 };
 
 export const smsRecipientsApi = {
   list: async (): Promise<SmsRecipient[]> => {
-    const res = await fetch("/api/sms-recipients");
+    const res = await fetch("/api/sms-recipients", {
+      headers: await getAuthHeaders(),
+    });
     return res.json();
   },
   create: async (data: {
@@ -352,23 +436,30 @@ export const smsRecipientsApi = {
   }): Promise<SmsRecipient> => {
     const res = await fetch("/api/sms-recipients", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await getAuthHeaders(),
       body: JSON.stringify(data),
     });
     return res.json();
   },
   delete: async (id: string): Promise<void> => {
-    await fetch(`/api/sms-recipients/${id}`, { method: "DELETE" });
+    await fetch(`/api/sms-recipients/${id}`, {
+      method: "DELETE",
+      headers: await getAuthHeaders(),
+    });
   },
 };
 
 export const evaluationsApi = {
   list: async (): Promise<EvaluationType[]> => {
-    const res = await fetch("/api/evaluations");
+    const res = await fetch("/api/evaluations", {
+      headers: await getAuthHeaders(),
+    });
     return res.json();
   },
   get: async (id: string): Promise<EvaluationType | null> => {
-    const res = await fetch(`/api/evaluations/${id}`);
+    const res = await fetch(`/api/evaluations/${id}`, {
+      headers: await getAuthHeaders(),
+    });
     if (res.status === 404) return null;
     return res.json();
   },
@@ -377,14 +468,19 @@ export const evaluationsApi = {
     pushSent: boolean;
     smsSent: boolean;
   }> => {
-    const res = await fetch("/api/evaluations/trigger", { method: "POST" });
+    const res = await fetch("/api/evaluations/trigger", {
+      method: "POST",
+      headers: await getAuthHeaders(),
+    });
     return res.json();
   },
 };
 
 export const schedulerApi = {
   status: async (): Promise<SchedulerStatus> => {
-    const res = await fetch("/api/scheduler/status");
+    const res = await fetch("/api/scheduler/status", {
+      headers: await getAuthHeaders(),
+    });
     return res.json();
   },
 };
@@ -463,7 +559,9 @@ export type OpenAIModelsResponse = {
 
 export const configApi = {
   get: async (): Promise<ServerConfig> => {
-    const res = await fetch("/api/config");
+    const res = await fetch("/api/config", {
+      headers: await getAuthHeaders(),
+    });
     return res.json();
   },
   update: async (
@@ -471,13 +569,16 @@ export const configApi = {
   ): Promise<{ success: boolean }> => {
     const res = await fetch("/api/config", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: await getAuthHeaders(),
       body: JSON.stringify(updates),
     });
     return res.json();
   },
   reset: async (): Promise<{ success: boolean }> => {
-    const res = await fetch("/api/config/reset", { method: "POST" });
+    const res = await fetch("/api/config/reset", {
+      method: "POST",
+      headers: await getAuthHeaders(),
+    });
     return res.json();
   },
   deleteKey: async (
@@ -486,11 +587,15 @@ export const configApi = {
   ): Promise<{ success: boolean }> => {
     const res = await fetch(`/api/config/${group}/${key}`, {
       method: "DELETE",
+      headers: await getAuthHeaders(),
     });
     return res.json();
   },
   testFirebase: async (): Promise<{ success: boolean; error?: string }> => {
-    const res = await fetch("/api/config/test-firebase", { method: "POST" });
+    const res = await fetch("/api/config/test-firebase", {
+      method: "POST",
+      headers: await getAuthHeaders(),
+    });
     return res.json();
   },
   testTwilio: async (
@@ -498,18 +603,22 @@ export const configApi = {
   ): Promise<{ success: boolean; error?: string }> => {
     const res = await fetch("/api/config/test-twilio", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await getAuthHeaders(),
       body: JSON.stringify({ testPhone }),
     });
     return res.json();
   },
   testOpenAI: async (): Promise<{ success: boolean; error?: string }> => {
-    const res = await fetch("/api/config/test-openai", { method: "POST" });
+    const res = await fetch("/api/config/test-openai", {
+      method: "POST",
+      headers: await getAuthHeaders(),
+    });
     return res.json();
   },
   reinitialize: async (service: string): Promise<{ success: boolean }> => {
     const res = await fetch(`/api/config/reinitialize/${service}`, {
       method: "POST",
+      headers: await getAuthHeaders(),
     });
     return res.json();
   },
@@ -518,7 +627,9 @@ export const configApi = {
     if (endpoint && endpoint.trim()) {
       url.searchParams.set("endpoint", endpoint.trim());
     }
-    const res = await fetch(url.pathname + url.search);
+    const res = await fetch(url.pathname + url.search, {
+      headers: await getAuthHeaders(),
+    });
     return res.json();
   },
 };
@@ -559,6 +670,20 @@ export const securityApi = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ recoveryKey }),
+    });
+    return res.json();
+  },
+};
+
+export const authApi = {
+  login: async (
+    passphrase: string,
+    ttl?: string,
+  ): Promise<{ success: boolean; token: string; expiresIn: number; error?: string }> => {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ passphrase, ttl }),
     });
     return res.json();
   },
@@ -619,18 +744,22 @@ export type EstatePlanType = {
 
 export const estatePlansApi = {
   list: async (): Promise<EstatePlanType[]> => {
-    const res = await fetch("/api/estate-plans");
+    const res = await fetch("/api/estate-plans", {
+      headers: await getAuthHeaders(),
+    });
     return res.json();
   },
   get: async (id: string): Promise<EstatePlanType | null> => {
-    const res = await fetch(`/api/estate-plans/${id}`);
+    const res = await fetch(`/api/estate-plans/${id}`, {
+      headers: await getAuthHeaders(),
+    });
     if (res.status === 404) return null;
     return res.json();
   },
   create: async (data: Partial<EstatePlanType>): Promise<EstatePlanType> => {
     const res = await fetch("/api/estate-plans", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await getAuthHeaders(),
       body: JSON.stringify(data),
     });
     return res.json();
@@ -641,13 +770,16 @@ export const estatePlansApi = {
   ): Promise<EstatePlanType> => {
     const res = await fetch(`/api/estate-plans/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: await getAuthHeaders(),
       body: JSON.stringify(updates),
     });
     return res.json();
   },
   delete: async (id: string): Promise<void> => {
-    await fetch(`/api/estate-plans/${id}`, { method: "DELETE" });
+    await fetch(`/api/estate-plans/${id}`, {
+      method: "DELETE",
+      headers: await getAuthHeaders(),
+    });
   },
   addBeneficiary: async (
     planId: string,
@@ -655,7 +787,7 @@ export const estatePlansApi = {
   ): Promise<unknown> => {
     const res = await fetch(`/api/estate-plans/${planId}/beneficiaries`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await getAuthHeaders(),
       body: JSON.stringify(data),
     });
     return res.json();
@@ -663,6 +795,7 @@ export const estatePlansApi = {
   removeBeneficiary: async (planId: string, id: string): Promise<void> => {
     await fetch(`/api/estate-plans/${planId}/beneficiaries/${id}`, {
       method: "DELETE",
+      headers: await getAuthHeaders(),
     });
   },
   addAsset: async (
@@ -671,7 +804,7 @@ export const estatePlansApi = {
   ): Promise<unknown> => {
     const res = await fetch(`/api/estate-plans/${planId}/assets`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await getAuthHeaders(),
       body: JSON.stringify(data),
     });
     return res.json();
@@ -679,6 +812,7 @@ export const estatePlansApi = {
   removeAsset: async (planId: string, id: string): Promise<void> => {
     await fetch(`/api/estate-plans/${planId}/assets/${id}`, {
       method: "DELETE",
+      headers: await getAuthHeaders(),
     });
   },
   addDocument: async (
@@ -687,7 +821,7 @@ export const estatePlansApi = {
   ): Promise<unknown> => {
     const res = await fetch(`/api/estate-plans/${planId}/documents`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await getAuthHeaders(),
       body: JSON.stringify(data),
     });
     return res.json();
@@ -699,7 +833,7 @@ export const estatePlansApi = {
   ): Promise<unknown> => {
     const res = await fetch(`/api/estate-plans/${planId}/documents/${docId}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: await getAuthHeaders(),
       body: JSON.stringify(updates),
     });
     return res.json();
@@ -707,6 +841,7 @@ export const estatePlansApi = {
   removeDocument: async (planId: string, id: string): Promise<void> => {
     await fetch(`/api/estate-plans/${planId}/documents/${id}`, {
       method: "DELETE",
+      headers: await getAuthHeaders(),
     });
   },
 };
@@ -720,7 +855,7 @@ export const researchAgentApi = {
   }> => {
     const res = await fetch("/api/research/agent/chat", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await getAuthHeaders(),
       body: JSON.stringify({ messages }),
     });
     if (!res.ok) throw new Error(`Research agent error: ${res.status}`);
@@ -744,6 +879,7 @@ export const api = {
   scheduler: schedulerApi,
   config: configApi,
   security: securityApi,
+  auth: authApi,
   estatePlans: estatePlansApi,
   researchAgent: researchAgentApi,
 };

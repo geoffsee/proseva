@@ -8,6 +8,7 @@ import { configCommand } from "../commands/config";
 import { dbCommand } from "../commands/db";
 import { notificationsCommand } from "../commands/notifications";
 import { scanCommand } from "../commands/scan";
+import { authCommand, readToken } from "../commands/auth";
 import chalk from "chalk";
 
 const program = new Command();
@@ -23,16 +24,21 @@ program
   )
   .option("--json", "Output as JSON")
   .option("--verbose", "Verbose logging")
-  .hook("preAction", (thisCommand) => {
+  .hook("preAction", async (thisCommand) => {
     // Make options available globally
     const opts = thisCommand.optsWithGlobals();
     (global as any).cliOptions = opts;
+
+    // Load stored token
+    const tokenData = await readToken();
+    const token = tokenData?.token;
 
     // Create API client
     const apiUrl = opts.apiUrl.replace(/\/$/, ""); // Remove trailing slash
     (global as any).apiClient = new ApiClient({
       baseUrl: `${apiUrl}/api`,
       verbose: opts.verbose,
+      token,
     });
   });
 
@@ -44,6 +50,43 @@ program
   .action(async (options) => {
     try {
       await statusCommand(options);
+    } catch (error) {
+      handleError(error);
+    }
+  });
+
+// Auth commands
+const auth = program.command("auth").description("Authentication management");
+
+auth
+  .command("login")
+  .description("Login with passphrase and get authentication token")
+  .option("--ttl <duration>", "Token time-to-live (e.g., 24h, 7d, 30m)", "24h")
+  .action(async (options) => {
+    try {
+      await authCommand.login(options);
+    } catch (error) {
+      handleError(error);
+    }
+  });
+
+auth
+  .command("logout")
+  .description("Remove stored authentication token")
+  .action(async () => {
+    try {
+      await authCommand.logout();
+    } catch (error) {
+      handleError(error);
+    }
+  });
+
+auth
+  .command("status")
+  .description("Show authentication status")
+  .action(async () => {
+    try {
+      await authCommand.status();
     } catch (error) {
       handleError(error);
     }

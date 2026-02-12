@@ -10,8 +10,16 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { securityApi } from "../../lib/api";
 import {
+  securityApi,
+  authApi,
+  setAuthToken,
+  getAuthToken,
+  clearAuthToken,
+  setAuthExpiredCallback,
+} from "../../lib/api";
+import {
+  initAuthStore,
   initKeysStore,
   initDataStore,
   generateAndStoreMLKEMKeys,
@@ -42,6 +50,28 @@ export function PassphraseGate({ children }: { children: ReactNode }) {
     let cancelled = false;
     const bootstrap = async () => {
       try {
+        // Initialize auth store first (doesn't require passphrase)
+        await initAuthStore();
+
+        // Check if we have a valid token from a previous session
+        const existingToken = await getAuthToken();
+        if (existingToken) {
+          // Try to use the existing token to initialize stores
+          // This will fail if the token is expired, which is fine
+          try {
+            setState("initializing");
+            await initializeWithExistingToken(existingToken);
+            if (!cancelled) {
+              setState("ready");
+            }
+            return;
+          } catch (err) {
+            // Token invalid or expired, clear it and continue to passphrase prompt
+            await clearAuthToken();
+            console.log("Existing token invalid, requiring new login:", err);
+          }
+        }
+
         const status = await securityApi.status();
         if (cancelled) return;
 
@@ -63,25 +93,54 @@ export function PassphraseGate({ children }: { children: ReactNode }) {
     };
   }, [isTestMode]);
 
+  const initializeWithExistingToken = useCallback(
+    async (token: string) => {
+      // Try to verify the token is still valid by making a test API call
+      // This will throw if the token is expired/invalid
+      await securityApi.status();
+
+      // Token is valid, but we still need the passphrase to decrypt the keys store
+      // So we can't fully initialize here. Just set the token and return.
+      // The user will still need to enter their passphrase.
+      throw new Error("Token exists but passphrase still required for encryption keys");
+    },
+    [],
+  );
+
   const initializeStores = useCallback(
     async (pwd: string, isFirstRun: boolean) => {
       setState("initializing");
       setError(null);
 
       try {
-        // 1. Open the keys store with the passphrase
+        // 1. Get authentication token from backend
+        const authResult = await authApi.login(pwd);
+        if (!authResult.success || !authResult.token) {
+          throw new Error(authResult.error || "Failed to get authentication token");
+        }
+        await setAuthToken(authResult.token);
+
+        // Set up auth expiration handler AFTER successful login
+        setAuthExpiredCallback(() => {
+          void clearAuthToken();
+          setError("Your session has expired. Please log in again.");
+          setPassphrase("");
+          setState("enter-passphrase");
+        });
+
+        // 2. Open the keys store with the passphrase
         await initKeysStore(pwd);
 
         let publicKey: Uint8Array;
         let secretKey: Uint8Array;
 
         if (isFirstRun) {
-          // 2a. First run: generate ML-KEM keypair and store in keys KV
+          // 3a. First run: generate ML-KEM keypair and store in keys KV
           const keys = await generateAndStoreMLKEMKeys();
           publicKey = keys.publicKey;
           secretKey = keys.secretKey;
         } else {
-          // 2b. Subsequent: load ML-KEM keys from keys KV
+          // 3b. Subsequent: load ML-KEM keys from keys KV
           const keys = await loadMLKEMKeys();
           if (!keys) {
             // Recovery path: if passphrase is valid but keys are missing
@@ -95,11 +154,12 @@ export function PassphraseGate({ children }: { children: ReactNode }) {
           }
         }
 
-        // 3. Open the data store with ML-KEM keys
+        // 4. Open the data store with ML-KEM keys
         await initDataStore(publicKey, secretKey);
 
         setState("ready");
       } catch (err) {
+        await clearAuthToken();
         setError(`Failed to initialize encryption: ${String(err)}`);
         setState(isFirstRun ? "create-passphrase" : "enter-passphrase");
       }
