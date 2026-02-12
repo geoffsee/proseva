@@ -55,6 +55,17 @@ async function login(passphrase?: string): Promise<void> {
   const client = (global as any).apiClient as ApiClient;
   const outputJson = (global as any).cliOptions.json;
 
+  // Warn if passphrase provided as argument
+  if (passphrase && !outputJson) {
+    printWarning(
+      "Security Warning: Passphrase provided as command argument may be exposed in shell history.",
+    );
+    console.log(
+      chalk.dim("For better security, use: proseva auth login (without passphrase argument)"),
+    );
+    console.log();
+  }
+
   // Prompt for passphrase if not provided
   if (!passphrase) {
     const { default: prompts } = await import("prompts");

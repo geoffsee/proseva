@@ -6,6 +6,12 @@ const PASSPHRASE_HASH_KEY = "passphrase_hash";
 const AUTH_TOKENS_KEY = "auth_tokens";
 const DEFAULT_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
+// Bcrypt costs for different use cases
+// Higher cost for passphrases (used less frequently, stored long-term)
+// Lower cost for tokens (used frequently, short-lived, already high-entropy)
+const PASSPHRASE_BCRYPT_COST = 12;
+const TOKEN_BCRYPT_COST = 10;
+
 type AuthToken = {
   hash: string;
   expiresAt: string;
@@ -17,7 +23,10 @@ type StoredTokens = {
 };
 
 async function hashPassphrase(passphrase: string): Promise<string> {
-  return Bun.password.hash(passphrase, { algorithm: "bcrypt", cost: 12 });
+  return Bun.password.hash(passphrase, {
+    algorithm: "bcrypt",
+    cost: PASSPHRASE_BCRYPT_COST,
+  });
 }
 
 async function verifyPassphrase(
@@ -32,7 +41,10 @@ function generateToken(): string {
 }
 
 async function hashToken(token: string): Promise<string> {
-  return Bun.password.hash(token, { algorithm: "bcrypt", cost: 10 });
+  return Bun.password.hash(token, {
+    algorithm: "bcrypt",
+    cost: TOKEN_BCRYPT_COST,
+  });
 }
 
 async function verifyToken(token: string, hash: string): Promise<boolean> {
