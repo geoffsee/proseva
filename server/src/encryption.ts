@@ -23,13 +23,24 @@ const DB_ENCRYPTION_PAYLOAD_KEY = "__proseva_encrypted";
 const DB_ENCRYPTION_V2_PAYLOAD_KEY = "__proseva_encrypted_v2";
 const DB_ENCRYPTION_V3_PAYLOAD_KEY = "__proseva_encrypted_v3";
 const USE_ML_KEM_ENV_VAR = "PROSEVA_USE_ML_KEM";
+const ML_KEM_KEYPAIR_FILE_ENV_VAR = "PROSEVA_ML_KEM_KEYPAIR_FILE";
 
 // Initialize ML-KEM WASM module
 let wasmInitialized = false;
 function ensureWasmInit(): void {
   if (wasmInitialized) return;
   try {
-    const wasmPath = join(__dir, "../../node_modules/wasm-pqc-subtle/wasm_pqc_subtle_bg.wasm");
+    // Try multiple path resolution strategies for robustness
+    let wasmPath: string;
+    try {
+      // First, try to resolve from node_modules
+      const resolvedPath = require.resolve("wasm-pqc-subtle/wasm_pqc_subtle_bg.wasm");
+      wasmPath = resolvedPath;
+    } catch {
+      // Fallback to relative path
+      wasmPath = join(__dir, "../../node_modules/wasm-pqc-subtle/wasm_pqc_subtle_bg.wasm");
+    }
+    
     const wasmBuffer = readFileSync(wasmPath);
     initSync({ module: wasmBuffer });
     wasmInitialized = true;
@@ -77,7 +88,6 @@ type MlKemEncryptedEnvelope = {
   iv: string; // AES IV (base64)
   authTag: string; // AES auth tag (base64)
   ciphertext: string; // AES encrypted data (base64)
-  publicKey: string; // ML-KEM-1024 public key (base64)
 };
 
 // --- ML-KEM keypair state ---
@@ -87,17 +97,71 @@ type MlKemKeyPair = {
   secretKey: Uint8Array;
 };
 
+type SerializedKeyPair = {
+  publicKey: string;
+  secretKey: string;
+};
+
 let serverKeyPair: MlKemKeyPair | null = null;
 
+/**
+ * Load or generate ML-KEM-1024 keypair.
+ * 
+ * If PROSEVA_ML_KEM_KEYPAIR_FILE is set, attempts to load the keypair from that file.
+ * If the file doesn't exist or the variable is not set, generates a new keypair.
+ * 
+ * WARNING: In production, the keypair must be persisted to decrypt previously encrypted data.
+ * Without persistence, data encrypted with one keypair cannot be decrypted after server restart.
+ */
 function getOrGenerateKeyPair(): MlKemKeyPair {
   if (serverKeyPair) return serverKeyPair;
   
   ensureWasmInit();
+  
+  const keypairFile = process.env[ML_KEM_KEYPAIR_FILE_ENV_VAR];
+  
+  // Try to load existing keypair from file
+  if (keypairFile) {
+    try {
+      const keypairData = readFileSync(keypairFile, "utf8");
+      const serialized: SerializedKeyPair = JSON.parse(keypairData);
+      serverKeyPair = {
+        publicKey: Uint8Array.from(Buffer.from(serialized.publicKey, "base64")),
+        secretKey: Uint8Array.from(Buffer.from(serialized.secretKey, "base64")),
+      };
+      console.log("Loaded ML-KEM keypair from:", keypairFile);
+      return serverKeyPair;
+    } catch (err) {
+      console.warn("Failed to load ML-KEM keypair from file, generating new one:", err);
+    }
+  }
+  
+  // Generate new keypair
   const keypair = ml_kem_1024_generate_keypair();
   serverKeyPair = {
     publicKey: keypair.public_key,
     secretKey: keypair.secret_key,
   };
+  
+  // Save keypair if file path is specified
+  if (keypairFile) {
+    try {
+      const serialized: SerializedKeyPair = {
+        publicKey: Buffer.from(serverKeyPair.publicKey).toString("base64"),
+        secretKey: Buffer.from(serverKeyPair.secretKey).toString("base64"),
+      };
+      const { writeFileSync } = require("node:fs");
+      writeFileSync(keypairFile, JSON.stringify(serialized, null, 2), { mode: 0o600 });
+      console.log("Saved ML-KEM keypair to:", keypairFile);
+    } catch (err) {
+      console.error("Failed to save ML-KEM keypair:", err);
+    }
+  } else {
+    console.warn(
+      "ML-KEM keypair generated but not persisted. " +
+      `Set ${ML_KEM_KEYPAIR_FILE_ENV_VAR} to persist the keypair for production use.`
+    );
+  }
   
   return serverKeyPair;
 }
@@ -186,8 +250,7 @@ function isMlKemEnvelope(value: unknown): value is MlKemEncryptedEnvelope {
     typeof value.kemCiphertext === "string" &&
     typeof value.iv === "string" &&
     typeof value.authTag === "string" &&
-    typeof value.ciphertext === "string" &&
-    typeof value.publicKey === "string"
+    typeof value.ciphertext === "string"
   );
 }
 
@@ -324,7 +387,6 @@ function encryptV3Snapshot(input: DatabaseSnapshot): DatabaseSnapshot {
     iv: iv.toString("base64"),
     authTag: authTag.toString("base64"),
     ciphertext: ciphertextBuffer.toString("base64"),
-    publicKey: Buffer.from(keypair.publicKey).toString("base64"),
   };
   
   return {
@@ -444,4 +506,4 @@ export async function encryptSnapshot(
   };
 }
 
-export { DB_ENCRYPTION_KEY_ENV_VAR, USE_ML_KEM_ENV_VAR };
+export { DB_ENCRYPTION_KEY_ENV_VAR, USE_ML_KEM_ENV_VAR, ML_KEM_KEYPAIR_FILE_ENV_VAR };
