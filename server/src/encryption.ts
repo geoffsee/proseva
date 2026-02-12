@@ -10,7 +10,7 @@
 import { PassphraseEncryptionProvider } from "idb-repo";
 import { createDecipheriv, pbkdf2Sync, createCipheriv, randomBytes } from "node:crypto";
 import { initSync, ml_kem_1024_generate_keypair, ml_kem_1024_encapsulate, ml_kem_1024_decapsulate } from "wasm-pqc-subtle";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const __dir =
@@ -24,6 +24,7 @@ const DB_ENCRYPTION_V2_PAYLOAD_KEY = "__proseva_encrypted_v2";
 const DB_ENCRYPTION_V3_PAYLOAD_KEY = "__proseva_encrypted_v3";
 const USE_ML_KEM_ENV_VAR = "PROSEVA_USE_ML_KEM";
 const ML_KEM_KEYPAIR_FILE_ENV_VAR = "PROSEVA_ML_KEM_KEYPAIR_FILE";
+const KEYPAIR_FILE_PERMISSIONS = 0o600;
 
 // Initialize ML-KEM WASM module
 let wasmInitialized = false;
@@ -150,8 +151,7 @@ function getOrGenerateKeyPair(): MlKemKeyPair {
         publicKey: Buffer.from(serverKeyPair.publicKey).toString("base64"),
         secretKey: Buffer.from(serverKeyPair.secretKey).toString("base64"),
       };
-      const { writeFileSync } = require("node:fs");
-      writeFileSync(keypairFile, JSON.stringify(serialized, null, 2), { mode: 0o600 });
+      writeFileSync(keypairFile, JSON.stringify(serialized, null, 2), { mode: KEYPAIR_FILE_PERMISSIONS });
       console.log("Saved ML-KEM keypair to:", keypairFile);
     } catch (err) {
       console.error("Failed to save ML-KEM keypair:", err);
