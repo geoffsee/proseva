@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from "../../../test-utils";
-import { AddEditAssetDialog, AssetFormData } from "./index";
+import { AddEditAssetDialog, type AssetFormData } from "./index";
 import { vi, describe, it, expect } from "vitest";
 
 const mockForm: AssetFormData = {
@@ -114,8 +114,6 @@ describe("AddEditAssetDialog", () => {
     expect(onFormChange).toHaveBeenCalledWith(expect.objectContaining({ institution: "Fidelity" }));
 
     // Find Account Number input - it doesn't have a placeholder, but it's the 5th input (index 4)
-    // Or we can find by label text if we navigate.
-    const inputs = screen.getAllByRole("textbox");
     // 0: name, 1: ownershipType, 2: accountNumber, 3: institution, 4: notes
     // Wait, let's check order in code.
     // name, (select category), estimatedValue (number), ownershipType, accountNumber, institution, notes

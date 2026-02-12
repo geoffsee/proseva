@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from "../../../test-utils";
-import { AddEditPlanDialog, PlanFormData } from "./index";
+import { AddEditPlanDialog, type PlanFormData } from "./index";
 import { vi, describe, it, expect } from "vitest";
 
 const mockForm: PlanFormData = {

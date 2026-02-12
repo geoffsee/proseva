@@ -1,8 +1,6 @@
-import { render, screen, fireEvent, waitFor } from "../../test-utils";
+import { render, screen } from "../../test-utils";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PassphraseGate } from "./PassphraseGate";
-import { securityApi, authApi } from "../../lib/api";
-import * as kv from "../../lib/kv";
 
 // Mock API
 vi.mock("../../lib/api", () => ({

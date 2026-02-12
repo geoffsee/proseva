@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from "../../../test-utils";
-import { AddEditBeneficiaryDialog, BeneficiaryFormData } from "./index";
+import { AddEditBeneficiaryDialog, type BeneficiaryFormData } from "./index";
 import { vi, describe, it, expect } from "vitest";
 
 const mockForm: BeneficiaryFormData = {
