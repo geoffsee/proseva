@@ -367,7 +367,8 @@ function toMaps(raw: Partial<DatabaseSnapshot>): Collections {
   const maps = {} as Collections;
   for (const key of COLLECTION_KEYS) {
     const data = raw[key] || {};
-    maps[key] = new Map(Object.entries(data)) as any; // Still need one cast for the Map constructor due to generic Map type
+    // @ts-expect-error - Map constructor with string keys matches our collection types
+    maps[key] = new Map(Object.entries(data));
   }
   return maps;
 }

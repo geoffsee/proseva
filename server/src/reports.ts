@@ -555,13 +555,12 @@ export async function testOpenAIConnection(): Promise<{
       baseURL: endpoint || undefined,
     });
 
-    const completion = await openai.chat.completions.create({
+    await openai.chat.completions.create({
       model: getConfig("TEXT_MODEL_SMALL") || "gpt-4o-mini",
       messages: [{ role: "user", content: "Test connection. Reply with OK." }],
       max_tokens: 10,
     });
 
-    const response = completion.choices[0].message.content || "";
     return { success: true };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);

@@ -1,6 +1,6 @@
 import { types, flow } from "mobx-state-tree";
 import { v4 as uuidv4 } from "uuid";
-import { EvidenceModel } from "./models/EvidenceModel";
+import { EvidenceModel, type Evidence } from "./models/EvidenceModel";
 import { api } from "../lib/api";
 
 export const EvidenceStore = types
@@ -83,9 +83,10 @@ export const EvidenceStore = types
   .actions((self) => ({
     loadEvidences: flow(function* () {
       try {
-        const evidences: any[] = yield api.evidences.list();
+        const evidences = (yield api.evidences.list()) as Evidence[];
         if (evidences && Array.isArray(evidences)) {
-          self.evidences.replace(evidences as any);
+          // @ts-expect-error - MST array replace type mismatch with plain array
+          self.evidences.replace(evidences);
         }
       } catch (error) {
         console.error("Failed to load evidences from API:", error);

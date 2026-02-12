@@ -1,6 +1,6 @@
 import { types, flow } from "mobx-state-tree";
 import { v4 as uuidv4 } from "uuid";
-import { CaseModel } from "./models/CaseModel";
+import { CaseModel, type Case } from "./models/CaseModel";
 import { api } from "../lib/api";
 
 export const CaseStore = types
@@ -10,9 +10,10 @@ export const CaseStore = types
   .actions((self) => ({
     loadCases: flow(function* () {
       try {
-        const cases: any[] = yield api.cases.list();
+        const cases = (yield api.cases.list()) as Case[];
         if (cases && Array.isArray(cases)) {
-          self.cases.replace(cases as any);
+          // @ts-expect-error - MST array replace type mismatch with plain array
+          self.cases.replace(cases);
         }
       } catch (error) {
         console.error("Failed to load cases from API:", error);

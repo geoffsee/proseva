@@ -3,6 +3,16 @@ import { v4 as uuidv4 } from "uuid";
 import { FinancialEntryModel } from "./models/FinancialEntryModel";
 import { api } from "../lib/api";
 
+interface FinancialEntry {
+  id: string;
+  category: "income" | "expense";
+  subcategory: string;
+  amount: number;
+  frequency: "one-time" | "weekly" | "biweekly" | "monthly" | "annually";
+  date: string;
+  description: string;
+}
+
 export const FinanceStore = types
   .model("FinanceStore", {
     entries: types.array(FinancialEntryModel),
@@ -10,9 +20,10 @@ export const FinanceStore = types
   .actions((self) => ({
     loadEntries: flow(function* () {
       try {
-        const entries: any[] = yield api.finances.list();
+        const entries = (yield api.finances.list()) as FinancialEntry[];
         if (entries && Array.isArray(entries)) {
-          self.entries.replace(entries as any);
+          // @ts-expect-error - MST array replace type mismatch with plain array
+          self.entries.replace(entries);
         }
       } catch (error) {
         console.error("Failed to load finances from API:", error);

@@ -1,6 +1,6 @@
 import { types, flow } from "mobx-state-tree";
 import { v4 as uuidv4 } from "uuid";
-import { NoteModel } from "./models/NoteModel";
+import { NoteModel, type Note } from "./models/NoteModel";
 import { api } from "../lib/api";
 
 export const NoteStore = types
@@ -91,9 +91,10 @@ export const NoteStore = types
 
     loadNotes: flow(function* () {
       try {
-        const notes: any[] = yield api.notes.list();
+        const notes = (yield api.notes.list()) as Note[];
         if (notes && Array.isArray(notes)) {
-          self.notes.replace(notes as any);
+          // @ts-expect-error - MST array replace type mismatch with plain array
+          self.notes.replace(notes);
         }
       } catch (error) {
         console.error("Failed to load notes from API:", error);

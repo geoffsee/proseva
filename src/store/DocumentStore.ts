@@ -13,6 +13,19 @@ const DocumentEntryModel = types.model("DocumentEntry", {
   caseId: types.optional(types.string, ""),
 });
 
+interface DocumentEntry {
+  id: string;
+  filename: string;
+  path: string;
+  category: string;
+  title: string;
+  pageCount: number;
+  textFile: string;
+  dates: string[];
+  fileSize: number;
+  caseId?: string;
+}
+
 export const DocumentStore = types
   .model("DocumentStore", {
     documents: types.array(DocumentEntryModel),
@@ -43,8 +56,9 @@ export const DocumentStore = types
       try {
         const res: Response = yield fetch("/index-documents.json");
         if (!res.ok) return;
-        const data: unknown[] = yield res.json();
-        self.documents.replace(data as any);
+        const data = (yield res.json()) as DocumentEntry[];
+        // @ts-expect-error - MST array replace type mismatch with plain array
+        self.documents.replace(data);
       } catch {
         // silently fail — documents are optional context
       }

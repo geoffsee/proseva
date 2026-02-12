@@ -73,6 +73,8 @@ describe("snapshotExistingData", () => {
   });
 });
 
+import OpenAI from "openai";
+
 describe("executeTool", () => {
   let state: { selectedCaseId?: string };
 
@@ -134,7 +136,7 @@ describe("executeTool", () => {
 
     it("does not match when caseNumber is empty", () => {
       seedCase({ caseNumber: "" });
-      const result = executeTool(
+      executeTool(
         "create_case",
         { name: "Another", caseNumber: "" },
         state,
@@ -636,7 +638,7 @@ describe("executeTool", () => {
               }),
           },
         },
-      } as any;
+      } as unknown as OpenAI;
 
       const entry: DocumentEntry = {
         id: "doc-1",
@@ -692,7 +694,7 @@ describe("executeTool", () => {
               }),
           },
         },
-      } as any;
+      } as unknown as OpenAI;
 
       const entry: DocumentEntry = {
         id: "doc-2",
@@ -723,7 +725,7 @@ describe("executeTool", () => {
             }),
           },
         },
-      } as any;
+      } as unknown as OpenAI;
 
       const entry: DocumentEntry = {
         id: "doc-3",

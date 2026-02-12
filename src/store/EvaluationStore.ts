@@ -117,7 +117,8 @@ export const EvaluationStore = types
       self.isLoading = true;
       try {
         const evaluations: EvaluationType[] = yield api.evaluations.list();
-        self.evaluations.replace(evaluations as any);
+        // @ts-expect-error - MST array replace type mismatch with plain array
+        self.evaluations.replace(evaluations);
       } catch (error) {
         console.error("Failed to load evaluations:", error);
       } finally {
@@ -128,7 +129,8 @@ export const EvaluationStore = types
     loadDeviceTokens: flow(function* () {
       try {
         const tokens: DeviceToken[] = yield api.deviceTokens.list();
-        self.deviceTokens.replace(tokens as any);
+        // @ts-expect-error - MST array replace type mismatch with plain array
+        self.deviceTokens.replace(tokens);
       } catch (error) {
         console.error("Failed to load device tokens:", error);
       }
@@ -137,7 +139,8 @@ export const EvaluationStore = types
     loadSmsRecipients: flow(function* () {
       try {
         const recipients: SmsRecipient[] = yield api.smsRecipients.list();
-        self.smsRecipients.replace(recipients as any);
+        // @ts-expect-error - MST array replace type mismatch with plain array
+        self.smsRecipients.replace(recipients);
       } catch (error) {
         console.error("Failed to load SMS recipients:", error);
       }
@@ -146,7 +149,8 @@ export const EvaluationStore = types
     loadSchedulerStatus: flow(function* () {
       try {
         const status: SchedulerStatus = yield api.scheduler.status();
-        self.schedulerStatus = status as any;
+        // @ts-expect-error - MST model assignment type mismatch
+        self.schedulerStatus = status;
       } catch (error) {
         console.error("Failed to load scheduler status:", error);
       }
@@ -154,10 +158,10 @@ export const EvaluationStore = types
 
     loadAll: flow(function* () {
       yield Promise.all([
-        (self as any).loadEvaluations(),
-        (self as any).loadDeviceTokens(),
-        (self as any).loadSmsRecipients(),
-        (self as any).loadSchedulerStatus(),
+        self.loadEvaluations(),
+        self.loadDeviceTokens(),
+        self.loadSmsRecipients(),
+        self.loadSchedulerStatus(),
       ]);
     }),
 
@@ -170,7 +174,7 @@ export const EvaluationStore = types
           smsSent: boolean;
         } = yield api.evaluations.trigger();
         // Reload evaluations to get the new one
-        yield (self as any).loadEvaluations();
+        yield self.loadEvaluations();
         return result;
       } catch (error) {
         console.error("Failed to trigger evaluation:", error);
@@ -189,7 +193,8 @@ export const EvaluationStore = types
           token,
           platform,
         });
-        self.deviceTokens.push(newToken as any);
+        // @ts-expect-error - MST array push type mismatch
+        self.deviceTokens.push(newToken);
         return newToken;
       } catch (error) {
         console.error("Failed to add device token:", error);
@@ -216,7 +221,8 @@ export const EvaluationStore = types
           phone,
           name,
         });
-        self.smsRecipients.push(newRecipient as any);
+        // @ts-expect-error - MST array push type mismatch
+        self.smsRecipients.push(newRecipient);
         return newRecipient;
       } catch (error) {
         console.error("Failed to add SMS recipient:", error);

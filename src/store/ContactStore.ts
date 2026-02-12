@@ -1,6 +1,6 @@
 import { types, flow } from "mobx-state-tree";
 import { v4 as uuidv4 } from "uuid";
-import { ContactModel } from "./models/ContactModel";
+import { ContactModel, type Contact } from "./models/ContactModel";
 import { api } from "../lib/api";
 
 export const ContactStore = types
@@ -34,9 +34,10 @@ export const ContactStore = types
   .actions((self) => ({
     loadContacts: flow(function* () {
       try {
-        const contacts: any[] = yield api.contacts.list();
+        const contacts = (yield api.contacts.list()) as Contact[];
         if (contacts && Array.isArray(contacts)) {
-          self.contacts.replace(contacts as any);
+          // @ts-expect-error - MST array replace type mismatch with plain array
+          self.contacts.replace(contacts);
         }
       } catch (error) {
         console.error("Failed to load contacts from API:", error);

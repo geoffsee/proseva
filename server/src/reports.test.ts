@@ -3,6 +3,10 @@ import { setupTestServer, api } from "./test-helpers";
 
 const ctx = setupTestServer();
 
+interface TestReportSection {
+  heading: string;
+}
+
 describe("Reports API", () => {
   it("returns 400 for invalid report type", async () => {
     const res = await api.post(
@@ -70,8 +74,9 @@ describe("Reports API", () => {
       const report = await res.json();
       expect(report.title).toContain("Summary Case");
       expect(report.sections.length).toBeGreaterThanOrEqual(5);
-      expect(report.sections.map((s: any) => s.heading)).toContain("Deadlines");
-      expect(report.sections.map((s: any) => s.heading)).toContain("Evidence");
+      const sections = report.sections as TestReportSection[];
+      expect(sections.map((s) => s.heading)).toContain("Deadlines");
+      expect(sections.map((s) => s.heading)).toContain("Evidence");
     });
   });
 

@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   Database,
   clearDbEncryptionPassphrase,
-  hasDbEncryptionPassphrase,
   setDbEncryptionPassphrase,
   type Case,
 } from "./db";

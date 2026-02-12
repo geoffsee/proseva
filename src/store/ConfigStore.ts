@@ -1,4 +1,4 @@
-import { types, flow } from "mobx-state-tree";
+import { types, flow, type SnapshotIn } from "mobx-state-tree";
 import { api, type ServerConfig } from "../lib/api";
 
 const FirebaseConfigModel = types.model("FirebaseConfig", {
@@ -124,8 +124,8 @@ export const ConfigStore = types
       self.isLoading = true;
       self.error = null;
       try {
-        const config: ServerConfig = yield api.config.get();
-        self.config = config as any;
+        const config: SnapshotIn<typeof ServerConfigModel> = yield api.config.get();
+        self.config = ServerConfigModel.create(config);
       } catch (error) {
         self.error = String(error);
         console.error("Failed to load config:", error);
@@ -140,7 +140,7 @@ export const ConfigStore = types
       try {
         yield api.config.update(updates);
         // Reload to get updated values
-        yield (self as any).loadConfig();
+        yield self.loadConfig();
       } catch (error) {
         self.error = String(error);
         console.error("Failed to update config:", error);
@@ -155,7 +155,7 @@ export const ConfigStore = types
       try {
         yield api.config.reset();
         // Reload to get environment values
-        yield (self as any).loadConfig();
+        yield self.loadConfig();
       } catch (error) {
         self.error = String(error);
         console.error("Failed to reset config:", error);
@@ -170,7 +170,7 @@ export const ConfigStore = types
       try {
         yield api.config.deleteKey(group, key);
         // Reload to get updated values
-        yield (self as any).loadConfig();
+        yield self.loadConfig();
       } catch (error) {
         self.error = String(error);
         console.error("Failed to delete config key:", error);

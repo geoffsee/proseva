@@ -1,6 +1,6 @@
 import { types, flow } from "mobx-state-tree";
 import { v4 as uuidv4 } from "uuid";
-import { FilingModel } from "./models/FilingModel";
+import { FilingModel, type Filing } from "./models/FilingModel";
 import { api } from "../lib/api";
 
 export const FilingStore = types
@@ -51,9 +51,10 @@ export const FilingStore = types
   .actions((self) => ({
     loadFilings: flow(function* () {
       try {
-        const filings: any[] = yield api.filings.list();
+        const filings = (yield api.filings.list()) as Filing[];
         if (filings && Array.isArray(filings)) {
-          self.filings.replace(filings as any);
+          // @ts-expect-error - MST array replace type mismatch with plain array
+          self.filings.replace(filings);
         }
       } catch (error) {
         console.error("Failed to load filings from API:", error);

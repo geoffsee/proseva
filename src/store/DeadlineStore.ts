@@ -1,6 +1,6 @@
 import { types, flow } from "mobx-state-tree";
 import { v4 as uuidv4 } from "uuid";
-import { DeadlineModel } from "./models/DeadlineModel";
+import { DeadlineModel, type Deadline } from "./models/DeadlineModel";
 import { api } from "../lib/api";
 import { parseLocalDate } from "../lib/dateUtils";
 
@@ -91,9 +91,10 @@ export const DeadlineStore = types
   .actions((self) => ({
     loadDeadlines: flow(function* () {
       try {
-        const deadlines: any[] = yield api.deadlines.list();
+        const deadlines = (yield api.deadlines.list()) as Deadline[];
         if (deadlines && Array.isArray(deadlines)) {
-          self.deadlines.replace(deadlines as any);
+          // @ts-expect-error - MST array replace type mismatch with plain array
+          self.deadlines.replace(deadlines);
         }
       } catch (error) {
         console.error("Failed to load deadlines from API:", error);

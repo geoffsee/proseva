@@ -2,30 +2,12 @@ import { render, screen, fireEvent } from "../test-utils";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import Chat from "./Chat";
 import { useStore } from "../store/StoreContext";
+import type { IRootStore } from "../store/RootStore";
 
 const mockSendMessage = vi.fn();
 
 vi.mock("../store/StoreContext", () => ({
-  useStore: vi.fn(() => ({
-    chatStore: {
-      messages: [
-        {
-          id: "1",
-          role: "user" as const,
-          text: "What is discovery?",
-          timestamp: Date.now(),
-        },
-        {
-          id: "2",
-          role: "assistant" as const,
-          text: "Discovery is the process...",
-          timestamp: Date.now(),
-        },
-      ],
-      isTyping: false,
-      sendMessage: mockSendMessage,
-    },
-  })),
+  useStore: vi.fn(),
 }));
 
 describe("Chat", () => {
@@ -50,7 +32,7 @@ describe("Chat", () => {
         isTyping: false,
         sendMessage: mockSendMessage,
       },
-    } as any);
+    } as unknown as IRootStore);
   });
 
   it("renders AI Assistant heading", () => {
@@ -114,7 +96,7 @@ describe("Chat", () => {
         isTyping: false,
         sendMessage: vi.fn(),
       },
-    } as any);
+    } as unknown as IRootStore);
     render(<Chat />);
     expect(screen.getByText(/Send a message to start/)).toBeInTheDocument();
   });
@@ -126,7 +108,7 @@ describe("Chat", () => {
         isTyping: true,
         sendMessage: vi.fn(),
       },
-    } as any);
+    } as unknown as IRootStore);
     render(<Chat />);
     expect(screen.getByText("Typing...")).toBeInTheDocument();
   });

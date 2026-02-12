@@ -1,6 +1,10 @@
-import { types, flow } from "mobx-state-tree";
-import { v4 as uuidv4 } from "uuid";
-import { EstatePlanModel } from "./models/EstatePlanModel";
+import {
+  EstatePlanModel,
+  type EstatePlan,
+  type Beneficiary,
+  type EstateAsset,
+  type EstateDocument,
+} from "./models/EstatePlanModel";
 import { api } from "../lib/api";
 
 export const EstatePlanStore = types
@@ -68,9 +72,10 @@ export const EstatePlanStore = types
   .actions((self) => ({
     loadPlans: flow(function* () {
       try {
-        const plans: any[] = yield api.estatePlans.list();
+        const plans = (yield api.estatePlans.list()) as EstatePlan[];
         if (plans && Array.isArray(plans)) {
-          self.plans.replace(plans as any);
+          // @ts-expect-error - MST array replace type mismatch with plain array
+          self.plans.replace(plans);
         }
       } catch (error) {
         console.error("Failed to load estate plans from API:", error);
@@ -89,7 +94,7 @@ export const EstatePlanStore = types
       notes?: string;
     }) {
       const now = new Date().toISOString();
-      const newPlan = {
+      const newPlan: EstatePlan = {
         id: uuidv4(),
         title: data.title,
         status: "planning" as const,
@@ -108,17 +113,18 @@ export const EstatePlanStore = types
         createdAt: now,
         updatedAt: now,
       };
-      self.plans.push(newPlan as any);
+      // @ts-expect-error - MST array push type mismatch
+      self.plans.push(newPlan);
       yield api.estatePlans.create(newPlan);
     }),
-    updatePlan: flow(function* (id: string, updates: Record<string, unknown>) {
+    updatePlan: flow(function* (id: string, updates: Partial<EstatePlan>) {
       const plan = self.plans.find((p) => p.id === id);
       if (plan) {
         Object.assign(plan, {
           ...updates,
           updatedAt: new Date().toISOString(),
         });
-        yield api.estatePlans.update(id, updates as any);
+        yield api.estatePlans.update(id, updates);
       }
     }),
     deletePlan: flow(function* (id: string) {
@@ -142,7 +148,7 @@ export const EstatePlanStore = types
     ) {
       const plan = self.plans.find((p) => p.id === planId);
       if (plan) {
-        const b = {
+        const b: Beneficiary = {
           id: uuidv4(),
           name: data.name,
           relationship: data.relationship ?? "",
@@ -152,7 +158,8 @@ export const EstatePlanStore = types
           address: data.address ?? "",
           notes: data.notes ?? "",
         };
-        plan.beneficiaries.push(b as any);
+        // @ts-expect-error - MST array push type mismatch
+        plan.beneficiaries.push(b);
         plan.updatedAt = new Date().toISOString();
         yield api.estatePlans.addBeneficiary(planId, b);
       }
@@ -183,10 +190,10 @@ export const EstatePlanStore = types
     ) {
       const plan = self.plans.find((p) => p.id === planId);
       if (plan) {
-        const a = {
+        const a: EstateAsset = {
           id: uuidv4(),
           name: data.name,
-          category: data.category ?? "other",
+          category: (data.category as EstateAsset["category"]) ?? "other",
           estimatedValue: data.estimatedValue ?? 0,
           ownershipType: data.ownershipType ?? "",
           accountNumber: data.accountNumber ?? "",
@@ -194,7 +201,8 @@ export const EstatePlanStore = types
           beneficiaryIds: data.beneficiaryIds ?? [],
           notes: data.notes ?? "",
         };
-        plan.assets.push(a as any);
+        // @ts-expect-error - MST array push type mismatch
+        plan.assets.push(a);
         plan.updatedAt = new Date().toISOString();
         yield api.estatePlans.addAsset(planId, a);
       }
@@ -224,11 +232,11 @@ export const EstatePlanStore = types
       const plan = self.plans.find((p) => p.id === planId);
       if (plan) {
         const now = new Date().toISOString();
-        const doc = {
+        const doc: EstateDocument = {
           id: uuidv4(),
-          type: data.type ?? "other",
+          type: (data.type as EstateDocument["type"]) ?? "other",
           title: data.title,
-          status: data.status ?? "not-started",
+          status: (data.status as EstateDocument["status"]) ?? "not-started",
           content: data.content ?? "",
           fieldValues: data.fieldValues ?? {},
           templateId: data.templateId ?? "",
@@ -238,7 +246,8 @@ export const EstatePlanStore = types
           createdAt: now,
           updatedAt: now,
         };
-        plan.documents.push(doc as any);
+        // @ts-expect-error - MST array push type mismatch
+        plan.documents.push(doc);
         plan.updatedAt = now;
         yield api.estatePlans.addDocument(planId, doc);
       }
@@ -246,7 +255,7 @@ export const EstatePlanStore = types
     updateEstateDocument: flow(function* (
       planId: string,
       docId: string,
-      updates: Record<string, unknown>,
+      updates: Partial<EstateDocument>,
     ) {
       const plan = self.plans.find((p) => p.id === planId);
       if (plan) {

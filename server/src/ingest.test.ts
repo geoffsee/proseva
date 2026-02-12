@@ -63,6 +63,8 @@ describe("generateId", () => {
   });
 });
 
+import OpenAI from "openai";
+
 describe("extractTextFromPdf", () => {
   it("extracts text and page count from OpenAI response", async () => {
     const mockOpenai = {
@@ -77,7 +79,7 @@ describe("extractTextFromPdf", () => {
           }),
         },
       },
-    } as any;
+    } as unknown as OpenAI;
 
     const result = await extractTextFromPdf(
       Buffer.from("fake-pdf"),
@@ -96,7 +98,7 @@ describe("extractTextFromPdf", () => {
           }),
         },
       },
-    } as any;
+    } as unknown as OpenAI;
 
     const result = await extractTextFromPdf(Buffer.from("fake"), mockOpenai);
     expect(result.pageCount).toBe(1);
@@ -112,7 +114,7 @@ describe("extractTextFromPdf", () => {
           }),
         },
       },
-    } as any;
+    } as unknown as OpenAI;
 
     const result = await extractTextFromPdf(Buffer.from("fake"), mockOpenai);
     expect(result.text).toBe("");
