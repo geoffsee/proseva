@@ -186,7 +186,10 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
       parameters: {
         type: "object",
         properties: {
-          query: { type: "string", description: "Search query for court opinions" },
+          query: {
+            type: "string",
+            description: "Search query for court opinions",
+          },
           court: {
             type: "string",
             description: "Court code filter (e.g., 'scotus', 'ca4', 'cadc')",
@@ -199,7 +202,10 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
             type: "string",
             description: "Filter opinions before this date (YYYY-MM-DD)",
           },
-          limit: { type: "number", description: "Number of results (default 10, max 20)" },
+          limit: {
+            type: "number",
+            description: "Number of results (default 10, max 20)",
+          },
         },
         required: ["query"],
       },
@@ -216,7 +222,10 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
         properties: {
           query: { type: "string", description: "Search query for dockets" },
           court: { type: "string", description: "Court code filter" },
-          limit: { type: "number", description: "Number of results (default 10, max 20)" },
+          limit: {
+            type: "number",
+            description: "Number of results (default 10, max 20)",
+          },
         },
         required: ["query"],
       },
@@ -249,13 +258,20 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
       parameters: {
         type: "object",
         properties: {
-          query: { type: "string", description: "Search query for statutes/bills" },
+          query: {
+            type: "string",
+            description: "Search query for statutes/bills",
+          },
           state: {
             type: "string",
-            description: "State code (e.g., 'CA', 'NY', 'VA', 'US' for federal)",
+            description:
+              "State code (e.g., 'CA', 'NY', 'VA', 'US' for federal)",
           },
           year: { type: "string", description: "Legislative year" },
-          limit: { type: "number", description: "Number of results (default 10, max 20)" },
+          limit: {
+            type: "number",
+            description: "Number of results (default 10, max 20)",
+          },
         },
         required: ["query"],
       },
@@ -276,7 +292,10 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
             description:
               "Collection filter: BILLS, CFR, FR, USCODE, PLAW, STATUTE, USCOURTS, CHRG, CDOC, CRPT",
           },
-          limit: { type: "number", description: "Number of results (default 10, max 20)" },
+          limit: {
+            type: "number",
+            description: "Number of results (default 10, max 20)",
+          },
         },
         required: ["query"],
       },
@@ -291,8 +310,14 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
       parameters: {
         type: "object",
         properties: {
-          query: { type: "string", description: "Search query for academic papers" },
-          limit: { type: "number", description: "Number of results (default 10, max 20)" },
+          query: {
+            type: "string",
+            description: "Search query for academic papers",
+          },
+          limit: {
+            type: "number",
+            description: "Number of results (default 10, max 20)",
+          },
         },
         required: ["query"],
       },
@@ -302,7 +327,8 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "search_lawyers",
-      description: "Search for lawyers by location and optional specialty via web search.",
+      description:
+        "Search for lawyers by location and optional specialty via web search.",
       parameters: {
         type: "object",
         properties: {
@@ -312,9 +338,13 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
           },
           specialty: {
             type: "string",
-            description: "Practice area (e.g., 'bankruptcy', 'patent', 'criminal defense')",
+            description:
+              "Practice area (e.g., 'bankruptcy', 'patent', 'criminal defense')",
           },
-          limit: { type: "number", description: "Number of results (default 10, max 20)" },
+          limit: {
+            type: "number",
+            description: "Number of results (default 10, max 20)",
+          },
         },
         required: ["location"],
       },
@@ -342,13 +372,16 @@ async function searchOpinions(params: {
   searchUrl.searchParams.set("order_by", "score desc");
   searchUrl.searchParams.set("page_size", limit.toString());
   if (params.court) searchUrl.searchParams.set("court", params.court);
-  if (params.date_after) searchUrl.searchParams.set("filed_after", params.date_after);
-  if (params.date_before) searchUrl.searchParams.set("filed_before", params.date_before);
+  if (params.date_after)
+    searchUrl.searchParams.set("filed_after", params.date_after);
+  if (params.date_before)
+    searchUrl.searchParams.set("filed_before", params.date_before);
 
   const response = await fetch(searchUrl.toString(), {
     headers: getCourtListenerHeaders(),
   });
-  if (!response.ok) throw new Error(`CourtListener API returned ${response.status}`);
+  if (!response.ok)
+    throw new Error(`CourtListener API returned ${response.status}`);
 
   const data = (await response.json()) as CourtListenerResponse;
   const results = (data.results || []).map((op: CourtListenerResult) => ({
@@ -356,7 +389,9 @@ async function searchOpinions(params: {
     caseName: op.caseName || op.case_name || "Unknown Case",
     citation:
       op.citation ||
-      [op.neutral_cite, op.lexis_cite, op.west_cite].filter(Boolean).join(", ") ||
+      [op.neutral_cite, op.lexis_cite, op.west_cite]
+        .filter(Boolean)
+        .join(", ") ||
       "",
     court: COURT_NAMES[op.court] || op.court || "",
     dateFiled: formatDate(op.dateFiled || op.date_filed),
@@ -367,7 +402,11 @@ async function searchOpinions(params: {
       : "",
   }));
 
-  return { results, total: data.count || results.length, source: "CourtListener" };
+  return {
+    results,
+    total: data.count || results.length,
+    source: "CourtListener",
+  };
 }
 
 async function searchDockets(params: {
@@ -390,7 +429,8 @@ async function searchDockets(params: {
   const response = await fetch(searchUrl.toString(), {
     headers: getCourtListenerHeaders(),
   });
-  if (!response.ok) throw new Error(`CourtListener API returned ${response.status}`);
+  if (!response.ok)
+    throw new Error(`CourtListener API returned ${response.status}`);
 
   const data = (await response.json()) as CourtListenerResponse;
   const results = (data.results || []).map((d: CourtListenerResult) => ({
@@ -406,7 +446,11 @@ async function searchDockets(params: {
       : "",
   }));
 
-  return { results, total: data.count || results.length, source: "CourtListener RECAP" };
+  return {
+    results,
+    total: data.count || results.length,
+    source: "CourtListener RECAP",
+  };
 }
 
 async function lookupCitation(params: { citation: string }) {
@@ -422,7 +466,8 @@ async function lookupCitation(params: { citation: string }) {
   const response = await fetch(searchUrl.toString(), {
     headers: getCourtListenerHeaders(),
   });
-  if (!response.ok) throw new Error(`CourtListener API returned ${response.status}`);
+  if (!response.ok)
+    throw new Error(`CourtListener API returned ${response.status}`);
 
   const data = (await response.json()) as CourtListenerResponse;
   const results = (data.results || []).map((op: CourtListenerResult) => ({
@@ -436,7 +481,11 @@ async function lookupCitation(params: { citation: string }) {
       : "",
   }));
 
-  return { results, searchedCitation: params.citation, source: "CourtListener" };
+  return {
+    results,
+    searchedCitation: params.citation,
+    source: "CourtListener",
+  };
 }
 
 async function searchStatutes(params: {
@@ -468,7 +517,8 @@ async function searchStatutes(params: {
   if (!response.ok) throw new Error(`LegiScan API returned ${response.status}`);
 
   const data = (await response.json()) as LegiscanResponse;
-  if (data.status === "ERROR") throw new Error(data.alert?.message || "LegiScan API error");
+  if (data.status === "ERROR")
+    throw new Error(data.alert?.message || "LegiScan API error");
 
   const searchResults = data.searchresult || {};
   const results: StatuteResult[] = [];
@@ -526,11 +576,15 @@ async function searchGovinfo(params: {
     id: item.packageId || `govinfo_${i}`,
     title: item.title || "Unknown Title",
     collectionCode: item.collectionCode || "",
-    collectionName: GOVINFO_COLLECTIONS[item.collectionCode || ""] || item.collectionCode || "",
+    collectionName:
+      GOVINFO_COLLECTIONS[item.collectionCode || ""] ||
+      item.collectionCode ||
+      "",
     dateIssued: item.dateIssued || "",
     category: item.category || "",
     detailsLink:
-      item.detailsLink || `https://www.govinfo.gov/app/details/${item.packageId}`,
+      item.detailsLink ||
+      `https://www.govinfo.gov/app/details/${item.packageId}`,
   }));
 
   return { results, total: data.count || results.length, source: "GovInfo" };
@@ -563,13 +617,18 @@ async function searchAcademic(params: { query: string; limit?: number }) {
     let snippet = "";
     if (work.abstract_inverted_index) {
       const words: [string, number][] = [];
-      for (const [word, positions] of Object.entries(work.abstract_inverted_index)) {
+      for (const [word, positions] of Object.entries(
+        work.abstract_inverted_index,
+      )) {
         for (const pos of positions as number[]) {
           words.push([word, pos]);
         }
       }
       words.sort((a, b) => a[1] - b[1]);
-      snippet = words.map((w) => w[0]).join(" ").substring(0, 400);
+      snippet = words
+        .map((w) => w[0])
+        .join(" ")
+        .substring(0, 400);
     }
 
     return {
@@ -579,13 +638,19 @@ async function searchAcademic(params: { query: string; limit?: number }) {
       authors,
       year: work.publication_year?.toString() || "",
       citedBy: work.cited_by_count || 0,
-      link: work.doi ? `https://doi.org/${work.doi}` : work.primary_location?.landing_page_url || "",
+      link: work.doi
+        ? `https://doi.org/${work.doi}`
+        : work.primary_location?.landing_page_url || "",
       journal: work.primary_location?.source?.display_name || "",
       openAccess: work.open_access?.is_oa || false,
     };
   });
 
-  return { results, total: data.meta?.count || results.length, source: "OpenAlex" };
+  return {
+    results,
+    total: data.meta?.count || results.length,
+    source: "OpenAlex",
+  };
 }
 
 async function searchLawyers(params: {
@@ -646,22 +711,39 @@ async function searchLawyers(params: {
 
 // --- Tool dispatch ---
 
-async function executeTool(name: string, args: Record<string, unknown>): Promise<unknown> {
+async function executeTool(
+  name: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
   switch (name) {
     case "search_opinions":
-      return searchOpinions(args as unknown as Parameters<typeof searchOpinions>[0]);
+      return searchOpinions(
+        args as unknown as Parameters<typeof searchOpinions>[0],
+      );
     case "search_dockets":
-      return searchDockets(args as unknown as Parameters<typeof searchDockets>[0]);
+      return searchDockets(
+        args as unknown as Parameters<typeof searchDockets>[0],
+      );
     case "lookup_citation":
-      return lookupCitation(args as unknown as Parameters<typeof lookupCitation>[0]);
+      return lookupCitation(
+        args as unknown as Parameters<typeof lookupCitation>[0],
+      );
     case "search_statutes":
-      return searchStatutes(args as unknown as Parameters<typeof searchStatutes>[0]);
+      return searchStatutes(
+        args as unknown as Parameters<typeof searchStatutes>[0],
+      );
     case "search_govinfo":
-      return searchGovinfo(args as unknown as Parameters<typeof searchGovinfo>[0]);
+      return searchGovinfo(
+        args as unknown as Parameters<typeof searchGovinfo>[0],
+      );
     case "search_academic":
-      return searchAcademic(args as unknown as Parameters<typeof searchAcademic>[0]);
+      return searchAcademic(
+        args as unknown as Parameters<typeof searchAcademic>[0],
+      );
     case "search_lawyers":
-      return searchLawyers(args as unknown as Parameters<typeof searchLawyers>[0]);
+      return searchLawyers(
+        args as unknown as Parameters<typeof searchLawyers>[0],
+      );
     default:
       return { error: `Unknown tool: ${name}` };
   }
@@ -685,7 +767,8 @@ export async function handleResearchChat(
   const apiKey = getConfig("OPENAI_API_KEY");
   if (!apiKey) {
     return {
-      reply: "OpenAI API key is not configured. Please add it in Settings to use the research agent.",
+      reply:
+        "OpenAI API key is not configured. Please add it in Settings to use the research agent.",
       toolResults: [],
     };
   }
@@ -698,9 +781,10 @@ export async function handleResearchChat(
 
   const model = getConfig("TEXT_MODEL_SMALL") || "gpt-4o-mini";
 
-  const systemMessage: OpenAI.Chat.Completions.ChatCompletionSystemMessageParam = {
-    role: "system",
-    content: `You are a legal research assistant specializing in U.S. law. You help users find court opinions, statutes, regulations, academic papers, government documents, and lawyers.
+  const systemMessage: OpenAI.Chat.Completions.ChatCompletionSystemMessageParam =
+    {
+      role: "system",
+      content: `You are a legal research assistant specializing in U.S. law. You help users find court opinions, statutes, regulations, academic papers, government documents, and lawyers.
 
 When a user asks a research question, use the available tools to search for relevant information. You can call multiple tools in sequence to provide comprehensive answers.
 
@@ -713,7 +797,7 @@ Guidelines:
 - When searching for court opinions, try specific legal terms and key phrases.
 - For statute searches, specify the state when the user mentions a jurisdiction.
 - Be proactive: if the user asks about a topic, search both opinions and statutes when relevant.`,
-  };
+    };
 
   const chatMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     systemMessage,
@@ -744,7 +828,10 @@ Guidelines:
       for (const toolCall of choice.message.tool_calls) {
         let args: Record<string, unknown>;
         try {
-          args = JSON.parse(toolCall.function.arguments) as Record<string, unknown>;
+          args = JSON.parse(toolCall.function.arguments) as Record<
+            string,
+            unknown
+          >;
         } catch {
           args = {};
         }
@@ -752,10 +839,16 @@ Guidelines:
         let result: unknown;
         try {
           result = await executeTool(toolCall.function.name, args);
-          toolResults.push({ toolName: toolCall.function.name, results: result });
+          toolResults.push({
+            toolName: toolCall.function.name,
+            results: result,
+          });
         } catch (err) {
           result = { error: (err as Error).message };
-          toolResults.push({ toolName: toolCall.function.name, results: result });
+          toolResults.push({
+            toolName: toolCall.function.name,
+            results: result,
+          });
         }
 
         chatMessages.push({
@@ -777,7 +870,9 @@ Guidelines:
     .filter((m) => m.role === "assistant")
     .pop();
   const fallbackReply =
-    (lastAssistant && "content" in lastAssistant && typeof lastAssistant.content === "string"
+    (lastAssistant &&
+    "content" in lastAssistant &&
+    typeof lastAssistant.content === "string"
       ? lastAssistant.content
       : null) ||
     "I completed several research steps. Please review the results in the sidebar.";

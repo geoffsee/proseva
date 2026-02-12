@@ -380,7 +380,9 @@ router.get("/openai-models", async (req) => {
 
   let modelsUrl: string;
   try {
-    modelsUrl = buildOpenAIModelsUrl(endpointOverride || getConfig("OPENAI_ENDPOINT"));
+    modelsUrl = buildOpenAIModelsUrl(
+      endpointOverride || getConfig("OPENAI_ENDPOINT"),
+    );
   } catch {
     return Response.json(
       {

@@ -3,7 +3,10 @@ import { configRouter } from "./config-api";
 import { resetDb } from "./db";
 import { InMemoryAdapter } from "./persistence";
 
-function setAiConfig(values: { openaiApiKey?: string; openaiEndpoint?: string }) {
+function setAiConfig(values: {
+  openaiApiKey?: string;
+  openaiEndpoint?: string;
+}) {
   const now = new Date().toISOString();
   const response = configRouter.fetch(
     new Request("http://localhost/api/config", {
@@ -67,7 +70,9 @@ describe("config API openai-models", () => {
     );
     expect(response.status).toBe(200);
     expect(fetchSpy).toHaveBeenCalledTimes(1);
-    expect(fetchSpy.mock.calls[0]?.[0]).toBe("https://api.openai.com/v1/models");
+    expect(fetchSpy.mock.calls[0]?.[0]).toBe(
+      "https://api.openai.com/v1/models",
+    );
 
     const body = await response.json();
     expect(body.success).toBe(true);

@@ -31,9 +31,7 @@ let _forceMemory = false;
  * Initialize the keys KV store encrypted with user's passphrase (PBKDF2 + AES-256-GCM).
  * This store holds the ML-KEM keypair.
  */
-export async function initKeysStore(
-  passphrase: string,
-): Promise<KVNamespace> {
+export async function initKeysStore(passphrase: string): Promise<KVNamespace> {
   const provider = await PassphraseEncryptionProvider.create(passphrase);
   _keysStore = createKV({
     dbName: "proseva-keys",
@@ -64,7 +62,8 @@ export async function initDataStore(
  * Get the initialized data store. Throws if not yet initialized.
  */
 export function getDataStore(): KVNamespace {
-  if (!_dataStore) throw new Error("Data store not initialized. Call initDataStore() first.");
+  if (!_dataStore)
+    throw new Error("Data store not initialized. Call initDataStore() first.");
   return _dataStore;
 }
 
@@ -72,7 +71,8 @@ export function getDataStore(): KVNamespace {
  * Get the initialized keys store. Throws if not yet initialized.
  */
 export function getKeysStore(): KVNamespace {
-  if (!_keysStore) throw new Error("Keys store not initialized. Call initKeysStore() first.");
+  if (!_keysStore)
+    throw new Error("Keys store not initialized. Call initKeysStore() first.");
   return _keysStore;
 }
 

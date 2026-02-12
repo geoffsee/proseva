@@ -43,7 +43,12 @@ describe("cosine_similarity_dataspace", () => {
     const flat = new Float64Array(vectors.flat());
     const query = new Float64Array([1, 0, 0]);
 
-    const result = cosine_similarity_dataspace(flat, vectors.length, dim, query);
+    const result = cosine_similarity_dataspace(
+      flat,
+      vectors.length,
+      dim,
+      query,
+    );
 
     // Result is interleaved [score, index, score, index, ...]
     // First result should be the most similar (index 0, score ~1)
@@ -97,9 +102,24 @@ describe("embeddings collection in Database", () => {
 
   it("supports SearchKnowledge-style ranking via dataspace", () => {
     const entries: Embedding[] = [
-      { id: "1", source: "a.pdf", content: "relevant doc", embedding: [1, 0, 0] },
-      { id: "2", source: "b.pdf", content: "somewhat relevant", embedding: [0.7, 0.7, 0] },
-      { id: "3", source: "c.pdf", content: "irrelevant doc", embedding: [0, 0, 1] },
+      {
+        id: "1",
+        source: "a.pdf",
+        content: "relevant doc",
+        embedding: [1, 0, 0],
+      },
+      {
+        id: "2",
+        source: "b.pdf",
+        content: "somewhat relevant",
+        embedding: [0.7, 0.7, 0],
+      },
+      {
+        id: "3",
+        source: "c.pdf",
+        content: "irrelevant doc",
+        embedding: [0, 0, 1],
+      },
     ];
     for (const e of entries) db.embeddings.set(e.id, e);
 

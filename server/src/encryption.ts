@@ -9,10 +9,7 @@
  * (hand-rolled AES-256-GCM) for reading existing encrypted databases.
  */
 import { PassphraseEncryptionProvider } from "idb-repo";
-import {
-  createDecipheriv,
-  pbkdf2Sync,
-} from "node:crypto";
+import { createDecipheriv, pbkdf2Sync } from "node:crypto";
 
 const DB_ENCRYPTION_KEY_ENV_VAR = "PROSEVA_DB_ENCRYPTION_KEY";
 const DB_ENCRYPTION_PAYLOAD_KEY = "__proseva_encrypted";
@@ -120,8 +117,11 @@ function isLegacyEnvelope(value: unknown): value is LegacyEncryptedEnvelope {
 }
 
 function isV2Snapshot(input: DatabaseSnapshot): boolean {
-  return typeof input[DB_ENCRYPTION_V2_PAYLOAD_KEY] === "object" &&
-    typeof (input[DB_ENCRYPTION_V2_PAYLOAD_KEY] as Record<string, unknown>)?.ciphertext === "string";
+  return (
+    typeof input[DB_ENCRYPTION_V2_PAYLOAD_KEY] === "object" &&
+    typeof (input[DB_ENCRYPTION_V2_PAYLOAD_KEY] as Record<string, unknown>)
+      ?.ciphertext === "string"
+  );
 }
 
 function isLegacySnapshot(input: DatabaseSnapshot): boolean {
@@ -176,7 +176,8 @@ async function decryptV2Snapshot(
   input: DatabaseSnapshot,
   passphraseOverride?: string,
 ): Promise<DatabaseSnapshot> {
-  const passphrase = normalizePassphrase(passphraseOverride) ?? runtimePassphrase;
+  const passphrase =
+    normalizePassphrase(passphraseOverride) ?? runtimePassphrase;
   if (!passphrase) {
     throw new DatabaseEncryptionError(
       "missing_key",
@@ -184,10 +185,10 @@ async function decryptV2Snapshot(
     );
   }
 
-  const envelope = input[DB_ENCRYPTION_V2_PAYLOAD_KEY] as { ciphertext: string };
-  const encrypted = Uint8Array.from(
-    Buffer.from(envelope.ciphertext, "base64"),
-  );
+  const envelope = input[DB_ENCRYPTION_V2_PAYLOAD_KEY] as {
+    ciphertext: string;
+  };
+  const encrypted = Uint8Array.from(Buffer.from(envelope.ciphertext, "base64"));
 
   let parsed: unknown;
   try {
@@ -195,7 +196,10 @@ async function decryptV2Snapshot(
     // correct key — PassphraseEncryptionProvider.decrypt() uses the provider's
     // own salt, not the one embedded in the ciphertext.
     const embeddedSalt = encrypted.slice(0, 16);
-    const p = await PassphraseEncryptionProvider.create(passphrase, embeddedSalt);
+    const p = await PassphraseEncryptionProvider.create(
+      passphrase,
+      embeddedSalt,
+    );
     const plaintext = await p.decrypt(encrypted);
     parsed = JSON.parse(new TextDecoder().decode(plaintext));
   } catch {

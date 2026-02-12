@@ -45,7 +45,9 @@ export function StoreProvider({
       resolvedStore.estatePlanStore.loadPlans();
       setIsReady(true);
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [resolvedStore, store]);
 
   if (!isReady) {

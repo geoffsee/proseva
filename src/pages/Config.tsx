@@ -31,7 +31,10 @@ const RECOVERY_KEY_STORAGE_KEY = "proseva.dbRecoveryKey";
 function generateRecoveryKey(): string {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   const bytes = new Uint8Array(30);
-  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.getRandomValues === "function"
+  ) {
     crypto.getRandomValues(bytes);
   } else {
     for (let i = 0; i < bytes.length; i += 1) {
@@ -143,9 +146,7 @@ const Config = observer(() => {
       setCourtListenerApiToken(
         configStore.config.legalResearch?.courtListenerApiToken || "",
       );
-      setLegiscanApiKey(
-        configStore.config.legalResearch?.legiscanApiKey || "",
-      );
+      setLegiscanApiKey(configStore.config.legalResearch?.legiscanApiKey || "");
       setGovInfoApiKey(configStore.config.legalResearch?.govInfoApiKey || "");
       setSerpapiBase(configStore.config.legalResearch?.serpapiBase || "");
     }
@@ -679,13 +680,21 @@ const Config = observer(() => {
                 {modelOptions.map((model) => (
                   <label
                     key={model}
-                    style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
                   >
                     <input
                       type="checkbox"
                       checked={selectedModels.includes(model)}
                       onChange={(e) => toggleModel(model, e.target.checked)}
-                      style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                      style={{
+                        width: "16px",
+                        height: "16px",
+                        cursor: "pointer",
+                      }}
                     />
                     <Text fontSize="sm">{model}</Text>
                   </label>
@@ -828,10 +837,12 @@ const Config = observer(() => {
             <Alert.Root status="warning">
               <Alert.Indicator />
               <Alert.Title>Store this key safely</Alert.Title>
-              <Alert.Description>
-                {generatedRecoveryKey}
-              </Alert.Description>
-              <Button size="xs" variant="outline" onClick={handleCopyRecoveryKey}>
+              <Alert.Description>{generatedRecoveryKey}</Alert.Description>
+              <Button
+                size="xs"
+                variant="outline"
+                onClick={handleCopyRecoveryKey}
+              >
                 Copy
               </Button>
             </Alert.Root>
@@ -863,8 +874,7 @@ const Config = observer(() => {
             </Alert.Indicator>
             <Alert.Title>Requires restart</Alert.Title>
             <Alert.Description>
-              Changes to auto-ingest directory require a restart to take
-              effect
+              Changes to auto-ingest directory require a restart to take effect
             </Alert.Description>
           </Alert.Root>
           <Text fontSize="sm" color="gray.600">

@@ -312,9 +312,9 @@ This means values can be configured either via environment variables or through 
 
 #### Database Encryption
 
-| Variable                      | Required | Default | Description                                                                         |
-| ----------------------------- | -------- | ------- | ----------------------------------------------------------------------------------- |
-| `PROSEVA_DB_ENCRYPTION_KEY`   | ❌ No    | -       | Optional startup key for decrypting/encrypting `db.json` (AES-256-GCM + PBKDF2).   |
+| Variable                    | Required | Default | Description                                                                      |
+| --------------------------- | -------- | ------- | -------------------------------------------------------------------------------- |
+| `PROSEVA_DB_ENCRYPTION_KEY` | ❌ No    | -       | Optional startup key for decrypting/encrypting `db.json` (AES-256-GCM + PBKDF2). |
 
 If `PROSEVA_DB_ENCRYPTION_KEY` is not set, the app can still be unlocked by entering a recovery key in the Settings page or startup unlock prompt.
 
@@ -547,6 +547,7 @@ Outputs:
 - Verify localStorage keys in `RootStore.ts` STORAGE_KEYS
 
 ## Resources
+
 - [capabilities.md](./capabilities.md) - Feature list and capabilities
 - [Vite Documentation](https://vitejs.dev)
 - [React Documentation](https://react.dev)

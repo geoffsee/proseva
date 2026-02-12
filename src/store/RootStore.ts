@@ -1,4 +1,9 @@
-import { types, onSnapshot, applySnapshot, type SnapshotIn } from "mobx-state-tree";
+import {
+  types,
+  onSnapshot,
+  applySnapshot,
+  type SnapshotIn,
+} from "mobx-state-tree";
 import { CaseStore } from "./CaseStore";
 import { DeadlineStore } from "./DeadlineStore";
 import { FinanceStore } from "./FinanceStore";

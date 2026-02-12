@@ -505,9 +505,7 @@ export const configApi = {
     });
     return res.json();
   },
-  getOpenAIModels: async (
-    endpoint?: string,
-  ): Promise<OpenAIModelsResponse> => {
+  getOpenAIModels: async (endpoint?: string): Promise<OpenAIModelsResponse> => {
     const url = new URL("/api/config/openai-models", window.location.origin);
     if (endpoint && endpoint.trim()) {
       url.searchParams.set("endpoint", endpoint.trim());
@@ -544,7 +542,11 @@ export const securityApi = {
   },
   applyRecoveryKey: async (
     recoveryKey: string,
-  ): Promise<{ success: boolean; status?: DbSecurityStatus; error?: string }> => {
+  ): Promise<{
+    success: boolean;
+    status?: DbSecurityStatus;
+    error?: string;
+  }> => {
     const res = await fetch("/api/security/recovery-key", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -704,7 +706,10 @@ export const estatePlansApi = {
 export const researchAgentApi = {
   chat: async (
     messages: Array<{ role: string; content: string }>,
-  ): Promise<{ reply: string; toolResults: Array<{ toolName: string; results: unknown }> }> => {
+  ): Promise<{
+    reply: string;
+    toolResults: Array<{ toolName: string; results: unknown }>;
+  }> => {
     const res = await fetch("/api/research/agent/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

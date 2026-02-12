@@ -294,10 +294,7 @@ async function loadDocuments(): Promise<DocumentEntry[]> {
     import.meta.dirname ??
     new URL(".", import.meta.url).pathname;
   const appRoot = process.env.PROSEVA_DATA_DIR ?? join(__dir, "../..");
-  const indexPath = join(
-    appRoot,
-    "case-data/case-documents-app/index.json",
-  );
+  const indexPath = join(appRoot, "case-data/case-documents-app/index.json");
 
   try {
     const raw = await readFile(indexPath, "utf-8");

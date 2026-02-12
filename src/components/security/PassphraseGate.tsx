@@ -58,7 +58,9 @@ export function PassphraseGate({ children }: { children: ReactNode }) {
       }
     };
     void bootstrap();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [isTestMode]);
 
   const initializeStores = useCallback(
@@ -197,8 +199,8 @@ export function PassphraseGate({ children }: { children: ReactNode }) {
             <Heading size="md">Create Passphrase</Heading>
             <Text fontSize="sm" color="fg.muted">
               Choose a strong passphrase to protect your data. All case data
-              will be encrypted with post-quantum ML-KEM-1024 encryption. If
-              you lose this passphrase, your data cannot be recovered.
+              will be encrypted with post-quantum ML-KEM-1024 encryption. If you
+              lose this passphrase, your data cannot be recovered.
             </Text>
 
             {error && (

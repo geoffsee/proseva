@@ -13,7 +13,7 @@ describe("Research API", () => {
             name: "Smith v. Jones",
             description: "Trademark infringement case",
           },
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         expect(res.status).toBe(201);
         const data = await res.json();
@@ -31,7 +31,7 @@ describe("Research API", () => {
         const res = await api.post(
           "/api/research/cases",
           { name: "Important Case" },
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         expect(res.status).toBe(201);
         const data = await res.json();
@@ -43,7 +43,7 @@ describe("Research API", () => {
         const res = await api.post(
           "/api/research/cases",
           { description: "No name" },
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         expect(res.status).toBe(400);
       });
@@ -52,14 +52,14 @@ describe("Research API", () => {
         const res1 = await api.post(
           "/api/research/cases",
           { name: "Case 1" },
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         const case1 = (await res1.json()).case;
 
         const res2 = await api.post(
           "/api/research/cases",
           { name: "Case 2" },
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         const case2 = (await res2.json()).case;
 
@@ -81,16 +81,8 @@ describe("Research API", () => {
       });
 
       it("returns all created cases", async () => {
-        await api.post(
-          "/api/research/cases",
-          { name: "Case 1" },
-          ctx.baseUrl
-        );
-        await api.post(
-          "/api/research/cases",
-          { name: "Case 2" },
-          ctx.baseUrl
-        );
+        await api.post("/api/research/cases", { name: "Case 1" }, ctx.baseUrl);
+        await api.post("/api/research/cases", { name: "Case 2" }, ctx.baseUrl);
 
         const res = await api.get("/api/research/cases", ctx.baseUrl);
         expect(res.status).toBe(200);
@@ -104,14 +96,14 @@ describe("Research API", () => {
         const res1 = await api.post(
           "/api/research/cases",
           { name: "Case 1" },
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         const case1Id = (await res1.json()).case.id;
 
         const res2 = await api.post(
           "/api/research/cases",
           { name: "Case 2" },
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         const case2Id = (await res2.json()).case.id;
 
@@ -125,7 +117,7 @@ describe("Research API", () => {
         await api.post(
           `/api/research/cases/${case1Id}/activate`,
           {},
-          ctx.baseUrl
+          ctx.baseUrl,
         );
 
         // Now case1 should be active
@@ -141,13 +133,13 @@ describe("Research API", () => {
         const createRes = await api.post(
           "/api/research/cases",
           { name: "Test Case", description: "Test description" },
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         const caseId = (await createRes.json()).case.id;
 
         const getRes = await api.get(
           `/api/research/cases/${caseId}`,
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         expect(getRes.status).toBe(200);
         const data = await getRes.json();
@@ -159,7 +151,7 @@ describe("Research API", () => {
       it("returns 404 for non-existent case", async () => {
         const res = await api.get(
           "/api/research/cases/nonexistent",
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         expect(res.status).toBe(404);
       });
@@ -170,7 +162,7 @@ describe("Research API", () => {
         const createRes = await api.post(
           "/api/research/cases",
           { name: "Original Name" },
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         const caseId = (await createRes.json()).case.id;
 
@@ -178,7 +170,7 @@ describe("Research API", () => {
         const updateRes = await api.patch(
           `/api/research/cases/${caseId}`,
           { name: "Updated Name" },
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         // Either 200 (successful) or 404 (not implemented) are acceptable
         expect([200, 404]).toContain(updateRes.status);
@@ -190,20 +182,20 @@ describe("Research API", () => {
         const createRes = await api.post(
           "/api/research/cases",
           { name: "To Delete" },
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         const caseId = (await createRes.json()).case.id;
 
         const deleteRes = await api.delete(
           `/api/research/cases/${caseId}`,
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         expect(deleteRes.status).toBe(200);
 
         // Verify it's deleted
         const getRes = await api.get(
           `/api/research/cases/${caseId}`,
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         expect(getRes.status).toBe(404);
       });
@@ -214,14 +206,14 @@ describe("Research API", () => {
         const res1 = await api.post(
           "/api/research/cases",
           { name: "Case 1" },
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         const case1Id = (await res1.json()).case.id;
 
         const res2 = await api.post(
           "/api/research/cases",
           { name: "Case 2" },
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         const case2Id = (await res2.json()).case.id;
 
@@ -229,7 +221,7 @@ describe("Research API", () => {
         const activateRes = await api.post(
           `/api/research/cases/${case1Id}/activate`,
           {},
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         expect(activateRes.status).toBe(200);
 
@@ -248,7 +240,7 @@ describe("Research API", () => {
         const caseRes = await api.post(
           "/api/research/cases",
           { name: "Test Case" },
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         const caseId = (await caseRes.json()).case.id;
 
@@ -260,7 +252,7 @@ describe("Research API", () => {
             searchType: "opinions",
             resultCount: 42,
           },
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         expect(searchRes.status).toBe(201);
         const search = (await searchRes.json()).search;
@@ -276,7 +268,7 @@ describe("Research API", () => {
         const caseRes = await api.post(
           "/api/research/cases",
           { name: "Test Case" },
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         const caseId = (await caseRes.json()).case.id;
 
@@ -286,7 +278,7 @@ describe("Research API", () => {
             query: "test query",
             searchType: "bills",
           },
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         expect(searchRes.status).toBe(201);
         const search = (await searchRes.json()).search;
@@ -297,7 +289,7 @@ describe("Research API", () => {
         const res = await api.post(
           "/api/research/cases/nonexistent/searches",
           { name: "Search" },
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         expect(res.status).toBe(404);
       });
@@ -306,7 +298,7 @@ describe("Research API", () => {
         const caseRes = await api.post(
           "/api/research/cases",
           { name: "Test Case" },
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         const caseId = (await caseRes.json()).case.id;
 
@@ -314,7 +306,7 @@ describe("Research API", () => {
         const searchRes = await api.post(
           `/api/research/cases/${caseId}/searches`,
           {},
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         expect([201, 400]).toContain(searchRes.status);
       });
@@ -370,7 +362,7 @@ describe("Research API", () => {
       it("returns list of GovInfo collections", async () => {
         const res = await api.get(
           "/api/research/govinfo/collections",
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         expect(res.status).toBe(200);
         const data = await res.json();
@@ -381,7 +373,7 @@ describe("Research API", () => {
       it("collection objects have required fields", async () => {
         const res = await api.get(
           "/api/research/govinfo/collections",
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         const data = await res.json();
         const collection = data.collections[0];
@@ -393,7 +385,7 @@ describe("Research API", () => {
       it("includes major collection codes", async () => {
         const res = await api.get(
           "/api/research/govinfo/collections",
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         const data = await res.json();
         const codes = data.collections.map((c: any) => c.code);
@@ -420,7 +412,7 @@ describe("Research API", () => {
       it("returns list of legal specialties", async () => {
         const res = await api.get(
           "/api/research/lawyers/specialties",
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         expect(res.status).toBe(200);
         const data = await res.json();
@@ -431,7 +423,7 @@ describe("Research API", () => {
       it("specialty objects have required fields", async () => {
         const res = await api.get(
           "/api/research/lawyers/specialties",
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         const data = await res.json();
         const specialty = data.specialties[0];
@@ -442,7 +434,7 @@ describe("Research API", () => {
       it("includes common practice areas", async () => {
         const res = await api.get(
           "/api/research/lawyers/specialties",
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         const data = await res.json();
         const codes = data.specialties.map((s: any) => s.code);
@@ -460,7 +452,7 @@ describe("Research API", () => {
         // This will return 503 if the token is not configured
         const res = await api.get(
           "/api/research/opinions/search?q=test",
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         // Should be 503 (Service Unavailable) or 200 with results
         expect([503, 200]).toContain(res.status);
@@ -471,7 +463,7 @@ describe("Research API", () => {
       it("returns 400 for opinions search with short query", async () => {
         const res = await api.get(
           "/api/research/opinions/search?q=ab",
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         expect(res.status).toBe(200); // Returns empty results
         const data = await res.json();
@@ -481,16 +473,13 @@ describe("Research API", () => {
       it("returns 400 for citation lookup with short citation", async () => {
         const res = await api.get(
           "/api/research/citation/lookup?cite=abc",
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         expect(res.status).toBe(400);
       });
 
       it("returns 400 for lawyer search without location", async () => {
-        const res = await api.get(
-          "/api/research/lawyers/search",
-          ctx.baseUrl
-        );
+        const res = await api.get("/api/research/lawyers/search", ctx.baseUrl);
         expect(res.status).toBe(400);
       });
     });
@@ -501,14 +490,14 @@ describe("Research API", () => {
         const createRes = await api.post(
           "/api/research/cases",
           { name: "My Case" },
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         const caseId = (await createRes.json()).case.id;
 
         // Should be able to access own case
         const getRes = await api.get(
           `/api/research/cases/${caseId}`,
-          ctx.baseUrl
+          ctx.baseUrl,
         );
         expect(getRes.status).toBe(200);
       });

@@ -80,10 +80,7 @@ describe("Tooltip", () => {
 
   it("forwards ref correctly", () => {
     render(
-      <Tooltip
-        content="Tooltip"
-        ref={() => {}}
-      >
+      <Tooltip content="Tooltip" ref={() => {}}>
         <button>Button</button>
       </Tooltip>,
     );

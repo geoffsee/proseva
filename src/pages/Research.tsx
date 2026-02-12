@@ -75,9 +75,20 @@ const QUICK_ACTIONS = [
   { label: "Find Lawyers", prompt: "Find lawyers in " },
 ];
 
-function ResultCard({ item, toolName }: { item: ResultItem; toolName: string }) {
+function ResultCard({
+  item,
+  toolName,
+}: {
+  item: ResultItem;
+  toolName: string;
+}) {
   const link =
-    item.absoluteUrl || item.url || item.detailsLink || item.link || item.website || "";
+    item.absoluteUrl ||
+    item.url ||
+    item.detailsLink ||
+    item.link ||
+    item.website ||
+    "";
   return (
     <Box
       borderWidth="1px"
@@ -94,12 +105,16 @@ function ResultCard({ item, toolName }: { item: ResultItem; toolName: string }) 
           {item.citation}
         </Text>
       )}
-      {item.court && (
-        <Text color="fg.muted">{item.court}</Text>
-      )}
-      {(item.dateFiled || item.dateIssued || item.year || item.lastActionDate) && (
+      {item.court && <Text color="fg.muted">{item.court}</Text>}
+      {(item.dateFiled ||
+        item.dateIssued ||
+        item.year ||
+        item.lastActionDate) && (
         <Text color="fg.muted">
-          {item.dateFiled || item.dateIssued || item.year || item.lastActionDate}
+          {item.dateFiled ||
+            item.dateIssued ||
+            item.year ||
+            item.lastActionDate}
         </Text>
       )}
       {item.authors && (
@@ -117,7 +132,7 @@ function ResultCard({ item, toolName }: { item: ResultItem; toolName: string }) 
           {item.snippet.replace(/<[^>]*>/g, "")}
         </Text>
       )}
-      {(toolName === "search_lawyers") && item.phone && (
+      {toolName === "search_lawyers" && item.phone && (
         <Text color="fg.muted">{item.phone}</Text>
       )}
       {(item.citedBy ?? 0) > 0 && (
@@ -297,17 +312,13 @@ const Research = observer(function Research() {
                 key={msg.id}
                 align="start"
                 gap="3"
-                alignSelf={
-                  msg.role === "user" ? "flex-end" : "flex-start"
-                }
+                alignSelf={msg.role === "user" ? "flex-end" : "flex-start"}
                 maxW="80%"
                 flexDir={msg.role === "user" ? "row-reverse" : "row"}
               >
                 <Box
                   borderRadius="full"
-                  bg={
-                    msg.role === "assistant" ? "purple.500" : "blue.500"
-                  }
+                  bg={msg.role === "assistant" ? "purple.500" : "blue.500"}
                   p="2"
                   color="white"
                   flexShrink={0}
@@ -317,9 +328,7 @@ const Research = observer(function Research() {
                   </Icon>
                 </Box>
                 <Box
-                  bg={
-                    msg.role === "assistant" ? "bg.subtle" : "blue.500"
-                  }
+                  bg={msg.role === "assistant" ? "bg.subtle" : "blue.500"}
                   color={msg.role === "user" ? "white" : undefined}
                   px="4"
                   py="3"

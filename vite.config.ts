@@ -34,7 +34,10 @@ function resolveWasmPqcSubtlePath() {
 export default defineConfig({
   resolve: {
     alias: {
-      "idb-repo": path.resolve(__dirname, "node_modules/idb-repo/dist/index-browser.js"),
+      "idb-repo": path.resolve(
+        __dirname,
+        "node_modules/idb-repo/dist/index-browser.js",
+      ),
     },
   },
   server: {
