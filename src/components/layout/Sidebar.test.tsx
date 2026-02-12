@@ -40,7 +40,9 @@ describe("Sidebar", () => {
   it("renders Data section navigation items", () => {
     render(<Sidebar />, { withRouter: true });
     expect(screen.getByRole("link", { name: /Cases/ })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Documents/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /Doc Manager/ }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Finances/ })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Contacts/ })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Notes/ })).toBeInTheDocument();
@@ -53,7 +55,7 @@ describe("Sidebar", () => {
     expect(screen.getByRole("link", { name: /Tasks/ })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Resources/ })).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /Doc Manager/ }),
+      screen.getByRole("link", { name: /Document Generation/ }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: /ProSeVA AI/ }),

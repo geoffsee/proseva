@@ -76,3 +76,4 @@ server/data/backups/
 /server/data
 /dist-server/proseva-server
 /.output.txt
+package-lock.json

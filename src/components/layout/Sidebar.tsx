@@ -41,7 +41,7 @@ const NAV_SECTIONS = [
     title: "Data",
     items: [
       { to: "/cases", label: "Cases", icon: LuFolder },
-      { to: "/documents", label: "Documents", icon: LuFileText },
+      { to: "/document-manager", label: "Doc Manager", icon: LuArchive },
       { to: "/finances", label: "Finances", icon: LuDollarSign },
       { to: "/contacts", label: "Contacts", icon: LuUsers },
       { to: "/notes", label: "Notes", icon: LuStickyNote },
@@ -54,7 +54,7 @@ const NAV_SECTIONS = [
       { to: "/", label: "Dashboard", icon: LuLayoutDashboard },
       { to: "/tasks", label: "Tasks", icon: LuKanban },
       { to: "/resources", label: "Resources", icon: LuBookOpen },
-      { to: "/document-manager", label: "Doc Manager", icon: LuArchive },
+      { to: "/documents", label: "Document Generation", icon: LuFileText },
       { to: "/chat", label: "ProSeVA AI", icon: LuMessageSquare },
       { to: "/research", label: "Case Research", icon: LuSearch },
       { to: "/reports", label: "Reports", icon: LuFile },
