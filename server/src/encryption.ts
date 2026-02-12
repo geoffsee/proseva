@@ -7,10 +7,10 @@
  *
  * Maintains backward compatibility with v1 and v2 formats for reading.
  */
-import { PassphraseEncryptionProvider } from "idb-repo";
+import { PassphraseEncryptionProvider, createKV, kvGetJson, type KVNamespace } from "idb-repo";
 import { createDecipheriv, pbkdf2Sync, createCipheriv, randomBytes } from "node:crypto";
 import { initSync, ml_kem_1024_generate_keypair, ml_kem_1024_encapsulate, ml_kem_1024_decapsulate } from "wasm-pqc-subtle";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const __dir =
@@ -23,8 +23,7 @@ const DB_ENCRYPTION_PAYLOAD_KEY = "__proseva_encrypted";
 const DB_ENCRYPTION_V2_PAYLOAD_KEY = "__proseva_encrypted_v2";
 const DB_ENCRYPTION_V3_PAYLOAD_KEY = "__proseva_encrypted_v3";
 const USE_ML_KEM_ENV_VAR = "PROSEVA_USE_ML_KEM";
-const ML_KEM_KEYPAIR_FILE_ENV_VAR = "PROSEVA_ML_KEM_KEYPAIR_FILE";
-const KEYPAIR_FILE_PERMISSIONS = 0o600;
+const DEFAULT_KEYPAIR_STORE_DIR = join(__dir, "../data/ml-kem-keys");
 
 // Initialize ML-KEM WASM module
 let wasmInitialized = false;
@@ -98,71 +97,67 @@ type MlKemKeyPair = {
   secretKey: Uint8Array;
 };
 
-type SerializedKeyPair = {
-  publicKey: string;
-  secretKey: string;
-};
-
 let serverKeyPair: MlKemKeyPair | null = null;
+let keypairStore: KVNamespace | null = null;
+let _keypairForceMemory = false;
+
+export function setKeypairForceMemory(force: boolean): void {
+  _keypairForceMemory = force;
+}
+
+function getKeypairStore(): KVNamespace {
+  if (!keypairStore) {
+    keypairStore = createKV({
+      dbName: DEFAULT_KEYPAIR_STORE_DIR,
+      forceMemory: _keypairForceMemory,
+    });
+  }
+  return keypairStore;
+}
 
 /**
  * Load or generate ML-KEM-1024 keypair.
- * 
- * If PROSEVA_ML_KEM_KEYPAIR_FILE is set, attempts to load the keypair from that file.
- * If the file doesn't exist or the variable is not set, generates a new keypair.
- * 
- * WARNING: In production, the keypair must be persisted to decrypt previously encrypted data.
- * Without persistence, data encrypted with one keypair cannot be decrypted after server restart.
+ *
+ * On first call, attempts to load the keypair from an idb-repo KV store
+ * persisted in server/data/ml-kem-keys/. If none exists, generates a new
+ * keypair and saves it to the store automatically.
  */
-function getOrGenerateKeyPair(): MlKemKeyPair {
+async function getOrGenerateKeyPair(): Promise<MlKemKeyPair> {
   if (serverKeyPair) return serverKeyPair;
-  
+
   ensureWasmInit();
-  
-  const keypairFile = process.env[ML_KEM_KEYPAIR_FILE_ENV_VAR];
-  
-  // Try to load existing keypair from file
-  if (keypairFile) {
-    try {
-      const keypairData = readFileSync(keypairFile, "utf8");
-      const serialized: SerializedKeyPair = JSON.parse(keypairData);
-      serverKeyPair = {
-        publicKey: Uint8Array.from(Buffer.from(serialized.publicKey, "base64")),
-        secretKey: Uint8Array.from(Buffer.from(serialized.secretKey, "base64")),
-      };
-      console.log("Loaded ML-KEM keypair from:", keypairFile);
-      return serverKeyPair;
-    } catch (err) {
-      console.warn("Failed to load ML-KEM keypair from file, generating new one:", err);
-    }
+
+  const store = getKeypairStore();
+
+  // Try to load existing keypair from KV store
+  const pubArr = await kvGetJson<number[]>(store, "publicKey");
+  const secArr = await kvGetJson<number[]>(store, "secretKey");
+
+  if (pubArr && secArr) {
+    serverKeyPair = {
+      publicKey: new Uint8Array(pubArr),
+      secretKey: new Uint8Array(secArr),
+    };
+    console.log("Loaded ML-KEM keypair from store");
+    return serverKeyPair;
   }
-  
+
   // Generate new keypair
   const keypair = ml_kem_1024_generate_keypair();
   serverKeyPair = {
     publicKey: keypair.public_key,
     secretKey: keypair.secret_key,
   };
-  
-  // Save keypair if file path is specified
-  if (keypairFile) {
-    try {
-      const serialized: SerializedKeyPair = {
-        publicKey: Buffer.from(serverKeyPair.publicKey).toString("base64"),
-        secretKey: Buffer.from(serverKeyPair.secretKey).toString("base64"),
-      };
-      writeFileSync(keypairFile, JSON.stringify(serialized, null, 2), { mode: KEYPAIR_FILE_PERMISSIONS });
-      console.log("Saved ML-KEM keypair to:", keypairFile);
-    } catch (err) {
-      console.error("Failed to save ML-KEM keypair:", err);
-    }
-  } else {
-    console.warn(
-      "ML-KEM keypair generated but not persisted. " +
-      `Set ${ML_KEM_KEYPAIR_FILE_ENV_VAR} to persist the keypair for production use.`
-    );
+
+  // Persist to KV store
+  try {
+    await store.put("publicKey", Array.from(serverKeyPair.publicKey));
+    await store.put("secretKey", Array.from(serverKeyPair.secretKey));
+    console.log("Saved ML-KEM keypair to store");
+  } catch (err) {
+    console.error("Failed to save ML-KEM keypair:", err);
   }
-  
+
   return serverKeyPair;
 }
 
@@ -360,10 +355,10 @@ async function decryptV2Snapshot(
 
 // --- V3 ML-KEM-1024 encryption/decryption ---
 
-function encryptV3Snapshot(input: DatabaseSnapshot): DatabaseSnapshot {
+async function encryptV3Snapshot(input: DatabaseSnapshot): Promise<DatabaseSnapshot> {
   ensureWasmInit();
-  
-  const keypair = getOrGenerateKeyPair();
+
+  const keypair = await getOrGenerateKeyPair();
   
   // Encapsulate to get a shared secret
   const encapResult = ml_kem_1024_encapsulate(keypair.publicKey);
@@ -394,11 +389,11 @@ function encryptV3Snapshot(input: DatabaseSnapshot): DatabaseSnapshot {
   };
 }
 
-function decryptV3Snapshot(input: DatabaseSnapshot): DatabaseSnapshot {
+async function decryptV3Snapshot(input: DatabaseSnapshot): Promise<DatabaseSnapshot> {
   ensureWasmInit();
-  
+
   const envelope = input[DB_ENCRYPTION_V3_PAYLOAD_KEY] as MlKemEncryptedEnvelope;
-  const keypair = getOrGenerateKeyPair();
+  const keypair = await getOrGenerateKeyPair();
   
   // Decapsulate to recover the shared secret
   const kemCiphertext = Uint8Array.from(Buffer.from(envelope.kemCiphertext, "base64"));
@@ -453,7 +448,7 @@ export async function decryptSnapshot(
 ): Promise<DatabaseSnapshot> {
   // V3 format (ML-KEM-1024 + AES-256-GCM)
   if (isV3Snapshot(input)) {
-    return decryptV3Snapshot(input);
+    return await decryptV3Snapshot(input);
   }
 
   // V2 format (idb-repo PassphraseEncryptionProvider)
@@ -490,7 +485,7 @@ export async function encryptSnapshot(
 ): Promise<DatabaseSnapshot> {
   // Use ML-KEM-1024 if enabled
   if (shouldUseMlKem()) {
-    return encryptV3Snapshot(input);
+    return await encryptV3Snapshot(input);
   }
 
   // Fallback to passphrase-based encryption if configured
@@ -506,4 +501,4 @@ export async function encryptSnapshot(
   };
 }
 
-export { DB_ENCRYPTION_KEY_ENV_VAR, USE_ML_KEM_ENV_VAR, ML_KEM_KEYPAIR_FILE_ENV_VAR };
+export { DB_ENCRYPTION_KEY_ENV_VAR, USE_ML_KEM_ENV_VAR };
