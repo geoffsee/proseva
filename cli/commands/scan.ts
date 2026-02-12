@@ -1,14 +1,12 @@
 import chalk from "chalk";
 import ora from "ora";
 import {
-  printSuccess,
   printError,
   printWarning,
   printInfo,
   formatJson,
   printSection,
 } from "../lib/formatters";
-import type { ApiClient } from "../lib/api-client";
 
 interface ScanOptions {
   watch?: boolean;
@@ -18,8 +16,8 @@ export async function scanCommand(
   directory: string,
   options: ScanOptions,
 ): Promise<void> {
-  const client = (global as any).apiClient as ApiClient;
-  const outputJson = (global as any).cliOptions.json;
+  const client = globalThis.apiClient;
+  const outputJson = globalThis.cliOptions.json;
 
   if (options.watch) {
     printWarning("Watch mode not yet implemented");
@@ -28,8 +26,8 @@ export async function scanCommand(
   }
 
   // Verify OpenAI is configured
-  const config = await client.get("/config");
-  if (!(config as any)?.ai?.openaiApiKey) {
+  const config = (await client.get("/config")) as any;
+  if (!config?.ai?.openaiApiKey) {
     printError("OpenAI API key not configured");
     printError("Run: proseva config set ai.openaiApiKey <key>");
     process.exit(1);
@@ -38,11 +36,11 @@ export async function scanCommand(
   const spinner = ora(`Scanning ${directory} for documents...`).start();
 
   try {
-    const result = await client.post("/ingest/scan", {
+    const result = (await client.post("/ingest/scan", {
       body: {
         directory,
-      },
-    });
+      } as any,
+    })) as any;
 
     spinner.succeed("Scan completed");
 
@@ -51,7 +49,7 @@ export async function scanCommand(
       return;
     }
 
-    const { added, skipped, errors, startedAt, finishedAt } = result as any;
+    const { added, skipped, errors, startedAt, finishedAt } = result;
 
     console.log();
     if (added > 0) {

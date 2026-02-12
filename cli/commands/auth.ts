@@ -4,7 +4,6 @@ import { join } from "path";
 import { stdin as input, stdout as output } from "process";
 import { createInterface } from "readline";
 import chalk from "chalk";
-import { ApiClient } from "../lib/api-client";
 import { printError } from "../lib/formatters";
 
 const CONFIG_DIR = join(homedir(), ".proseva");
@@ -64,8 +63,10 @@ async function promptPassphrase(): Promise<string> {
 
   return new Promise((resolve) => {
     // Hide input by muting stdout
-    const stdin = process.stdin as any;
-    stdin.setRawMode?.(true);
+    const stdin = process.stdin;
+    if (stdin.isTTY) {
+      stdin.setRawMode(true);
+    }
 
     output.write("Passphrase: ");
     let passphrase = "";
@@ -75,7 +76,9 @@ async function promptPassphrase(): Promise<string> {
 
       if (str === "\n" || str === "\r" || str === "\r\n") {
         // Enter pressed
-        stdin.setRawMode?.(false);
+        if (stdin.isTTY) {
+          stdin.setRawMode(false);
+        }
         stdin.removeListener("data", onData);
         output.write("\n");
         rl.close();
@@ -106,8 +109,8 @@ async function promptPassphrase(): Promise<string> {
  * Login command - authenticate with passphrase and store token
  */
 export async function login(options: { ttl?: string }): Promise<void> {
-  const client = (global as any).apiClient as ApiClient;
-  const apiUrl = (global as any).cliOptions.apiUrl;
+  const client = globalThis.apiClient;
+  const apiUrl = globalThis.cliOptions.apiUrl;
 
   try {
     // Prompt for passphrase
@@ -123,18 +126,24 @@ export async function login(options: { ttl?: string }): Promise<void> {
       body: {
         passphrase,
         ttl: options.ttl,
-      },
+      } as Record<string, unknown>, // Cast to satisfy generated types
     });
 
-    if (!response?.success || !response?.token) {
+    if (!response || typeof response !== "object" || !("success" in response) || !("token" in response)) {
       printError("Authentication failed");
       process.exit(1);
     }
 
+    const authResponse = response as {
+      success: boolean;
+      token: string;
+      expiresIn: number;
+    };
+
     // Store token
     const tokenData: TokenData = {
-      token: response.token,
-      expiresAt: Date.now() + response.expiresIn * 1000,
+      token: authResponse.token,
+      expiresAt: Date.now() + authResponse.expiresIn * 1000,
       apiUrl,
     };
 
@@ -142,14 +151,22 @@ export async function login(options: { ttl?: string }): Promise<void> {
 
     console.log(chalk.green("✓ Authentication successful"));
     console.log(
-      chalk.gray(`Token expires in ${Math.floor(response.expiresIn / 3600)} hours`),
+      chalk.gray(
+        `Token expires in ${Math.floor(authResponse.expiresIn / 3600)} hours`,
+      ),
     );
     console.log(chalk.gray(`Stored in ${TOKEN_FILE}`));
-  } catch (error: any) {
-    if (error?.status === 401) {
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      error.status === 401
+    ) {
       printError("Invalid passphrase");
     } else {
-      printError(`Login failed: ${error?.message || "Unknown error"}`);
+      const message = error instanceof Error ? error.message : "Unknown error";
+      printError(`Login failed: ${message}`);
     }
     process.exit(1);
   }

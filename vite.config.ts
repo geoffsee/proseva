@@ -112,7 +112,7 @@ export default defineConfig({
                 "utf-8",
               );
               res.end(content);
-            } catch (err) {
+            } catch {
               res.statusCode = 404;
               res.end(JSON.stringify({ error: "Index not found" }));
             }
@@ -131,7 +131,7 @@ export default defineConfig({
                 res.statusCode = 404;
                 res.end("Not found");
               }
-            } catch (err) {
+            } catch {
               res.statusCode = 500;
               res.end("Error reading file");
             }

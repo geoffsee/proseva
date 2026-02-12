@@ -312,11 +312,11 @@ export type ResearchCase = {
   updatedAt: number;
   isActive: boolean;
   userEmail: string;
-  savedSearches: any[];
-  documents: any[];
-  summaries: any[];
-  contextItems: any[];
-  generatedDocuments?: any[];
+  savedSearches: unknown[];
+  documents: unknown[];
+  summaries: unknown[];
+  contextItems: unknown[];
+  generatedDocuments?: unknown[];
 };
 
 export type ResearchAttachment = {
@@ -363,18 +363,18 @@ const COLLECTION_KEYS: (keyof Collections)[] = [
   "researchAttachments",
 ];
 
-function toMaps(raw: DatabaseSnapshot): Collections {
-  const maps: any = {};
+function toMaps(raw: Partial<DatabaseSnapshot>): Collections {
+  const maps = {} as Collections;
   for (const key of COLLECTION_KEYS) {
-    maps[key] = new Map(Object.entries(raw[key] ?? {}));
+    maps[key] = new Map(Object.entries(raw[key] ?? {})) as any;
   }
   return maps;
 }
 
 function fromMaps(collections: Collections): DatabaseSnapshot {
-  const out: any = {};
+  const out = {} as DatabaseSnapshot;
   for (const key of COLLECTION_KEYS) {
-    out[key] = Object.fromEntries(collections[key]);
+    (out as any)[key] = Object.fromEntries(collections[key]);
   }
   return out;
 }

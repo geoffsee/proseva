@@ -8,17 +8,16 @@ import {
   formatPhone,
   printSection,
 } from "../lib/formatters";
-import type { ApiClient } from "../lib/api-client";
 
 /**
  * Device tokens (FCM)
  */
 const devices = {
   async list(): Promise<void> {
-    const client = (global as any).apiClient as ApiClient;
-    const outputJson = (global as any).cliOptions.json;
+    const client = globalThis.apiClient;
+    const outputJson = globalThis.cliOptions.json;
 
-    const tokens = await client.get("/device-tokens");
+    const tokens = (await client.get("/device-tokens")) as any[];
 
     if (outputJson) {
       console.log(formatJson(tokens));
@@ -36,7 +35,7 @@ const devices = {
 
     const table = createTable(["ID", "Platform", "Token", "Created"]);
 
-    tokens.forEach((token: any) => {
+    tokens.forEach((token) => {
       table.push([
         token.id?.slice(0, 8) || "—",
         token.platform || "—",
@@ -53,26 +52,26 @@ const devices = {
     token: string,
     options: { name?: string; platform?: string },
   ): Promise<void> {
-    const client = (global as any).apiClient as ApiClient;
-    const outputJson = (global as any).cliOptions.json;
+    const client = globalThis.apiClient;
+    const outputJson = globalThis.cliOptions.json;
 
     const spinner = ora("Adding device token...").start();
 
     try {
-      const result = await client.post("/device-tokens", {
+      const result = (await client.post("/device-tokens", {
         body: {
           token,
           platform: options.platform || "web",
           name: options.name,
-        },
-      });
+        } as any,
+      })) as any;
 
       spinner.succeed("Device token added");
 
       if (outputJson) {
         console.log(formatJson(result));
       } else {
-        printSuccess(`Token ID: ${(result as any)?.id}`);
+        printSuccess(`Token ID: ${result?.id}`);
       }
     } catch (error) {
       spinner.fail("Failed to add device token");
@@ -81,8 +80,8 @@ const devices = {
   },
 
   async remove(id: string): Promise<void> {
-    const client = (global as any).apiClient as ApiClient;
-    const outputJson = (global as any).cliOptions.json;
+    const client = globalThis.apiClient;
+    const outputJson = globalThis.cliOptions.json;
 
     const spinner = ora("Removing device token...").start();
 
@@ -105,10 +104,10 @@ const devices = {
  */
 const sms = {
   async list(): Promise<void> {
-    const client = (global as any).apiClient as ApiClient;
-    const outputJson = (global as any).cliOptions.json;
+    const client = globalThis.apiClient;
+    const outputJson = globalThis.cliOptions.json;
 
-    const recipients = await client.get("/sms-recipients");
+    const recipients = (await client.get("/sms-recipients")) as any[];
 
     if (outputJson) {
       console.log(formatJson(recipients));
@@ -126,7 +125,7 @@ const sms = {
 
     const table = createTable(["ID", "Name", "Phone", "Active", "Created"]);
 
-    recipients.forEach((recipient: any) => {
+    recipients.forEach((recipient) => {
       const active = recipient.active ? chalk.green("✓") : chalk.gray("○");
       table.push([
         recipient.id?.slice(0, 8) || "—",
@@ -142,8 +141,8 @@ const sms = {
   },
 
   async add(phone: string, options: { name?: string }): Promise<void> {
-    const client = (global as any).apiClient as ApiClient;
-    const outputJson = (global as any).cliOptions.json;
+    const client = globalThis.apiClient;
+    const outputJson = globalThis.cliOptions.json;
 
     // Validate phone number format
     const cleaned = phone.replace(/\D/g, "");
@@ -157,20 +156,20 @@ const sms = {
     const spinner = ora("Adding SMS recipient...").start();
 
     try {
-      const result = await client.post("/sms-recipients", {
+      const result = (await client.post("/sms-recipients", {
         body: {
           phone,
           name: options.name,
-        },
-      });
+        } as any,
+      })) as any;
 
       spinner.succeed("SMS recipient added");
 
       if (outputJson) {
         console.log(formatJson(result));
       } else {
-        printSuccess(`Recipient ID: ${(result as any)?.id}`);
-        printSuccess(`Phone: ${formatPhone((result as any)?.phone)}`);
+        printSuccess(`Recipient ID: ${result?.id}`);
+        printSuccess(`Phone: ${formatPhone(result?.phone)}`);
       }
     } catch (error) {
       spinner.fail("Failed to add SMS recipient");
@@ -179,8 +178,8 @@ const sms = {
   },
 
   async remove(id: string): Promise<void> {
-    const client = (global as any).apiClient as ApiClient;
-    const outputJson = (global as any).cliOptions.json;
+    const client = globalThis.apiClient;
+    const outputJson = globalThis.cliOptions.json;
 
     const spinner = ora("Removing SMS recipient...").start();
 
@@ -202,13 +201,13 @@ const sms = {
  * Test notification (trigger evaluation)
  */
 async function test(): Promise<void> {
-  const client = (global as any).apiClient as ApiClient;
-  const outputJson = (global as any).cliOptions.json;
+  const client = globalThis.apiClient;
+  const outputJson = globalThis.cliOptions.json;
 
   const spinner = ora("Triggering test evaluation...").start();
 
   try {
-    const result = await client.post("/evaluations/trigger", {});
+    const result = (await client.post("/evaluations/trigger", {})) as any;
 
     spinner.succeed("Test evaluation triggered");
 
@@ -216,12 +215,12 @@ async function test(): Promise<void> {
       console.log(formatJson(result));
     } else {
       printSection("Evaluation Result");
-      console.log(chalk.gray("Status:"), (result as any)?.status || "—");
-      console.log(chalk.gray("Overdue:"), (result as any)?.overdue || 0);
-      console.log(chalk.gray("Upcoming:"), (result as any)?.upcoming || 0);
+      console.log(chalk.gray("Status:"), result?.status || "—");
+      console.log(chalk.gray("Overdue:"), result?.overdue || 0);
+      console.log(chalk.gray("Upcoming:"), result?.upcoming || 0);
       console.log(
         chalk.gray("Sent:"),
-        (result as any)?.sent ? chalk.green("✓") : chalk.gray("○"),
+        result?.sent ? chalk.green("✓") : chalk.gray("○"),
       );
       console.log();
     }

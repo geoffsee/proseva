@@ -1,5 +1,5 @@
 import { basename, relative, join } from "path";
-import { readFile, writeFile, mkdir, stat } from "fs/promises";
+import { writeFile, mkdir, stat } from "fs/promises";
 import { createHash } from "crypto";
 import OpenAI from "openai";
 import { getConfig } from "./config";

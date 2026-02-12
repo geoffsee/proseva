@@ -16,9 +16,9 @@ for (const key of Object.getOwnPropertyNames(window)) {
 
 // @ts-expect-error - essential globals
 globalThis.document = window.document;
-// @ts-expect-error
+// @ts-expect-error - essential globals
 globalThis.window = window;
-// @ts-expect-error
+// @ts-expect-error - essential globals
 globalThis.navigator = window.navigator;
-// @ts-expect-error
+// @ts-expect-error - essential globals
 globalThis.HTMLElement = window.HTMLElement;

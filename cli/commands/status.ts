@@ -15,8 +15,8 @@ interface StatusOptions {
 }
 
 export async function statusCommand(options: StatusOptions): Promise<void> {
-  const client = (global as any).apiClient as ApiClient;
-  const outputJson = (global as any).cliOptions.json;
+  const client = globalThis.apiClient;
+  const outputJson = globalThis.cliOptions.json;
 
   if (options.watch) {
     // Watch mode - refresh every 5 seconds
@@ -43,7 +43,7 @@ async function displayStatus(
     cases,
     deadlines,
     contacts,
-  ] = await Promise.all([
+  ] = (await Promise.all([
     client.get("/config"),
     client.get("/scheduler/status"),
     client.get("/ingest/status"),
@@ -51,7 +51,7 @@ async function displayStatus(
     client.get("/cases"),
     client.get("/deadlines"),
     client.get("/contacts"),
-  ]);
+  ])) as [any, any, any, any[] | null, any[] | null, any[] | null, any[] | null];
 
   if (outputJson) {
     console.log(
@@ -88,10 +88,10 @@ async function displayStatus(
   printSection("Services");
 
   // Firebase
-  const firebaseConfigured = !!(config as any)?.firebase?.projectId;
+  const firebaseConfigured = !!config?.firebase?.projectId;
   const deviceCount = await client
     .get("/device-tokens")
-    .then((tokens: any) => tokens?.length || 0)
+    .then((tokens: any) => (tokens as any[])?.length || 0)
     .catch(() => 0);
   console.log(
     formatServiceStatus(
@@ -102,10 +102,10 @@ async function displayStatus(
   );
 
   // Twilio
-  const twilioConfigured = !!(config as any)?.twilio?.accountSid;
+  const twilioConfigured = !!config?.twilio?.accountSid;
   const smsCount = await client
     .get("/sms-recipients")
-    .then((recipients: any) => recipients?.length || 0)
+    .then((recipients: any) => (recipients as any[])?.length || 0)
     .catch(() => 0);
   console.log(
     formatServiceStatus(
@@ -116,22 +116,22 @@ async function displayStatus(
   );
 
   // Scheduler
-  const schedulerEnabled = (schedulerStatus as any)?.enabled || false;
-  const nextRun = (schedulerStatus as any)?.nextRun;
+  const schedulerEnabled = schedulerStatus?.enabled || false;
+  const nextRun = schedulerStatus?.nextRun;
   console.log(
     formatServiceStatus(
       "Scheduler",
       schedulerEnabled,
-      nextRun ? `Next: ${formatDate(nextRun)}` : undefined,
+      nextRun ? `Next: ${formatDate(nextRun as string)}` : undefined,
     ),
   );
 
   // OpenAI
-  const openaiConfigured = !!(config as any)?.ai?.openaiApiKey;
+  const openaiConfigured = !!config?.ai?.openaiApiKey;
   console.log(formatServiceStatus("OpenAI", openaiConfigured));
 
   // Auto-Ingest
-  const autoIngestConfigured = !!(config as any)?.autoIngest?.directory;
+  const autoIngestConfigured = !!config?.autoIngest?.directory;
   console.log(
     formatServiceStatus(
       "Auto-Ingest",
@@ -145,7 +145,7 @@ async function displayStatus(
   // Recent evaluations
   if (evaluations && Array.isArray(evaluations) && evaluations.length > 0) {
     printSection("Recent Evaluations");
-    evaluations.slice(0, 5).forEach((evaluation: any) => {
+    evaluations.slice(0, 5).forEach((evaluation) => {
       const date = new Date(evaluation.createdAt).toLocaleString();
       const status = evaluation.sent
         ? chalk.green("Sent")

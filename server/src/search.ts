@@ -2,13 +2,6 @@ import { join } from "path";
 import { readFile } from "fs/promises";
 import {
   db,
-  type Case,
-  type Contact,
-  type Deadline,
-  type FinancialEntry,
-  type Evidence,
-  type Filing,
-  type Note,
 } from "./db";
 import type { DocumentEntry } from "./ingest";
 

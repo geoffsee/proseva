@@ -2,19 +2,16 @@ import chalk from "chalk";
 import ora from "ora";
 import {
   createTable,
-  formatCount,
-  printSection,
   printSuccess,
   formatJson,
 } from "../lib/formatters";
-import type { ApiClient } from "../lib/api-client";
 
 /**
  * Show database statistics
  */
 async function stats(): Promise<void> {
-  const client = (global as any).apiClient as ApiClient;
-  const outputJson = (global as any).cliOptions.json;
+  const client = globalThis.apiClient;
+  const outputJson = globalThis.cliOptions.json;
 
   const spinner = ora("Fetching database statistics...").start();
 
@@ -29,7 +26,7 @@ async function stats(): Promise<void> {
         client.get("/evidences"),
         client.get("/filings"),
         client.get("/notes"),
-      ]);
+      ]) as Array<any[] | null | undefined>;
 
     spinner.stop();
 
@@ -57,14 +54,14 @@ async function stats(): Promise<void> {
     const table = createTable(["Collection", "Count"]);
 
     table.push(
-      ["Cases", chalk.cyan(stats.cases)],
-      ["Deadlines", chalk.cyan(stats.deadlines)],
-      ["Contacts", chalk.cyan(stats.contacts)],
-      ["Finances", chalk.cyan(stats.finances)],
-      ["Evidence", chalk.cyan(stats.evidences)],
-      ["Filings", chalk.cyan(stats.filings)],
-      ["Notes", chalk.cyan(stats.notes)],
-      [chalk.bold("Total"), chalk.bold.cyan(total)],
+      ["Cases", chalk.cyan(stats.cases.toString())],
+      ["Deadlines", chalk.cyan(stats.deadlines.toString())],
+      ["Contacts", chalk.cyan(stats.contacts.toString())],
+      ["Finances", chalk.cyan(stats.finances.toString())],
+      ["Evidence", chalk.cyan(stats.evidences.toString())],
+      ["Filings", chalk.cyan(stats.filings.toString())],
+      ["Notes", chalk.cyan(stats.notes.toString())],
+      [chalk.bold("Total"), chalk.bold.cyan(total.toString())],
     );
 
     console.log(table.toString());
@@ -79,8 +76,8 @@ async function stats(): Promise<void> {
  * Export database
  */
 async function exportData(format: string): Promise<void> {
-  const client = (global as any).apiClient as ApiClient;
-  const outputJson = (global as any).cliOptions.json;
+  const client = globalThis.apiClient;
+  const outputJson = globalThis.cliOptions.json;
 
   if (format !== "json" && format !== "csv") {
     console.error(chalk.red("Invalid format. Supported formats: json, csv"));
@@ -100,7 +97,7 @@ async function exportData(format: string): Promise<void> {
         client.get("/evidences"),
         client.get("/filings"),
         client.get("/notes"),
-      ]);
+      ]) as any[][];
 
     const data = {
       cases: cases || [],

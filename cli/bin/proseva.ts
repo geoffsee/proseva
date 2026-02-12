@@ -9,7 +9,7 @@ import { dbCommand } from "../commands/db";
 import { notificationsCommand } from "../commands/notifications";
 import { scanCommand } from "../commands/scan";
 import { authCommand, readToken } from "../commands/auth";
-import chalk from "chalk";
+import "../lib/globals.d";
 
 const program = new Command();
 
@@ -26,8 +26,8 @@ program
   .option("--verbose", "Verbose logging")
   .hook("preAction", async (thisCommand) => {
     // Make options available globally
-    const opts = thisCommand.optsWithGlobals();
-    (global as any).cliOptions = opts;
+    const opts = thisCommand.optsWithGlobals() as CliOptions;
+    globalThis.cliOptions = opts;
 
     // Load stored token
     const tokenData = await readToken();
@@ -35,7 +35,7 @@ program
 
     // Create API client
     const apiUrl = opts.apiUrl.replace(/\/$/, ""); // Remove trailing slash
-    (global as any).apiClient = new ApiClient({
+    globalThis.apiClient = new ApiClient({
       baseUrl: `${apiUrl}/api`,
       verbose: opts.verbose,
       token,
@@ -293,7 +293,7 @@ function handleError(error: unknown): void {
   if (error instanceof ApiError) {
     if (error.isNetworkError() || error.status === 0) {
       printError(
-        `Cannot connect to server at ${(global as any).cliOptions.apiUrl}. Is it running?`,
+        `Cannot connect to server at ${globalThis.cliOptions.apiUrl}. Is it running?`,
       );
       process.exit(2);
     }
@@ -319,7 +319,7 @@ function handleError(error: unknown): void {
 
   if (error instanceof Error) {
     printError(error.message);
-    if ((global as any).cliOptions.verbose) {
+    if (globalThis.cliOptions.verbose) {
       console.error(error.stack);
     }
     process.exit(1);

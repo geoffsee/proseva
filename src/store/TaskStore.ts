@@ -1,4 +1,4 @@
-import { types, type Instance, flow, type SnapshotIn } from "mobx-state-tree";
+import { types, type Instance, type SnapshotIn } from "mobx-state-tree";
 import { v4 as uuidv4 } from "uuid";
 
 export const TaskModel = types
@@ -49,7 +49,7 @@ export const TaskStore = types
     },
   }))
   .actions((self) => ({
-    addTask: flow(function* (taskData: {
+    addTask(taskData: {
       title: string;
       description?: string;
       status?: "todo" | "in-progress" | "done";
@@ -69,8 +69,8 @@ export const TaskStore = types
       });
       self.tasks.push(newTask);
       return newTask;
-    }),
-    updateTask: flow(function* (
+    },
+    updateTask(
       id: string,
       updates: Partial<SnapshotIn<Task>>,
     ) {
@@ -78,14 +78,14 @@ export const TaskStore = types
       if (task) {
         task.update(updates);
       }
-    }),
-    deleteTask: flow(function* (id: string) {
+    },
+    deleteTask(id: string) {
       const index = self.tasks.findIndex((task) => task.id === id);
       if (index !== -1) {
         self.tasks.splice(index, 1);
       }
-    }),
-    moveTask: flow(function* (
+    },
+    moveTask(
       id: string,
       newStatus: "todo" | "in-progress" | "done",
     ) {
@@ -93,7 +93,7 @@ export const TaskStore = types
       if (task) {
         task.moveToStatus(newStatus);
       }
-    }),
+    },
   }));
 
 export type TaskStoreType = Instance<typeof TaskStore>;

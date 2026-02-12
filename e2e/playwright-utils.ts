@@ -76,6 +76,8 @@ export const SELECTORS = {
   CHAT_SEND_BUTTON: "chat-send-button",
 } as const;
 
+import type { Page } from "@playwright/test";
+
 /**
  * Navigate to a page in the ProSe VA application
  * @param page - Playwright page object
@@ -83,7 +85,7 @@ export const SELECTORS = {
  * @param timeout - Navigation timeout in milliseconds
  */
 export async function navigateTo(
-  page: any,
+  page: Page,
   url: string,
   timeout: number = 30000,
 ): Promise<void> {
@@ -100,7 +102,7 @@ export async function navigateTo(
  * @param label - Descriptive label for logging
  */
 export async function clickNavLink(
-  page: any,
+  page: Page,
   ref: string,
   label: string,
 ): Promise<void> {
@@ -114,7 +116,7 @@ export async function clickNavLink(
  * @param navRef - Navigation element reference from SELECTORS
  */
 export async function navigateViaSidebar(
-  page: any,
+  page: Page,
   navRef: string,
 ): Promise<void> {
   await clickNavLink(page, navRef, `Navigation: ${navRef}`);
@@ -127,7 +129,7 @@ export async function navigateViaSidebar(
  * @param filename - Name of the file to save (without path)
  */
 export async function takeScreenshot(
-  page: any,
+  page: Page,
   filename: string,
 ): Promise<string> {
   const filepath = `.playwright-mcp/${filename}`;
@@ -143,11 +145,9 @@ export async function takeScreenshot(
 /**
  * Get page accessibility snapshot
  * @param page - Playwright page object
- * @param filename - Optional filename to save to
  */
 export async function getPageSnapshot(
-  page: any,
-  filename?: string,
+  page: Page,
 ): Promise<any> {
   return await page.accessibility.snapshot({
     interestingOnly: false,
@@ -162,7 +162,7 @@ export async function getPageSnapshot(
  * @param element - Descriptive element name
  */
 export async function clickElement(
-  page: any,
+  page: Page,
   testId: string,
   element: string,
 ): Promise<void> {
@@ -178,7 +178,7 @@ export async function clickElement(
  * @param label - Descriptive label
  */
 export async function fillInput(
-  page: any,
+  page: Page,
   testId: string,
   text: string,
   label: string,
@@ -195,7 +195,7 @@ export async function fillInput(
  * @param label - Descriptive label
  */
 export async function selectDropdown(
-  page: any,
+  page: Page,
   testId: string,
   value: string,
   label: string,
@@ -210,9 +210,9 @@ export async function selectDropdown(
  * @param testId - Element test id
  */
 export async function getElementText(
-  page: any,
+  page: Page,
   testId: string,
-): Promise<string> {
+): Promise<string | null> {
   return await page.getByTestId(testId).textContent();
 }
 
@@ -223,7 +223,7 @@ export async function getElementText(
  * @param timeout - Timeout in milliseconds
  */
 export async function waitForElement(
-  page: any,
+  page: Page,
   testId: string,
   timeout: number = 5000,
 ): Promise<void> {
@@ -236,7 +236,7 @@ export async function waitForElement(
  * @param testId - Element test id
  */
 export async function isElementVisible(
-  page: any,
+  page: Page,
   testId: string,
 ): Promise<boolean> {
   try {
@@ -255,12 +255,10 @@ export async function isElementVisible(
  * Navigate to a specific page via direct URL
  * @param page - Playwright page object
  * @param pagePath - URL path using PAGES constant
- * @param navRef - Navigation reference (deprecated, kept for backward compatibility)
  */
 export async function goToPage(
-  page: any,
+  page: Page,
   pagePath: string,
-  navRef?: string,
 ): Promise<void> {
   // Navigate directly by URL instead of clicking sidebar
   await navigateTo(page, pagePath);
@@ -273,7 +271,7 @@ export async function goToPage(
  * @param searchTerm - Term to search for
  */
 export async function search(
-  page: any,
+  page: Page,
   searchRef: string,
   searchTerm: string,
 ): Promise<void> {
@@ -290,7 +288,7 @@ export async function search(
  * @param filterLabel - Descriptive label
  */
 export async function applyFilter(
-  page: any,
+  page: Page,
   filterRef: string,
   filterValue: string,
   filterLabel: string,
@@ -307,7 +305,7 @@ export async function applyFilter(
  * @param formSelectors - CSS selectors for form elements to wait for
  */
 export async function openAddForm(
-  page: any,
+  page: Page,
   addButtonRef: string,
   formSelectors?: string[],
 ): Promise<void> {
@@ -327,7 +325,7 @@ export async function openAddForm(
  * Toggle color mode (light/dark theme)
  * @param page - Playwright page object
  */
-export async function toggleColorMode(page: any): Promise<void> {
+export async function toggleColorMode(page: Page): Promise<void> {
   try {
     const colorModeButton = page
       .getByTestId(SELECTORS.COLOR_MODE_TOGGLE)
@@ -336,7 +334,7 @@ export async function toggleColorMode(page: any): Promise<void> {
     await colorModeButton.waitFor({ state: "visible", timeout: 10000 });
     await colorModeButton.click();
     console.log("Toggled color mode");
-  } catch (error) {
+  } catch {
     console.log("Color mode toggle not found - skipping test");
   }
 }
@@ -345,7 +343,7 @@ export async function toggleColorMode(page: any): Promise<void> {
  * Get page title
  * @param page - Playwright page object
  */
-export async function getPageTitle(page: any): Promise<string> {
+export async function getPageTitle(page: Page): Promise<string> {
   return await page.title();
 }
 
@@ -353,7 +351,7 @@ export async function getPageTitle(page: any): Promise<string> {
  * Get current URL
  * @param page - Playwright page object
  */
-export async function getCurrentUrl(page: any): Promise<string> {
+export async function getCurrentUrl(page: Page): Promise<string> {
   return page.url();
 }
 
@@ -364,7 +362,7 @@ export async function getCurrentUrl(page: any): Promise<string> {
  * @param timeout - Timeout in milliseconds
  */
 export async function waitForText(
-  page: any,
+  page: Page,
   text: string,
   timeout: number = 5000,
 ): Promise<void> {
@@ -380,7 +378,7 @@ export async function waitForText(
  * @param page - Playwright page object
  * @param text - Text to check for
  */
-export async function hasText(page: any, text: string): Promise<boolean> {
+export async function hasText(page: Page, text: string): Promise<boolean> {
   try {
     // Check if text exists anywhere on the page using getByText
     const element = await page.getByText(text, { exact: false }).first();
@@ -398,118 +396,118 @@ export async function hasText(page: any, text: string): Promise<boolean> {
  * Get all text content from page
  * @param page - Playwright page object
  */
-export async function getPageText(page: any): Promise<string> {
+export async function getPageText(page: Page): Promise<string> {
   return await page.evaluate(() => document.body.innerText);
 }
 
 /**
  * Navigation helper - go to dashboard
  */
-export async function goToDashboard(page: any): Promise<void> {
-  await goToPage(page, PAGES.DASHBOARD, SELECTORS.NAV_DASHBOARD);
+export async function goToDashboard(page: Page): Promise<void> {
+  await goToPage(page, PAGES.DASHBOARD);
 }
 
 /**
  * Navigation helper - go to deadlines
  */
-export async function goToDeadlines(page: any): Promise<void> {
-  await goToPage(page, PAGES.DEADLINES, SELECTORS.NAV_DEADLINES);
+export async function goToDeadlines(page: Page): Promise<void> {
+  await goToPage(page, PAGES.DEADLINES);
 }
 
 /**
  * Navigation helper - go to filings
  */
-export async function goToFilings(page: any): Promise<void> {
-  await goToPage(page, PAGES.FILINGS, SELECTORS.NAV_FILINGS);
+export async function goToFilings(page: Page): Promise<void> {
+  await goToPage(page, PAGES.FILINGS);
 }
 
 /**
  * Navigation helper - go to evidence
  */
-export async function goToEvidence(page: any): Promise<void> {
-  await goToPage(page, PAGES.EVIDENCE, SELECTORS.NAV_EVIDENCE);
+export async function goToEvidence(page: Page): Promise<void> {
+  await goToPage(page, PAGES.EVIDENCE);
 }
 
 /**
  * Navigation helper - go to timeline
  */
-export async function goToTimeline(page: any): Promise<void> {
-  await goToPage(page, PAGES.TIMELINE, SELECTORS.NAV_TIMELINE);
+export async function goToTimeline(page: Page): Promise<void> {
+  await goToPage(page, PAGES.TIMELINE);
 }
 
 /**
  * Navigation helper - go to cases
  */
-export async function goToCases(page: any): Promise<void> {
-  await goToPage(page, PAGES.CASES, SELECTORS.NAV_CASES);
+export async function goToCases(page: Page): Promise<void> {
+  await goToPage(page, PAGES.CASES);
 }
 
 /**
  * Navigation helper - go to documents
  */
-export async function goToDocuments(page: any): Promise<void> {
-  await goToPage(page, PAGES.DOCUMENTS, SELECTORS.NAV_DOCUMENTS);
+export async function goToDocuments(page: Page): Promise<void> {
+  await goToPage(page, PAGES.DOCUMENTS);
 }
 
 /**
  * Navigation helper - go to finances
  */
-export async function goToFinances(page: any): Promise<void> {
-  await goToPage(page, PAGES.FINANCES, SELECTORS.NAV_FINANCES);
+export async function goToFinances(page: Page): Promise<void> {
+  await goToPage(page, PAGES.FINANCES);
 }
 
 /**
  * Navigation helper - go to contacts
  */
-export async function goToContacts(page: any): Promise<void> {
-  await goToPage(page, PAGES.CONTACTS, SELECTORS.NAV_CONTACTS);
+export async function goToContacts(page: Page): Promise<void> {
+  await goToPage(page, PAGES.CONTACTS);
 }
 
 /**
  * Navigation helper - go to notes
  */
-export async function goToNotes(page: any): Promise<void> {
-  await goToPage(page, PAGES.NOTES, SELECTORS.NAV_NOTES);
+export async function goToNotes(page: Page): Promise<void> {
+  await goToPage(page, PAGES.NOTES);
 }
 
 /**
  * Navigation helper - go to calendar
  */
-export async function goToCalendar(page: any): Promise<void> {
-  await goToPage(page, PAGES.CALENDAR, SELECTORS.NAV_CALENDAR);
+export async function goToCalendar(page: Page): Promise<void> {
+  await goToPage(page, PAGES.CALENDAR);
 }
 
 /**
  * Navigation helper - go to tasks
  */
-export async function goToTasks(page: any): Promise<void> {
-  await goToPage(page, PAGES.TASKS, SELECTORS.NAV_TASKS);
+export async function goToTasks(page: Page): Promise<void> {
+  await goToPage(page, PAGES.TASKS);
 }
 
 /**
  * Navigation helper - go to resources
  */
-export async function goToResources(page: any): Promise<void> {
-  await goToPage(page, PAGES.RESOURCES, SELECTORS.NAV_RESOURCES);
+export async function goToResources(page: Page): Promise<void> {
+  await goToPage(page, PAGES.RESOURCES);
 }
 
 /**
  * Navigation helper - go to document manager
  */
-export async function goToDocumentManager(page: any): Promise<void> {
-  await goToPage(page, PAGES.DOCUMENT_MANAGER, SELECTORS.NAV_DOC_MANAGER);
+export async function goToDocumentManager(page: Page): Promise<void> {
+  await goToPage(page, PAGES.DOCUMENT_MANAGER);
 }
 
 /**
  * Navigation helper - go to AI chat
  */
-export async function goToChat(page: any): Promise<void> {
-  await goToPage(page, PAGES.CHAT, SELECTORS.NAV_AI_CHAT);
+export async function goToChat(page: Page): Promise<void> {
+  await goToPage(page, PAGES.CHAT);
 }
 
 /**
  * Navigation helper - go to reports
  */
-export async function goToReports(page: any): Promise<void> {
-  await goToPage(page, PAGES.REPORTS, SELECTORS.NAV_REPORTS);
+export async function goToReports(page: Page): Promise<void> {
+  await goToPage(page, PAGES.REPORTS);
 }

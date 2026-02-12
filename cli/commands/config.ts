@@ -4,22 +4,20 @@ import {
   formatConfigValue,
   formatSource,
   printSection,
-  printKeyValue,
   printSuccess,
   printError,
   printWarning,
   formatJson,
 } from "../lib/formatters";
-import type { ApiClient } from "../lib/api-client";
 
 /**
  * Get configuration
  */
 async function get(key?: string): Promise<void> {
-  const client = (global as any).apiClient as ApiClient;
-  const outputJson = (global as any).cliOptions.json;
+  const client = globalThis.apiClient;
+  const outputJson = globalThis.cliOptions.json;
 
-  const config = await client.get("/config");
+  const config = await client.get("/config") as Record<string, any>;
 
   if (outputJson) {
     console.log(formatJson(config));
@@ -75,8 +73,8 @@ async function get(key?: string): Promise<void> {
  * Set configuration value
  */
 async function set(key: string, value: string): Promise<void> {
-  const client = (global as any).apiClient as ApiClient;
-  const outputJson = (global as any).cliOptions.json;
+  const client = globalThis.apiClient;
+  const outputJson = globalThis.cliOptions.json;
 
   // Parse the key into group and field
   const parts = key.split(".");
@@ -99,7 +97,7 @@ async function set(key: string, value: string): Promise<void> {
 
   try {
     // Parse value for booleans
-    let parsedValue: any = value;
+    let parsedValue: string | boolean = value;
     if (value === "true" || value === "false") {
       parsedValue = value === "true";
     }
@@ -109,7 +107,7 @@ async function set(key: string, value: string): Promise<void> {
         [group]: {
           [field]: parsedValue,
         },
-      },
+      } as any,
     });
 
     spinner.succeed(`Set ${key} = ${value}`);
@@ -132,8 +130,8 @@ async function set(key: string, value: string): Promise<void> {
  * Reset configuration
  */
 async function reset(group?: string): Promise<void> {
-  const client = (global as any).apiClient as ApiClient;
-  const outputJson = (global as any).cliOptions.json;
+  const client = globalThis.apiClient;
+  const outputJson = globalThis.cliOptions.json;
 
   if (group) {
     printWarning(
@@ -150,8 +148,8 @@ async function reset(group?: string): Promise<void> {
   try {
     if (group) {
       // Delete specific group
-      const config = await client.get("/config");
-      const groupConfig = (config as any)[group];
+      const config = (await client.get("/config")) as Record<string, any>;
+      const groupConfig = config[group];
 
       if (!groupConfig) {
         spinner.fail(`Group not found: ${group}`);
@@ -184,8 +182,8 @@ async function reset(group?: string): Promise<void> {
  * Test service connection
  */
 async function test(service: string): Promise<void> {
-  const client = (global as any).apiClient as ApiClient;
-  const outputJson = (global as any).cliOptions.json;
+  const client = globalThis.apiClient;
+  const outputJson = globalThis.cliOptions.json;
 
   const validServices = ["firebase", "twilio", "openai"];
   if (!validServices.includes(service)) {
@@ -198,7 +196,7 @@ async function test(service: string): Promise<void> {
   const spinner = ora(`Testing ${service} connection...`).start();
 
   try {
-    let result;
+    let result: any;
     if (service === "firebase") {
       result = await client.post("/config/test-firebase", {});
     } else if (service === "twilio") {
@@ -217,15 +215,15 @@ async function test(service: string): Promise<void> {
       return;
     }
 
-    if ((result as any)?.success) {
+    if (result?.success) {
       spinner.succeed(`${service} connection successful`);
-      if ((result as any)?.message) {
-        console.log(chalk.gray((result as any).message));
+      if (result?.message) {
+        console.log(chalk.gray(result.message));
       }
     } else {
       spinner.fail(`${service} connection failed`);
-      if ((result as any)?.error) {
-        printError((result as any).error);
+      if (result?.error) {
+        printError(result.error);
       }
       process.exit(1);
     }
@@ -239,8 +237,8 @@ async function test(service: string): Promise<void> {
  * Reinitialize service
  */
 async function reinit(service: string): Promise<void> {
-  const client = (global as any).apiClient as ApiClient;
-  const outputJson = (global as any).cliOptions.json;
+  const client = globalThis.apiClient;
+  const outputJson = globalThis.cliOptions.json;
 
   const validServices = ["firebase", "twilio", "scheduler"];
   if (!validServices.includes(service)) {
@@ -253,22 +251,22 @@ async function reinit(service: string): Promise<void> {
   const spinner = ora(`Reinitializing ${service}...`).start();
 
   try {
-    const result = await client.post(
+    const result = (await client.post(
       `/config/reinitialize/${service}` as any,
       {},
-    );
+    )) as any;
 
     if (outputJson) {
       console.log(formatJson(result));
       return;
     }
 
-    if ((result as any)?.success) {
+    if (result?.success) {
       spinner.succeed(`${service} reinitialized successfully`);
     } else {
       spinner.fail(`Failed to reinitialize ${service}`);
-      if ((result as any)?.error) {
-        printError((result as any).error);
+      if (result?.error) {
+        printError(result.error);
       }
       process.exit(1);
     }
@@ -282,7 +280,7 @@ async function reinit(service: string): Promise<void> {
  * Helper: Print a configuration item with source
  */
 function printConfigItem(
-  config: any,
+  config: Record<string, any>,
   path: string,
   label: string,
   sensitive = false,
@@ -292,7 +290,7 @@ function printConfigItem(
   const source = getNestedValue(config, sourceKey);
 
   const formattedValue = formatConfigValue(value, sensitive);
-  const formattedSource = source ? formatSource(source as any) : "";
+  const formattedSource = source ? formatSource(source as string) : "";
 
   console.log(
     `  ${chalk.gray(label + ":")} ${formattedValue} ${formattedSource}`,

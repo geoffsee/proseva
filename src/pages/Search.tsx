@@ -346,7 +346,7 @@ export default function Search() {
       } else {
         setResults(response);
       }
-    } catch (err) {
+    } catch {
       setError("Failed to perform search. Please try again.");
       setResults(null);
     } finally {

@@ -312,8 +312,7 @@ async function decryptV3Snapshot(input: DatabaseSnapshot): Promise<DatabaseSnaps
       decipher.final(),
     ]);
     parsed = JSON.parse(plaintext.toString("utf8"));
-  } catch (err: unknown) {
-    void err;
+  } catch {
     throw new DatabaseEncryptionError(
       "invalid_key",
       `Failed to decrypt database. AES decryption failed.`,

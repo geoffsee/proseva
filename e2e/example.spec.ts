@@ -5,7 +5,7 @@
  * the ProSe VA application. Run with: npx playwright test e2e/example.spec.ts
  */
 
-import { test, expect, Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import * as pw from "./playwright-utils";
 
 // Setup: Navigate to base URL before each test

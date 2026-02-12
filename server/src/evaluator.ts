@@ -30,19 +30,6 @@ function getDaysDiff(dateStr: string): number {
 }
 
 /**
- * Get urgency level for a deadline
- */
-function getUrgency(
-  dateStr: string,
-): "overdue" | "urgent" | "upcoming" | "future" {
-  const diffDays = getDaysDiff(dateStr);
-  if (diffDays < 0) return "overdue";
-  if (diffDays <= 3) return "urgent";
-  if (diffDays <= 14) return "upcoming";
-  return "future";
-}
-
-/**
  * Convert deadline to summary with case info
  */
 function toDeadlineSummary(

@@ -59,11 +59,11 @@ export default function DocumentManager() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchDocs();
   }, [fetchDocs]);
 
   useEffect(() => {
-    let timer: ReturnType<typeof setInterval> | undefined;
     const loadStatus = () =>
       fetch("/api/ingest/status")
         .then((r) => (r.ok ? r.json() : Promise.resolve(null)))
@@ -84,9 +84,9 @@ export default function DocumentManager() {
           ),
         );
     loadStatus();
-    timer = setInterval(loadStatus, 10000);
+    const timer = setInterval(loadStatus, 10000);
     return () => {
-      if (timer) clearInterval(timer);
+      clearInterval(timer);
     };
   }, []);
 

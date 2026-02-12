@@ -46,7 +46,7 @@ export function ReportPreview({
         title: "Copied to clipboard",
         type: "success",
       });
-    } catch (error) {
+    } catch {
       toaster.create({
         title: "Failed to copy",
         type: "error",

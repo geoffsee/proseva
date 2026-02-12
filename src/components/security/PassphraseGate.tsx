@@ -91,7 +91,7 @@ export function PassphraseGate({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [isTestMode]);
+  }, [isTestMode, initializeWithExistingToken]);
 
   const initializeWithExistingToken = useCallback(
     async (token: string) => {

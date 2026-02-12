@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import type { ReactElement } from "react";
 import { render, cleanup, type RenderOptions } from "@testing-library/react";
 import { Provider } from "./components/ui/provider";
