@@ -436,6 +436,14 @@ export interface ServerConfig {
     govInfoApiKeySource?: "database" | "environment";
     serpapiBaseSource?: "database" | "environment";
   };
+  prompts?: {
+    chatSystemPrompt?: string;
+    caseSummaryPrompt?: string;
+    evaluatorPrompt?: string;
+    chatSystemPromptSource?: "database" | "default";
+    caseSummaryPromptSource?: "database" | "default";
+    evaluatorPromptSource?: "database" | "default";
+  };
 }
 
 export type DbSecurityStatus = {
