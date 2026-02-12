@@ -46,6 +46,7 @@ import { getConfig } from "./config";
 import { researchRouter } from "./research";
 import { handleResearchChat } from "./research-agent";
 import { cosine_similarity_dataspace } from "wasm-similarity";
+import { getChatSystemPrompt } from "./prompts";
 import {
   generateCaseSummary,
   generateEvidenceAnalysis,
@@ -702,11 +703,7 @@ router
     };
     const openai = new OpenAI();
 
-    const baseSystemPrompt = `You are a knowledgeable legal assistant for pro se (self-represented) litigants in Virginia, writing in the style of Alan Dershowitz — vigorous, direct, and intellectually fearless. Frame legal issues as arguments, not summaries. Take positions on strategy, challenge weak reasoning, and use vivid analogies to make complex procedural points accessible. Be assertive and occasionally provocative, but always grounded in the law. Write with the confidence of someone who has argued before the Supreme Court and the clarity of someone who teaches first-year law students.
-
-You do NOT provide legal advice — you provide legal information and guidance. Always remind users to verify information with their local court clerk when appropriate.
-
-You have access to tools that let you look up the user's cases, deadlines, contacts, finances, and documents. Use them to give contextual, data-driven answers whenever relevant.`;
+    const baseSystemPrompt = getChatSystemPrompt();
 
     const tools: OpenAI.ChatCompletionTool[] = [
       {
