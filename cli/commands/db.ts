@@ -1,10 +1,6 @@
 import chalk from "chalk";
 import ora from "ora";
-import {
-  createTable,
-  printSuccess,
-  formatJson,
-} from "../lib/formatters";
+import { createTable, printSuccess, formatJson } from "../lib/formatters";
 
 /**
  * Show database statistics
@@ -17,17 +13,18 @@ async function stats(): Promise<void> {
 
   try {
     // Fetch all entity counts in parallel
-    const results = await Promise.all([
-        client.get("/cases"),
-        client.get("/deadlines"),
-        client.get("/contacts"),
-        client.get("/finances"),
-        client.get("/evidences"),
-        client.get("/filings"),
-        client.get("/notes"),
-      ]) as Array<unknown[] | null | undefined>;
+    const results = (await Promise.all([
+      client.get("/cases"),
+      client.get("/deadlines"),
+      client.get("/contacts"),
+      client.get("/finances"),
+      client.get("/evidences"),
+      client.get("/filings"),
+      client.get("/notes"),
+    ])) as Array<unknown[] | null | undefined>;
 
-    const [cases, deadlines, contacts, finances, evidences, filings, notes] = results;
+    const [cases, deadlines, contacts, finances, evidences, filings, notes] =
+      results;
 
     spinner.stop();
 
@@ -89,17 +86,18 @@ async function exportData(format: string): Promise<void> {
 
   try {
     // Fetch all data in parallel
-    const results = await Promise.all([
-        client.get("/cases"),
-        client.get("/deadlines"),
-        client.get("/contacts"),
-        client.get("/finances"),
-        client.get("/evidences"),
-        client.get("/filings"),
-        client.get("/notes"),
-      ]) as unknown[][];
+    const results = (await Promise.all([
+      client.get("/cases"),
+      client.get("/deadlines"),
+      client.get("/contacts"),
+      client.get("/finances"),
+      client.get("/evidences"),
+      client.get("/filings"),
+      client.get("/notes"),
+    ])) as unknown[][];
 
-    const [cases, deadlines, contacts, finances, evidences, filings, notes] = results;
+    const [cases, deadlines, contacts, finances, evidences, filings, notes] =
+      results;
 
     const data = {
       cases: cases || [],

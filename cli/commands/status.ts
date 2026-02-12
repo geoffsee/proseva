@@ -51,7 +51,15 @@ async function displayStatus(
     client.get("/cases"),
     client.get("/deadlines"),
     client.get("/contacts"),
-  ])) as [Record<string, unknown>, Record<string, unknown>, Record<string, unknown>, Array<Record<string, unknown>> | null, unknown[] | null, unknown[] | null, unknown[] | null];
+  ])) as [
+    Record<string, unknown>,
+    Record<string, unknown>,
+    Record<string, unknown>,
+    Array<Record<string, unknown>> | null,
+    unknown[] | null,
+    unknown[] | null,
+    unknown[] | null,
+  ];
 
   if (outputJson) {
     console.log(
@@ -88,7 +96,9 @@ async function displayStatus(
   printSection("Services");
 
   // Firebase
-  const firebaseConfig = config?.firebase as Record<string, unknown> | undefined;
+  const firebaseConfig = config?.firebase as
+    | Record<string, unknown>
+    | undefined;
   const firebaseConfigured = !!firebaseConfig?.projectId;
   const deviceCount = await client
     .get("/device-tokens")
@@ -118,8 +128,10 @@ async function displayStatus(
   );
 
   // Scheduler
-  const schedulerEnabled = (schedulerStatus as Record<string, unknown>)?.enabled as boolean || false;
-  const nextRun = (schedulerStatus as Record<string, unknown>)?.nextRun as string;
+  const schedulerEnabled =
+    ((schedulerStatus as Record<string, unknown>)?.enabled as boolean) || false;
+  const nextRun = (schedulerStatus as Record<string, unknown>)
+    ?.nextRun as string;
   console.log(
     formatServiceStatus(
       "Scheduler",
@@ -134,14 +146,16 @@ async function displayStatus(
   console.log(formatServiceStatus("OpenAI", openaiConfigured));
 
   // Auto-Ingest
-  const autoIngestConfig = config?.autoIngest as Record<string, unknown> | undefined;
+  const autoIngestConfig = config?.autoIngest as
+    | Record<string, unknown>
+    | undefined;
   const autoIngestConfigured = !!autoIngestConfig?.directory;
   console.log(
     formatServiceStatus(
       "Auto-Ingest",
       autoIngestConfigured,
       autoIngestConfigured
-        ? (ingestStatus as Record<string, unknown>)?.directory as string
+        ? ((ingestStatus as Record<string, unknown>)?.directory as string)
         : "Not configured",
     ),
   );

@@ -29,7 +29,9 @@ describe("AssetList", () => {
   });
 
   it("renders assets correctly", () => {
-    render(<AssetList assets={mockAssets} onAdd={vi.fn()} onRemove={vi.fn()} />);
+    render(
+      <AssetList assets={mockAssets} onAdd={vi.fn()} onRemove={vi.fn()} />,
+    );
 
     expect(screen.getByText("Savings Account")).toBeInTheDocument();
     expect(screen.getByText("Primary Residence")).toBeInTheDocument();
@@ -48,9 +50,13 @@ describe("AssetList", () => {
 
   it("calls onRemove when remove button is clicked", () => {
     const onRemove = vi.fn();
-    render(<AssetList assets={mockAssets} onAdd={vi.fn()} onRemove={onRemove} />);
+    render(
+      <AssetList assets={mockAssets} onAdd={vi.fn()} onRemove={onRemove} />,
+    );
 
-    const removeButtons = screen.getAllByRole("button", { name: "Remove asset" });
+    const removeButtons = screen.getAllByRole("button", {
+      name: "Remove asset",
+    });
     fireEvent.click(removeButtons[0]);
 
     expect(onRemove).toHaveBeenCalledWith("1");

@@ -1062,9 +1062,7 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
               );
             }
             if (party) {
-              events = events.filter(
-                (e: TimelineEvent) => e.party === party,
-              );
+              events = events.filter((e: TimelineEvent) => e.party === party);
             }
             if (caseNumber) {
               events = events.filter(

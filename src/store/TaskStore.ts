@@ -70,10 +70,7 @@ export const TaskStore = types
       self.tasks.push(newTask);
       return newTask;
     },
-    updateTask(
-      id: string,
-      updates: Partial<SnapshotIn<Task>>,
-    ) {
+    updateTask(id: string, updates: Partial<SnapshotIn<Task>>) {
       const task = self.getTaskById(id);
       if (task) {
         task.update(updates);
@@ -85,10 +82,7 @@ export const TaskStore = types
         self.tasks.splice(index, 1);
       }
     },
-    moveTask(
-      id: string,
-      newStatus: "todo" | "in-progress" | "done",
-    ) {
+    moveTask(id: string, newStatus: "todo" | "in-progress" | "done") {
       const task = self.getTaskById(id);
       if (task) {
         task.moveToStatus(newStatus);

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { analyzeCaseGraph, compressCaseGraphForPrompt, type AnalyzeCaseGraphResult } from "./chat-graph";
+import {
+  analyzeCaseGraph,
+  compressCaseGraphForPrompt,
+  type AnalyzeCaseGraphResult,
+} from "./chat-graph";
 import type { Case, Contact, Deadline, Evidence, Filing, Note } from "./db";
 import type { DocumentEntry } from "./ingest";
 
@@ -165,10 +169,16 @@ describe("chat-graph", () => {
       edges: 17,
     });
     expect(result.topConnectedNodes).toHaveLength(5);
-    expect(result.topConnectedNodes.map((node) => node.nodeId)).toContain("case:c1");
+    expect(result.topConnectedNodes.map((node) => node.nodeId)).toContain(
+      "case:c1",
+    );
 
-    const case1 = result.caseSummaries.find((summary) => summary.caseId === "c1");
-    const case2 = result.caseSummaries.find((summary) => summary.caseId === "c2");
+    const case1 = result.caseSummaries.find(
+      (summary) => summary.caseId === "c1",
+    );
+    const case2 = result.caseSummaries.find(
+      (summary) => summary.caseId === "c2",
+    );
 
     expect(case1).toBeDefined();
     expect(case1?.counts).toMatchObject({
@@ -199,7 +209,10 @@ describe("chat-graph", () => {
     const scoped = analyzeCaseGraph(
       {
         cases: [c1, c2],
-        deadlines: [makeDeadline("d1", "c1", false), makeDeadline("d2", "c2", false)],
+        deadlines: [
+          makeDeadline("d1", "c1", false),
+          makeDeadline("d2", "c2", false),
+        ],
         contacts: [makeContact("ct1", "c1"), makeContact("ct2", "c2")],
         filings: [],
         evidences: [],
@@ -272,7 +285,12 @@ describe("chat-graph", () => {
         },
         { nodeId: "case:c2", entity: "Case", label: "Case Two", degree: 8 },
         { nodeId: "case:c1", entity: "Case", label: "Case One", degree: 7 },
-        { nodeId: "deadline:d1", entity: "Deadline", label: "Deadline", degree: 6 },
+        {
+          nodeId: "deadline:d1",
+          entity: "Deadline",
+          label: "Deadline",
+          degree: 6,
+        },
       ],
       caseSummaries: [
         {
@@ -326,13 +344,28 @@ describe("chat-graph", () => {
       ],
     };
 
-    const compressed = compressCaseGraphForPrompt(input, { maxCases: 2, maxNodes: 2 });
+    const compressed = compressCaseGraphForPrompt(input, {
+      maxCases: 2,
+      maxNodes: 2,
+    });
     expect(compressed.openDeadlineCount).toBe(4);
-    expect(compressed.priorityCases.map((entry) => entry.caseId)).toEqual(["c2", "c1"]);
-    expect(compressed.bottlenecks.map((entry) => entry.caseId)).toEqual(["c2", "c1"]);
-    expect(compressed.hotNodes.map((node) => node.nodeId)).toEqual(["case:c2", "case:c1"]);
+    expect(compressed.priorityCases.map((entry) => entry.caseId)).toEqual([
+      "c2",
+      "c1",
+    ]);
+    expect(compressed.bottlenecks.map((entry) => entry.caseId)).toEqual([
+      "c2",
+      "c1",
+    ]);
+    expect(compressed.hotNodes.map((node) => node.nodeId)).toEqual([
+      "case:c2",
+      "case:c1",
+    ]);
 
-    const clamped = compressCaseGraphForPrompt(input, { maxCases: 0, maxNodes: 100 });
+    const clamped = compressCaseGraphForPrompt(input, {
+      maxCases: 0,
+      maxNodes: 100,
+    });
     expect(clamped.priorityCases).toHaveLength(1);
     expect(clamped.hotNodes).toHaveLength(3);
   });

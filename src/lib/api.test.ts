@@ -205,7 +205,13 @@ describe("api stub layer", () => {
 
     it("create returns null", async () => {
       mockFetch.mockResolvedValueOnce(mockResponse(204));
-      expect(await api.notes.create({ title: "T", content: "C", category: "general" })).toBeNull();
+      expect(
+        await api.notes.create({
+          title: "T",
+          content: "C",
+          category: "general",
+        }),
+      ).toBeNull();
     });
   });
 

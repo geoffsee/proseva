@@ -14,13 +14,21 @@ const mockBeneficiaries = [
 
 describe("BeneficiaryList", () => {
   it("renders empty state when no beneficiaries", () => {
-    render(<BeneficiaryList beneficiaries={[]} onAdd={vi.fn()} onRemove={vi.fn()} />);
+    render(
+      <BeneficiaryList beneficiaries={[]} onAdd={vi.fn()} onRemove={vi.fn()} />,
+    );
 
     expect(screen.getByText("No beneficiaries yet")).toBeInTheDocument();
   });
 
   it("renders beneficiaries correctly", () => {
-    render(<BeneficiaryList beneficiaries={mockBeneficiaries} onAdd={vi.fn()} onRemove={vi.fn()} />);
+    render(
+      <BeneficiaryList
+        beneficiaries={mockBeneficiaries}
+        onAdd={vi.fn()}
+        onRemove={vi.fn()}
+      />,
+    );
 
     expect(screen.getByText("Jane Doe")).toBeInTheDocument();
     expect(screen.getByText("Spouse")).toBeInTheDocument();
@@ -28,7 +36,9 @@ describe("BeneficiaryList", () => {
 
   it("calls onAdd when Add button is clicked", () => {
     const onAdd = vi.fn();
-    render(<BeneficiaryList beneficiaries={[]} onAdd={onAdd} onRemove={vi.fn()} />);
+    render(
+      <BeneficiaryList beneficiaries={[]} onAdd={onAdd} onRemove={vi.fn()} />,
+    );
 
     const addButton = screen.getByRole("button", { name: "Add" });
     fireEvent.click(addButton);
@@ -38,9 +48,17 @@ describe("BeneficiaryList", () => {
 
   it("calls onRemove when remove button is clicked", () => {
     const onRemove = vi.fn();
-    render(<BeneficiaryList beneficiaries={mockBeneficiaries} onAdd={vi.fn()} onRemove={onRemove} />);
+    render(
+      <BeneficiaryList
+        beneficiaries={mockBeneficiaries}
+        onAdd={vi.fn()}
+        onRemove={onRemove}
+      />,
+    );
 
-    const removeButton = screen.getByRole("button", { name: "Remove beneficiary" });
+    const removeButton = screen.getByRole("button", {
+      name: "Remove beneficiary",
+    });
     fireEvent.click(removeButton);
 
     expect(onRemove).toHaveBeenCalledWith("1");

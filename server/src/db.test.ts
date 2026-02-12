@@ -103,7 +103,10 @@ describe("Database", () => {
       const raw = adapter.load();
       expect(raw).toHaveProperty("__proseva_encrypted_v3");
       expect(raw.__proseva_encrypted_v3).toHaveProperty("kemCiphertext");
-      expect(raw.__proseva_encrypted_v3).toHaveProperty("algorithm", "ml-kem-1024-aes-256-gcm");
+      expect(raw.__proseva_encrypted_v3).toHaveProperty(
+        "algorithm",
+        "ml-kem-1024-aes-256-gcm",
+      );
       expect(raw.cases).toBeUndefined();
     });
 
@@ -124,7 +127,12 @@ describe("Database", () => {
         caseType: "civil",
         status: "active" as const,
         parties: [
-          { id: "p1", name: "John Doe", role: "Plaintiff", contact: "john@example.com" }
+          {
+            id: "p1",
+            name: "John Doe",
+            role: "Plaintiff",
+            contact: "john@example.com",
+          },
         ],
         filings: [],
         notes: "Test notes with special characters: éñ™£",
@@ -166,7 +174,9 @@ describe("InMemoryAdapter", () => {
 
   it("returns cloned data (no shared references)", () => {
     const adapter = new InMemoryAdapter();
-    const data = { cases: { "1": { id: "1", nested: { value: "x" } } } } as DatabaseSnapshot;
+    const data = {
+      cases: { "1": { id: "1", nested: { value: "x" } } },
+    } as DatabaseSnapshot;
     adapter.save(data);
 
     const loaded = adapter.load();
@@ -174,9 +184,12 @@ describe("InMemoryAdapter", () => {
     expect(loaded).not.toBe(data);
 
     // Mutate the loaded data
-    (loaded.cases["1"] as { nested: { value: string } }).nested.value = "changed";
+    (loaded.cases["1"] as { nested: { value: string } }).nested.value =
+      "changed";
 
     // Original should be unchanged
-    expect((data.cases["1"] as { nested: { value: string } }).nested.value).toBe("x");
+    expect(
+      (data.cases["1"] as { nested: { value: string } }).nested.value,
+    ).toBe("x");
   });
 });

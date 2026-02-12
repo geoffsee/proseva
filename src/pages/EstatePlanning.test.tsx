@@ -45,8 +45,8 @@ const mockEstatePlanStore = {
 
 // Update filteredPlans to include the mock plan
 mockEstatePlanStore.filteredPlans = mockEstatePlanStore.plans as any;
-mockEstatePlanStore.getPlan.mockImplementation((id: string) => 
-  mockEstatePlanStore.plans.find(p => p.id === id)
+mockEstatePlanStore.getPlan.mockImplementation((id: string) =>
+  mockEstatePlanStore.plans.find((p) => p.id === id),
 );
 
 vi.mock("../store/StoreContext", () => ({
@@ -78,7 +78,7 @@ describe("EstatePlanning", () => {
     render(<EstatePlanning />);
     const newPlanButton = screen.getByRole("button", { name: /New Plan/i });
     fireEvent.click(newPlanButton);
-    
+
     // Check for dialog title
     await waitFor(() => {
       expect(screen.getByText("New Estate Plan")).toBeInTheDocument();
@@ -120,22 +120,27 @@ describe("EstatePlanning", () => {
 
     // Fill the dialog
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "Add Beneficiary" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: "Add Beneficiary" }),
+      ).toBeInTheDocument();
     });
 
     fireEvent.change(screen.getByPlaceholderText("Full legal name"), {
       target: { value: "Child Name" },
     });
-    fireEvent.change(screen.getByPlaceholderText("e.g. Spouse, Child, Sibling"), {
-      target: { value: "Son" },
-    });
+    fireEvent.change(
+      screen.getByPlaceholderText("e.g. Spouse, Child, Sibling"),
+      {
+        target: { value: "Son" },
+      },
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Add Beneficiary" }));
 
     await waitFor(() => {
       expect(mockEstatePlanStore.addBeneficiary).toHaveBeenCalledWith(
         "plan-1",
-        expect.objectContaining({ name: "Child Name", relationship: "Son" })
+        expect.objectContaining({ name: "Child Name", relationship: "Son" }),
       );
     });
   });
@@ -149,12 +154,17 @@ describe("EstatePlanning", () => {
     fireEvent.click(addButtons[1]);
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "Add Asset" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: "Add Asset" }),
+      ).toBeInTheDocument();
     });
 
-    fireEvent.change(screen.getByPlaceholderText("e.g. Primary Residence, Savings Account"), {
-      target: { value: "House" },
-    });
+    fireEvent.change(
+      screen.getByPlaceholderText("e.g. Primary Residence, Savings Account"),
+      {
+        target: { value: "House" },
+      },
+    );
     fireEvent.change(screen.getByPlaceholderText("0"), {
       target: { value: "500000" },
     });
@@ -164,7 +174,7 @@ describe("EstatePlanning", () => {
     await waitFor(() => {
       expect(mockEstatePlanStore.addAsset).toHaveBeenCalledWith(
         "plan-1",
-        expect.objectContaining({ name: "House", estimatedValue: 500000 })
+        expect.objectContaining({ name: "House", estimatedValue: 500000 }),
       );
     });
   });

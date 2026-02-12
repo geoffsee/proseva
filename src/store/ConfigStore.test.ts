@@ -5,11 +5,21 @@ import * as apiModule from "../lib/api";
 vi.spyOn(apiModule.api.config, "get").mockResolvedValue({} as any);
 vi.spyOn(apiModule.api.config, "update").mockResolvedValue({ success: true });
 vi.spyOn(apiModule.api.config, "reset").mockResolvedValue({ success: true });
-vi.spyOn(apiModule.api.config, "deleteKey").mockResolvedValue({ success: true });
-vi.spyOn(apiModule.api.config, "testFirebase").mockResolvedValue({ success: true });
-vi.spyOn(apiModule.api.config, "testTwilio").mockResolvedValue({ success: true });
-vi.spyOn(apiModule.api.config, "testOpenAI").mockResolvedValue({ success: true });
-vi.spyOn(apiModule.api.config, "reinitialize").mockResolvedValue({ success: true });
+vi.spyOn(apiModule.api.config, "deleteKey").mockResolvedValue({
+  success: true,
+});
+vi.spyOn(apiModule.api.config, "testFirebase").mockResolvedValue({
+  success: true,
+});
+vi.spyOn(apiModule.api.config, "testTwilio").mockResolvedValue({
+  success: true,
+});
+vi.spyOn(apiModule.api.config, "testOpenAI").mockResolvedValue({
+  success: true,
+});
+vi.spyOn(apiModule.api.config, "reinitialize").mockResolvedValue({
+  success: true,
+});
 
 function createStore() {
   return ConfigStore.create({});
@@ -30,7 +40,9 @@ describe("ConfigStore", () => {
   it("updateConfig updates and reloads", async () => {
     const store = createStore();
     const updateSpy = vi.spyOn(apiModule.api.config, "update");
-    const getSpy = vi.spyOn(apiModule.api.config, "get").mockResolvedValue({ ai: { openaiApiKey: "updated" } } as any);
+    const getSpy = vi
+      .spyOn(apiModule.api.config, "get")
+      .mockResolvedValue({ ai: { openaiApiKey: "updated" } } as any);
 
     await store.updateConfig({ ai: { openaiApiKey: "updated" } });
 
@@ -63,7 +75,9 @@ describe("ConfigStore", () => {
 
   it("testFirebase returns success", async () => {
     const store = createStore();
-    vi.spyOn(apiModule.api.config, "testFirebase").mockResolvedValue({ success: true });
+    vi.spyOn(apiModule.api.config, "testFirebase").mockResolvedValue({
+      success: true,
+    });
 
     const result = await store.testFirebase();
 
@@ -73,7 +87,9 @@ describe("ConfigStore", () => {
 
   it("testTwilio returns success", async () => {
     const store = createStore();
-    vi.spyOn(apiModule.api.config, "testTwilio").mockResolvedValue({ success: true });
+    vi.spyOn(apiModule.api.config, "testTwilio").mockResolvedValue({
+      success: true,
+    });
 
     const result = await store.testTwilio("1234567890");
 
@@ -83,7 +99,9 @@ describe("ConfigStore", () => {
 
   it("testOpenAI returns success", async () => {
     const store = createStore();
-    vi.spyOn(apiModule.api.config, "testOpenAI").mockResolvedValue({ success: true });
+    vi.spyOn(apiModule.api.config, "testOpenAI").mockResolvedValue({
+      success: true,
+    });
 
     const result = await store.testOpenAI();
 

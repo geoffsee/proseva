@@ -17,7 +17,7 @@ async function get(key?: string): Promise<void> {
   const client = globalThis.apiClient;
   const outputJson = globalThis.cliOptions.json;
 
-  const config = await client.get("/config") as Record<string, unknown>;
+  const config = (await client.get("/config")) as Record<string, unknown>;
 
   if (outputJson) {
     console.log(formatJson(config));
@@ -217,7 +217,9 @@ async function test(service: string): Promise<void> {
       return;
     }
 
-    const typedResult = result as { success?: boolean; message?: string; error?: string } | undefined;
+    const typedResult = result as
+      | { success?: boolean; message?: string; error?: string }
+      | undefined;
 
     if (typedResult?.success) {
       spinner.succeed(`${service} connection successful`);
@@ -260,7 +262,9 @@ async function reinit(service: string): Promise<void> {
       {},
     );
 
-    const typedResult = result as { success?: boolean; error?: string } | undefined;
+    const typedResult = result as
+      | { success?: boolean; error?: string }
+      | undefined;
 
     if (outputJson) {
       console.log(formatJson(typedResult));
@@ -296,7 +300,9 @@ function printConfigItem(
   const source = getNestedValue(config, sourceKey);
 
   const formattedValue = formatConfigValue(value as string, sensitive);
-  const formattedSource = source ? formatSource(source as "database" | "environment") : "";
+  const formattedSource = source
+    ? formatSource(source as "database" | "environment")
+    : "";
 
   console.log(
     `  ${chalk.gray(label + ":")} ${formattedValue} ${formattedSource}`,
@@ -307,7 +313,12 @@ function printConfigItem(
  * Helper: Get nested value from object by path
  */
 function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
-  return path.split(".").reduce((acc, part) => (acc as Record<string, unknown> | undefined)?.[part], obj);
+  return path
+    .split(".")
+    .reduce(
+      (acc, part) => (acc as Record<string, unknown> | undefined)?.[part],
+      obj,
+    );
 }
 
 export const configCommand = {

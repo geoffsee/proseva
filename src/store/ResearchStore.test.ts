@@ -98,7 +98,9 @@ describe("ResearchStore", () => {
     await store.sendMessage("test error");
 
     expect(store.messages).toHaveLength(2);
-    expect(store.messages[1].text).toContain("couldn't reach the research service");
+    expect(store.messages[1].text).toContain(
+      "couldn't reach the research service",
+    );
   });
 
   it("handles network errors gracefully", async () => {
@@ -110,7 +112,9 @@ describe("ResearchStore", () => {
     await store.sendMessage("test network error");
 
     expect(store.messages).toHaveLength(2);
-    expect(store.messages[1].text).toContain("couldn't reach the research service");
+    expect(store.messages[1].text).toContain(
+      "couldn't reach the research service",
+    );
   });
 
   it("toggleSidebar flips the sidebarOpen state", () => {
@@ -126,7 +130,7 @@ describe("ResearchStore", () => {
     mockFetch("response", [{ toolName: "t", results: {} }]);
     const store = createStore();
     await store.sendMessage("test");
-    
+
     expect(store.messages.length).toBeGreaterThan(0);
     expect(store.sidebarResults.length).toBeGreaterThan(0);
 

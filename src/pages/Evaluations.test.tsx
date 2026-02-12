@@ -40,7 +40,9 @@ const mockEvaluationStore = {
     },
   },
   loadAll: vi.fn(),
-  triggerEvaluation: vi.fn().mockResolvedValue({ pushSent: true, smsSent: true }),
+  triggerEvaluation: vi
+    .fn()
+    .mockResolvedValue({ pushSent: true, smsSent: true }),
   addSmsRecipient: vi.fn().mockResolvedValue({ id: "r2" }),
   removeSmsRecipient: vi.fn().mockResolvedValue({ success: true }),
 };
@@ -85,15 +87,19 @@ describe("Evaluations", () => {
 
   it("renders evaluation history", () => {
     render(<Evaluations />);
-    expect(screen.getByText("File Answer - 5 days overdue")).toBeInTheDocument();
+    expect(
+      screen.getByText("File Answer - 5 days overdue"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Discovery - 3 days")).toBeInTheDocument();
-    expect(screen.getByText("You have 1 overdue deadline.")).toBeInTheDocument();
+    expect(
+      screen.getByText("You have 1 overdue deadline."),
+    ).toBeInTheDocument();
   });
 
   it("manages SMS recipients", async () => {
     render(<Evaluations />);
     expect(screen.getByText("Alice")).toBeInTheDocument();
-    
+
     const phoneInput = screen.getByPlaceholderText("Phone number (+1...)");
     const nameInput = screen.getByPlaceholderText("Name (optional)");
     const addButton = screen.getByRole("button", { name: /Add/i });
@@ -103,7 +109,10 @@ describe("Evaluations", () => {
     fireEvent.click(addButton);
 
     await waitFor(() => {
-      expect(mockEvaluationStore.addSmsRecipient).toHaveBeenCalledWith("+15559998888", "Bob");
+      expect(mockEvaluationStore.addSmsRecipient).toHaveBeenCalledWith(
+        "+15559998888",
+        "Bob",
+      );
     });
   });
 

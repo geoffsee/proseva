@@ -321,11 +321,12 @@ This means values can be configured either via environment variables or through 
 
 #### Database Encryption
 
-| Variable                        | Required | Default | Description                                                                                                                         |
-| ------------------------------- | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `PROSEVA_DB_ENCRYPTION_KEY`     | ❌ No    | -       | Optional passphrase for encrypting the ML-KEM keypair store. Provides additional security layer for the encryption keys.           |
+| Variable                    | Required | Default | Description                                                                                                              |
+| --------------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `PROSEVA_DB_ENCRYPTION_KEY` | ❌ No    | -       | Optional passphrase for encrypting the ML-KEM keypair store. Provides additional security layer for the encryption keys. |
 
 All databases are encrypted using ML-KEM-1024 (post-quantum) + AES-256-GCM:
+
 - **Keypair storage**: ML-KEM keypairs are automatically persisted to `server/data/ml-kem-keys/`
 - **Passphrase protection**: Set `PROSEVA_DB_ENCRYPTION_KEY` to encrypt the keypair store with a passphrase
 - **Backup**: Always include `server/data/ml-kem-keys/` in your backup strategy

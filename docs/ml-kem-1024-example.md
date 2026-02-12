@@ -7,6 +7,7 @@ This document describes the ML-KEM-1024 post-quantum encryption used in proseva.
 ML-KEM-1024 (Module-Lattice-Based Key Encapsulation Mechanism) is a NIST-standardized post-quantum cryptographic algorithm (FIPS 203) that provides protection against attacks from quantum computers.
 
 **All databases are automatically encrypted with ML-KEM-1024.** The server automatically:
+
 - Generates an ML-KEM-1024 keypair on first launch
 - Persists it to `server/data/ml-kem-keys/` using an idb-repo KV store
 - Loads the keypair on subsequent restarts
@@ -17,6 +18,7 @@ ML-KEM-1024 (Module-Lattice-Based Key Encapsulation Mechanism) is a NIST-standar
 The keypair is stored in `server/data/ml-kem-keys/` and is automatically persisted across server restarts. This directory is already excluded from git via `.gitignore`.
 
 **Security:**
+
 1. **Automatic Encryption**: When you set up a passphrase through the app (via PassphraseGate), the keypair store is automatically encrypted using PassphraseEncryptionProvider (PBKDF2 + AES-256-GCM)
 2. **File Permissions**: The storage backend creates files with secure permissions
 3. **Location**: `server/data/ml-kem-keys/` is created automatically
@@ -32,6 +34,7 @@ npm start
 ```
 
 **Important**:
+
 - Loss of the `server/data/ml-kem-keys/` directory or the passphrase means loss of the keypair, which makes previously encrypted data unrecoverable
 - Always include this directory in your backup strategy
 - **Passphrase Protection**: If the server detects an existing keypair that can't be decrypted (wrong passphrase), it will refuse to start and display an error instead of overwriting the keypair. This prevents accidental data loss.
@@ -90,6 +93,7 @@ The system uses a single encryption format:
 ## Performance
 
 ML-KEM-1024 operations are fast:
+
 - Key generation: ~1ms
 - Encapsulation: ~1ms
 - Decapsulation: ~1ms
@@ -140,6 +144,7 @@ npm run test:server
 ```
 
 The test suite includes:
+
 - Basic encryption/decryption
 - Round-trip data integrity
 - Format validation

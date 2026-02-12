@@ -5,9 +5,8 @@ import { db } from "./db";
 const PASSPHRASE_HASH_KEY = "passphrase_hash";
 const JWT_SECRET_KEY = "jwt_secret";
 const DEFAULT_TOKEN_TTL = "24h"; // 24 hours
-type ServerConfigValue = typeof db.serverConfig extends Map<string, infer TValue>
-  ? TValue
-  : never;
+type ServerConfigValue =
+  typeof db.serverConfig extends Map<string, infer TValue> ? TValue : never;
 
 /**
  * Get or generate JWT secret key

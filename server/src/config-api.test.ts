@@ -141,7 +141,9 @@ describe("config API prompts", () => {
     const body = await response.json();
     expect(body.success).toBe(true);
     expect(body.config.prompts?.chatSystemPrompt).toBe(customChatPrompt);
-    expect(body.config.prompts?.caseSummaryPrompt).toBe(customCaseSummaryPrompt);
+    expect(body.config.prompts?.caseSummaryPrompt).toBe(
+      customCaseSummaryPrompt,
+    );
   });
 
   it("returns database source for configured prompts", async () => {

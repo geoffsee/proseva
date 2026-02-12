@@ -136,11 +136,7 @@ describe("executeTool", () => {
 
     it("does not match when caseNumber is empty", () => {
       seedCase({ caseNumber: "" });
-      executeTool(
-        "create_case",
-        { name: "Another", caseNumber: "" },
-        state,
-      );
+      executeTool("create_case", { name: "Another", caseNumber: "" }, state);
       // Empty caseNumber should not match — creates a new case
       expect(db.cases.size).toBe(2);
     });

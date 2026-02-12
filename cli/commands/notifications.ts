@@ -14,7 +14,9 @@ const devices = {
     const client = globalThis.apiClient;
     const outputJson = globalThis.cliOptions.json;
 
-    const tokens = (await client.get("/device-tokens")) as Array<Record<string, unknown>>;
+    const tokens = (await client.get("/device-tokens")) as Array<
+      Record<string, unknown>
+    >;
 
     if (outputJson) {
       console.log(formatJson(tokens));
@@ -104,7 +106,9 @@ const sms = {
     const client = globalThis.apiClient;
     const outputJson = globalThis.cliOptions.json;
 
-    const recipients = (await client.get("/sms-recipients")) as Array<Record<string, unknown>>;
+    const recipients = (await client.get("/sms-recipients")) as Array<
+      Record<string, unknown>
+    >;
 
     if (outputJson) {
       console.log(formatJson(recipients));
@@ -204,7 +208,10 @@ async function test(): Promise<void> {
   const spinner = ora("Triggering test evaluation...").start();
 
   try {
-    const result = (await client.post("/evaluations/trigger", {})) as Record<string, unknown>;
+    const result = (await client.post("/evaluations/trigger", {})) as Record<
+      string,
+      unknown
+    >;
 
     spinner.succeed("Test evaluation triggered");
 

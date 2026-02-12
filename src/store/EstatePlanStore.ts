@@ -165,7 +165,10 @@ export const EstatePlanStore = types
         };
         plan.beneficiaries.push(b as unknown as BeneficiaryInstance);
         plan.updatedAt = new Date().toISOString();
-        yield api.estatePlans.addBeneficiary(planId, b as Record<string, unknown>);
+        yield api.estatePlans.addBeneficiary(
+          planId,
+          b as Record<string, unknown>,
+        );
       }
     }),
     removeBeneficiary: flow(function* (planId: string, beneficiaryId: string) {
@@ -251,7 +254,10 @@ export const EstatePlanStore = types
         };
         plan.documents.push(doc as unknown as EstateDocumentInstance);
         plan.updatedAt = now;
-        yield api.estatePlans.addDocument(planId, doc as Record<string, unknown>);
+        yield api.estatePlans.addDocument(
+          planId,
+          doc as Record<string, unknown>,
+        );
       }
     }),
     updateEstateDocument: flow(function* (

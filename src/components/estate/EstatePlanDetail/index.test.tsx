@@ -64,7 +64,7 @@ describe("EstatePlanDetail", () => {
         onEditDocument={vi.fn()}
         onRemoveDocument={vi.fn()}
         onDocumentStatusChange={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText("My Estate Plan")).toBeInTheDocument();
@@ -89,7 +89,7 @@ describe("EstatePlanDetail", () => {
         onEditDocument={vi.fn()}
         onRemoveDocument={vi.fn()}
         onDocumentStatusChange={vi.fn()}
-      />
+      />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Back/i }));
@@ -112,7 +112,7 @@ describe("EstatePlanDetail", () => {
         onEditDocument={vi.fn()}
         onRemoveDocument={vi.fn()}
         onDocumentStatusChange={vi.fn()}
-      />
+      />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: /^Edit$/ }));
@@ -134,7 +134,7 @@ describe("EstatePlanDetail", () => {
         onEditDocument={vi.fn()}
         onRemoveDocument={vi.fn()}
         onDocumentStatusChange={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText("Beneficiaries")).toBeInTheDocument();

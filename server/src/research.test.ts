@@ -70,11 +70,7 @@ describe("Research API", () => {
       });
 
       it("sets created case as active", async () => {
-        await api.post(
-          "/api/research/cases",
-          { name: "Case 1" },
-          ctx.baseUrl,
-        );
+        await api.post("/api/research/cases", { name: "Case 1" }, ctx.baseUrl);
 
         const res2 = await api.post(
           "/api/research/cases",
@@ -363,7 +359,9 @@ describe("Research API", () => {
       it("includes US federal jurisdiction", async () => {
         const res = await api.get("/api/research/statutes/states", ctx.baseUrl);
         const data = await res.json();
-        const usState = (data.states as TestState[]).find((s) => s.code === "US");
+        const usState = (data.states as TestState[]).find(
+          (s) => s.code === "US",
+        );
         expect(usState).toBeDefined();
         expect(usState?.name).toContain("Congress");
       });

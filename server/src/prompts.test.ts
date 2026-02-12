@@ -24,7 +24,7 @@ describe("prompts", () => {
     it("returns custom prompt when configured in ServerConfig", () => {
       const customPrompt = "Custom chat system prompt for testing";
       const now = new Date().toISOString();
-      
+
       db.serverConfig.set("singleton", {
         id: "singleton",
         createdAt: now,
@@ -48,7 +48,7 @@ describe("prompts", () => {
     it("returns custom prompt when configured in ServerConfig", () => {
       const customPrompt = "Custom case summary prompt: {caseName} - {status}";
       const now = new Date().toISOString();
-      
+
       db.serverConfig.set("singleton", {
         id: "singleton",
         createdAt: now,
@@ -70,9 +70,10 @@ describe("prompts", () => {
     });
 
     it("returns custom prompt when configured in ServerConfig", () => {
-      const customPrompt = "Custom evaluator prompt: {overdueText} and {upcomingText}";
+      const customPrompt =
+        "Custom evaluator prompt: {overdueText} and {upcomingText}";
       const now = new Date().toISOString();
-      
+
       db.serverConfig.set("singleton", {
         id: "singleton",
         createdAt: now,

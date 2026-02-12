@@ -28,7 +28,7 @@ describe("EstateDocumentWizard", () => {
 
     // Step 1: Fill fields
     const inputs = screen.getAllByRole("textbox");
-    
+
     // testatorName
     fireEvent.change(inputs[0], { target: { value: "John Doe" } });
     // county
@@ -44,7 +44,9 @@ describe("EstateDocumentWizard", () => {
 
     // Step 2: Preview
     expect(screen.getByText("Preview")).toBeInTheDocument();
-    expect(screen.getByText(/LAST WILL AND TESTAMENT OF John Doe/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/LAST WILL AND TESTAMENT OF John Doe/),
+    ).toBeInTheDocument();
   });
 
   it("handles empty fields in preview by showing placeholders", () => {
@@ -55,7 +57,7 @@ describe("EstateDocumentWizard", () => {
     // Fill only testatorName
     const inputs = screen.getAllByRole("textbox");
     fireEvent.change(inputs[0], { target: { value: "John Doe" } });
-    
+
     // We can't click preview because other fields are required.
     // Let's find a template with fewer required fields or just check the code.
     // Actually, I can mock the template or just fill required but leave optional empty.
@@ -72,7 +74,11 @@ describe("EstateDocumentWizard", () => {
     fireEvent.click(screen.getByRole("button", { name: /Preview/i }));
 
     // Should show placeholder for alternateExecutor
-    expect(screen.getByText(/If Jane Doe is unable or unwilling to serve, I appoint \[alternateExecutor\] as alternate Executor/)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /If Jane Doe is unable or unwilling to serve, I appoint \[alternateExecutor\] as alternate Executor/,
+      ),
+    ).toBeInTheDocument();
   });
 
   it("calls onSave when save button is clicked in step 2", () => {
@@ -92,11 +98,13 @@ describe("EstateDocumentWizard", () => {
     const saveButton = screen.getByRole("button", { name: /Save Document/i });
     fireEvent.click(saveButton);
 
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
-      type: "last-will",
-      title: "Last Will and Testament",
-      templateId: "last-will",
-    }));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "last-will",
+        title: "Last Will and Testament",
+        templateId: "last-will",
+      }),
+    );
   });
 
   it("calls onCancel when cancel button is clicked in step 0", () => {
@@ -127,7 +135,9 @@ describe("EstateDocumentWizard", () => {
     fireEvent.click(screen.getByText("Advance Medical Directive"));
 
     const select = screen.getByRole("combobox");
-    fireEvent.change(select, { target: { value: "I wish to donate any needed organs/tissues" } });
+    fireEvent.change(select, {
+      target: { value: "I wish to donate any needed organs/tissues" },
+    });
 
     expect(select).toHaveValue("I wish to donate any needed organs/tissues");
   });

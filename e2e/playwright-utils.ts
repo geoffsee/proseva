@@ -256,10 +256,7 @@ export async function isElementVisible(
  * @param page - Playwright page object
  * @param pagePath - URL path using PAGES constant
  */
-export async function goToPage(
-  page: Page,
-  pagePath: string,
-): Promise<void> {
+export async function goToPage(page: Page, pagePath: string): Promise<void> {
   // Navigate directly by URL instead of clicking sidebar
   await navigateTo(page, pagePath);
 }

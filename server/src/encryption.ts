@@ -3,9 +3,19 @@
  *
  * Uses ML-KEM-1024 key encapsulation + AES-256-GCM for all database encryption.
  */
-import { PassphraseEncryptionProvider, createKV, kvGetJson, type KVNamespace } from "idb-repo";
+import {
+  PassphraseEncryptionProvider,
+  createKV,
+  kvGetJson,
+  type KVNamespace,
+} from "idb-repo";
 import { createDecipheriv, createCipheriv, randomBytes } from "node:crypto";
-import { initSync, ml_kem_1024_generate_keypair, ml_kem_1024_encapsulate, ml_kem_1024_decapsulate } from "wasm-pqc-subtle";
+import {
+  initSync,
+  ml_kem_1024_generate_keypair,
+  ml_kem_1024_encapsulate,
+  ml_kem_1024_decapsulate,
+} from "wasm-pqc-subtle";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -27,11 +37,15 @@ function ensureWasmInit(): void {
     let wasmPath: string;
     try {
       // First, try to resolve from node_modules
-      const resolvedPath = require.resolve("wasm-pqc-subtle/wasm_pqc_subtle_bg.wasm");
+      const resolvedPath =
+        require.resolve("wasm-pqc-subtle/wasm_pqc_subtle_bg.wasm");
       wasmPath = resolvedPath;
     } catch {
       // Fallback to relative path
-      wasmPath = join(__dir, "../../node_modules/wasm-pqc-subtle/wasm_pqc_subtle_bg.wasm");
+      wasmPath = join(
+        __dir,
+        "../../node_modules/wasm-pqc-subtle/wasm_pqc_subtle_bg.wasm",
+      );
     }
 
     const wasmBuffer = readFileSync(wasmPath);
@@ -99,7 +113,8 @@ async function getKeypairStore(): Promise<KVNamespace> {
   // If a passphrase is available, encrypt the keypair store
   let encryptionProvider: PassphraseEncryptionProvider | undefined;
   if (runtimePassphrase) {
-    encryptionProvider = await PassphraseEncryptionProvider.create(runtimePassphrase);
+    encryptionProvider =
+      await PassphraseEncryptionProvider.create(runtimePassphrase);
   }
 
   keypairStore = createKV({
@@ -147,9 +162,9 @@ async function getOrGenerateKeyPair(): Promise<MlKemKeyPair> {
     throw new DatabaseEncryptionError(
       "invalid_key",
       "ML-KEM keypair store exists but cannot be decrypted. " +
-      "This likely means the passphrase has changed. " +
-      "Refusing to overwrite existing keypair to prevent data loss. " +
-      "If you need to reset encryption, manually delete server/data/ml-kem-keys/",
+        "This likely means the passphrase has changed. " +
+        "Refusing to overwrite existing keypair to prevent data loss. " +
+        "If you need to reset encryption, manually delete server/data/ml-kem-keys/",
     );
   }
 
@@ -245,7 +260,9 @@ export function isEncryptedSnapshot(input: DatabaseSnapshot): boolean {
 
 // --- ML-KEM-1024 encryption/decryption ---
 
-async function encryptV3Snapshot(input: DatabaseSnapshot): Promise<DatabaseSnapshot> {
+async function encryptV3Snapshot(
+  input: DatabaseSnapshot,
+): Promise<DatabaseSnapshot> {
   ensureWasmInit();
 
   const keypair = await getOrGenerateKeyPair();
@@ -279,14 +296,20 @@ async function encryptV3Snapshot(input: DatabaseSnapshot): Promise<DatabaseSnaps
   };
 }
 
-async function decryptV3Snapshot(input: DatabaseSnapshot): Promise<DatabaseSnapshot> {
+async function decryptV3Snapshot(
+  input: DatabaseSnapshot,
+): Promise<DatabaseSnapshot> {
   ensureWasmInit();
 
-  const envelope = input[DB_ENCRYPTION_V3_PAYLOAD_KEY] as MlKemEncryptedEnvelope;
+  const envelope = input[
+    DB_ENCRYPTION_V3_PAYLOAD_KEY
+  ] as MlKemEncryptedEnvelope;
   const keypair = await getOrGenerateKeyPair();
 
   // Decapsulate to recover the shared secret
-  const kemCiphertext = Uint8Array.from(Buffer.from(envelope.kemCiphertext, "base64"));
+  const kemCiphertext = Uint8Array.from(
+    Buffer.from(envelope.kemCiphertext, "base64"),
+  );
   let sharedSecret: Uint8Array;
 
   try {

@@ -131,16 +131,24 @@ describe("Config", () => {
     const timezoneInput = screen.getByPlaceholderText("America/New_York");
     fireEvent.change(timezoneInput, { target: { value: "UTC" } });
 
-    const saveButton = screen.getByRole("button", { name: /Save All Changes/i });
+    const saveButton = screen.getByRole("button", {
+      name: /Save All Changes/i,
+    });
     expect(saveButton).not.toBeDisabled();
 
     fireEvent.click(saveButton);
 
     await waitFor(() => {
       expect(mockConfigStore.updateConfig).toHaveBeenCalled();
-      expect(mockConfigStore.reinitializeService).toHaveBeenCalledWith("firebase");
-      expect(mockConfigStore.reinitializeService).toHaveBeenCalledWith("twilio");
-      expect(mockConfigStore.reinitializeService).toHaveBeenCalledWith("scheduler");
+      expect(mockConfigStore.reinitializeService).toHaveBeenCalledWith(
+        "firebase",
+      );
+      expect(mockConfigStore.reinitializeService).toHaveBeenCalledWith(
+        "twilio",
+      );
+      expect(mockConfigStore.reinitializeService).toHaveBeenCalledWith(
+        "scheduler",
+      );
     });
   });
 
@@ -163,7 +171,9 @@ describe("Config", () => {
   it("handles Firebase connection test", async () => {
     render(<Config />);
 
-    const testButton = screen.getByRole("button", { name: /Test Firebase Connection/i });
+    const testButton = screen.getByRole("button", {
+      name: /Test Firebase Connection/i,
+    });
     fireEvent.click(testButton);
 
     await waitFor(() => {
@@ -189,7 +199,9 @@ describe("Config", () => {
   it("handles OpenAI connection test", async () => {
     render(<Config />);
 
-    const testButton = screen.getByRole("button", { name: /Test OpenAI Connection/i });
+    const testButton = screen.getByRole("button", {
+      name: /Test OpenAI Connection/i,
+    });
     fireEvent.click(testButton);
 
     await waitFor(() => {
@@ -200,7 +212,9 @@ describe("Config", () => {
   it("handles recovery key generation", async () => {
     render(<Config />);
 
-    const generateButton = screen.getByRole("button", { name: /Generate Recovery Key/i });
+    const generateButton = screen.getByRole("button", {
+      name: /Generate Recovery Key/i,
+    });
     fireEvent.click(generateButton);
 
     await waitFor(() => {
@@ -216,14 +230,20 @@ describe("Config", () => {
 
     render(<Config />);
 
-    const keyInput = screen.getByPlaceholderText("Enter existing key or generate a new one");
+    const keyInput = screen.getByPlaceholderText(
+      "Enter existing key or generate a new one",
+    );
     fireEvent.change(keyInput, { target: { value: "TEST-KEY-123" } });
 
-    const applyButton = screen.getByRole("button", { name: /Apply Recovery Key/i });
+    const applyButton = screen.getByRole("button", {
+      name: /Apply Recovery Key/i,
+    });
     fireEvent.click(applyButton);
 
     await waitFor(() => {
-      expect(api.security.applyRecoveryKey).toHaveBeenCalledWith("TEST-KEY-123");
+      expect(api.security.applyRecoveryKey).toHaveBeenCalledWith(
+        "TEST-KEY-123",
+      );
     });
   });
 
@@ -234,15 +254,19 @@ describe("Config", () => {
     const gpt3Checkbox = await screen.findByLabelText("gpt-3.5-turbo");
     fireEvent.click(gpt3Checkbox);
 
-    const saveButton = screen.getByRole("button", { name: /Save All Changes/i });
+    const saveButton = screen.getByRole("button", {
+      name: /Save All Changes/i,
+    });
     fireEvent.click(saveButton);
 
     await waitFor(() => {
-      expect(mockConfigStore.updateConfig).toHaveBeenCalledWith(expect.objectContaining({
-        ai: expect.objectContaining({
-          selectedModels: expect.arrayContaining(["gpt-4", "gpt-3.5-turbo"]),
+      expect(mockConfigStore.updateConfig).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ai: expect.objectContaining({
+            selectedModels: expect.arrayContaining(["gpt-4", "gpt-3.5-turbo"]),
+          }),
         }),
-      }));
+      );
     });
   });
 
@@ -253,10 +277,12 @@ describe("Config", () => {
     fireEvent.click(testButton);
 
     await waitFor(() => {
-      expect(toaster.create).toHaveBeenCalledWith(expect.objectContaining({
-        title: "Test phone number required",
-        type: "error",
-      }));
+      expect(toaster.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Test phone number required",
+          type: "error",
+        }),
+      );
     });
   });
 });

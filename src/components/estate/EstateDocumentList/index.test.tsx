@@ -22,7 +22,7 @@ describe("EstateDocumentList", () => {
         onEdit={vi.fn()}
         onRemove={vi.fn()}
         onStatusChange={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText("No documents yet")).toBeInTheDocument();
@@ -36,7 +36,7 @@ describe("EstateDocumentList", () => {
         onEdit={vi.fn()}
         onRemove={vi.fn()}
         onStatusChange={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText("My Will")).toBeInTheDocument();
@@ -54,7 +54,7 @@ describe("EstateDocumentList", () => {
         onEdit={vi.fn()}
         onRemove={vi.fn()}
         onStatusChange={vi.fn()}
-      />
+      />,
     );
 
     const draftButton = screen.getByRole("button", { name: "Draft Document" });
@@ -72,7 +72,7 @@ describe("EstateDocumentList", () => {
         onEdit={vi.fn()}
         onRemove={vi.fn()}
         onStatusChange={onStatusChange}
-      />
+      />,
     );
 
     const statusButton = screen.getByText("Mark Review");
@@ -93,7 +93,7 @@ describe("EstateDocumentList", () => {
         onEdit={vi.fn()}
         onRemove={vi.fn()}
         onStatusChange={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.queryByText(/Mark /)).not.toBeInTheDocument();
@@ -108,7 +108,7 @@ describe("EstateDocumentList", () => {
         onEdit={onEdit}
         onRemove={vi.fn()}
         onStatusChange={vi.fn()}
-      />
+      />,
     );
 
     const editButton = screen.getByRole("button", { name: "Edit document" });
@@ -126,10 +126,12 @@ describe("EstateDocumentList", () => {
         onEdit={vi.fn()}
         onRemove={onRemove}
         onStatusChange={vi.fn()}
-      />
+      />,
     );
 
-    const removeButton = screen.getByRole("button", { name: "Remove document" });
+    const removeButton = screen.getByRole("button", {
+      name: "Remove document",
+    });
     fireEvent.click(removeButton);
 
     expect(onRemove).toHaveBeenCalledWith("1");

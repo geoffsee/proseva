@@ -312,8 +312,7 @@ export function executeTool(
     case "create_case": {
       const caseNumber = args.caseNumber as string | undefined;
       const existing = [...db.cases.values()].find(
-        (c) =>
-          c.caseNumber && caseNumber && c.caseNumber === caseNumber,
+        (c) => c.caseNumber && caseNumber && c.caseNumber === caseNumber,
       );
       if (existing) {
         state.selectedCaseId = existing.id;
@@ -347,9 +346,7 @@ export function executeTool(
       if (!c) return { message: `Case ${caseId} not found` };
       const name = args.name as string;
       const role = args.role as string;
-      const exists = c.parties.find(
-        (p) => p.name === name && p.role === role,
-      );
+      const exists = c.parties.find((p) => p.name === name && p.role === role);
       if (exists) return { message: `Party already exists on case ${caseId}` };
       const party: Party = {
         id: randomUUID(),
@@ -404,8 +401,7 @@ export function executeTool(
       const title = args.title as string;
       const date = args.date as string;
       const existing = [...db.deadlines.values()].find(
-        (d) =>
-          d.title === title && d.date === date && d.caseId === caseId,
+        (d) => d.title === title && d.date === date && d.caseId === caseId,
       );
       if (existing)
         return {
@@ -432,8 +428,7 @@ export function executeTool(
       const name = args.name as string;
       const role = args.role as string;
       const existing = [...db.contacts.values()].find(
-        (c) =>
-          c.name === name && c.role === role && c.caseId === caseId,
+        (c) => c.name === name && c.role === role && c.caseId === caseId,
       );
       if (existing)
         return {
@@ -464,7 +459,7 @@ export function executeTool(
         id: randomUUID(),
         caseId,
         exhibitNumber: "",
-        title: (args.title as string),
+        title: args.title as string,
         description: (args.description as string) ?? "",
         type: (args.type as Evidence["type"]) ?? "document",
         fileUrl: (args.fileUrl as string) ?? "",
@@ -490,8 +485,8 @@ export function executeTool(
       const now = nowIso();
       const note: Note = {
         id: crypto.randomUUID(),
-        title: (args.title as string),
-        content: (args.content as string),
+        title: args.title as string,
+        content: args.content as string,
         category: (args.category as Note["category"]) ?? "case-notes",
         tags: Array.isArray(args.tags) ? (args.tags as string[]) : [],
         caseId,
@@ -553,7 +548,10 @@ export async function autoPopulateFromDocument(
       for (const toolCall of choice.message.tool_calls) {
         try {
           const args = toolCall.function.arguments
-            ? (JSON.parse(toolCall.function.arguments) as Record<string, unknown>)
+            ? (JSON.parse(toolCall.function.arguments) as Record<
+                string,
+                unknown
+              >)
             : {};
           const result = executeTool(toolCall.function.name, args, state);
           if (result.selectedCaseId)

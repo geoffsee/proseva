@@ -5,6 +5,7 @@ This document describes the hot-swap prompts feature, which allows you to custom
 ## Overview
 
 The hot-swap prompts feature allows you to configure custom system prompts for:
+
 - **Chat System Prompt**: The system prompt used by the AI chat assistant
 - **Case Summary Prompt**: The prompt template used for generating case summaries in reports
 - **Evaluator Prompt**: The prompt template used for deadline evaluation summaries
@@ -44,6 +45,7 @@ curl http://localhost:3001/api/config
 ```
 
 The response will include a `prompts` section showing:
+
 - Current prompt values (if customized)
 - Source indicators (`database` or `default`) showing whether each prompt is custom or using the default
 

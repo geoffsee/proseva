@@ -668,27 +668,33 @@ function createResearchRouter() {
       );
 
       // Transform CourtListener response to our format
-      const results: OpinionSearchResult[] = (data.results || []).map((opinion) => ({
-        id: opinion.id?.toString() || opinion.cluster_id?.toString() || "",
-        caseName: opinion.caseName || opinion.case_name || "Unknown Case",
-        citation:
-          opinion.citation ||
-          [opinion.neutral_cite, opinion.lexis_cite, opinion.west_cite]
-            .filter(Boolean)
-            .join(", ") ||
-          "",
-        court: COURT_NAMES[opinion.court] || opinion.court || "",
-        courtId: opinion.court || "",
-        dateFiled: formatDate(opinion.dateFiled || opinion.date_filed || null),
-        dateArgued: formatDate(opinion.dateArgued || opinion.date_argued || null),
-        docketNumber: opinion.docketNumber || opinion.docket_number || "",
-        snippet: opinion.snippet || "",
-        absoluteUrl: opinion.absolute_url
-          ? `https://www.courtlistener.com${opinion.absolute_url}`
-          : "",
-        status: opinion.status || "",
-        suitNature: opinion.nature_of_suit || "",
-      }));
+      const results: OpinionSearchResult[] = (data.results || []).map(
+        (opinion) => ({
+          id: opinion.id?.toString() || opinion.cluster_id?.toString() || "",
+          caseName: opinion.caseName || opinion.case_name || "Unknown Case",
+          citation:
+            opinion.citation ||
+            [opinion.neutral_cite, opinion.lexis_cite, opinion.west_cite]
+              .filter(Boolean)
+              .join(", ") ||
+            "",
+          court: COURT_NAMES[opinion.court] || opinion.court || "",
+          courtId: opinion.court || "",
+          dateFiled: formatDate(
+            opinion.dateFiled || opinion.date_filed || null,
+          ),
+          dateArgued: formatDate(
+            opinion.dateArgued || opinion.date_argued || null,
+          ),
+          docketNumber: opinion.docketNumber || opinion.docket_number || "",
+          snippet: opinion.snippet || "",
+          absoluteUrl: opinion.absolute_url
+            ? `https://www.courtlistener.com${opinion.absolute_url}`
+            : "",
+          status: opinion.status || "",
+          suitNature: opinion.nature_of_suit || "",
+        }),
+      );
 
       return new Response(
         JSON.stringify({
@@ -1225,9 +1231,7 @@ function createResearchRouter() {
         court: COURT_NAMES[docket.court] || docket.court || "",
         courtId: docket.court || "",
         dateFiled: formatDate(docket.date_filed || null),
-        dateTerminated: formatDate(
-          docket.date_terminated || null,
-        ),
+        dateTerminated: formatDate(docket.date_terminated || null),
         docketNumber: docket.docket_number || "",
         cause: docket.cause || "",
         suitNature: docket.nature_of_suit || "",
@@ -1942,7 +1946,8 @@ function createResearchRouter() {
         throw new Error(`LegiScan API returned ${billResponse.status}`);
       }
 
-      const billData = (await billResponse.json()) as LegiScanBillDetailResponse;
+      const billData =
+        (await billResponse.json()) as LegiScanBillDetailResponse;
       if (billData.status === "ERROR") {
         throw new Error(billData.alert?.message || "LegiScan API error");
       }
@@ -1990,10 +1995,10 @@ function createResearchRouter() {
         });
 
         if (billTextResponse.ok) {
-          const billTextData = (await billTextResponse.json()) as LegiScanBillTextResponse;
+          const billTextData =
+            (await billTextResponse.json()) as LegiScanBillTextResponse;
           if (billTextData.status !== "ERROR") {
-            const textPayload =
-              billTextData.text || billTextData.bill?.text;
+            const textPayload = billTextData.text || billTextData.bill?.text;
             const encoded = textPayload?.doc || "";
             const payloadMime = textPayload?.mime || textMime;
             const isTextMime =
@@ -3551,35 +3556,60 @@ Respond in JSON format:
    * @example
    * GET /api/research/govinfo/search?q=data%20protection&collection=CFR&limit=20
    */
-  router.get(
-    "/api/research/govinfo/search",
-    async (request: Request) => {
-      const requestId =
-        request.headers.get("X-Request-Id") || crypto.randomUUID();
-      const url = new URL(request.url);
-      const query = url.searchParams.get("q") || "";
-      const collection = url.searchParams.get("collection") || ""; // e.g., CFR, FR, BILLS, USCODE
-      const limit = Math.min(
-        parseInt(url.searchParams.get("limit") || "20"),
-        100,
-      );
-      const offset = parseInt(url.searchParams.get("offset") || "0");
+  router.get("/api/research/govinfo/search", async (request: Request) => {
+    const requestId =
+      request.headers.get("X-Request-Id") || crypto.randomUUID();
+    const url = new URL(request.url);
+    const query = url.searchParams.get("q") || "";
+    const collection = url.searchParams.get("collection") || ""; // e.g., CFR, FR, BILLS, USCODE
+    const limit = Math.min(
+      parseInt(url.searchParams.get("limit") || "20"),
+      100,
+    );
+    const offset = parseInt(url.searchParams.get("offset") || "0");
 
-      console.log(
-        `[ResearchRouter ${requestId}] GET /api/research/govinfo/search?q=${query}&collection=${collection}`,
-      );
+    console.log(
+      `[ResearchRouter ${requestId}] GET /api/research/govinfo/search?q=${query}&collection=${collection}`,
+    );
 
-      if (!query || query.length < 3) {
+    if (!query || query.length < 3) {
+      return new Response(
+        JSON.stringify({
+          results: [],
+          total: 0,
+          collections: GOVINFO_COLLECTIONS,
+          disclaimer:
+            "This information is for educational purposes only and does not constitute legal advice.",
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "X-Request-Id": requestId,
+          },
+        },
+      );
+    }
+
+    try {
+      await withRateLimit(request, "paralegal-govinfo-search", 15);
+
+      // Check if GovInfo API key is configured
+      if (!getConfig("GOVINFO_API_KEY")) {
+        console.warn(
+          `[ResearchRouter ${requestId}] GOVINFO_API_KEY not configured`,
+        );
         return new Response(
           JSON.stringify({
+            error:
+              "GovInfo search requires an API key. Get one free at https://api.govinfo.gov/docs/",
             results: [],
-            total: 0,
             collections: GOVINFO_COLLECTIONS,
             disclaimer:
               "This information is for educational purposes only and does not constitute legal advice.",
           }),
           {
-            status: 200,
+            status: 503,
             headers: {
               "Content-Type": "application/json",
               "X-Request-Id": requestId,
@@ -3588,25 +3618,31 @@ Respond in JSON format:
         );
       }
 
-      try {
-        await withRateLimit(request, "paralegal-govinfo-search", 15);
+      // Build GovInfo search URL
+      const searchUrl = new URL(`${GOVINFO_API_BASE}/search`);
+      searchUrl.searchParams.set("api_key", getConfig("GOVINFO_API_KEY"));
+      searchUrl.searchParams.set("query", query);
+      searchUrl.searchParams.set("pageSize", limit.toString());
+      searchUrl.searchParams.set("offsetMark", offset.toString());
+      searchUrl.searchParams.set("sortBy", "relevance");
 
-        // Check if GovInfo API key is configured
-        if (!getConfig("GOVINFO_API_KEY")) {
-          console.warn(
-            `[ResearchRouter ${requestId}] GOVINFO_API_KEY not configured`,
-          );
+      // Filter by collection if specified
+      if (collection && GOVINFO_COLLECTIONS[collection]) {
+        searchUrl.searchParams.set("collection", collection);
+      }
+
+      const response = await fetch(searchUrl.toString(), {
+        headers: {
+          Accept: "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 429) {
           return new Response(
-            JSON.stringify({
-              error:
-                "GovInfo search requires an API key. Get one free at https://api.govinfo.gov/docs/",
-              results: [],
-              collections: GOVINFO_COLLECTIONS,
-              disclaimer:
-                "This information is for educational purposes only and does not constitute legal advice.",
-            }),
+            JSON.stringify({ error: "API rate limit exceeded", results: [] }),
             {
-              status: 503,
+              status: 429,
               headers: {
                 "Content-Type": "application/json",
                 "X-Request-Id": requestId,
@@ -3614,137 +3650,103 @@ Respond in JSON format:
             },
           );
         }
-
-        // Build GovInfo search URL
-        const searchUrl = new URL(`${GOVINFO_API_BASE}/search`);
-        searchUrl.searchParams.set("api_key", getConfig("GOVINFO_API_KEY"));
-        searchUrl.searchParams.set("query", query);
-        searchUrl.searchParams.set("pageSize", limit.toString());
-        searchUrl.searchParams.set("offsetMark", offset.toString());
-        searchUrl.searchParams.set("sortBy", "relevance");
-
-        // Filter by collection if specified
-        if (collection && GOVINFO_COLLECTIONS[collection]) {
-          searchUrl.searchParams.set("collection", collection);
-        }
-
-        const response = await fetch(searchUrl.toString(), {
-          headers: {
-            Accept: "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          if (response.status === 429) {
-            return new Response(
-              JSON.stringify({ error: "API rate limit exceeded", results: [] }),
-              {
-                status: 429,
-                headers: {
-                  "Content-Type": "application/json",
-                  "X-Request-Id": requestId,
-                },
+        if (response.status === 401 || response.status === 403) {
+          return new Response(
+            JSON.stringify({ error: "Invalid GovInfo API key", results: [] }),
+            {
+              status: 401,
+              headers: {
+                "Content-Type": "application/json",
+                "X-Request-Id": requestId,
               },
-            );
-          }
-          if (response.status === 401 || response.status === 403) {
-            return new Response(
-              JSON.stringify({ error: "Invalid GovInfo API key", results: [] }),
-              {
-                status: 401,
-                headers: {
-                  "Content-Type": "application/json",
-                  "X-Request-Id": requestId,
-                },
-              },
-            );
-          }
-          throw new Error(`GovInfo API returned ${response.status}`);
+            },
+          );
         }
-
-        const data = (await response.json()) as GovInfoSearchResponse;
-
-        // Transform GovInfo response
-        const results = (data.results || []).map((item, index: number) => {
-          const collectionCode = item.collectionCode || "";
-          const collectionName =
-            GOVINFO_COLLECTIONS[collectionCode] || collectionCode;
-
-          return {
-            id: item.packageId || `govinfo_${Date.now()}_${index}`,
-            packageId: item.packageId || "",
-            title: item.title || "Unknown Title",
-            collectionCode,
-            collectionName,
-            dateIssued: item.dateIssued || "",
-            lastModified: item.lastModified || "",
-            category: item.category || "",
-            branch: item.branch || "",
-            governmentAuthor: item.governmentAuthor || "",
-            suDocClass: item.suDocClassNumber || "",
-            congress: item.congress || "",
-            session: item.session || "",
-            docType: item.docType || "",
-            pages: item.pages || 0,
-            pdfLink: item.download?.pdfLink || "",
-            xmlLink: item.download?.xmlLink || "",
-            txtLink: item.download?.txtLink || "",
-            detailsLink:
-              item.detailsLink ||
-              `https://www.govinfo.gov/app/details/${item.packageId}`,
-          };
-        });
-
-        console.log(
-          `[ResearchRouter ${requestId}] GovInfo returned ${results.length} results`,
-        );
-
-        return new Response(
-          JSON.stringify({
-            results,
-            total: data.count || results.length,
-            nextOffset: data.nextPageOffset || null,
-            collections: GOVINFO_COLLECTIONS,
-            disclaimer:
-              "This information is for educational purposes only and does not constitute legal advice.",
-            source: "GovInfo (U.S. Government Publishing Office)",
-          }),
-          {
-            status: 200,
-            headers: {
-              "Content-Type": "application/json",
-              "X-Request-Id": requestId,
-              "Cache-Control": "public, max-age=3600", // 1 hour cache
-            },
-          },
-        );
-      } catch (err) {
-        console.error(
-          `[ResearchRouter ${requestId}] ERROR:`,
-          (err as Error)?.message,
-        );
-        const isRateLimitError = (err as Error)?.message?.includes(
-          "Too many attempts",
-        );
-        return new Response(
-          JSON.stringify({
-            error: sanitizeError(err, "Failed to search GovInfo"),
-            results: [],
-            collections: GOVINFO_COLLECTIONS,
-            disclaimer:
-              "This information is for educational purposes only and does not constitute legal advice.",
-          }),
-          {
-            status: isRateLimitError ? 429 : 500,
-            headers: {
-              "Content-Type": "application/json",
-              "X-Request-Id": requestId,
-            },
-          },
-        );
+        throw new Error(`GovInfo API returned ${response.status}`);
       }
-    },
-  );
+
+      const data = (await response.json()) as GovInfoSearchResponse;
+
+      // Transform GovInfo response
+      const results = (data.results || []).map((item, index: number) => {
+        const collectionCode = item.collectionCode || "";
+        const collectionName =
+          GOVINFO_COLLECTIONS[collectionCode] || collectionCode;
+
+        return {
+          id: item.packageId || `govinfo_${Date.now()}_${index}`,
+          packageId: item.packageId || "",
+          title: item.title || "Unknown Title",
+          collectionCode,
+          collectionName,
+          dateIssued: item.dateIssued || "",
+          lastModified: item.lastModified || "",
+          category: item.category || "",
+          branch: item.branch || "",
+          governmentAuthor: item.governmentAuthor || "",
+          suDocClass: item.suDocClassNumber || "",
+          congress: item.congress || "",
+          session: item.session || "",
+          docType: item.docType || "",
+          pages: item.pages || 0,
+          pdfLink: item.download?.pdfLink || "",
+          xmlLink: item.download?.xmlLink || "",
+          txtLink: item.download?.txtLink || "",
+          detailsLink:
+            item.detailsLink ||
+            `https://www.govinfo.gov/app/details/${item.packageId}`,
+        };
+      });
+
+      console.log(
+        `[ResearchRouter ${requestId}] GovInfo returned ${results.length} results`,
+      );
+
+      return new Response(
+        JSON.stringify({
+          results,
+          total: data.count || results.length,
+          nextOffset: data.nextPageOffset || null,
+          collections: GOVINFO_COLLECTIONS,
+          disclaimer:
+            "This information is for educational purposes only and does not constitute legal advice.",
+          source: "GovInfo (U.S. Government Publishing Office)",
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "X-Request-Id": requestId,
+            "Cache-Control": "public, max-age=3600", // 1 hour cache
+          },
+        },
+      );
+    } catch (err) {
+      console.error(
+        `[ResearchRouter ${requestId}] ERROR:`,
+        (err as Error)?.message,
+      );
+      const isRateLimitError = (err as Error)?.message?.includes(
+        "Too many attempts",
+      );
+      return new Response(
+        JSON.stringify({
+          error: sanitizeError(err, "Failed to search GovInfo"),
+          results: [],
+          collections: GOVINFO_COLLECTIONS,
+          disclaimer:
+            "This information is for educational purposes only and does not constitute legal advice.",
+        }),
+        {
+          status: isRateLimitError ? 429 : 500,
+          headers: {
+            "Content-Type": "application/json",
+            "X-Request-Id": requestId,
+          },
+        },
+      );
+    }
+  });
 
   /**
    * Retrieve detailed metadata for a specific GovInfo package/document.
@@ -4011,164 +4013,155 @@ Respond in JSON format:
    * @example
    * GET /api/research/lawyers/search?location=San%20Francisco,%20CA&specialty=patent&limit=10
    */
-  router.get(
-    "/api/research/lawyers/search",
-    async (request: Request) => {
-      const requestId =
-        request.headers.get("X-Request-Id") || crypto.randomUUID();
-      const url = new URL(request.url);
-      const location = url.searchParams.get("location") || "";
-      const specialty = url.searchParams.get("specialty") || "";
-      const limit = Math.min(
-        parseInt(url.searchParams.get("limit") || "20"),
-        50,
+  router.get("/api/research/lawyers/search", async (request: Request) => {
+    const requestId =
+      request.headers.get("X-Request-Id") || crypto.randomUUID();
+    const url = new URL(request.url);
+    const location = url.searchParams.get("location") || "";
+    const specialty = url.searchParams.get("specialty") || "";
+    const limit = Math.min(parseInt(url.searchParams.get("limit") || "20"), 50);
+
+    console.log(
+      `[ResearchRouter ${requestId}] GET /api/research/lawyers/search?location=${location}&specialty=${specialty}`,
+    );
+
+    if (!location || location.length < 2) {
+      return new Response(
+        JSON.stringify({
+          error: "Location is required (city, state, or zip code)",
+          results: [],
+          disclaimer:
+            "This information is for educational purposes only and does not constitute legal advice.",
+        }),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+            "X-Request-Id": requestId,
+          },
+        },
       );
+    }
+
+    try {
+      await withRateLimit(request, "paralegal-lawyers-search", 15);
+
+      // Build a SerpAPI Google search for lawyers
+      const query = specialty
+        ? `${specialty} lawyers in ${location}`
+        : `lawyers in ${location}`;
+      const serpUrl = new URL(getSerpApiBase());
+      serpUrl.searchParams.set("q", query);
+      serpUrl.searchParams.set("engine", "google");
+      serpUrl.searchParams.set("num", String(limit));
 
       console.log(
-        `[ResearchRouter ${requestId}] GET /api/research/lawyers/search?location=${location}&specialty=${specialty}`,
+        `[ResearchRouter ${requestId}] Fetching lawyers via SerpAPI: ${query}`,
       );
 
-      if (!location || location.length < 2) {
-        return new Response(
-          JSON.stringify({
-            error: "Location is required (city, state, or zip code)",
-            results: [],
-            disclaimer:
-              "This information is for educational purposes only and does not constitute legal advice.",
-          }),
-          {
-            status: 400,
-            headers: {
-              "Content-Type": "application/json",
-              "X-Request-Id": requestId,
-            },
-          },
+      const response = await fetch(serpUrl.toString());
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(
+          `[ResearchRouter ${requestId}] SerpAPI error: ${response.status} - ${errorText}`,
         );
+        throw new Error(`SerpAPI returned ${response.status}`);
       }
 
-      try {
-        await withRateLimit(request, "paralegal-lawyers-search", 15);
+      const data = (await response.json()) as SerpApiResponse;
+      const organic = data.organic_results || [];
+      const localResults = data.local_results?.places || [];
 
-        // Build a SerpAPI Google search for lawyers
-        const query = specialty
-          ? `${specialty} lawyers in ${location}`
-          : `lawyers in ${location}`;
-        const serpUrl = new URL(getSerpApiBase());
-        serpUrl.searchParams.set("q", query);
-        serpUrl.searchParams.set("engine", "google");
-        serpUrl.searchParams.set("num", String(limit));
-
-        console.log(
-          `[ResearchRouter ${requestId}] Fetching lawyers via SerpAPI: ${query}`,
-        );
-
-        const response = await fetch(serpUrl.toString());
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(
-            `[ResearchRouter ${requestId}] SerpAPI error: ${response.status} - ${errorText}`,
-          );
-          throw new Error(`SerpAPI returned ${response.status}`);
-        }
-
-        const data = (await response.json()) as SerpApiResponse;
-        const organic = data.organic_results || [];
-        const localResults = data.local_results?.places || [];
-
-        // Merge local pack results (richer data) with organic results
-        const results = [
-          ...localResults.slice(0, limit).map((place, index: number) => ({
-            id: place.place_id || `lawyer_local_${Date.now()}_${index}`,
-            name: place.title || "Unknown",
-            firm: place.title || "",
-            address: place.address || "",
+      // Merge local pack results (richer data) with organic results
+      const results = [
+        ...localResults.slice(0, limit).map((place, index: number) => ({
+          id: place.place_id || `lawyer_local_${Date.now()}_${index}`,
+          name: place.title || "Unknown",
+          firm: place.title || "",
+          address: place.address || "",
+          city: "",
+          state: "",
+          zipCode: "",
+          phone: place.phone || "",
+          email: "",
+          website: place.website || "",
+          specialty: place.type || specialty || "",
+          rating: place.rating ?? null,
+          reviewCount: place.reviews ?? 0,
+          yearsExperience: null,
+          barNumber: "",
+          education: "",
+          languages: "",
+          profileUrl: place.website || "",
+          imageUrl: place.thumbnail || "",
+        })),
+        ...organic
+          .slice(0, Math.max(0, limit - localResults.length))
+          .map((item, index: number) => ({
+            id: `lawyer_organic_${Date.now()}_${index}`,
+            name: item.title || "Unknown",
+            firm: "",
+            address: "",
             city: "",
             state: "",
             zipCode: "",
-            phone: place.phone || "",
+            phone: "",
             email: "",
-            website: place.website || "",
-            specialty: place.type || specialty || "",
-            rating: place.rating ?? null,
-            reviewCount: place.reviews ?? 0,
+            website: item.link || "",
+            specialty: specialty || "",
+            rating: null,
+            reviewCount: 0,
             yearsExperience: null,
             barNumber: "",
             education: "",
             languages: "",
-            profileUrl: place.website || "",
-            imageUrl: place.thumbnail || "",
+            profileUrl: item.link || "",
+            imageUrl: "",
           })),
-          ...organic
-            .slice(0, Math.max(0, limit - localResults.length))
-            .map((item, index: number) => ({
-              id: `lawyer_organic_${Date.now()}_${index}`,
-              name: item.title || "Unknown",
-              firm: "",
-              address: "",
-              city: "",
-              state: "",
-              zipCode: "",
-              phone: "",
-              email: "",
-              website: item.link || "",
-              specialty: specialty || "",
-              rating: null,
-              reviewCount: 0,
-              yearsExperience: null,
-              barNumber: "",
-              education: "",
-              languages: "",
-              profileUrl: item.link || "",
-              imageUrl: "",
-            })),
-        ].slice(0, limit);
+      ].slice(0, limit);
 
-        console.log(
-          `[ResearchRouter ${requestId}] SerpAPI returned ${results.length} lawyer results`,
-        );
+      console.log(
+        `[ResearchRouter ${requestId}] SerpAPI returned ${results.length} lawyer results`,
+      );
 
-        return new Response(
-          JSON.stringify({
-            results,
-            total: results.length,
-            location,
-            specialty: specialty || "All",
-            source: "SerpAPI",
-            disclaimer:
-              "This information is for educational purposes only and does not constitute legal advice. Always verify credentials independently before hiring an attorney.",
-          }),
-          {
-            status: 200,
-            headers: {
-              "Content-Type": "application/json",
-              "X-Request-Id": requestId,
-            },
+      return new Response(
+        JSON.stringify({
+          results,
+          total: results.length,
+          location,
+          specialty: specialty || "All",
+          source: "SerpAPI",
+          disclaimer:
+            "This information is for educational purposes only and does not constitute legal advice. Always verify credentials independently before hiring an attorney.",
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "X-Request-Id": requestId,
           },
-        );
-      } catch (err) {
-        console.error(
-          `[ResearchRouter ${requestId}] Lawyers search error:`,
-          err,
-        );
-        return new Response(
-          JSON.stringify({
-            error: sanitizeError(err, "Failed to search for lawyers"),
-            results: [],
-            disclaimer:
-              "This information is for educational purposes only and does not constitute legal advice.",
-          }),
-          {
-            status: 500,
-            headers: {
-              "Content-Type": "application/json",
-              "X-Request-Id": requestId,
-            },
+        },
+      );
+    } catch (err) {
+      console.error(`[ResearchRouter ${requestId}] Lawyers search error:`, err);
+      return new Response(
+        JSON.stringify({
+          error: sanitizeError(err, "Failed to search for lawyers"),
+          results: [],
+          disclaimer:
+            "This information is for educational purposes only and does not constitute legal advice.",
+        }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+            "X-Request-Id": requestId,
           },
-        );
-      }
-    },
-  );
+        },
+      );
+    }
+  });
 
   /**
    * List all available legal practice areas/specialties for lawyer search filters.

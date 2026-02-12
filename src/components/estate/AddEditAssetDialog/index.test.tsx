@@ -25,11 +25,15 @@ describe("AddEditAssetDialog", () => {
         form={mockForm}
         onFormChange={onFormChange}
         onSave={onSave}
-      />
+      />,
     );
 
-    expect(screen.getByRole("heading", { name: "Add Asset" })).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("e.g. Primary Residence, Savings Account")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Add Asset" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("e.g. Primary Residence, Savings Account"),
+    ).toBeInTheDocument();
   });
 
   it("calls onFormChange when name changes", () => {
@@ -41,10 +45,12 @@ describe("AddEditAssetDialog", () => {
         form={mockForm}
         onFormChange={onFormChange}
         onSave={vi.fn()}
-      />
+      />,
     );
 
-    const input = screen.getByPlaceholderText("e.g. Primary Residence, Savings Account");
+    const input = screen.getByPlaceholderText(
+      "e.g. Primary Residence, Savings Account",
+    );
     fireEvent.change(input, { target: { value: "My House" } });
 
     expect(onFormChange).toHaveBeenCalledWith({
@@ -62,7 +68,7 @@ describe("AddEditAssetDialog", () => {
         form={mockForm}
         onFormChange={onFormChange}
         onSave={vi.fn()}
-      />
+      />,
     );
 
     const select = screen.getByDisplayValue("Real Property");
@@ -83,7 +89,7 @@ describe("AddEditAssetDialog", () => {
         form={mockForm}
         onFormChange={onFormChange}
         onSave={vi.fn()}
-      />
+      />,
     );
 
     const input = screen.getByPlaceholderText("0");
@@ -104,14 +110,24 @@ describe("AddEditAssetDialog", () => {
         form={mockForm}
         onFormChange={onFormChange}
         onSave={vi.fn()}
-      />
+      />,
     );
 
-    fireEvent.change(screen.getByPlaceholderText("e.g. Sole, Joint, Community"), { target: { value: "Joint" } });
-    expect(onFormChange).toHaveBeenCalledWith(expect.objectContaining({ ownershipType: "Joint" }));
+    fireEvent.change(
+      screen.getByPlaceholderText("e.g. Sole, Joint, Community"),
+      { target: { value: "Joint" } },
+    );
+    expect(onFormChange).toHaveBeenCalledWith(
+      expect.objectContaining({ ownershipType: "Joint" }),
+    );
 
-    fireEvent.change(screen.getByPlaceholderText("e.g. Bank of America, Fidelity"), { target: { value: "Fidelity" } });
-    expect(onFormChange).toHaveBeenCalledWith(expect.objectContaining({ institution: "Fidelity" }));
+    fireEvent.change(
+      screen.getByPlaceholderText("e.g. Bank of America, Fidelity"),
+      { target: { value: "Fidelity" } },
+    );
+    expect(onFormChange).toHaveBeenCalledWith(
+      expect.objectContaining({ institution: "Fidelity" }),
+    );
 
     // Find Account Number input - it doesn't have a placeholder, but it's the 5th input (index 4)
     // 0: name, 1: ownershipType, 2: accountNumber, 3: institution, 4: notes
@@ -124,13 +140,17 @@ describe("AddEditAssetDialog", () => {
     // accountNumber: textbox
     // institution: textbox
     // notes: textbox
-    
+
     const textboxes = screen.getAllByRole("textbox");
     fireEvent.change(textboxes[2], { target: { value: "12345" } }); // accountNumber
-    expect(onFormChange).toHaveBeenCalledWith(expect.objectContaining({ accountNumber: "12345" }));
+    expect(onFormChange).toHaveBeenCalledWith(
+      expect.objectContaining({ accountNumber: "12345" }),
+    );
 
     fireEvent.change(textboxes[4], { target: { value: "Some notes" } }); // notes
-    expect(onFormChange).toHaveBeenCalledWith(expect.objectContaining({ notes: "Some notes" }));
+    expect(onFormChange).toHaveBeenCalledWith(
+      expect.objectContaining({ notes: "Some notes" }),
+    );
   });
 
   it("calls onSave when save button is clicked and name is provided", () => {
@@ -142,7 +162,7 @@ describe("AddEditAssetDialog", () => {
         form={{ ...mockForm, name: "My House" }}
         onFormChange={vi.fn()}
         onSave={onSave}
-      />
+      />,
     );
 
     const saveButton = screen.getByRole("button", { name: "Add Asset" });
@@ -159,7 +179,7 @@ describe("AddEditAssetDialog", () => {
         form={mockForm}
         onFormChange={vi.fn()}
         onSave={vi.fn()}
-      />
+      />,
     );
 
     const saveButton = screen.getByRole("button", { name: "Add Asset" });
@@ -175,7 +195,7 @@ describe("AddEditAssetDialog", () => {
         form={mockForm}
         onFormChange={vi.fn()}
         onSave={vi.fn()}
-      />
+      />,
     );
 
     const cancelButton = screen.getByRole("button", { name: "Cancel" });

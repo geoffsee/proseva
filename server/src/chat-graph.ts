@@ -1,12 +1,5 @@
 import { createKnowledgeGraph } from "mst-graph";
-import type {
-  Case,
-  Contact,
-  Deadline,
-  Evidence,
-  Filing,
-  Note,
-} from "./db";
+import type { Case, Contact, Deadline, Evidence, Filing, Note } from "./db";
 import type { DocumentEntry } from "./ingest";
 
 type GraphEntity =
@@ -374,13 +367,18 @@ export function analyzeCaseGraph(
     },
     totals: {
       cases: selectedCases.length,
-      deadlines: input.deadlines.filter((d) => selectedCaseIds.has(d.caseId)).length,
-      contacts: input.contacts.filter((c) => selectedCaseIds.has(c.caseId)).length,
-      filings: input.filings.filter((f) => selectedCaseIds.has(f.caseId)).length,
-      evidences: input.evidences.filter((e) => selectedCaseIds.has(e.caseId)).length,
-      notes: input.notes.filter((n) => selectedCaseIds.has(n.caseId)).length,
-      documents: input.documents.filter((d) => !!d.caseId && selectedCaseIds.has(d.caseId))
+      deadlines: input.deadlines.filter((d) => selectedCaseIds.has(d.caseId))
         .length,
+      contacts: input.contacts.filter((c) => selectedCaseIds.has(c.caseId))
+        .length,
+      filings: input.filings.filter((f) => selectedCaseIds.has(f.caseId))
+        .length,
+      evidences: input.evidences.filter((e) => selectedCaseIds.has(e.caseId))
+        .length,
+      notes: input.notes.filter((n) => selectedCaseIds.has(n.caseId)).length,
+      documents: input.documents.filter(
+        (d) => !!d.caseId && selectedCaseIds.has(d.caseId),
+      ).length,
       nodes: dedupedNodes.length,
       edges: dedupedEdges.length,
     },
@@ -397,7 +395,8 @@ export function compressCaseGraphForPrompt(
   const maxCases = clampLimit(options.maxCases, 4, 1, 8);
   const maxNodes = clampLimit(options.maxNodes, 6, 1, 12);
   const sortedCases = [...result.caseSummaries].sort((left, right) => {
-    const openDeadlineDelta = right.counts.openDeadlines - left.counts.openDeadlines;
+    const openDeadlineDelta =
+      right.counts.openDeadlines - left.counts.openDeadlines;
     if (openDeadlineDelta !== 0) return openDeadlineDelta;
 
     const connectivityDelta = right.connectivity - left.connectivity;

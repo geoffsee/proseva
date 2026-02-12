@@ -21,13 +21,17 @@ describe("MaskedInput", () => {
   });
 
   it("renders with password type by default", () => {
-    render(<MaskedInput value="secret" onChange={() => {}} label="Masked Field" />);
+    render(
+      <MaskedInput value="secret" onChange={() => {}} label="Masked Field" />,
+    );
     const input = screen.getByLabelText("Masked Field");
     expect(input).toHaveAttribute("type", "password");
   });
 
   it("toggles visibility when eye icon is clicked", () => {
-    render(<MaskedInput value="secret" onChange={() => {}} label="Masked Field" />);
+    render(
+      <MaskedInput value="secret" onChange={() => {}} label="Masked Field" />,
+    );
     const input = screen.getByLabelText("Masked Field");
     const toggleButton = screen.getByLabelText("Show value");
 
@@ -41,7 +45,9 @@ describe("MaskedInput", () => {
 
   it("calls onChange when text is entered", () => {
     const handleChange = vi.fn();
-    render(<MaskedInput value="" onChange={handleChange} label="Masked Field" />);
+    render(
+      <MaskedInput value="" onChange={handleChange} label="Masked Field" />,
+    );
     const input = screen.getByLabelText("Masked Field");
 
     fireEvent.change(input, { target: { value: "new-value" } });
@@ -49,17 +55,27 @@ describe("MaskedInput", () => {
   });
 
   it("copies value to clipboard when copy icon is clicked", async () => {
-    render(<MaskedInput value="secret-to-copy" onChange={() => {}} label="Masked Field" />);
+    render(
+      <MaskedInput
+        value="secret-to-copy"
+        onChange={() => {}}
+        label="Masked Field"
+      />,
+    );
     const copyButton = screen.getByLabelText("Copy value");
 
     fireEvent.click(copyButton);
 
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith("secret-to-copy");
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+      "secret-to-copy",
+    );
     await waitFor(() => {
-      expect(toaster.create).toHaveBeenCalledWith(expect.objectContaining({
-        title: "Copied to clipboard",
-        type: "success",
-      }));
+      expect(toaster.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Copied to clipboard",
+          type: "success",
+        }),
+      );
     });
   });
 

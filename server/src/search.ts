@@ -1,8 +1,6 @@
 import { join } from "path";
 import { readFile } from "fs/promises";
-import {
-  db,
-} from "./db";
+import { db } from "./db";
 import type { DocumentEntry } from "./ingest";
 
 // --- Type Definitions ---

@@ -129,7 +129,12 @@ export async function login(options: { ttl?: string }): Promise<void> {
       } as Record<string, unknown>, // Cast to satisfy generated types
     });
 
-    if (!response || typeof response !== "object" || !("success" in response) || !("token" in response)) {
+    if (
+      !response ||
+      typeof response !== "object" ||
+      !("success" in response) ||
+      !("token" in response)
+    ) {
       printError("Authentication failed");
       process.exit(1);
     }

@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import {
-  clearDbEncryptionPassphrase,
-} from "./db";
+import { clearDbEncryptionPassphrase } from "./db";
 import { api, setupTestServer } from "./test-helpers";
 
 const ctx = setupTestServer();

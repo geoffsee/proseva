@@ -3,7 +3,11 @@ import { EvaluationStore } from "./EvaluationStore";
 import * as apiModule from "../lib/api";
 
 vi.spyOn(apiModule.api.evaluations, "list").mockResolvedValue([]);
-vi.spyOn(apiModule.api.evaluations, "trigger").mockResolvedValue({ evaluationId: "1", pushSent: true, smsSent: true });
+vi.spyOn(apiModule.api.evaluations, "trigger").mockResolvedValue({
+  evaluationId: "1",
+  pushSent: true,
+  smsSent: true,
+});
 vi.spyOn(apiModule.api.deviceTokens, "list").mockResolvedValue([]);
 vi.spyOn(apiModule.api.deviceTokens, "create").mockResolvedValue({} as any);
 vi.spyOn(apiModule.api.deviceTokens, "delete").mockResolvedValue(undefined);
@@ -29,22 +33,26 @@ function createStore() {
 
 describe("EvaluationStore", () => {
   it("loadEvaluations loads from api", async () => {
-    const mockEvaluations = [{ 
-      id: "1", 
-      createdAt: new Date().toISOString(), 
-      status: "sent", 
-      analysis: {
-        overdueDeadlines: [],
-        upcomingDeadlines: [],
-        tomorrowActions: [],
-        aiSummary: "Test Summary"
-      }, 
-      notification: {
-        title: "Test Title",
-        body: "Test Body"
-      } 
-    }];
-    vi.spyOn(apiModule.api.evaluations, "list").mockResolvedValue(mockEvaluations as any);
+    const mockEvaluations = [
+      {
+        id: "1",
+        createdAt: new Date().toISOString(),
+        status: "sent",
+        analysis: {
+          overdueDeadlines: [],
+          upcomingDeadlines: [],
+          tomorrowActions: [],
+          aiSummary: "Test Summary",
+        },
+        notification: {
+          title: "Test Title",
+          body: "Test Body",
+        },
+      },
+    ];
+    vi.spyOn(apiModule.api.evaluations, "list").mockResolvedValue(
+      mockEvaluations as any,
+    );
 
     const store = createStore();
     await store.loadEvaluations();
@@ -75,8 +83,16 @@ describe("EvaluationStore", () => {
   });
 
   it("addDeviceToken adds and calls api", async () => {
-    const mockToken = { id: "t1", token: "abc", platform: "ios", active: true, createdAt: new Date().toISOString() };
-    vi.spyOn(apiModule.api.deviceTokens, "create").mockResolvedValue(mockToken as any);
+    const mockToken = {
+      id: "t1",
+      token: "abc",
+      platform: "ios",
+      active: true,
+      createdAt: new Date().toISOString(),
+    };
+    vi.spyOn(apiModule.api.deviceTokens, "create").mockResolvedValue(
+      mockToken as any,
+    );
 
     const store = createStore();
     await store.addDeviceToken("abc", "ios");
@@ -87,8 +103,15 @@ describe("EvaluationStore", () => {
   });
 
   it("addSmsRecipient adds and calls api", async () => {
-    const mockRecipient = { id: "r1", phone: "123", active: true, createdAt: new Date().toISOString() };
-    vi.spyOn(apiModule.api.smsRecipients, "create").mockResolvedValue(mockRecipient as any);
+    const mockRecipient = {
+      id: "r1",
+      phone: "123",
+      active: true,
+      createdAt: new Date().toISOString(),
+    };
+    vi.spyOn(apiModule.api.smsRecipients, "create").mockResolvedValue(
+      mockRecipient as any,
+    );
 
     const store = createStore();
     await store.addSmsRecipient("123", "User");

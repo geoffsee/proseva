@@ -23,8 +23,18 @@ vi.mock("../../lib/kv", () => ({
   initAuthStore: vi.fn(),
   initKeysStore: vi.fn(),
   initDataStore: vi.fn(),
-  generateAndStoreMLKEMKeys: vi.fn().mockResolvedValue({ publicKey: new Uint8Array(), secretKey: new Uint8Array() }),
-  loadMLKEMKeys: vi.fn().mockResolvedValue({ publicKey: new Uint8Array(), secretKey: new Uint8Array() }),
+  generateAndStoreMLKEMKeys: vi
+    .fn()
+    .mockResolvedValue({
+      publicKey: new Uint8Array(),
+      secretKey: new Uint8Array(),
+    }),
+  loadMLKEMKeys: vi
+    .fn()
+    .mockResolvedValue({
+      publicKey: new Uint8Array(),
+      secretKey: new Uint8Array(),
+    }),
 }));
 
 describe("PassphraseGate", () => {
@@ -36,19 +46,19 @@ describe("PassphraseGate", () => {
     render(
       <PassphraseGate>
         <div data-testid="protected-content">Protected</div>
-      </PassphraseGate>
+      </PassphraseGate>,
     );
     expect(screen.getByTestId("protected-content")).toBeInTheDocument();
   });
 
   it("shows loading state initially", async () => {
     // We can't easily mock import.meta.env.MODE, but we can try to see if it
-    // enters the bootstrap flow if we were able to. 
+    // enters the bootstrap flow if we were able to.
     // For now, this just verifies the component doesn't crash.
     render(
       <PassphraseGate>
         <div>Content</div>
-      </PassphraseGate>
+      </PassphraseGate>,
     );
   });
 });

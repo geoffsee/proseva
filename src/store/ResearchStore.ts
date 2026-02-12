@@ -48,7 +48,6 @@ export const ResearchStore = types
       let replyText: string;
       let toolResults: ToolResultData[] = [];
 
-
       try {
         const apiMessages = self.messages
           .filter((m) => m.role === "user" || m.role === "assistant")

@@ -115,7 +115,9 @@ export function PassphraseGate({ children }: { children: ReactNode }) {
         // 1. Get authentication token from backend
         const authResult = await authApi.login(pwd);
         if (!authResult.success || !authResult.token) {
-          throw new Error(authResult.error || "Failed to get authentication token");
+          throw new Error(
+            authResult.error || "Failed to get authentication token",
+          );
         }
         await setAuthToken(authResult.token);
 

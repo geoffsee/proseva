@@ -360,7 +360,12 @@ describe("Chat API", () => {
       caseType: "custody",
       status: "active",
       parties: [
-        { id: "p1", name: "Alice", role: "Petitioner", contact: "alice@example.com" },
+        {
+          id: "p1",
+          name: "Alice",
+          role: "Petitioner",
+          contact: "alice@example.com",
+        },
       ],
       filings: [],
       notes: "",
@@ -377,7 +382,9 @@ describe("Chat API", () => {
     });
 
     mockCreate.mockResolvedValueOnce({
-      choices: [{ finish_reason: "stop", message: { content: "Graph complete." } }],
+      choices: [
+        { finish_reason: "stop", message: { content: "Graph complete." } },
+      ],
     });
 
     const res = await api.post(
@@ -398,7 +405,9 @@ describe("Chat API", () => {
     const toolNames = firstCall.tools?.map((tool) => tool.function.name) ?? [];
     expect(toolNames).not.toContain("AnalyzeCaseGraph");
 
-    const systemMessage = firstCall.messages?.find((message) => message.role === "system");
+    const systemMessage = firstCall.messages?.find(
+      (message) => message.role === "system",
+    );
     expect(systemMessage?.content).toContain(
       "Graph context bootstrap (compressed JSON snapshot):",
     );

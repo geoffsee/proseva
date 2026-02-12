@@ -682,7 +682,12 @@ export const authApi = {
   login: async (
     passphrase: string,
     ttl?: string,
-  ): Promise<{ success: boolean; token: string; expiresIn: number; error?: string }> => {
+  ): Promise<{
+    success: boolean;
+    token: string;
+    expiresIn: number;
+    error?: string;
+  }> => {
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

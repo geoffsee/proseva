@@ -5,6 +5,7 @@ This document describes the bearer token authentication system added to Pro-Se-V
 ## Overview
 
 The API now requires bearer token authentication for all endpoints except:
+
 - `/api/auth/login` - Login endpoint to obtain token
 - `/api/security/*` - Security-related endpoints (passphrase setup, recovery)
 
@@ -31,6 +32,7 @@ curl -X POST http://localhost:3001/api/auth/login \
 ```
 
 Response:
+
 ```json
 {
   "success": true,
@@ -40,6 +42,7 @@ Response:
 ```
 
 TTL options:
+
 - `24h` - 24 hours (default)
 - `7d` - 7 days
 - `30m` - 30 minutes
@@ -67,6 +70,7 @@ proseva auth login
 ```
 
 Custom TTL:
+
 ```bash
 proseva auth login --ttl 7d
 ```
@@ -78,6 +82,7 @@ proseva auth status
 ```
 
 Output:
+
 ```
 ✓ Authenticated
 API URL: http://localhost:3001
@@ -119,6 +124,7 @@ proseva db stats
 ## Error Responses
 
 ### 401 Unauthorized - Missing Token
+
 ```json
 {
   "error": "Authentication required. Please provide a valid Bearer token.",
@@ -127,6 +133,7 @@ proseva db stats
 ```
 
 ### 401 Unauthorized - Invalid Header Format
+
 ```json
 {
   "error": "Invalid Authorization header format. Use 'Bearer <token>'.",
@@ -135,6 +142,7 @@ proseva db stats
 ```
 
 ### 401 Unauthorized - Invalid/Expired Token
+
 ```json
 {
   "error": "Invalid or expired token.",
@@ -187,11 +195,13 @@ The frontend automatically handles bearer token authentication through the Passp
 ### Key Components
 
 **PassphraseGate** (`src/components/security/PassphraseGate.tsx`):
+
 - Handles initial passphrase setup and entry
 - Calls `/api/auth/login` after passphrase verification
 - Sets up auth expiration callback
 
 **API Client** (`src/lib/api.ts`):
+
 - `setAuthToken(token)` - Store JWT token in memory
 - `getAuthToken()` - Retrieve current token
 - `clearAuthToken()` - Remove token (on logout/expiration)
@@ -201,6 +211,7 @@ The frontend automatically handles bearer token authentication through the Passp
 ### Token Expiration Handling
 
 When a 401 response is received:
+
 1. Token is automatically cleared
 2. Auth expiration callback is triggered
 3. PassphraseGate returns to login state
@@ -210,6 +221,7 @@ When a 401 response is received:
 ### Testing
 
 The PassphraseGate component includes test mode detection:
+
 ```typescript
 const isTestMode = import.meta.env.MODE === "test";
 ```
@@ -223,6 +235,7 @@ In test mode, authentication is bypassed for easier testing.
 If you have existing scripts or applications using the API:
 
 1. Add authentication:
+
    ```bash
    # Get token first
    TOKEN=$(curl -X POST http://localhost:3001/api/auth/login \

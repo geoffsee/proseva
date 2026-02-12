@@ -157,9 +157,7 @@ const Config = observer(() => {
       setSerpapiBase(configStore.config.legalResearch?.serpapiBase || "");
 
       setChatSystemPrompt(configStore.config.prompts?.chatSystemPrompt || "");
-      setCaseSummaryPrompt(
-        configStore.config.prompts?.caseSummaryPrompt || "",
-      );
+      setCaseSummaryPrompt(configStore.config.prompts?.caseSummaryPrompt || "");
       setEvaluatorPrompt(configStore.config.prompts?.evaluatorPrompt || "");
     }
   }, [configStore.config]);

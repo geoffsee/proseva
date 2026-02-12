@@ -6,13 +6,21 @@ vi.spyOn(apiModule.api.estatePlans, "list").mockResolvedValue([]);
 vi.spyOn(apiModule.api.estatePlans, "create").mockResolvedValue({} as any);
 vi.spyOn(apiModule.api.estatePlans, "update").mockResolvedValue({} as any);
 vi.spyOn(apiModule.api.estatePlans, "delete").mockResolvedValue(undefined);
-vi.spyOn(apiModule.api.estatePlans, "addBeneficiary").mockResolvedValue({} as any);
-vi.spyOn(apiModule.api.estatePlans, "removeBeneficiary").mockResolvedValue(undefined);
+vi.spyOn(apiModule.api.estatePlans, "addBeneficiary").mockResolvedValue(
+  {} as any,
+);
+vi.spyOn(apiModule.api.estatePlans, "removeBeneficiary").mockResolvedValue(
+  undefined,
+);
 vi.spyOn(apiModule.api.estatePlans, "addAsset").mockResolvedValue({} as any);
 vi.spyOn(apiModule.api.estatePlans, "removeAsset").mockResolvedValue(undefined);
 vi.spyOn(apiModule.api.estatePlans, "addDocument").mockResolvedValue({} as any);
-vi.spyOn(apiModule.api.estatePlans, "updateDocument").mockResolvedValue({} as any);
-vi.spyOn(apiModule.api.estatePlans, "removeDocument").mockResolvedValue(undefined);
+vi.spyOn(apiModule.api.estatePlans, "updateDocument").mockResolvedValue(
+  {} as any,
+);
+vi.spyOn(apiModule.api.estatePlans, "removeDocument").mockResolvedValue(
+  undefined,
+);
 
 function createStore() {
   return EstatePlanStore.create({ plans: [] });
@@ -20,13 +28,17 @@ function createStore() {
 
 describe("EstatePlanStore", () => {
   it("loadPlans loads from api", async () => {
-    const mockPlans = [{ 
-      id: "1", 
-      title: "Test Plan", 
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString() 
-    }];
-    vi.spyOn(apiModule.api.estatePlans, "list").mockResolvedValue(mockPlans as any);
+    const mockPlans = [
+      {
+        id: "1",
+        title: "Test Plan",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ];
+    vi.spyOn(apiModule.api.estatePlans, "list").mockResolvedValue(
+      mockPlans as any,
+    );
 
     const store = createStore();
     await store.loadPlans();

@@ -267,9 +267,7 @@ describe("RootStore persistence", () => {
     vi.advanceTimersByTime(1);
 
     const savedByKey = new Map<string, unknown>(
-      vi
-        .mocked(kvSave)
-        .mock.calls.map(([key, value]) => [key, value] as const),
+      vi.mocked(kvSave).mock.calls.map(([key, value]) => [key, value] as const),
     );
 
     expect(savedByKey.get(STORAGE_KEYS.cases)).toEqual([caseSnapshot]);

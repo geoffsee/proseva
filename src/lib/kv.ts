@@ -227,7 +227,10 @@ export async function generateAndStoreMLKEMKeys(): Promise<{
     // Store a synthetic keypair so passphrase setup can still complete.
     secretKey = crypto.getRandomValues(new Uint8Array(32));
     publicKey = crypto.getRandomValues(new Uint8Array(32));
-    console.warn("ML-KEM key generation unavailable; using fallback keys.", err);
+    console.warn(
+      "ML-KEM key generation unavailable; using fallback keys.",
+      err,
+    );
   }
 
   await keysStore.put(MLKEM_PUBLIC_KEY, Array.from(publicKey));
