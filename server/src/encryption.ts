@@ -1,14 +1,10 @@
 /**
  * Database encryption module with ML-KEM-1024 post-quantum encryption.
  *
- * V3 (current): ML-KEM-1024 key encapsulation + AES-256-GCM
- * V2: PBKDF2 + AES-256-GCM via idb-repo
- * V1 (legacy): Hand-rolled AES-256-GCM
- *
- * Maintains backward compatibility with v1 and v2 formats for reading.
+ * Uses ML-KEM-1024 key encapsulation + AES-256-GCM for all database encryption.
  */
 import { PassphraseEncryptionProvider, createKV, kvGetJson, type KVNamespace } from "idb-repo";
-import { createDecipheriv, pbkdf2Sync, createCipheriv, randomBytes } from "node:crypto";
+import { createDecipheriv, createCipheriv, randomBytes } from "node:crypto";
 import { initSync, ml_kem_1024_generate_keypair, ml_kem_1024_encapsulate, ml_kem_1024_decapsulate } from "wasm-pqc-subtle";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -19,10 +15,7 @@ const __dir =
   new URL(".", import.meta.url).pathname;
 
 const DB_ENCRYPTION_KEY_ENV_VAR = "PROSEVA_DB_ENCRYPTION_KEY";
-const DB_ENCRYPTION_PAYLOAD_KEY = "__proseva_encrypted";
-const DB_ENCRYPTION_V2_PAYLOAD_KEY = "__proseva_encrypted_v2";
 const DB_ENCRYPTION_V3_PAYLOAD_KEY = "__proseva_encrypted_v3";
-const USE_ML_KEM_ENV_VAR = "PROSEVA_USE_ML_KEM";
 const DEFAULT_KEYPAIR_STORE_DIR = join(__dir, "../data/ml-kem-keys");
 
 // Initialize ML-KEM WASM module
@@ -40,7 +33,7 @@ function ensureWasmInit(): void {
       // Fallback to relative path
       wasmPath = join(__dir, "../../node_modules/wasm-pqc-subtle/wasm_pqc_subtle_bg.wasm");
     }
-    
+
     const wasmBuffer = readFileSync(wasmPath);
     initSync({ module: wasmBuffer });
     wasmInitialized = true;
@@ -48,10 +41,6 @@ function ensureWasmInit(): void {
     console.error("Failed to initialize ML-KEM WASM module:", err);
     throw err;
   }
-}
-
-function shouldUseMlKem(): boolean {
-  return process.env[USE_ML_KEM_ENV_VAR] === "true";
 }
 
 export type DatabaseSnapshot = Record<string, Record<string, unknown>>;
@@ -66,20 +55,7 @@ export class DatabaseEncryptionError extends Error {
   }
 }
 
-// --- Legacy v1 envelope types (for backward compat) ---
-
-type LegacyEncryptedEnvelope = {
-  version: 1;
-  algorithm: "aes-256-gcm";
-  kdf: "pbkdf2-sha256";
-  iterations: number;
-  salt: string;
-  iv: string;
-  authTag: string;
-  ciphertext: string;
-};
-
-// --- V3 envelope (ML-KEM-1024 + AES-256-GCM) ---
+// --- ML-KEM envelope ---
 
 type MlKemEncryptedEnvelope = {
   version: 3;
@@ -196,7 +172,7 @@ async function getOrGenerateKeyPair(): Promise<MlKemKeyPair> {
   return serverKeyPair;
 }
 
-// --- Passphrase state ---
+// --- Passphrase state (for keypair encryption only) ---
 
 export function normalizePassphrase(
   raw: string | undefined,
@@ -216,39 +192,24 @@ let runtimePassphrase = normalizePassphrase(
   process.env[DB_ENCRYPTION_KEY_ENV_VAR],
 );
 
-let provider: PassphraseEncryptionProvider | null = null;
-
 export function getPassphrase(): string | undefined {
   return runtimePassphrase;
 }
 
 export async function setPassphrase(passphrase: string): Promise<void> {
   runtimePassphrase = normalizePassphrase(passphrase);
-  if (runtimePassphrase) {
-    provider = await PassphraseEncryptionProvider.create(runtimePassphrase);
-  } else {
-    provider = null;
-  }
   // Reset keypair store so it gets recreated with the new encryption provider
   resetKeypairStore();
 }
 
 export function clearPassphrase(): void {
   runtimePassphrase = undefined;
-  provider = null;
   // Reset keypair store so it gets recreated without encryption
   resetKeypairStore();
 }
 
 export function hasPassphrase(): boolean {
   return runtimePassphrase !== undefined;
-}
-
-async function getProvider(): Promise<PassphraseEncryptionProvider | null> {
-  if (provider) return provider;
-  if (!runtimePassphrase) return null;
-  provider = await PassphraseEncryptionProvider.create(runtimePassphrase);
-  return provider;
 }
 
 // --- Detection helpers ---
@@ -260,20 +221,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function isDatabaseSnapshot(value: unknown): value is DatabaseSnapshot {
   if (!isRecord(value)) return false;
   return Object.values(value).every((entry) => isRecord(entry));
-}
-
-function isLegacyEnvelope(value: unknown): value is LegacyEncryptedEnvelope {
-  if (!isRecord(value)) return false;
-  return (
-    value.version === 1 &&
-    value.algorithm === "aes-256-gcm" &&
-    value.kdf === "pbkdf2-sha256" &&
-    typeof value.iterations === "number" &&
-    typeof value.salt === "string" &&
-    typeof value.iv === "string" &&
-    typeof value.authTag === "string" &&
-    typeof value.ciphertext === "string"
-  );
 }
 
 function isMlKemEnvelope(value: unknown): value is MlKemEncryptedEnvelope {
@@ -288,132 +235,36 @@ function isMlKemEnvelope(value: unknown): value is MlKemEncryptedEnvelope {
   );
 }
 
-function isV2Snapshot(input: DatabaseSnapshot): boolean {
-  return (
-    typeof input[DB_ENCRYPTION_V2_PAYLOAD_KEY] === "object" &&
-    typeof (input[DB_ENCRYPTION_V2_PAYLOAD_KEY] as Record<string, unknown>)
-      ?.ciphertext === "string"
-  );
-}
-
 function isV3Snapshot(input: DatabaseSnapshot): boolean {
   return isMlKemEnvelope(input[DB_ENCRYPTION_V3_PAYLOAD_KEY]);
 }
 
-function isLegacySnapshot(input: DatabaseSnapshot): boolean {
-  return isLegacyEnvelope(input[DB_ENCRYPTION_PAYLOAD_KEY]);
-}
-
 export function isEncryptedSnapshot(input: DatabaseSnapshot): boolean {
-  return isV3Snapshot(input) || isV2Snapshot(input) || isLegacySnapshot(input);
+  return isV3Snapshot(input);
 }
 
-// --- Legacy v1 decryption (backward compat, read-only) ---
-
-function decryptLegacySnapshot(
-  input: DatabaseSnapshot,
-  passphrase: string,
-): DatabaseSnapshot {
-  const envelope = input[DB_ENCRYPTION_PAYLOAD_KEY] as LegacyEncryptedEnvelope;
-
-  const salt = Buffer.from(envelope.salt, "base64");
-  const iv = Buffer.from(envelope.iv, "base64");
-  const authTag = Buffer.from(envelope.authTag, "base64");
-  const ciphertext = Buffer.from(envelope.ciphertext, "base64");
-
-  const key = pbkdf2Sync(passphrase, salt, envelope.iterations, 32, "sha256");
-
-  let parsed: unknown;
-  try {
-    const decipher = createDecipheriv("aes-256-gcm", key, iv);
-    decipher.setAuthTag(authTag);
-    const plaintext = Buffer.concat([
-      decipher.update(ciphertext),
-      decipher.final(),
-    ]);
-    parsed = JSON.parse(plaintext.toString("utf8"));
-  } catch {
-    throw new DatabaseEncryptionError(
-      "invalid_key",
-      `Failed to decrypt database. Check ${DB_ENCRYPTION_KEY_ENV_VAR}.`,
-    );
-  }
-
-  if (!isDatabaseSnapshot(parsed)) {
-    throw new Error("Decrypted database payload is invalid.");
-  }
-
-  return parsed;
-}
-
-// --- V2 decryption (idb-repo PassphraseEncryptionProvider) ---
-
-async function decryptV2Snapshot(
-  input: DatabaseSnapshot,
-  passphraseOverride?: string,
-): Promise<DatabaseSnapshot> {
-  const passphrase =
-    normalizePassphrase(passphraseOverride) ?? runtimePassphrase;
-  if (!passphrase) {
-    throw new DatabaseEncryptionError(
-      "missing_key",
-      `Database is encrypted. Set ${DB_ENCRYPTION_KEY_ENV_VAR} to decrypt it.`,
-    );
-  }
-
-  const envelope = input[DB_ENCRYPTION_V2_PAYLOAD_KEY] as {
-    ciphertext: string;
-  };
-  const encrypted = Uint8Array.from(Buffer.from(envelope.ciphertext, "base64"));
-
-  let parsed: unknown;
-  try {
-    // Extract the embedded salt (first 16 bytes) so the provider derives the
-    // correct key — PassphraseEncryptionProvider.decrypt() uses the provider's
-    // own salt, not the one embedded in the ciphertext.
-    const embeddedSalt = encrypted.slice(0, 16);
-    const p = await PassphraseEncryptionProvider.create(
-      passphrase,
-      embeddedSalt,
-    );
-    const plaintext = await p.decrypt(encrypted);
-    parsed = JSON.parse(new TextDecoder().decode(plaintext));
-  } catch {
-    throw new DatabaseEncryptionError(
-      "invalid_key",
-      `Failed to decrypt database. Check ${DB_ENCRYPTION_KEY_ENV_VAR}.`,
-    );
-  }
-
-  if (!isDatabaseSnapshot(parsed)) {
-    throw new Error("Decrypted database payload is invalid.");
-  }
-
-  return parsed;
-}
-
-// --- V3 ML-KEM-1024 encryption/decryption ---
+// --- ML-KEM-1024 encryption/decryption ---
 
 async function encryptV3Snapshot(input: DatabaseSnapshot): Promise<DatabaseSnapshot> {
   ensureWasmInit();
 
   const keypair = await getOrGenerateKeyPair();
-  
+
   // Encapsulate to get a shared secret
   const encapResult = ml_kem_1024_encapsulate(keypair.publicKey);
   const sharedSecret = encapResult.shared_secret; // 32 bytes for AES-256
-  
+
   // Encrypt the data with AES-256-GCM using the shared secret
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", sharedSecret, iv);
-  
+
   const plaintext = JSON.stringify(input);
   const ciphertextBuffer = Buffer.concat([
     cipher.update(plaintext, "utf8"),
     cipher.final(),
   ]);
   const authTag = cipher.getAuthTag();
-  
+
   const envelope: MlKemEncryptedEnvelope = {
     version: 3,
     algorithm: "ml-kem-1024-aes-256-gcm",
@@ -422,7 +273,7 @@ async function encryptV3Snapshot(input: DatabaseSnapshot): Promise<DatabaseSnaps
     authTag: authTag.toString("base64"),
     ciphertext: ciphertextBuffer.toString("base64"),
   };
-  
+
   return {
     [DB_ENCRYPTION_V3_PAYLOAD_KEY]: envelope,
   };
@@ -433,11 +284,11 @@ async function decryptV3Snapshot(input: DatabaseSnapshot): Promise<DatabaseSnaps
 
   const envelope = input[DB_ENCRYPTION_V3_PAYLOAD_KEY] as MlKemEncryptedEnvelope;
   const keypair = await getOrGenerateKeyPair();
-  
+
   // Decapsulate to recover the shared secret
   const kemCiphertext = Uint8Array.from(Buffer.from(envelope.kemCiphertext, "base64"));
   let sharedSecret: Uint8Array;
-  
+
   try {
     sharedSecret = ml_kem_1024_decapsulate(keypair.secretKey, kemCiphertext);
   } catch (err) {
@@ -446,12 +297,12 @@ async function decryptV3Snapshot(input: DatabaseSnapshot): Promise<DatabaseSnaps
       `Failed to decrypt database with ML-KEM-1024.`,
     );
   }
-  
+
   // Decrypt the data with AES-256-GCM
   const iv = Buffer.from(envelope.iv, "base64");
   const authTag = Buffer.from(envelope.authTag, "base64");
   const ciphertext = Buffer.from(envelope.ciphertext, "base64");
-  
+
   let parsed: unknown;
   try {
     const decipher = createDecipheriv("aes-256-gcm", sharedSecret, iv);
@@ -468,45 +319,25 @@ async function decryptV3Snapshot(input: DatabaseSnapshot): Promise<DatabaseSnaps
       `Failed to decrypt database. AES decryption failed.`,
     );
   }
-  
+
   if (!isDatabaseSnapshot(parsed)) {
     throw new Error("Decrypted database payload is invalid.");
   }
-  
+
   return parsed;
 }
 
 // --- Public API ---
 
 /**
- * Decrypt a database snapshot. Supports v3 (ML-KEM-1024), v2 (idb-repo), and v1 (legacy).
+ * Decrypt a database snapshot. Only supports ML-KEM-1024 format.
  * Returns unencrypted snapshots as-is.
  */
 export async function decryptSnapshot(
   input: DatabaseSnapshot,
-  passphraseOverride?: string,
 ): Promise<DatabaseSnapshot> {
-  // V3 format (ML-KEM-1024 + AES-256-GCM)
   if (isV3Snapshot(input)) {
     return await decryptV3Snapshot(input);
-  }
-
-  // V2 format (idb-repo PassphraseEncryptionProvider)
-  if (isV2Snapshot(input)) {
-    return decryptV2Snapshot(input, passphraseOverride);
-  }
-
-  // Legacy v1 format (hand-rolled AES-256-GCM)
-  if (isLegacySnapshot(input)) {
-    const passphrase =
-      normalizePassphrase(passphraseOverride) ?? runtimePassphrase;
-    if (!passphrase) {
-      throw new DatabaseEncryptionError(
-        "missing_key",
-        `Database is encrypted. Set ${DB_ENCRYPTION_KEY_ENV_VAR} to decrypt it.`,
-      );
-    }
-    return decryptLegacySnapshot(input, passphrase);
   }
 
   // Unencrypted
@@ -514,31 +345,12 @@ export async function decryptSnapshot(
 }
 
 /**
- * Encrypt a database snapshot.
- * 
- * Uses ML-KEM-1024 + AES-256-GCM (V3) when PROSEVA_USE_ML_KEM=true.
- * Otherwise uses PBKDF2 + AES-256-GCM (V2) when a passphrase is configured.
- * Returns unencrypted if no passphrase is set and ML-KEM is not enabled.
+ * Encrypt a database snapshot using ML-KEM-1024 + AES-256-GCM.
  */
 export async function encryptSnapshot(
   input: DatabaseSnapshot,
 ): Promise<DatabaseSnapshot> {
-  // Use ML-KEM-1024 if enabled
-  if (shouldUseMlKem()) {
-    return await encryptV3Snapshot(input);
-  }
-
-  // Fallback to passphrase-based encryption if configured
-  const p = await getProvider();
-  if (!p) return input;
-
-  const plaintext = new TextEncoder().encode(JSON.stringify(input));
-  const encrypted = await p.encrypt(plaintext);
-  const ciphertext = Buffer.from(encrypted).toString("base64");
-
-  return {
-    [DB_ENCRYPTION_V2_PAYLOAD_KEY]: { ciphertext },
-  };
+  return await encryptV3Snapshot(input);
 }
 
-export { DB_ENCRYPTION_KEY_ENV_VAR, USE_ML_KEM_ENV_VAR };
+export { DB_ENCRYPTION_KEY_ENV_VAR };
