@@ -165,8 +165,8 @@ async function getOrGenerateKeyPair(): Promise<MlKemKeyPair> {
     await store.put("publicKey", Array.from(serverKeyPair.publicKey));
     await store.put("secretKey", Array.from(serverKeyPair.secretKey));
     console.log("Generated and saved new ML-KEM keypair to store");
-  } catch (err) {
-    console.error("Failed to save ML-KEM keypair:", err);
+  } catch {
+    console.error("Failed to save ML-KEM keypair");
   }
 
   return serverKeyPair;

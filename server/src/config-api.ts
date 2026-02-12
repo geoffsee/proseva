@@ -1,6 +1,5 @@
 import { Router } from "itty-router";
 import { db } from "./db";
-import type { ServerConfig } from "./db";
 import {
   getConfig,
   invalidateConfigCache,

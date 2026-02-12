@@ -257,23 +257,6 @@ interface CourtListenerSearchResponse {
   results: CourtListenerSearchResult[];
 }
 
-interface OpinionDetails {
-  id: string;
-  caseName: string;
-  court: string;
-  courtId: string;
-  dateFiled: string;
-  docketNumber: string;
-  judges: string;
-  plainText: string;
-  htmlWithCitations: string;
-  citations: string[];
-  citesCases: string[];
-  absoluteUrl: string;
-  disclaimer: string;
-  source: string;
-}
-
 interface CourtListenerOpinionResponse {
   id: number;
   case_name: string;
@@ -306,30 +289,6 @@ interface DocketEntry {
   dateFiled: string;
   entryNumber: string;
   description: string;
-}
-
-interface DocketDetails {
-  id: string;
-  caseName: string;
-  court: string;
-  courtId: string;
-  dateFiled: string;
-  dateTerminated: string;
-  dateLastFiling: string;
-  docketNumber: string;
-  docketNumberCore: string;
-  cause: string;
-  natureOfSuit: string;
-  juryDemand: string;
-  jurisdictionType: string;
-  assignedTo: string;
-  referredTo: string;
-  parties: DocketParty[];
-  docketEntries: DocketEntry[];
-  absoluteUrl: string;
-  pacerUrl: string;
-  disclaimer: string;
-  source: string;
 }
 
 interface CourtListenerDocketResponse {
@@ -368,15 +327,17 @@ interface CourtListenerDocketResponse {
   pacer_url: string;
 }
 
-interface LegiScanBill {
-  bill_id: number;
-  bill_number: string;
+interface StatuteSearchResult {
+  id: string;
   title: string;
-  state: string;
-  bill_type_id: number;
+  citation: string;
+  section: string;
+  code: string;
+  jurisdiction: string;
+  snippet: string;
   url: string;
-  last_action: string;
-  last_action_date: string;
+  lastAction: string;
+  lastActionDate: string;
   relevance: number;
 }
 

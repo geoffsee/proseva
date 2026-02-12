@@ -43,7 +43,8 @@ router.post("/setup-passphrase", async (req) => {
     }
 
     const hash = await hashPassphrase(passphrase);
-    db.serverConfig.set(PASSPHRASE_HASH_KEY, { hash } as any);
+    // @ts-expect-error - storing internal server state in serverConfig map
+    db.serverConfig.set(PASSPHRASE_HASH_KEY, { hash });
     db.persist();
 
     // Use this passphrase for encrypting the database and keypair store

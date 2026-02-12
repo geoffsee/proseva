@@ -8,13 +8,6 @@ vi.mock("openai", () => ({
   },
 }));
 
-interface MockFs {
-  readFile: any;
-  writeFile: any;
-  mkdir: any;
-  [key: string]: any;
-}
-
 vi.mock("fs/promises", async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>;
   return {
