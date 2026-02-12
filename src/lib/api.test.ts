@@ -4,6 +4,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
 
+// Mock kv module
+vi.mock("./kv", () => ({
+  saveAuthToken: vi.fn().mockResolvedValue(undefined),
+  loadAuthToken: vi.fn().mockResolvedValue("mock-token"),
+  clearAuthToken: vi.fn().mockResolvedValue(undefined),
+}));
+
 // Now import api (openapi-fetch will capture our mock)
 const { api } = await import("./api");
 
@@ -182,6 +189,75 @@ describe("api stub layer", () => {
     it("delete returns undefined", async () => {
       mockFetch.mockResolvedValueOnce(mockResponse(204));
       expect(await api.finances.delete("1")).toBeNull();
+    });
+  });
+
+  describe("notes", () => {
+    it("list returns empty array", async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse(200, []));
+      expect(await api.notes.list()).toEqual([]);
+    });
+
+    it("get returns null", async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse(404, undefined, false));
+      expect(await api.notes.get("1")).toBeNull();
+    });
+
+    it("create returns null", async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse(204));
+      expect(await api.notes.create({ title: "T", content: "C" })).toBeNull();
+    });
+  });
+
+  describe("evidences", () => {
+    it("list returns empty array", async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse(200, []));
+      expect(await api.evidences.list()).toEqual([]);
+    });
+  });
+
+  describe("search", () => {
+    it("calls search endpoint", async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse(200, { results: [] }));
+      const results = await api.search.search("test");
+      expect(results).toEqual({ results: [] });
+    });
+  });
+
+  describe("config", () => {
+    it("get returns config", async () => {
+      const mockConfig = { ai: { vlmModel: "gpt-4" } };
+      mockFetch.mockResolvedValueOnce(mockResponse(200, mockConfig));
+      expect(await api.config.get()).toEqual(mockConfig);
+    });
+  });
+
+  describe("auth", () => {
+    it("login returns token", async () => {
+      const mockResult = { success: true, token: "abc", expiresIn: 3600 };
+      mockFetch.mockResolvedValueOnce(mockResponse(200, mockResult));
+      expect(await api.auth.login("pass")).toEqual(mockResult);
+    });
+  });
+
+  describe("deviceTokens", () => {
+    it("list returns tokens", async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse(200, []));
+      expect(await api.deviceTokens.list()).toEqual([]);
+    });
+  });
+
+  describe("smsRecipients", () => {
+    it("list returns recipients", async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse(200, []));
+      expect(await api.smsRecipients.list()).toEqual([]);
+    });
+  });
+
+  describe("evaluations", () => {
+    it("list returns evaluations", async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse(200, []));
+      expect(await api.evaluations.list()).toEqual([]);
     });
   });
 
