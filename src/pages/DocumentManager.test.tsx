@@ -2,6 +2,10 @@ import { render, screen, waitFor, fireEvent } from "../test-utils";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import DocumentManager from "./DocumentManager";
 
+vi.mock("../lib/api", () => ({
+  getAuthToken: vi.fn().mockResolvedValue("test-token-123"),
+}));
+
 const MOCK_DOCS = [
   {
     id: "1",
@@ -300,5 +304,72 @@ describe("DocumentManager", () => {
       expect(screen.getAllByText("Duplicate").length).toBe(2),
     );
     expect(screen.getAllByText("Motion to Dismiss").length).toBe(2);
+  });
+
+  it("sends Authorization header with /api/documents request", async () => {
+    mockFetch(MOCK_DOCS);
+    render(<DocumentManager />);
+    await waitFor(() => {
+      expect(screen.getByText("Motion to Dismiss")).toBeInTheDocument();
+    });
+
+    const docCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.find(
+      (c: unknown[]) => c[0] === "/api/documents",
+    );
+    expect(docCall).toBeDefined();
+    expect(docCall![1]).toEqual(
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer test-token-123",
+        }),
+      }),
+    );
+  });
+
+  it("sends Authorization header with /api/ingest/status request", async () => {
+    mockFetch(MOCK_DOCS);
+    render(<DocumentManager />);
+    await waitFor(() => {
+      expect(screen.getByText("Motion to Dismiss")).toBeInTheDocument();
+    });
+
+    const ingestCall = (
+      global.fetch as ReturnType<typeof vi.fn>
+    ).mock.calls.find((c: unknown[]) => c[0] === "/api/ingest/status");
+    expect(ingestCall).toBeDefined();
+    expect(ingestCall![1]).toEqual(
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer test-token-123",
+        }),
+      }),
+    );
+  });
+
+  it("sends Authorization header when loading extracted text", async () => {
+    mockFetch(MOCK_DOCS);
+    render(<DocumentManager />);
+    await waitFor(() => {
+      expect(screen.getByText("Court Order")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText("Court Order"));
+    await waitFor(() => {
+      expect(
+        screen.getByText("Extracted text content for this document."),
+      ).toBeInTheDocument();
+    });
+
+    const textCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.find(
+      (c: unknown[]) => typeof c[0] === "string" && c[0].startsWith("/texts/"),
+    );
+    expect(textCall).toBeDefined();
+    expect(textCall![1]).toEqual(
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer test-token-123",
+        }),
+      }),
+    );
   });
 });

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from "react";
 import { Box, VStack, HStack, Text, Button } from "@chakra-ui/react";
 import { LuUpload, LuX, LuFile } from "react-icons/lu";
+import { getAuthToken } from "../lib/api";
 
 interface FileUploadProps {
   categories?: string[];
@@ -75,8 +76,13 @@ export default function FileUpload({
     formData.append("category", category);
 
     try {
+      const token = await getAuthToken();
+      const headers: HeadersInit = token
+        ? { Authorization: `Bearer ${token}` }
+        : {};
       const res = await fetch("/api/documents/upload", {
         method: "POST",
+        headers,
         body: formData,
       });
       if (!res.ok) {

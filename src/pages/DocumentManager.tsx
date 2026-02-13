@@ -12,6 +12,7 @@ import {
 import { LuChevronDown, LuChevronRight } from "react-icons/lu";
 import { StatCard } from "../components/shared/StatCard";
 import FileUpload from "../components/FileUpload";
+import { getAuthToken } from "../lib/api";
 
 interface DocumentEntry {
   id: string;
@@ -46,9 +47,13 @@ export default function DocumentManager() {
   const [expandedText, setExpandedText] = useState<Record<string, string>>({});
   const [loadingText, setLoadingText] = useState<string | null>(null);
 
-  const fetchDocs = useCallback(() => {
+  const fetchDocs = useCallback(async () => {
     setLoading(true);
-    fetch("/api/documents")
+    const token = await getAuthToken();
+    const headers: HeadersInit = token
+      ? { Authorization: `Bearer ${token}` }
+      : {};
+    fetch("/api/documents", { headers })
       .then((r) => {
         if (!r.ok) throw new Error(`Failed to load: ${r.status}`);
         return r.json();
@@ -64,8 +69,12 @@ export default function DocumentManager() {
   }, [fetchDocs]);
 
   useEffect(() => {
-    const loadStatus = () =>
-      fetch("/api/ingest/status")
+    const loadStatus = async () => {
+      const token = await getAuthToken();
+      const headers: HeadersInit = token
+        ? { Authorization: `Bearer ${token}` }
+        : {};
+      return fetch("/api/ingest/status", { headers })
         .then((r) => (r.ok ? r.json() : Promise.resolve(null)))
         .then((data) => setIngestStatus(data))
         .catch(() =>
@@ -83,6 +92,7 @@ export default function DocumentManager() {
               },
           ),
         );
+    };
     loadStatus();
     const timer = setInterval(loadStatus, 10000);
     return () => {
@@ -98,7 +108,12 @@ export default function DocumentManager() {
     setExpandedId(doc.id);
     if (!expandedText[doc.id] && doc.textFile) {
       setLoadingText(doc.id);
-      fetch(`/texts/${doc.id}.txt`)
+      getAuthToken().then((token) => {
+        const headers: HeadersInit = token
+          ? { Authorization: `Bearer ${token}` }
+          : {};
+        return fetch(`/texts/${doc.id}.txt`, { headers });
+      })
         .then((r) => (r.ok ? r.text() : Promise.resolve("")))
         .then((text) =>
           setExpandedText((prev) => ({ ...prev, [doc.id]: text })),

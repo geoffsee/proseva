@@ -2,6 +2,10 @@ import { render, screen, fireEvent, waitFor } from "../test-utils";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import FileUpload from "./FileUpload";
 
+vi.mock("../lib/api", () => ({
+  getAuthToken: vi.fn().mockResolvedValue("test-token-123"),
+}));
+
 function createFile(name: string, size = 1024, type = "application/pdf"): File {
   const buffer = new ArrayBuffer(size);
   return new File([buffer], name, { type });
@@ -144,5 +148,28 @@ describe("FileUpload", () => {
       "Only PDF files are accepted.",
     );
     expect(screen.queryByText("notes.txt")).not.toBeInTheDocument();
+  });
+
+  it("sends Authorization header with upload request", async () => {
+    global.fetch = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: () => Promise.resolve([]) });
+
+    render(<FileUpload />);
+    const input = screen.getByTestId("file-input");
+    fireEvent.change(input, { target: { files: [createFile("doc1.pdf")] } });
+    fireEvent.click(screen.getByText("Upload 1 file"));
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        "/api/documents/upload",
+        expect.objectContaining({
+          method: "POST",
+          headers: expect.objectContaining({
+            Authorization: "Bearer test-token-123",
+          }),
+        }),
+      );
+    });
   });
 });
