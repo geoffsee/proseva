@@ -2890,7 +2890,7 @@ function createResearchRouter() {
         }
 
         // Generate summary using OpenAI
-        const openai = new OpenAI({ apiKey: getConfig("OPENAI_API_KEY") });
+        const openai = new OpenAI({ apiKey: getConfig("OPENAI_API_KEY"), baseURL: getConfig("OPENAI_ENDPOINT") });
         const message = await openai.chat.completions.create({
           model: getConfig("TEXT_MODEL_SMALL") || "gpt-4o-mini",
           max_tokens: 1024,
@@ -3278,7 +3278,7 @@ Respond in JSON format:
         }
 
         // Analyze with OpenAI
-        const openai = new OpenAI({ apiKey: getConfig("OPENAI_API_KEY") });
+        const openai = new OpenAI({ apiKey: getConfig("OPENAI_API_KEY"), baseURL: getConfig("OPENAI_ENDPOINT") });
         const prompt = validated.data.query
           ? `Analyze this legal document and answer: ${validated.data.query}\n\nDocument:\n${textContent.substring(0, 8000)}`
           : `Analyze this legal document and provide a summary with key findings:\n\n${textContent.substring(0, 8000)}`;
@@ -4378,7 +4378,7 @@ Respond in JSON format:
           );
         }
 
-        const openai = new OpenAI({ apiKey: getConfig("OPENAI_API_KEY") });
+        const openai = new OpenAI({ apiKey: getConfig("OPENAI_API_KEY"), baseURL: getConfig("OPENAI_ENDPOINT") });
 
         // Generate document
         console.log(

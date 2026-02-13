@@ -264,7 +264,12 @@ async function maybeAutoIngestFromEnv(): Promise<void> {
 
   let openai: OpenAI;
   try {
-    openai = new OpenAI();
+    openai = new OpenAI({
+      apiKey: getConfig('OPENAI_API_KEY'),
+      baseURL: getConfig('OPENAI_ENDPOINT'),
+    });
+
+
   } catch (err) {
     console.error("[auto-ingest] OpenAI client init failed:", err);
     ingestionStatus.running = false;
@@ -788,7 +793,10 @@ router
     const { messages } = (await req.json()) as {
       messages: { role: string; content: string }[];
     };
-    const openai = new OpenAI();
+    const openai = new OpenAI({
+      apiKey: getConfig('OPENAI_API_KEY'),
+      baseURL: getConfig('OPENAI_ENDPOINT'),
+    });
 
     const baseSystemPrompt = getChatSystemPrompt();
 
@@ -1250,7 +1258,10 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
     const baseDir = join(appRoot, "case-data/case-documents-app");
     await mkdir(baseDir, { recursive: true });
 
-    const openai = new OpenAI();
+    const openai = new OpenAI({
+      apiKey: getConfig('OPENAI_API_KEY'),
+      baseURL: getConfig('OPENAI_ENDPOINT'),
+    });
     const indexPath = join(baseDir, "index.json");
 
     let existingEntries: DocumentEntry[] = [];
@@ -1357,7 +1368,7 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
       }
 
       // Verify OpenAI is configured
-      const openaiApiKey = process.env.OPENAI_API_KEY;
+      const openaiApiKey = getConfig("OPENAI_API_KEY");
       if (!openaiApiKey) {
         return new Response(
           JSON.stringify({ error: "OpenAI API key not configured" }),
@@ -1391,7 +1402,7 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
       }
 
       const startedAt = new Date().toISOString();
-      const openai = new OpenAI({ apiKey: openaiApiKey });
+      const openai = new OpenAI({ apiKey: openaiApiKey, baseURL: getConfig('OPENAI_ENDPOINT') });
       const baseDir = join(appRoot, "case-data/case-documents-app");
       const indexPath = join(baseDir, "index.json");
 
