@@ -19,6 +19,7 @@ export class StubFaxProvider implements FaxProvider {
     return { success: true, providerJobId };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async getStatus(_providerJobId: string): Promise<FaxStatusResult> {
     return { status: "sent" };
   }

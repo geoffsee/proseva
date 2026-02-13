@@ -108,6 +108,17 @@ export function getConfig(key: string): string | undefined {
     if (key === "SERPAPI_BASE" && configCache.legalResearch?.serpapiBase) {
       return configCache.legalResearch.serpapiBase;
     }
+
+    // Fax gateway keys
+    if (key === "FAX_GATEWAY_URL" && configCache.faxGateway?.url) {
+      return configCache.faxGateway.url;
+    }
+    if (key === "FAX_GATEWAY_USERNAME" && configCache.faxGateway?.username) {
+      return configCache.faxGateway.username;
+    }
+    if (key === "FAX_GATEWAY_PASSWORD" && configCache.faxGateway?.password) {
+      return configCache.faxGateway.password;
+    }
   }
 
   // Fallback to environment variable
@@ -183,5 +194,16 @@ export function legalResearchConfig() {
     legiscanApiKey: getConfig("LEGISCAN_API_KEY"),
     govInfoApiKey: getConfig("GOVINFO_API_KEY"),
     serpapiBase: getConfig("SERPAPI_BASE"),
+  };
+}
+
+/**
+ * Get fax gateway configuration.
+ */
+export function faxGatewayConfig() {
+  return {
+    url: getConfig("FAX_GATEWAY_URL"),
+    username: getConfig("FAX_GATEWAY_USERNAME"),
+    password: getConfig("FAX_GATEWAY_PASSWORD"),
   };
 }

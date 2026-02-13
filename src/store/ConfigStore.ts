@@ -102,6 +102,21 @@ const PromptsConfigModel = types.model("PromptsConfig", {
   ),
 });
 
+const FaxGatewayConfigModel = types.model("FaxGatewayConfig", {
+  url: types.maybeNull(types.string),
+  username: types.maybeNull(types.string),
+  password: types.maybeNull(types.string),
+  urlSource: types.maybeNull(
+    types.enumeration(["database", "environment"]),
+  ),
+  usernameSource: types.maybeNull(
+    types.enumeration(["database", "environment"]),
+  ),
+  passwordSource: types.maybeNull(
+    types.enumeration(["database", "environment"]),
+  ),
+});
+
 const ServerConfigModel = types.model("ServerConfigModel", {
   firebase: types.maybeNull(FirebaseConfigModel),
   twilio: types.maybeNull(TwilioConfigModel),
@@ -110,6 +125,7 @@ const ServerConfigModel = types.model("ServerConfigModel", {
   autoIngest: types.maybeNull(AutoIngestConfigModel),
   legalResearch: types.maybeNull(LegalResearchConfigModel),
   prompts: types.maybeNull(PromptsConfigModel),
+  faxGateway: types.maybeNull(FaxGatewayConfigModel),
 });
 
 export const ConfigStore = types
@@ -242,6 +258,25 @@ export const ConfigStore = types
       }
     });
 
+    const testFax = flow(function* testFax(recipientNumber: string) {
+      self.isTesting = true;
+      self.error = null;
+      try {
+        const result: { success: boolean; error?: string } =
+          yield api.config.testFax(recipientNumber);
+        if (!result.success) {
+          self.error = result.error || "Test failed";
+        }
+        return result;
+      } catch (error) {
+        self.error = String(error);
+        console.error("Failed to test fax gateway:", error);
+        return { success: false, error: String(error) };
+      } finally {
+        self.isTesting = false;
+      }
+    });
+
     const reinitializeService = flow(function* reinitializeService(
       service: string,
     ) {
@@ -265,6 +300,7 @@ export const ConfigStore = types
       testFirebase,
       testTwilio,
       testOpenAI,
+      testFax,
       reinitializeService,
     };
   });

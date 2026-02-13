@@ -21,6 +21,7 @@ import {
   FiKey,
   FiSearch,
   FiMessageSquare,
+  FiPrinter,
 } from "react-icons/fi";
 import { useStore } from "../store/StoreContext";
 import { toaster } from "../components/ui/toaster";
@@ -85,6 +86,11 @@ const Config = observer(() => {
   const [chatSystemPrompt, setChatSystemPrompt] = useState("");
   const [caseSummaryPrompt, setCaseSummaryPrompt] = useState("");
   const [evaluatorPrompt, setEvaluatorPrompt] = useState("");
+
+  const [faxGatewayUrl, setFaxGatewayUrl] = useState("");
+  const [faxGatewayUsername, setFaxGatewayUsername] = useState("");
+  const [faxGatewayPassword, setFaxGatewayPassword] = useState("");
+  const [faxTestRecipient, setFaxTestRecipient] = useState("");
 
   const [hasChanges, setHasChanges] = useState(false);
   const [dbSecurityStatus, setDbSecurityStatus] =
@@ -159,6 +165,10 @@ const Config = observer(() => {
       setChatSystemPrompt(configStore.config.prompts?.chatSystemPrompt || "");
       setCaseSummaryPrompt(configStore.config.prompts?.caseSummaryPrompt || "");
       setEvaluatorPrompt(configStore.config.prompts?.evaluatorPrompt || "");
+
+      setFaxGatewayUrl(configStore.config.faxGateway?.url || "");
+      setFaxGatewayUsername(configStore.config.faxGateway?.username || "");
+      setFaxGatewayPassword(configStore.config.faxGateway?.password || "");
     }
   }, [configStore.config]);
 
@@ -198,6 +208,11 @@ const Config = observer(() => {
           chatSystemPrompt: chatSystemPrompt || undefined,
           caseSummaryPrompt: caseSummaryPrompt || undefined,
           evaluatorPrompt: evaluatorPrompt || undefined,
+        },
+        faxGateway: {
+          url: faxGatewayUrl || undefined,
+          username: faxGatewayUsername || undefined,
+          password: faxGatewayPassword || undefined,
         },
       });
 
@@ -289,6 +304,31 @@ const Config = observer(() => {
     } else {
       toaster.create({
         title: "OpenAI connection failed",
+        description: result.error,
+        type: "error",
+      });
+    }
+  };
+
+  const handleTestFax = async () => {
+    if (!faxTestRecipient.trim()) {
+      toaster.create({
+        title: "Recipient number required",
+        description: "Please enter a fax number to send the test to",
+        type: "error",
+      });
+      return;
+    }
+
+    const result = await configStore.testFax(faxTestRecipient);
+    if (result.success) {
+      toaster.create({
+        title: "Test fax sent successfully",
+        type: "success",
+      });
+    } else {
+      toaster.create({
+        title: "Fax gateway test failed",
         description: result.error,
         type: "error",
       });
@@ -409,6 +449,13 @@ const Config = observer(() => {
     configStore.config?.legalResearch?.legiscanApiKeySource === "database" ||
     configStore.config?.legalResearch?.govInfoApiKeySource === "database" ||
     configStore.config?.legalResearch?.serpapiBaseSource === "database"
+      ? "database"
+      : "environment";
+
+  const faxGatewayStatus =
+    configStore.config?.faxGateway?.urlSource === "database" ||
+    configStore.config?.faxGateway?.usernameSource === "database" ||
+    configStore.config?.faxGateway?.passwordSource === "database"
       ? "database"
       : "environment";
 
@@ -909,6 +956,77 @@ const Config = observer(() => {
             API keys and endpoints for legal research services (case law,
             legislation, and government publications)
           </Text>
+        </ConfigSection>
+
+        {/* Fax Gateway Section */}
+        <ConfigSection
+          title="Fax Gateway"
+          icon={<FiPrinter />}
+          status={faxGatewayStatus}
+          isTesting={configStore.isTesting}
+        >
+          <Text fontSize="sm" color="gray.600" mb={1}>
+            Connect to an internet-fax-machine gateway for sending faxes
+            directly from filings.
+          </Text>
+          <Box>
+            <Text fontSize="sm" mb={1} fontWeight="medium">
+              Gateway URL
+            </Text>
+            <Input
+              value={faxGatewayUrl}
+              onChange={(e) => {
+                setFaxGatewayUrl(e.target.value);
+                setHasChanges(true);
+              }}
+              placeholder="https://your-fax-worker.workers.dev"
+            />
+          </Box>
+          <Box>
+            <Text fontSize="sm" mb={1} fontWeight="medium">
+              Username
+            </Text>
+            <Input
+              value={faxGatewayUsername}
+              onChange={(e) => {
+                setFaxGatewayUsername(e.target.value);
+                setHasChanges(true);
+              }}
+              placeholder="basic auth username"
+            />
+          </Box>
+          <Box>
+            <Text fontSize="sm" mb={1} fontWeight="medium">
+              Password
+            </Text>
+            <MaskedInput
+              value={faxGatewayPassword}
+              onChange={(value) => {
+                setFaxGatewayPassword(value);
+                setHasChanges(true);
+              }}
+              placeholder="basic auth password"
+              label="Fax Gateway Password"
+            />
+          </Box>
+          <Box>
+            <Text fontSize="sm" mb={1} fontWeight="medium">
+              Test Recipient Number
+            </Text>
+            <Input
+              value={faxTestRecipient}
+              onChange={(e) => setFaxTestRecipient(e.target.value)}
+              placeholder="+15551234567"
+            />
+          </Box>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleTestFax}
+            loading={configStore.isTesting}
+          >
+            Send Test Fax
+          </Button>
         </ConfigSection>
 
         {/* Data Encryption Section */}

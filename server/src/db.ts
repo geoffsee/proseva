@@ -219,6 +219,12 @@ export type ServerConfig = {
     caseSummaryPrompt?: string;
     evaluatorPrompt?: string;
   };
+
+  faxGateway?: {
+    url?: string;
+    username?: string;
+    password?: string;
+  };
 };
 
 export type Beneficiary = {

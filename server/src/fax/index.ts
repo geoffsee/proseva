@@ -1,5 +1,7 @@
 import type { FaxProvider } from "./types";
 import { StubFaxProvider } from "./stub-provider";
+import { InternetFaxProvider } from "./internet-fax-provider";
+import { faxGatewayConfig } from "../config";
 import { db, type FaxJob } from "../db";
 
 let provider: FaxProvider = new StubFaxProvider();
@@ -10,6 +12,25 @@ export function setFaxProvider(p: FaxProvider): void {
 
 export function getFaxProvider(): FaxProvider {
   return provider;
+}
+
+/**
+ * Initialize the fax provider based on current configuration.
+ * Called at startup and when config changes.
+ */
+export function initFaxProvider(): void {
+  const cfg = faxGatewayConfig();
+  if (cfg.url) {
+    provider = new InternetFaxProvider({
+      url: cfg.url,
+      username: cfg.username,
+      password: cfg.password,
+    });
+    console.log(`[fax] Using internet-fax-machine gateway at ${cfg.url}`);
+  } else {
+    provider = new StubFaxProvider();
+    console.log("[fax] No gateway configured, using stub provider");
+  }
 }
 
 /**

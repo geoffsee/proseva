@@ -28,11 +28,11 @@ const testFiling: Filing = {
 };
 
 describe("SendFaxDialog", () => {
-  let mockOnOpenChange: ReturnType<typeof vi.fn>;
+  let mockOnOpenChange: ReturnType<typeof vi.fn<(open: boolean) => void>>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockOnOpenChange = vi.fn();
+    mockOnOpenChange = vi.fn<(open: boolean) => void>();
   });
 
   it("renders dialog when open with filing", () => {

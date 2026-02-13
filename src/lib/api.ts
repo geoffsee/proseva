@@ -541,6 +541,14 @@ export interface ServerConfig {
     caseSummaryPromptSource?: "database" | "default";
     evaluatorPromptSource?: "database" | "default";
   };
+  faxGateway?: {
+    url?: string;
+    username?: string;
+    password?: string;
+    urlSource?: "database" | "environment";
+    usernameSource?: "database" | "environment";
+    passwordSource?: "database" | "environment";
+  };
 }
 
 export type DbSecurityStatus = {
@@ -620,6 +628,16 @@ export const configApi = {
     const res = await fetch(`/api/config/reinitialize/${service}`, {
       method: "POST",
       headers: await getAuthHeaders(),
+    });
+    return res.json();
+  },
+  testFax: async (
+    recipientNumber: string,
+  ): Promise<{ success: boolean; error?: string }> => {
+    const res = await fetch("/api/config/test-fax", {
+      method: "POST",
+      headers: await getAuthHeaders(),
+      body: JSON.stringify({ recipientNumber }),
     });
     return res.json();
   },
