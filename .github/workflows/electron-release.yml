@@ -2,6 +2,8 @@ name: Electron Release
 
 on:
   push:
+#    branches:
+#      - electron-notary-debug
     tags:
       - "v*"
 
@@ -69,28 +71,18 @@ jobs:
           KEY_PATH="$RUNNER_TEMP/apple-keys/AuthKey.p8"
           mkdir -p "$(dirname "$KEY_PATH")"
 
-          python - <<'PY'
-import base64
-import os
-import pathlib
-
-data = os.environ["APPLE_API_KEY_CONTENT"]
-key_path = pathlib.Path(os.environ["RUNNER_TEMP"]) / "apple-keys" / "AuthKey.p8"
-
-# Replace escaped newlines so secrets stored as single-line strings still work
-processed = data.replace("\\n", "\n")
-
-# If it still doesn't look like a PEM key, try base64 decoding
-if "BEGIN PRIVATE KEY" not in processed:
-    try:
-        candidate = base64.b64decode(processed)
-        if b"BEGIN PRIVATE KEY" in candidate:
-            processed = candidate.decode()
-    except Exception:
-        pass
-
-key_path.write_text(processed)
-PY
+          python -c 'import base64, os, pathlib
+          data = os.environ["APPLE_API_KEY_CONTENT"]
+          key_path = pathlib.Path(os.environ["RUNNER_TEMP"]) / "apple-keys" / "AuthKey.p8"
+          processed = data.replace("\\n", "\n")
+          if "BEGIN PRIVATE KEY" not in processed:
+              try:
+                  candidate = base64.b64decode(processed)
+                  if b"BEGIN PRIVATE KEY" in candidate:
+                      processed = candidate.decode()
+              except Exception:
+                  pass
+          key_path.write_text(processed)'
 
           echo "APPLE_API_KEY=$KEY_PATH" >> "$GITHUB_ENV"
 
