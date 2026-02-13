@@ -4,2036 +4,2085 @@
  */
 
 export interface paths {
-    "/cases": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all cases */
-        get: operations["listCases"];
-        put?: never;
-        /** Create a case */
-        post: operations["createCase"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+  "/cases": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/cases/{caseId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                caseId: components["parameters"]["caseId"];
-            };
-            cookie?: never;
-        };
-        /** Get a case by ID */
-        get: operations["getCase"];
-        put?: never;
-        post?: never;
-        /** Delete a case */
-        delete: operations["deleteCase"];
-        options?: never;
-        head?: never;
-        /** Update a case */
-        patch: operations["updateCase"];
-        trace?: never;
+    /** List all cases */
+    get: operations["listCases"];
+    put?: never;
+    /** Create a case */
+    post: operations["createCase"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/cases/{caseId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        caseId: components["parameters"]["caseId"];
+      };
+      cookie?: never;
     };
-    "/cases/{caseId}/parties": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                caseId: components["parameters"]["caseId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Add a party to a case */
-        post: operations["addParty"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Get a case by ID */
+    get: operations["getCase"];
+    put?: never;
+    post?: never;
+    /** Delete a case */
+    delete: operations["deleteCase"];
+    options?: never;
+    head?: never;
+    /** Update a case */
+    patch: operations["updateCase"];
+    trace?: never;
+  };
+  "/cases/{caseId}/parties": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        caseId: components["parameters"]["caseId"];
+      };
+      cookie?: never;
     };
-    "/cases/{caseId}/parties/{partyId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                caseId: components["parameters"]["caseId"];
-                partyId: components["parameters"]["partyId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Remove a party from a case */
-        delete: operations["removeParty"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Add a party to a case */
+    post: operations["addParty"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/cases/{caseId}/parties/{partyId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        caseId: components["parameters"]["caseId"];
+        partyId: components["parameters"]["partyId"];
+      };
+      cookie?: never;
     };
-    "/cases/{caseId}/filings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                caseId: components["parameters"]["caseId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Add a filing to a case */
-        post: operations["addFiling"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Remove a party from a case */
+    delete: operations["removeParty"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/cases/{caseId}/filings": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        caseId: components["parameters"]["caseId"];
+      };
+      cookie?: never;
     };
-    "/cases/{caseId}/filings/{filingId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                caseId: components["parameters"]["caseId"];
-                filingId: components["parameters"]["filingId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Remove a filing from a case */
-        delete: operations["removeFiling"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Add a filing to a case */
+    post: operations["addFiling"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/cases/{caseId}/filings/{filingId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        caseId: components["parameters"]["caseId"];
+        filingId: components["parameters"]["filingId"];
+      };
+      cookie?: never;
     };
-    "/contacts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all contacts */
-        get: operations["listContacts"];
-        put?: never;
-        /** Create a contact */
-        post: operations["createContact"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Remove a filing from a case */
+    delete: operations["removeFiling"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/contacts": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/contacts/{contactId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                contactId: components["parameters"]["contactId"];
-            };
-            cookie?: never;
-        };
-        /** Get a contact by ID */
-        get: operations["getContact"];
-        put?: never;
-        post?: never;
-        /** Delete a contact */
-        delete: operations["deleteContact"];
-        options?: never;
-        head?: never;
-        /** Update a contact */
-        patch: operations["updateContact"];
-        trace?: never;
+    /** List all contacts */
+    get: operations["listContacts"];
+    put?: never;
+    /** Create a contact */
+    post: operations["createContact"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/contacts/{contactId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        contactId: components["parameters"]["contactId"];
+      };
+      cookie?: never;
     };
-    "/deadlines": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all deadlines */
-        get: operations["listDeadlines"];
-        put?: never;
-        /** Create a deadline */
-        post: operations["createDeadline"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Get a contact by ID */
+    get: operations["getContact"];
+    put?: never;
+    post?: never;
+    /** Delete a contact */
+    delete: operations["deleteContact"];
+    options?: never;
+    head?: never;
+    /** Update a contact */
+    patch: operations["updateContact"];
+    trace?: never;
+  };
+  "/deadlines": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/deadlines/{deadlineId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                deadlineId: components["parameters"]["deadlineId"];
-            };
-            cookie?: never;
-        };
-        /** Get a deadline by ID */
-        get: operations["getDeadline"];
-        put?: never;
-        post?: never;
-        /** Delete a deadline */
-        delete: operations["deleteDeadline"];
-        options?: never;
-        head?: never;
-        /** Update a deadline */
-        patch: operations["updateDeadline"];
-        trace?: never;
+    /** List all deadlines */
+    get: operations["listDeadlines"];
+    put?: never;
+    /** Create a deadline */
+    post: operations["createDeadline"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/deadlines/{deadlineId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        deadlineId: components["parameters"]["deadlineId"];
+      };
+      cookie?: never;
     };
-    "/deadlines/{deadlineId}/toggle-complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                deadlineId: components["parameters"]["deadlineId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Toggle a deadline's completed status */
-        post: operations["toggleDeadlineComplete"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Get a deadline by ID */
+    get: operations["getDeadline"];
+    put?: never;
+    post?: never;
+    /** Delete a deadline */
+    delete: operations["deleteDeadline"];
+    options?: never;
+    head?: never;
+    /** Update a deadline */
+    patch: operations["updateDeadline"];
+    trace?: never;
+  };
+  "/deadlines/{deadlineId}/toggle-complete": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        deadlineId: components["parameters"]["deadlineId"];
+      };
+      cookie?: never;
     };
-    "/finances": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all financial entries */
-        get: operations["listFinancialEntries"];
-        put?: never;
-        /** Create a financial entry */
-        post: operations["createFinancialEntry"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Toggle a deadline's completed status */
+    post: operations["toggleDeadlineComplete"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/finances": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/finances/{entryId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                entryId: components["parameters"]["entryId"];
-            };
-            cookie?: never;
-        };
-        /** Get a financial entry by ID */
-        get: operations["getFinancialEntry"];
-        put?: never;
-        post?: never;
-        /** Delete a financial entry */
-        delete: operations["deleteFinancialEntry"];
-        options?: never;
-        head?: never;
-        /** Update a financial entry */
-        patch: operations["updateFinancialEntry"];
-        trace?: never;
+    /** List all financial entries */
+    get: operations["listFinancialEntries"];
+    put?: never;
+    /** Create a financial entry */
+    post: operations["createFinancialEntry"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/finances/{entryId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        entryId: components["parameters"]["entryId"];
+      };
+      cookie?: never;
     };
-    "/evidences": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all evidence items */
-        get: operations["listEvidences"];
-        put?: never;
-        /** Create an evidence item */
-        post: operations["createEvidence"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Get a financial entry by ID */
+    get: operations["getFinancialEntry"];
+    put?: never;
+    post?: never;
+    /** Delete a financial entry */
+    delete: operations["deleteFinancialEntry"];
+    options?: never;
+    head?: never;
+    /** Update a financial entry */
+    patch: operations["updateFinancialEntry"];
+    trace?: never;
+  };
+  "/evidences": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/evidences/{evidenceId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                evidenceId: components["parameters"]["evidenceId"];
-            };
-            cookie?: never;
-        };
-        /** Get an evidence item by ID */
-        get: operations["getEvidence"];
-        put?: never;
-        post?: never;
-        /** Delete an evidence item */
-        delete: operations["deleteEvidence"];
-        options?: never;
-        head?: never;
-        /** Update an evidence item */
-        patch: operations["updateEvidence"];
-        trace?: never;
+    /** List all evidence items */
+    get: operations["listEvidences"];
+    put?: never;
+    /** Create an evidence item */
+    post: operations["createEvidence"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/evidences/{evidenceId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        evidenceId: components["parameters"]["evidenceId"];
+      };
+      cookie?: never;
     };
-    "/filings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all filings */
-        get: operations["listFilings"];
-        put?: never;
-        /** Create a filing */
-        post: operations["createFiling"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Get an evidence item by ID */
+    get: operations["getEvidence"];
+    put?: never;
+    post?: never;
+    /** Delete an evidence item */
+    delete: operations["deleteEvidence"];
+    options?: never;
+    head?: never;
+    /** Update an evidence item */
+    patch: operations["updateEvidence"];
+    trace?: never;
+  };
+  "/filings": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/filings/{filingId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                filingId: components["parameters"]["filingId"];
-            };
-            cookie?: never;
-        };
-        /** Get a filing by ID */
-        get: operations["getFiling"];
-        put?: never;
-        post?: never;
-        /** Delete a filing */
-        delete: operations["deleteFiling"];
-        options?: never;
-        head?: never;
-        /** Update a filing */
-        patch: operations["updateFiling"];
-        trace?: never;
+    /** List all filings */
+    get: operations["listFilings"];
+    put?: never;
+    /** Create a filing */
+    post: operations["createFiling"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/filings/{filingId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        filingId: components["parameters"]["filingId"];
+      };
+      cookie?: never;
     };
-    "/notes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all notes */
-        get: operations["listNotes"];
-        put?: never;
-        /** Create a note */
-        post: operations["createNote"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Get a filing by ID */
+    get: operations["getFiling"];
+    put?: never;
+    post?: never;
+    /** Delete a filing */
+    delete: operations["deleteFiling"];
+    options?: never;
+    head?: never;
+    /** Update a filing */
+    patch: operations["updateFiling"];
+    trace?: never;
+  };
+  "/notes": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/notes/{noteId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                noteId: components["parameters"]["noteId"];
-            };
-            cookie?: never;
-        };
-        /** Get a note by ID */
-        get: operations["getNote"];
-        put?: never;
-        post?: never;
-        /** Delete a note */
-        delete: operations["deleteNote"];
-        options?: never;
-        head?: never;
-        /** Update a note */
-        patch: operations["updateNote"];
-        trace?: never;
+    /** List all notes */
+    get: operations["listNotes"];
+    put?: never;
+    /** Create a note */
+    post: operations["createNote"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/notes/{noteId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        noteId: components["parameters"]["noteId"];
+      };
+      cookie?: never;
     };
-    "/chat": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Send a message to the AI legal assistant */
-        post: operations["chat"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Get a note by ID */
+    get: operations["getNote"];
+    put?: never;
+    post?: never;
+    /** Delete a note */
+    delete: operations["deleteNote"];
+    options?: never;
+    head?: never;
+    /** Update a note */
+    patch: operations["updateNote"];
+    trace?: never;
+  };
+  "/chat": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/reports": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Generate an AI-powered report */
-        post: operations["generateReport"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Send a message to the AI legal assistant */
+    post: operations["chat"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/reports": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/documents/upload": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upload and ingest PDF documents */
-        post: operations["uploadDocuments"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Generate an AI-powered report */
+    post: operations["generateReport"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/documents/upload": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/ingest/scan": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Scan directory for PDF documents */
-        post: operations["scanDirectory"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Upload and ingest PDF documents */
+    post: operations["uploadDocuments"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/ingest/scan": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    get?: never;
+    put?: never;
+    /** Scan directory for PDF documents */
+    post: operations["scanDirectory"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: {
-        Party: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            role: string;
-            /** @default  */
-            contact: string;
-        };
-        PartyCreate: {
-            name: string;
-            role: string;
-            contact?: string;
-        };
-        Filing: {
-            /** Format: uuid */
-            id: string;
-            title: string;
-            /** Format: date */
-            date: string;
-            /** @default  */
-            type: string;
-            /** @default  */
-            notes: string;
-            /** @default  */
-            caseId: string;
-        };
-        FilingCreate: {
-            title: string;
-            /** Format: date */
-            date: string;
-            type?: string;
-            notes?: string;
-            caseId?: string;
-        };
-        FilingUpdate: {
-            title?: string;
-            /** Format: date */
-            date?: string;
-            type?: string;
-            notes?: string;
-            caseId?: string;
-        };
-        Case: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            /** @default  */
-            caseNumber: string;
-            /** @default  */
-            court: string;
-            /** @default  */
-            caseType: string;
-            /**
-             * @default active
-             * @enum {string}
-             */
-            status: "active" | "closed" | "pending";
-            parties: components["schemas"]["Party"][];
-            filings: components["schemas"]["Filing"][];
-            /** @default  */
-            notes: string;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-        };
-        CaseCreate: {
-            name: string;
-            caseNumber?: string;
-            court?: string;
-            caseType?: string;
-            /** @enum {string} */
-            status?: "active" | "closed" | "pending";
-            notes?: string;
-        };
-        CaseUpdate: {
-            name?: string;
-            caseNumber?: string;
-            court?: string;
-            caseType?: string;
-            /** @enum {string} */
-            status?: "active" | "closed" | "pending";
-            notes?: string;
-        };
-        Contact: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            /** @enum {string} */
-            role: "attorney" | "judge" | "clerk" | "witness" | "expert" | "opposing_party" | "other";
-            /** @default  */
-            organization: string;
-            /** @default  */
-            phone: string;
-            /**
-             * Format: email
-             * @default
-             */
-            email: string;
-            /** @default  */
-            address: string;
-            /** @default  */
-            notes: string;
-            /** @default  */
-            caseId: string;
-        };
-        ContactCreate: {
-            name: string;
-            /** @enum {string} */
-            role: "attorney" | "judge" | "clerk" | "witness" | "expert" | "opposing_party" | "other";
-            organization?: string;
-            phone?: string;
-            /** Format: email */
-            email?: string;
-            address?: string;
-            notes?: string;
-            caseId?: string;
-        };
-        ContactUpdate: {
-            name?: string;
-            /** @enum {string} */
-            role?: "attorney" | "judge" | "clerk" | "witness" | "expert" | "opposing_party" | "other";
-            organization?: string;
-            phone?: string;
-            /** Format: email */
-            email?: string;
-            address?: string;
-            notes?: string;
-            caseId?: string;
-        };
-        Deadline: {
-            /** Format: uuid */
-            id: string;
-            /** @default  */
-            caseId: string;
-            title: string;
-            /** Format: date */
-            date: string;
-            /**
-             * @default other
-             * @enum {string}
-             */
-            type: "filing" | "hearing" | "discovery" | "other";
-            /** @default false */
-            completed: boolean;
-        };
-        DeadlineCreate: {
-            title: string;
-            /** Format: date */
-            date: string;
-            /** @enum {string} */
-            type?: "filing" | "hearing" | "discovery" | "other";
-            completed?: boolean;
-            caseId?: string;
-        };
-        DeadlineUpdate: {
-            title?: string;
-            /** Format: date */
-            date?: string;
-            /** @enum {string} */
-            type?: "filing" | "hearing" | "discovery" | "other";
-            completed?: boolean;
-            caseId?: string;
-        };
-        FinancialEntry: {
-            /** Format: uuid */
-            id: string;
-            /** @enum {string} */
-            category: "income" | "expense";
-            subcategory: string;
-            amount: number;
-            /**
-             * @default one-time
-             * @enum {string}
-             */
-            frequency: "one-time" | "weekly" | "biweekly" | "monthly" | "annually";
-            /** Format: date */
-            date: string;
-            /** @default  */
-            description: string;
-        };
-        FinancialEntryCreate: {
-            /** @enum {string} */
-            category: "income" | "expense";
-            subcategory: string;
-            amount: number;
-            /** @enum {string} */
-            frequency?: "one-time" | "weekly" | "biweekly" | "monthly" | "annually";
-            /** Format: date */
-            date: string;
-            description?: string;
-        };
-        FinancialEntryUpdate: {
-            /** @enum {string} */
-            category?: "income" | "expense";
-            subcategory?: string;
-            amount?: number;
-            /** @enum {string} */
-            frequency?: "one-time" | "weekly" | "biweekly" | "monthly" | "annually";
-            /** Format: date */
-            date?: string;
-            description?: string;
-        };
-        ChainOfCustodyEntry: {
-            /** Format: uuid */
-            id: string;
-            date: string;
-            transferredFrom: string;
-            transferredTo: string;
-            purpose: string;
-            /** @default  */
-            notes: string;
-        };
-        Evidence: {
-            /** Format: uuid */
-            id: string;
-            /** @default  */
-            caseId: string;
-            /** @default  */
-            exhibitNumber: string;
-            title: string;
-            /** @default  */
-            description: string;
-            /**
-             * @default other
-             * @enum {string}
-             */
-            type: "document" | "photo" | "video" | "audio" | "physical" | "testimony" | "digital" | "other";
-            /** @default  */
-            fileUrl: string;
-            /** @default  */
-            dateCollected: string;
-            /** @default  */
-            location: string;
-            /** @default [] */
-            tags: string[];
-            /**
-             * @default medium
-             * @enum {string}
-             */
-            relevance: "high" | "medium" | "low";
-            /** @default false */
-            admissible: boolean;
-            /** @default [] */
-            chain: components["schemas"]["ChainOfCustodyEntry"][];
-            /** @default  */
-            notes: string;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-        };
-        EvidenceCreate: {
-            caseId?: string;
-            exhibitNumber?: string;
-            title: string;
-            description?: string;
-            /** @enum {string} */
-            type?: "document" | "photo" | "video" | "audio" | "physical" | "testimony" | "digital" | "other";
-            fileUrl?: string;
-            dateCollected?: string;
-            location?: string;
-            tags?: string[];
-            /** @enum {string} */
-            relevance?: "high" | "medium" | "low";
-            admissible?: boolean;
-            chain?: components["schemas"]["ChainOfCustodyEntry"][];
-            notes?: string;
-        };
-        EvidenceUpdate: {
-            caseId?: string;
-            exhibitNumber?: string;
-            title?: string;
-            description?: string;
-            /** @enum {string} */
-            type?: "document" | "photo" | "video" | "audio" | "physical" | "testimony" | "digital" | "other";
-            fileUrl?: string;
-            dateCollected?: string;
-            location?: string;
-            tags?: string[];
-            /** @enum {string} */
-            relevance?: "high" | "medium" | "low";
-            admissible?: boolean;
-            chain?: components["schemas"]["ChainOfCustodyEntry"][];
-            notes?: string;
-            /** Format: date-time */
-            updatedAt?: string;
-        };
-        Note: {
-            /** Format: uuid */
-            id: string;
-            title: string;
-            content: string;
-            /** @enum {string} */
-            category: "case-notes" | "research" | "todo" | "general" | "other";
-            /** @default [] */
-            tags: string[];
-            /** @default  */
-            caseId: string;
-            /** @default false */
-            isPinned: boolean;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-        };
-        NoteCreate: {
-            title: string;
-            content: string;
-            /** @enum {string} */
-            category: "case-notes" | "research" | "todo" | "general" | "other";
-            tags?: string[];
-            caseId?: string;
-            isPinned?: boolean;
-        };
-        NoteUpdate: {
-            title?: string;
-            content?: string;
-            /** @enum {string} */
-            category?: "case-notes" | "research" | "todo" | "general" | "other";
-            tags?: string[];
-            caseId?: string;
-            isPinned?: boolean;
-        };
-        DocumentEntry: {
-            id: string;
-            filename: string;
-            path: string;
-            category: string;
-            title: string;
-            pageCount: number;
-            textFile: string;
-            dates: string[];
-            fileSize: number;
-            caseId?: string;
-        };
+  schemas: {
+    Party: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      role: string;
+      /** @default  */
+      contact: string;
     };
-    responses: never;
-    parameters: {
-        caseId: string;
-        partyId: string;
-        filingId: string;
-        contactId: string;
-        deadlineId: string;
-        entryId: string;
-        noteId: string;
-        evidenceId: string;
+    PartyCreate: {
+      name: string;
+      role: string;
+      contact?: string;
     };
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+    Filing: {
+      /** Format: uuid */
+      id: string;
+      title: string;
+      /** Format: date */
+      date: string;
+      /** @default  */
+      type: string;
+      /** @default  */
+      notes: string;
+      /** @default  */
+      caseId: string;
+    };
+    FilingCreate: {
+      title: string;
+      /** Format: date */
+      date: string;
+      type?: string;
+      notes?: string;
+      caseId?: string;
+    };
+    FilingUpdate: {
+      title?: string;
+      /** Format: date */
+      date?: string;
+      type?: string;
+      notes?: string;
+      caseId?: string;
+    };
+    Case: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      /** @default  */
+      caseNumber: string;
+      /** @default  */
+      court: string;
+      /** @default  */
+      caseType: string;
+      /**
+       * @default active
+       * @enum {string}
+       */
+      status: "active" | "closed" | "pending";
+      parties: components["schemas"]["Party"][];
+      filings: components["schemas"]["Filing"][];
+      /** @default  */
+      notes: string;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    CaseCreate: {
+      name: string;
+      caseNumber?: string;
+      court?: string;
+      caseType?: string;
+      /** @enum {string} */
+      status?: "active" | "closed" | "pending";
+      notes?: string;
+    };
+    CaseUpdate: {
+      name?: string;
+      caseNumber?: string;
+      court?: string;
+      caseType?: string;
+      /** @enum {string} */
+      status?: "active" | "closed" | "pending";
+      notes?: string;
+    };
+    Contact: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      /** @enum {string} */
+      role:
+        | "attorney"
+        | "judge"
+        | "clerk"
+        | "witness"
+        | "expert"
+        | "opposing_party"
+        | "other";
+      /** @default  */
+      organization: string;
+      /** @default  */
+      phone: string;
+      /**
+       * Format: email
+       * @default
+       */
+      email: string;
+      /** @default  */
+      address: string;
+      /** @default  */
+      notes: string;
+      /** @default  */
+      caseId: string;
+    };
+    ContactCreate: {
+      name: string;
+      /** @enum {string} */
+      role:
+        | "attorney"
+        | "judge"
+        | "clerk"
+        | "witness"
+        | "expert"
+        | "opposing_party"
+        | "other";
+      organization?: string;
+      phone?: string;
+      /** Format: email */
+      email?: string;
+      address?: string;
+      notes?: string;
+      caseId?: string;
+    };
+    ContactUpdate: {
+      name?: string;
+      /** @enum {string} */
+      role?:
+        | "attorney"
+        | "judge"
+        | "clerk"
+        | "witness"
+        | "expert"
+        | "opposing_party"
+        | "other";
+      organization?: string;
+      phone?: string;
+      /** Format: email */
+      email?: string;
+      address?: string;
+      notes?: string;
+      caseId?: string;
+    };
+    Deadline: {
+      /** Format: uuid */
+      id: string;
+      /** @default  */
+      caseId: string;
+      title: string;
+      /** Format: date */
+      date: string;
+      /**
+       * @default other
+       * @enum {string}
+       */
+      type: "filing" | "hearing" | "discovery" | "other";
+      /** @default false */
+      completed: boolean;
+    };
+    DeadlineCreate: {
+      title: string;
+      /** Format: date */
+      date: string;
+      /** @enum {string} */
+      type?: "filing" | "hearing" | "discovery" | "other";
+      completed?: boolean;
+      caseId?: string;
+    };
+    DeadlineUpdate: {
+      title?: string;
+      /** Format: date */
+      date?: string;
+      /** @enum {string} */
+      type?: "filing" | "hearing" | "discovery" | "other";
+      completed?: boolean;
+      caseId?: string;
+    };
+    FinancialEntry: {
+      /** Format: uuid */
+      id: string;
+      /** @enum {string} */
+      category: "income" | "expense";
+      subcategory: string;
+      amount: number;
+      /**
+       * @default one-time
+       * @enum {string}
+       */
+      frequency: "one-time" | "weekly" | "biweekly" | "monthly" | "annually";
+      /** Format: date */
+      date: string;
+      /** @default  */
+      description: string;
+    };
+    FinancialEntryCreate: {
+      /** @enum {string} */
+      category: "income" | "expense";
+      subcategory: string;
+      amount: number;
+      /** @enum {string} */
+      frequency?: "one-time" | "weekly" | "biweekly" | "monthly" | "annually";
+      /** Format: date */
+      date: string;
+      description?: string;
+    };
+    FinancialEntryUpdate: {
+      /** @enum {string} */
+      category?: "income" | "expense";
+      subcategory?: string;
+      amount?: number;
+      /** @enum {string} */
+      frequency?: "one-time" | "weekly" | "biweekly" | "monthly" | "annually";
+      /** Format: date */
+      date?: string;
+      description?: string;
+    };
+    ChainOfCustodyEntry: {
+      /** Format: uuid */
+      id: string;
+      date: string;
+      transferredFrom: string;
+      transferredTo: string;
+      purpose: string;
+      /** @default  */
+      notes: string;
+    };
+    Evidence: {
+      /** Format: uuid */
+      id: string;
+      /** @default  */
+      caseId: string;
+      /** @default  */
+      exhibitNumber: string;
+      title: string;
+      /** @default  */
+      description: string;
+      /**
+       * @default other
+       * @enum {string}
+       */
+      type:
+        | "document"
+        | "photo"
+        | "video"
+        | "audio"
+        | "physical"
+        | "testimony"
+        | "digital"
+        | "other";
+      /** @default  */
+      fileUrl: string;
+      /** @default  */
+      dateCollected: string;
+      /** @default  */
+      location: string;
+      /** @default [] */
+      tags: string[];
+      /**
+       * @default medium
+       * @enum {string}
+       */
+      relevance: "high" | "medium" | "low";
+      /** @default false */
+      admissible: boolean;
+      /** @default [] */
+      chain: components["schemas"]["ChainOfCustodyEntry"][];
+      /** @default  */
+      notes: string;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    EvidenceCreate: {
+      caseId?: string;
+      exhibitNumber?: string;
+      title: string;
+      description?: string;
+      /** @enum {string} */
+      type?:
+        | "document"
+        | "photo"
+        | "video"
+        | "audio"
+        | "physical"
+        | "testimony"
+        | "digital"
+        | "other";
+      fileUrl?: string;
+      dateCollected?: string;
+      location?: string;
+      tags?: string[];
+      /** @enum {string} */
+      relevance?: "high" | "medium" | "low";
+      admissible?: boolean;
+      chain?: components["schemas"]["ChainOfCustodyEntry"][];
+      notes?: string;
+    };
+    EvidenceUpdate: {
+      caseId?: string;
+      exhibitNumber?: string;
+      title?: string;
+      description?: string;
+      /** @enum {string} */
+      type?:
+        | "document"
+        | "photo"
+        | "video"
+        | "audio"
+        | "physical"
+        | "testimony"
+        | "digital"
+        | "other";
+      fileUrl?: string;
+      dateCollected?: string;
+      location?: string;
+      tags?: string[];
+      /** @enum {string} */
+      relevance?: "high" | "medium" | "low";
+      admissible?: boolean;
+      chain?: components["schemas"]["ChainOfCustodyEntry"][];
+      notes?: string;
+      /** Format: date-time */
+      updatedAt?: string;
+    };
+    Note: {
+      /** Format: uuid */
+      id: string;
+      title: string;
+      content: string;
+      /** @enum {string} */
+      category: "case-notes" | "research" | "todo" | "general" | "other";
+      /** @default [] */
+      tags: string[];
+      /** @default  */
+      caseId: string;
+      /** @default false */
+      isPinned: boolean;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    NoteCreate: {
+      title: string;
+      content: string;
+      /** @enum {string} */
+      category: "case-notes" | "research" | "todo" | "general" | "other";
+      tags?: string[];
+      caseId?: string;
+      isPinned?: boolean;
+    };
+    NoteUpdate: {
+      title?: string;
+      content?: string;
+      /** @enum {string} */
+      category?: "case-notes" | "research" | "todo" | "general" | "other";
+      tags?: string[];
+      caseId?: string;
+      isPinned?: boolean;
+    };
+    DocumentEntry: {
+      id: string;
+      filename: string;
+      path: string;
+      category: string;
+      title: string;
+      pageCount: number;
+      textFile: string;
+      dates: string[];
+      fileSize: number;
+      caseId?: string;
+    };
+  };
+  responses: never;
+  parameters: {
+    caseId: string;
+    partyId: string;
+    filingId: string;
+    contactId: string;
+    deadlineId: string;
+    entryId: string;
+    noteId: string;
+    evidenceId: string;
+  };
+  requestBodies: never;
+  headers: never;
+  pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    listCases: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of cases */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Case"][];
-                };
-            };
-        };
+  listCases: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    createCase: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description List of cases */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CaseCreate"];
-            };
+        content: {
+          "application/json": components["schemas"]["Case"][];
         };
-        responses: {
-            /** @description Created case */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Case"];
-                };
-            };
-        };
+      };
     };
-    getCase: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                caseId: components["parameters"]["caseId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The case */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Case"];
-                };
-            };
-            /** @description Case not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  };
+  createCase: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    deleteCase: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                caseId: components["parameters"]["caseId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Case not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CaseCreate"];
+      };
     };
-    updateCase: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                caseId: components["parameters"]["caseId"];
-            };
-            cookie?: never;
+    responses: {
+      /** @description Created case */
+      201: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CaseUpdate"];
-            };
+        content: {
+          "application/json": components["schemas"]["Case"];
         };
-        responses: {
-            /** @description Updated case */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Case"];
-                };
-            };
-            /** @description Case not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+      };
     };
-    addParty: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                caseId: components["parameters"]["caseId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PartyCreate"];
-            };
-        };
-        responses: {
-            /** @description Created party */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Party"];
-                };
-            };
-            /** @description Case not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  };
+  getCase: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        caseId: components["parameters"]["caseId"];
+      };
+      cookie?: never;
     };
-    removeParty: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                caseId: components["parameters"]["caseId"];
-                partyId: components["parameters"]["partyId"];
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description The case */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Case or party not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+        content: {
+          "application/json": components["schemas"]["Case"];
         };
+      };
+      /** @description Case not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
     };
-    addFiling: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                caseId: components["parameters"]["caseId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FilingCreate"];
-            };
-        };
-        responses: {
-            /** @description Created filing */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Filing"];
-                };
-            };
-            /** @description Case not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  };
+  deleteCase: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        caseId: components["parameters"]["caseId"];
+      };
+      cookie?: never;
     };
-    removeFiling: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                caseId: components["parameters"]["caseId"];
-                filingId: components["parameters"]["filingId"];
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Case or filing not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+        content?: never;
+      };
+      /** @description Case not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
         };
+        content?: never;
+      };
     };
-    listContacts: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of contacts */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Contact"][];
-                };
-            };
-        };
+  };
+  updateCase: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        caseId: components["parameters"]["caseId"];
+      };
+      cookie?: never;
     };
-    createContact: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ContactCreate"];
-            };
-        };
-        responses: {
-            /** @description Created contact */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Contact"];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CaseUpdate"];
+      };
     };
-    getContact: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                contactId: components["parameters"]["contactId"];
-            };
-            cookie?: never;
+    responses: {
+      /** @description Updated case */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description The contact */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Contact"];
-                };
-            };
-            /** @description Contact not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+        content: {
+          "application/json": components["schemas"]["Case"];
         };
+      };
+      /** @description Case not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
     };
-    deleteContact: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                contactId: components["parameters"]["contactId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Contact not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  };
+  addParty: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        caseId: components["parameters"]["caseId"];
+      };
+      cookie?: never;
     };
-    updateContact: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                contactId: components["parameters"]["contactId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ContactUpdate"];
-            };
-        };
-        responses: {
-            /** @description Updated contact */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Contact"];
-                };
-            };
-            /** @description Contact not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PartyCreate"];
+      };
     };
-    listDeadlines: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Created party */
+      201: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description List of deadlines */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Deadline"][];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["Party"];
         };
+      };
+      /** @description Case not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
     };
-    createDeadline: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeadlineCreate"];
-            };
-        };
-        responses: {
-            /** @description Created deadline */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Deadline"];
-                };
-            };
-        };
+  };
+  removeParty: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        caseId: components["parameters"]["caseId"];
+        partyId: components["parameters"]["partyId"];
+      };
+      cookie?: never;
     };
-    getDeadline: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                deadlineId: components["parameters"]["deadlineId"];
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description The deadline */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Deadline"];
-                };
-            };
-            /** @description Deadline not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+        content?: never;
+      };
+      /** @description Case or party not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
         };
+        content?: never;
+      };
     };
-    deleteDeadline: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                deadlineId: components["parameters"]["deadlineId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Deadline not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  };
+  addFiling: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        caseId: components["parameters"]["caseId"];
+      };
+      cookie?: never;
     };
-    updateDeadline: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                deadlineId: components["parameters"]["deadlineId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeadlineUpdate"];
-            };
-        };
-        responses: {
-            /** @description Updated deadline */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Deadline"];
-                };
-            };
-            /** @description Deadline not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FilingCreate"];
+      };
     };
-    toggleDeadlineComplete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                deadlineId: components["parameters"]["deadlineId"];
-            };
-            cookie?: never;
+    responses: {
+      /** @description Created filing */
+      201: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Updated deadline */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Deadline"];
-                };
-            };
-            /** @description Deadline not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+        content: {
+          "application/json": components["schemas"]["Filing"];
         };
+      };
+      /** @description Case not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
     };
-    listFinancialEntries: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of financial entries */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FinancialEntry"][];
-                };
-            };
-        };
+  };
+  removeFiling: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        caseId: components["parameters"]["caseId"];
+        filingId: components["parameters"]["filingId"];
+      };
+      cookie?: never;
     };
-    createFinancialEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FinancialEntryCreate"];
-            };
+        content?: never;
+      };
+      /** @description Case or filing not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
         };
-        responses: {
-            /** @description Created entry */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FinancialEntry"];
-                };
-            };
-        };
+        content?: never;
+      };
     };
-    getFinancialEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                entryId: components["parameters"]["entryId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The financial entry */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FinancialEntry"];
-                };
-            };
-            /** @description Entry not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  };
+  listContacts: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    deleteFinancialEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                entryId: components["parameters"]["entryId"];
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description List of contacts */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Entry not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+        content: {
+          "application/json": components["schemas"]["Contact"][];
         };
+      };
     };
-    updateFinancialEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                entryId: components["parameters"]["entryId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FinancialEntryUpdate"];
-            };
-        };
-        responses: {
-            /** @description Updated entry */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FinancialEntry"];
-                };
-            };
-            /** @description Entry not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  };
+  createContact: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    listEvidences: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of evidence items */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Evidence"][];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ContactCreate"];
+      };
     };
-    createEvidence: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Created contact */
+      201: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EvidenceCreate"];
-            };
+        content: {
+          "application/json": components["schemas"]["Contact"];
         };
-        responses: {
-            /** @description Created evidence */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Evidence"];
-                };
-            };
-        };
+      };
     };
-    getEvidence: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                evidenceId: components["parameters"]["evidenceId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The evidence item */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Evidence"];
-                };
-            };
-            /** @description Evidence not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  };
+  getContact: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        contactId: components["parameters"]["contactId"];
+      };
+      cookie?: never;
     };
-    deleteEvidence: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                evidenceId: components["parameters"]["evidenceId"];
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description The contact */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Evidence not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+        content: {
+          "application/json": components["schemas"]["Contact"];
         };
+      };
+      /** @description Contact not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
     };
-    updateEvidence: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                evidenceId: components["parameters"]["evidenceId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EvidenceUpdate"];
-            };
-        };
-        responses: {
-            /** @description Updated evidence */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Evidence"];
-                };
-            };
-            /** @description Evidence not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  };
+  deleteContact: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        contactId: components["parameters"]["contactId"];
+      };
+      cookie?: never;
     };
-    listFilings: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description List of filings */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Filing"][];
-                };
-            };
+        content?: never;
+      };
+      /** @description Contact not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
         };
+        content?: never;
+      };
     };
-    createFiling: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FilingCreate"];
-            };
-        };
-        responses: {
-            /** @description Created filing */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Filing"];
-                };
-            };
-        };
+  };
+  updateContact: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        contactId: components["parameters"]["contactId"];
+      };
+      cookie?: never;
     };
-    getFiling: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                filingId: components["parameters"]["filingId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The filing */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Filing"];
-                };
-            };
-            /** @description Filing not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ContactUpdate"];
+      };
     };
-    deleteFiling: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                filingId: components["parameters"]["filingId"];
-            };
-            cookie?: never;
+    responses: {
+      /** @description Updated contact */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Filing not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+        content: {
+          "application/json": components["schemas"]["Contact"];
         };
+      };
+      /** @description Contact not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
     };
-    updateFiling: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                filingId: components["parameters"]["filingId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FilingUpdate"];
-            };
-        };
-        responses: {
-            /** @description Updated filing */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Filing"];
-                };
-            };
-            /** @description Filing not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  };
+  listDeadlines: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    listNotes: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description List of deadlines */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description List of notes */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Note"][];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["Deadline"][];
         };
+      };
     };
-    createNote: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NoteCreate"];
-            };
-        };
-        responses: {
-            /** @description Created note */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Note"];
-                };
-            };
-        };
+  };
+  createDeadline: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    getNote: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                noteId: components["parameters"]["noteId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The note */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Note"];
-                };
-            };
-            /** @description Note not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["DeadlineCreate"];
+      };
     };
-    deleteNote: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                noteId: components["parameters"]["noteId"];
-            };
-            cookie?: never;
+    responses: {
+      /** @description Created deadline */
+      201: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Note not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+        content: {
+          "application/json": components["schemas"]["Deadline"];
         };
+      };
     };
-    updateNote: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                noteId: components["parameters"]["noteId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NoteUpdate"];
-            };
-        };
-        responses: {
-            /** @description Updated note */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Note"];
-                };
-            };
-            /** @description Note not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  };
+  getDeadline: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        deadlineId: components["parameters"]["deadlineId"];
+      };
+      cookie?: never;
     };
-    chat: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description The deadline */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": {
-                    messages: {
-                        /** @enum {string} */
-                        role: "user" | "assistant";
-                        content: string;
-                    }[];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["Deadline"];
         };
-        responses: {
-            /** @description Chat response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        reply: string;
-                    };
-                };
-            };
+      };
+      /** @description Deadline not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
         };
+        content?: never;
+      };
     };
-    generateReport: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @enum {string} */
-                    type: "case-summary" | "evidence-analysis" | "financial" | "chronology";
-                } & {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        responses: {
-            /** @description Generated report */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Invalid report type */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  };
+  deleteDeadline: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        deadlineId: components["parameters"]["deadlineId"];
+      };
+      cookie?: never;
     };
-    uploadDocuments: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "multipart/form-data": {
-                    files: string[];
-                    category?: string;
-                };
-            };
+        content?: never;
+      };
+      /** @description Deadline not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
         };
-        responses: {
-            /** @description Ingested documents */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DocumentEntry"][];
-                };
-            };
-            /** @description No files provided */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+        content?: never;
+      };
     };
-    scanDirectory: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @description Absolute path to directory on server */
-                    directory: string;
-                    /** @description Enable continuous watching */
-                    watch?: boolean;
-                };
-            };
-        };
-        responses: {
-            /** @description Scan result */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @enum {string} */
-                        status: "running" | "completed" | "error";
-                        added: number;
-                        skipped: number;
-                        errors: number;
-                        directory: string;
-                        /** Format: date-time */
-                        startedAt: string;
-                        /** Format: date-time */
-                        finishedAt?: string;
-                    };
-                };
-            };
-            /** @description Invalid request or configuration */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Scan failed */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  };
+  updateDeadline: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        deadlineId: components["parameters"]["deadlineId"];
+      };
+      cookie?: never;
     };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["DeadlineUpdate"];
+      };
+    };
+    responses: {
+      /** @description Updated deadline */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Deadline"];
+        };
+      };
+      /** @description Deadline not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  toggleDeadlineComplete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        deadlineId: components["parameters"]["deadlineId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Updated deadline */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Deadline"];
+        };
+      };
+      /** @description Deadline not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listFinancialEntries: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of financial entries */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FinancialEntry"][];
+        };
+      };
+    };
+  };
+  createFinancialEntry: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FinancialEntryCreate"];
+      };
+    };
+    responses: {
+      /** @description Created entry */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FinancialEntry"];
+        };
+      };
+    };
+  };
+  getFinancialEntry: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        entryId: components["parameters"]["entryId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The financial entry */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FinancialEntry"];
+        };
+      };
+      /** @description Entry not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deleteFinancialEntry: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        entryId: components["parameters"]["entryId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Entry not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  updateFinancialEntry: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        entryId: components["parameters"]["entryId"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FinancialEntryUpdate"];
+      };
+    };
+    responses: {
+      /** @description Updated entry */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FinancialEntry"];
+        };
+      };
+      /** @description Entry not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listEvidences: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of evidence items */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Evidence"][];
+        };
+      };
+    };
+  };
+  createEvidence: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["EvidenceCreate"];
+      };
+    };
+    responses: {
+      /** @description Created evidence */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Evidence"];
+        };
+      };
+    };
+  };
+  getEvidence: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        evidenceId: components["parameters"]["evidenceId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The evidence item */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Evidence"];
+        };
+      };
+      /** @description Evidence not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deleteEvidence: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        evidenceId: components["parameters"]["evidenceId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Evidence not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  updateEvidence: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        evidenceId: components["parameters"]["evidenceId"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["EvidenceUpdate"];
+      };
+    };
+    responses: {
+      /** @description Updated evidence */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Evidence"];
+        };
+      };
+      /** @description Evidence not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listFilings: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of filings */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Filing"][];
+        };
+      };
+    };
+  };
+  createFiling: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FilingCreate"];
+      };
+    };
+    responses: {
+      /** @description Created filing */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Filing"];
+        };
+      };
+    };
+  };
+  getFiling: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        filingId: components["parameters"]["filingId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The filing */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Filing"];
+        };
+      };
+      /** @description Filing not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deleteFiling: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        filingId: components["parameters"]["filingId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Filing not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  updateFiling: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        filingId: components["parameters"]["filingId"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FilingUpdate"];
+      };
+    };
+    responses: {
+      /** @description Updated filing */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Filing"];
+        };
+      };
+      /** @description Filing not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listNotes: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of notes */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Note"][];
+        };
+      };
+    };
+  };
+  createNote: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["NoteCreate"];
+      };
+    };
+    responses: {
+      /** @description Created note */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Note"];
+        };
+      };
+    };
+  };
+  getNote: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        noteId: components["parameters"]["noteId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The note */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Note"];
+        };
+      };
+      /** @description Note not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deleteNote: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        noteId: components["parameters"]["noteId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Note not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  updateNote: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        noteId: components["parameters"]["noteId"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["NoteUpdate"];
+      };
+    };
+    responses: {
+      /** @description Updated note */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Note"];
+        };
+      };
+      /** @description Note not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  chat: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          messages: {
+            /** @enum {string} */
+            role: "user" | "assistant";
+            content: string;
+          }[];
+        };
+      };
+    };
+    responses: {
+      /** @description Chat response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            reply: string;
+          };
+        };
+      };
+    };
+  };
+  generateReport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @enum {string} */
+          type:
+            | "case-summary"
+            | "evidence-analysis"
+            | "financial"
+            | "chronology";
+        } & {
+          [key: string]: unknown;
+        };
+      };
+    };
+    responses: {
+      /** @description Generated report */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Invalid report type */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  uploadDocuments: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "multipart/form-data": {
+          files: string[];
+          category?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Ingested documents */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DocumentEntry"][];
+        };
+      };
+      /** @description No files provided */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  scanDirectory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @description Absolute path to directory on server */
+          directory: string;
+          /** @description Enable continuous watching */
+          watch?: boolean;
+        };
+      };
+    };
+    responses: {
+      /** @description Scan result */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            status: "running" | "completed" | "error";
+            added: number;
+            skipped: number;
+            errors: number;
+            directory: string;
+            /** Format: date-time */
+            startedAt: string;
+            /** Format: date-time */
+            finishedAt?: string;
+          };
+        };
+      };
+      /** @description Invalid request or configuration */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Scan failed */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
 }

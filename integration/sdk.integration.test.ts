@@ -3,7 +3,10 @@ import { beforeAll, afterAll, describe, expect, it, vi } from "vitest";
 import { mkdtempSync, rmSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import path from "path";
-import { createProsevaClient, type ProsevaClient } from "../proseva-sdk/dist/index.js";
+import {
+  createProsevaClient,
+  type ProsevaClient,
+} from "../proseva-sdk/dist/index.js";
 
 const PORT = 4010;
 const PASSPHRASE = "integration-passphrase";
@@ -57,12 +60,18 @@ let createdEvidenceId: string | undefined;
 let createdFilingId: string | undefined;
 let createdNoteId: string | undefined;
 
-function buildLocalFetch(fetchHandler: (req: Request) => Promise<Response> | Response): typeof fetch {
-  return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+function buildLocalFetch(
+  fetchHandler: (req: Request) => Promise<Response> | Response,
+): typeof fetch {
+  return async (
+    input: RequestInfo | URL,
+    init?: RequestInit,
+  ): Promise<Response> => {
     if (input instanceof Request) {
       const cloned = input.clone();
       const url = new URL(cloned.url);
-      if (!url.pathname.startsWith("/api")) url.pathname = `/api${url.pathname}`;
+      if (!url.pathname.startsWith("/api"))
+        url.pathname = `/api${url.pathname}`;
       return fetchHandler(
         new Request(url, {
           method: cloned.method,
@@ -74,7 +83,10 @@ function buildLocalFetch(fetchHandler: (req: Request) => Promise<Response> | Res
       );
     }
 
-    const url = new URL(typeof input === "string" ? input : input.toString(), `http://localhost:${PORT}`);
+    const url = new URL(
+      typeof input === "string" ? input : input.toString(),
+      `http://localhost:${PORT}`,
+    );
     if (!url.pathname.startsWith("/api")) url.pathname = `/api${url.pathname}`;
     return fetchHandler(
       new Request(url, {
@@ -103,7 +115,9 @@ async function startApi(): Promise<void> {
   const originalFetch: (request: Request) => Promise<Response> | Response =
     mod.router.fetch.bind(mod.router);
 
-  const fetchHandler: (request: Request) => Promise<Response> | Response = async (request) => {
+  const fetchHandler: (
+    request: Request,
+  ) => Promise<Response> | Response = async (request) => {
     const url = new URL(request.url);
 
     if (url.pathname === "/api/chat") {
@@ -159,7 +173,10 @@ async function startApi(): Promise<void> {
   };
 
   localFetch = buildLocalFetch(fetchHandler);
-  api = createProsevaClient({ baseUrl: `http://localhost:${PORT}/api`, fetch: localFetch });
+  api = createProsevaClient({
+    baseUrl: `http://localhost:${PORT}/api`,
+    fetch: localFetch,
+  });
 }
 
 async function waitForHealth(timeoutMs = 10000): Promise<void> {
@@ -245,10 +262,15 @@ describe("ProSeVA SDK", () => {
   it("manages parties on a case", async () => {
     const add = await authedApi.POST("/cases/{caseId}/parties", {
       params: { path: { caseId: createdCaseId! } },
-      body: { name: "John Doe", role: "Plaintiff", contact: "john@example.com" },
+      body: {
+        name: "John Doe",
+        role: "Plaintiff",
+        contact: "john@example.com",
+      },
     });
     expect(add.response.status).toBe(201);
-    const partyId = add.data?.id!;
+    const partyId = add.data?.id;
+    if (!partyId) throw new Error("Party ID not returned");
     expect(partyId).toBeTruthy();
 
     const del = await authedApi.DELETE("/cases/{caseId}/parties/{partyId}", {
@@ -268,7 +290,8 @@ describe("ProSeVA SDK", () => {
       },
     });
     expect(add.response.status).toBe(201);
-    const filingId = add.data?.id!;
+    const filingId = add.data?.id;
+    if (!filingId) throw new Error("Filing ID not returned");
 
     const del = await authedApi.DELETE("/cases/{caseId}/filings/{filingId}", {
       params: { path: { caseId: createdCaseId!, filingId } },
@@ -288,7 +311,8 @@ describe("ProSeVA SDK", () => {
       },
     });
     expect(create.response.status).toBe(201);
-    createdContactId = create.data?.id!;
+    createdContactId = create.data?.id;
+    if (!createdContactId) throw new Error("Contact ID not returned");
 
     const get = await authedApi.GET("/contacts/{contactId}", {
       params: { path: { contactId: createdContactId! } },
@@ -323,7 +347,8 @@ describe("ProSeVA SDK", () => {
       },
     });
     expect(create.response.status).toBe(201);
-    createdDeadlineId = create.data?.id!;
+    createdDeadlineId = create.data?.id;
+    if (!createdDeadlineId) throw new Error("Deadline ID not returned");
 
     const get = await authedApi.GET("/deadlines/{deadlineId}", {
       params: { path: { deadlineId: createdDeadlineId! } },
@@ -337,9 +362,12 @@ describe("ProSeVA SDK", () => {
     expect(update.response.status).toBe(200);
     expect(update.data?.title).toBe("Updated Deadline");
 
-    const toggle = await authedApi.POST("/deadlines/{deadlineId}/toggle-complete", {
-      params: { path: { deadlineId: createdDeadlineId! } },
-    });
+    const toggle = await authedApi.POST(
+      "/deadlines/{deadlineId}/toggle-complete",
+      {
+        params: { path: { deadlineId: createdDeadlineId! } },
+      },
+    );
     expect(toggle.response.status).toBe(200);
     expect(toggle.data?.completed).toBe(true);
 
@@ -361,7 +389,8 @@ describe("ProSeVA SDK", () => {
       },
     });
     expect(create.response.status).toBe(201);
-    createdFinanceId = create.data?.id!;
+    createdFinanceId = create.data?.id;
+    if (!createdFinanceId) throw new Error("Finance ID not returned");
 
     const get = await authedApi.GET("/finances/{entryId}", {
       params: { path: { entryId: createdFinanceId! } },
@@ -393,7 +422,8 @@ describe("ProSeVA SDK", () => {
       },
     });
     expect(create.response.status).toBe(201);
-    createdEvidenceId = create.data?.id!;
+    createdEvidenceId = create.data?.id;
+    if (!createdEvidenceId) throw new Error("Evidence ID not returned");
 
     const get = await authedApi.GET("/evidences/{evidenceId}", {
       params: { path: { evidenceId: createdEvidenceId! } },
@@ -424,7 +454,8 @@ describe("ProSeVA SDK", () => {
       },
     });
     expect(create.response.status).toBe(201);
-    createdFilingId = create.data?.id!;
+    createdFilingId = create.data?.id;
+    if (!createdFilingId) throw new Error("Filing ID not returned");
 
     const get = await authedApi.GET("/filings/{filingId}", {
       params: { path: { filingId: createdFilingId! } },
@@ -455,7 +486,8 @@ describe("ProSeVA SDK", () => {
       },
     });
     expect(create.response.status).toBe(201);
-    createdNoteId = create.data?.id!;
+    createdNoteId = create.data?.id;
+    if (!createdNoteId) throw new Error("Note ID not returned");
 
     const get = await authedApi.GET("/notes/{noteId}", {
       params: { path: { noteId: createdNoteId! } },
@@ -485,22 +517,36 @@ describe("ProSeVA SDK", () => {
 
   it("generates reports", async () => {
     const summary = await authedApi.POST("/reports", {
-      body: { type: "case-summary", caseId: createdCaseId, options: { includeAI: false } },
+      body: {
+        type: "case-summary",
+        caseId: createdCaseId,
+        options: { includeAI: false },
+      },
     });
     expect(summary.response.status).toBe(200);
 
     const evidence = await authedApi.POST("/reports", {
-      body: { type: "evidence-analysis", caseId: createdCaseId, options: { includeChainOfCustody: false } },
+      body: {
+        type: "evidence-analysis",
+        caseId: createdCaseId,
+        options: { includeChainOfCustody: false },
+      },
     });
     expect(evidence.response.status).toBe(200);
 
     const financial = await authedApi.POST("/reports", {
-      body: { type: "financial", dateRange: { from: "2024-01-01", to: "2024-12-31" } },
+      body: {
+        type: "financial",
+        dateRange: { from: "2024-01-01", to: "2024-12-31" },
+      },
     });
     expect(financial.response.status).toBe(200);
 
     const chronology = await authedApi.POST("/reports", {
-      body: { type: "chronology", dateRange: { from: "2024-01-01", to: "2024-12-31" } },
+      body: {
+        type: "chronology",
+        dateRange: { from: "2024-01-01", to: "2024-12-31" },
+      },
     });
     expect(chronology.response.status).toBe(200);
   });
@@ -508,7 +554,11 @@ describe("ProSeVA SDK", () => {
   it("uploads documents", async () => {
     const pdfBytes = Buffer.from("%PDF-1.4\n%EOF");
     const form = new FormData();
-    form.append("files", new Blob([pdfBytes], { type: "application/pdf" }), "sample.pdf");
+    form.append(
+      "files",
+      new Blob([pdfBytes], { type: "application/pdf" }),
+      "sample.pdf",
+    );
     form.append("category", "integration");
 
     const res = await authedApi.POST("/documents/upload", {
@@ -528,7 +578,9 @@ describe("ProSeVA SDK", () => {
     });
     expect(res.response.status).toBe(200);
     expect(res.data?.status).toBe("completed");
-    expect((res.data?.added ?? 0) + (res.data?.skipped ?? 0)).toBeGreaterThan(0);
+    expect((res.data?.added ?? 0) + (res.data?.skipped ?? 0)).toBeGreaterThan(
+      0,
+    );
   });
 
   it("creates and deletes an additional case", async () => {
@@ -540,7 +592,8 @@ describe("ProSeVA SDK", () => {
       },
     });
     expect(createRes.response.status).toBe(201);
-    const disposableId = createRes.data?.id!;
+    const disposableId = createRes.data?.id;
+    if (!disposableId) throw new Error("Disposable ID not returned");
 
     const delRes = await authedApi.DELETE("/cases/{caseId}", {
       params: { path: { caseId: disposableId } },

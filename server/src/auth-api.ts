@@ -1,7 +1,7 @@
 import { Router } from "itty-router";
 import { SignJWT, jwtVerify } from "jose";
-import bcrypt from "bcryptjs";
 import { db } from "./db";
+import { verifyPassphrase } from "./crypto-utils";
 
 const PASSPHRASE_HASH_KEY = "passphrase_hash";
 const JWT_SECRET_KEY = "jwt_secret";
@@ -55,19 +55,6 @@ function parseTtl(ttl: string): number {
   }
 }
 
-/**
- * Verify passphrase against stored hash
- */
-async function verifyPassphrase(
-  passphrase: string,
-  hash: string,
-): Promise<boolean> {
-  return bcrypt.compare(passphrase, hash);
-}
-
-/**
- * Generate JWT token with specified TTL
- */
 async function generateToken(ttl: string = DEFAULT_TOKEN_TTL): Promise<string> {
   const secret = getJwtSecret();
   const ttlSeconds = parseTtl(ttl);

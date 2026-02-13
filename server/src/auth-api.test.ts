@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { db, initDb } from "./db";
 import { authRouter } from "./auth-api";
-import bcrypt from "bcryptjs";
+import { hashPassphrase } from "./crypto-utils";
 
 describe("Auth API", () => {
   beforeEach(async () => {
     await initDb(new (await import("./persistence")).InMemoryAdapter());
 
     // Set up passphrase hash (same as "testpass123")
-    const hash = await bcrypt.hash("testpass123", 12);
+    const hash = await hashPassphrase("testpass123");
     db.serverConfig.set("passphrase_hash", { hash } as any);
   });
 

@@ -1,19 +1,8 @@
 import { Router } from "itty-router";
-import bcrypt from "bcryptjs";
 import { db, setDbEncryptionPassphrase } from "./db";
+import { hashPassphrase, verifyPassphrase } from "./crypto-utils";
 
 const PASSPHRASE_HASH_KEY = "passphrase_hash";
-
-async function hashPassphrase(passphrase: string): Promise<string> {
-  return bcrypt.hash(passphrase, 12);
-}
-
-async function verifyPassphrase(
-  passphrase: string,
-  hash: string,
-): Promise<boolean> {
-  return bcrypt.compare(passphrase, hash);
-}
 
 const router = Router({ base: "/api/security" });
 

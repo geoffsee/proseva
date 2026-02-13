@@ -119,7 +119,7 @@ proseva db stats
 1. **Token Lifetime**: Tokens expire after the specified TTL. Default is 24 hours.
 2. **Token Storage**: CLI tokens are stored in plaintext in `~/.proseva/token.json`. Protect this file appropriately.
 3. **JWT Secret**: Generated automatically on first use and persisted in the database.
-4. **Passphrase**: Hashed using bcrypt (cost=12) before storage.
+4. **Passphrase**: Hashed using Argon2id before storage.
 
 ## Error Responses
 

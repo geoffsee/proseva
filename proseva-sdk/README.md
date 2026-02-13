@@ -32,6 +32,7 @@ const { data } = await api.GET("/cases");
 ```
 
 ### Auth tokens
+
 Pass `getAuthToken` (sync or async) to attach `Authorization: Bearer <token>` automatically:
 
 ```ts
