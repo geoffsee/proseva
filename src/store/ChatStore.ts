@@ -31,7 +31,7 @@ export const ChatStore = types
         };
         if (token) headers.Authorization = `Bearer ${token}`;
 
-        const res: Response = yield fetch("/api/chat", {
+        const res: Response = yield fetch(`${apiModule.API_BASE}/chat`, {
           method: "POST",
           headers,
           body: JSON.stringify({ messages: apiMessages }),

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from "electron";
+import { app, BrowserWindow, dialog, shell } from "electron";
 import { spawn, type ChildProcess } from "child_process";
 import path from "path";
 import fs from "fs";
@@ -84,9 +84,6 @@ function startServer(): ChildProcess {
   }
 
   // Production: run compiled server binary
-  const staticDir = getResourcePath("dist");
-  env.PROSEVA_STATIC_DIR = staticDir;
-
   const serverBin = getResourcePath("dist-server", "proseva-server");
   console.log("[electron] Starting compiled server:", serverBin);
   return spawn(serverBin, [], {
@@ -126,8 +123,11 @@ function createWindow(): void {
     },
   });
 
-  const loadURL = isDev ? DEV_URL : SERVER_URL;
-  mainWindow.loadURL(loadURL);
+  if (isDev) {
+    mainWindow.loadURL(DEV_URL);
+  } else {
+    mainWindow.loadFile(path.join(process.resourcesPath, "dist", "index.html"));
+  }
 
   // Open external links in browser
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -152,11 +152,14 @@ app.whenReady().then(async () => {
 
   serverProcess = startServer();
 
+  const serverErrors: string[] = [];
   serverProcess.stdout?.on("data", (data: Buffer) => {
     console.log(`[server] ${data.toString().trim()}`);
   });
   serverProcess.stderr?.on("data", (data: Buffer) => {
-    console.error(`[server] ${data.toString().trim()}`);
+    const msg = data.toString().trim();
+    console.error(`[server] ${msg}`);
+    serverErrors.push(msg);
   });
   serverProcess.on("exit", (code) => {
     console.log(`[server] Process exited with code ${code}`);
@@ -165,6 +168,13 @@ app.whenReady().then(async () => {
   const ready = await waitForServer();
   if (!ready) {
     console.error("[electron] Could not start server, quitting.");
+    const detail = serverErrors.length
+      ? serverErrors.join("\n").slice(-1500)
+      : "The server did not respond in time. Check the logs for details.";
+    dialog.showErrorBox(
+      "Pro Se VA — Server Failed to Start",
+      `The backend server could not be started.\n\n${detail}`,
+    );
     app.quit();
     return;
   }

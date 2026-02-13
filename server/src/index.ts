@@ -48,7 +48,7 @@ import { authRouter, verifyToken } from "./auth-api";
 import { getConfig } from "./config";
 import { researchRouter } from "./research";
 import { handleResearchChat } from "./research-agent";
-import { cosine_similarity_dataspace } from "wasm-similarity";
+import { cosine_similarity_dataspace, ensureWasmSimilarityInit } from "./wasm-similarity-init";
 import { getChatSystemPrompt } from "./prompts";
 import {
   generateCaseSummary,
@@ -211,7 +211,8 @@ export const router = AutoRouter({
 
 router.get("/health", () => ({ status: "ok" }));
 
-// Initialize the database before handling any requests.
+// Initialize WASM modules and database before handling any requests.
+ensureWasmSimilarityInit();
 await initDb();
 
 // Kick off optional bulk ingestion when AUTO_INGEST_DIR is set.
@@ -1858,56 +1859,6 @@ router.all("/research/*", researchRouter.fetch);
 
 // Initialize the scheduler on server startup
 initScheduler();
-
-// --- Static file serving for production Electron builds ---
-const staticDir = process.env.PROSEVA_STATIC_DIR;
-if (staticDir) {
-  // Serve built frontend assets as a catch-all after API routes
-  router.all("*", async (req) => {
-    const url = new URL(req.url);
-    const filePath = join(staticDir, url.pathname);
-
-    // Try exact file first
-    try {
-      const fileStat = await stat(filePath);
-      if (fileStat.isFile()) {
-        const content = await readFile(filePath);
-        const ext = filePath.split(".").pop() ?? "";
-        const mimeTypes: Record<string, string> = {
-          html: "text/html",
-          js: "application/javascript",
-          css: "text/css",
-          json: "application/json",
-          png: "image/png",
-          jpg: "image/jpeg",
-          jpeg: "image/jpeg",
-          svg: "image/svg+xml",
-          ico: "image/x-icon",
-          woff: "font/woff",
-          woff2: "font/woff2",
-          ttf: "font/ttf",
-        };
-        return new Response(content, {
-          headers: {
-            "content-type": mimeTypes[ext] ?? "application/octet-stream",
-          },
-        });
-      }
-    } catch {
-      // File not found, fall through to index.html
-    }
-
-    // SPA fallback: serve index.html for non-file routes
-    try {
-      const indexHtml = await readFile(join(staticDir, "index.html"));
-      return new Response(indexHtml, {
-        headers: { "content-type": "text/html" },
-      });
-    } catch {
-      return new Response("Not Found", { status: 404 });
-    }
-  });
-}
 
 const port = parseInt(process.env.PORT || "3001", 10);
 

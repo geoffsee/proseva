@@ -59,7 +59,7 @@ export const ResearchStore = types
         };
         if (token) headers.Authorization = `Bearer ${token}`;
 
-        const res: Response = yield fetch("/api/research/agent/chat", {
+        const res: Response = yield fetch(`${apiModule.API_BASE}/research/agent/chat`, {
           method: "POST",
           headers,
           body: JSON.stringify({ messages: apiMessages }),

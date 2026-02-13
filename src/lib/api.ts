@@ -43,9 +43,16 @@ export async function clearAuthToken(): Promise<void> {
   }
 }
 
+// Resolve API base: absolute URL in Electron (file:// origin), relative in browser
+const electronAPI = (window as { electronAPI?: { serverUrl?: string } })
+  .electronAPI;
+export const API_BASE = electronAPI?.serverUrl
+  ? `${electronAPI.serverUrl}/api`
+  : "/api";
+
 // Create client and configure with middleware for dynamic auth headers
 export const client = createClient<paths>({
-  baseUrl: "/api",
+  baseUrl: API_BASE,
 });
 
 // Add middleware to inject auth token on every request
@@ -330,7 +337,7 @@ export const searchApi = {
     if (options?.caseId) {
       params.set("caseId", options.caseId);
     }
-    const res = await fetch(`/api/search?${params.toString()}`, {
+    const res = await fetch(`${API_BASE}/search?${params.toString()}`, {
       headers: await getAuthHeaders(),
     });
     return res.json();
@@ -400,7 +407,7 @@ export type SchedulerStatus = {
 
 export const deviceTokensApi = {
   list: async (): Promise<DeviceToken[]> => {
-    const res = await fetch("/api/device-tokens", {
+    const res = await fetch(`${API_BASE}/device-tokens`, {
       headers: await getAuthHeaders(),
     });
     return res.json();
@@ -409,7 +416,7 @@ export const deviceTokensApi = {
     token: string;
     platform: "ios" | "android" | "web";
   }): Promise<DeviceToken> => {
-    const res = await fetch("/api/device-tokens", {
+    const res = await fetch(`${API_BASE}/device-tokens`, {
       method: "POST",
       headers: await getAuthHeaders(),
       body: JSON.stringify(data),
@@ -417,7 +424,7 @@ export const deviceTokensApi = {
     return res.json();
   },
   delete: async (id: string): Promise<void> => {
-    await fetch(`/api/device-tokens/${id}`, {
+    await fetch(`${API_BASE}/device-tokens/${id}`, {
       method: "DELETE",
       headers: await getAuthHeaders(),
     });
@@ -426,7 +433,7 @@ export const deviceTokensApi = {
 
 export const smsRecipientsApi = {
   list: async (): Promise<SmsRecipient[]> => {
-    const res = await fetch("/api/sms-recipients", {
+    const res = await fetch(`${API_BASE}/sms-recipients`, {
       headers: await getAuthHeaders(),
     });
     return res.json();
@@ -435,7 +442,7 @@ export const smsRecipientsApi = {
     phone: string;
     name?: string;
   }): Promise<SmsRecipient> => {
-    const res = await fetch("/api/sms-recipients", {
+    const res = await fetch(`${API_BASE}/sms-recipients`, {
       method: "POST",
       headers: await getAuthHeaders(),
       body: JSON.stringify(data),
@@ -443,7 +450,7 @@ export const smsRecipientsApi = {
     return res.json();
   },
   delete: async (id: string): Promise<void> => {
-    await fetch(`/api/sms-recipients/${id}`, {
+    await fetch(`${API_BASE}/sms-recipients/${id}`, {
       method: "DELETE",
       headers: await getAuthHeaders(),
     });
@@ -452,13 +459,13 @@ export const smsRecipientsApi = {
 
 export const evaluationsApi = {
   list: async (): Promise<EvaluationType[]> => {
-    const res = await fetch("/api/evaluations", {
+    const res = await fetch(`${API_BASE}/evaluations`, {
       headers: await getAuthHeaders(),
     });
     return res.json();
   },
   get: async (id: string): Promise<EvaluationType | null> => {
-    const res = await fetch(`/api/evaluations/${id}`, {
+    const res = await fetch(`${API_BASE}/evaluations/${id}`, {
       headers: await getAuthHeaders(),
     });
     if (res.status === 404) return null;
@@ -469,7 +476,7 @@ export const evaluationsApi = {
     pushSent: boolean;
     smsSent: boolean;
   }> => {
-    const res = await fetch("/api/evaluations/trigger", {
+    const res = await fetch(`${API_BASE}/evaluations/trigger`, {
       method: "POST",
       headers: await getAuthHeaders(),
     });
@@ -479,7 +486,7 @@ export const evaluationsApi = {
 
 export const schedulerApi = {
   status: async (): Promise<SchedulerStatus> => {
-    const res = await fetch("/api/scheduler/status", {
+    const res = await fetch(`${API_BASE}/scheduler/status`, {
       headers: await getAuthHeaders(),
     });
     return res.json();
@@ -568,7 +575,7 @@ export type OpenAIModelsResponse = {
 
 export const configApi = {
   get: async (): Promise<ServerConfig> => {
-    const res = await fetch("/api/config", {
+    const res = await fetch(`${API_BASE}/config`, {
       headers: await getAuthHeaders(),
     });
     return res.json();
@@ -576,7 +583,7 @@ export const configApi = {
   update: async (
     updates: Partial<ServerConfig>,
   ): Promise<{ success: boolean }> => {
-    const res = await fetch("/api/config", {
+    const res = await fetch(`${API_BASE}/config`, {
       method: "PATCH",
       headers: await getAuthHeaders(),
       body: JSON.stringify(updates),
@@ -584,7 +591,7 @@ export const configApi = {
     return res.json();
   },
   reset: async (): Promise<{ success: boolean }> => {
-    const res = await fetch("/api/config/reset", {
+    const res = await fetch(`${API_BASE}/config/reset`, {
       method: "POST",
       headers: await getAuthHeaders(),
     });
@@ -594,14 +601,14 @@ export const configApi = {
     group: string,
     key: string,
   ): Promise<{ success: boolean }> => {
-    const res = await fetch(`/api/config/${group}/${key}`, {
+    const res = await fetch(`${API_BASE}/config/${group}/${key}`, {
       method: "DELETE",
       headers: await getAuthHeaders(),
     });
     return res.json();
   },
   testFirebase: async (): Promise<{ success: boolean; error?: string }> => {
-    const res = await fetch("/api/config/test-firebase", {
+    const res = await fetch(`${API_BASE}/config/test-firebase`, {
       method: "POST",
       headers: await getAuthHeaders(),
     });
@@ -610,7 +617,7 @@ export const configApi = {
   testTwilio: async (
     testPhone: string,
   ): Promise<{ success: boolean; error?: string }> => {
-    const res = await fetch("/api/config/test-twilio", {
+    const res = await fetch(`${API_BASE}/config/test-twilio`, {
       method: "POST",
       headers: await getAuthHeaders(),
       body: JSON.stringify({ testPhone }),
@@ -618,14 +625,14 @@ export const configApi = {
     return res.json();
   },
   testOpenAI: async (): Promise<{ success: boolean; error?: string }> => {
-    const res = await fetch("/api/config/test-openai", {
+    const res = await fetch(`${API_BASE}/config/test-openai`, {
       method: "POST",
       headers: await getAuthHeaders(),
     });
     return res.json();
   },
   reinitialize: async (service: string): Promise<{ success: boolean }> => {
-    const res = await fetch(`/api/config/reinitialize/${service}`, {
+    const res = await fetch(`${API_BASE}/config/reinitialize/${service}`, {
       method: "POST",
       headers: await getAuthHeaders(),
     });
@@ -634,7 +641,7 @@ export const configApi = {
   testFax: async (
     recipientNumber: string,
   ): Promise<{ success: boolean; error?: string }> => {
-    const res = await fetch("/api/config/test-fax", {
+    const res = await fetch(`${API_BASE}/config/test-fax`, {
       method: "POST",
       headers: await getAuthHeaders(),
       body: JSON.stringify({ recipientNumber }),
@@ -642,11 +649,12 @@ export const configApi = {
     return res.json();
   },
   getOpenAIModels: async (endpoint?: string): Promise<OpenAIModelsResponse> => {
-    const url = new URL("/api/config/openai-models", window.location.origin);
+    const params = new URLSearchParams();
     if (endpoint && endpoint.trim()) {
-      url.searchParams.set("endpoint", endpoint.trim());
+      params.set("endpoint", endpoint.trim());
     }
-    const res = await fetch(url.pathname + url.search, {
+    const qs = params.toString();
+    const res = await fetch(`${API_BASE}/config/openai-models${qs ? `?${qs}` : ""}`, {
       headers: await getAuthHeaders(),
     });
     return res.json();
@@ -655,7 +663,7 @@ export const configApi = {
 
 export const securityApi = {
   status: async (token?: string): Promise<DbSecurityStatus> => {
-    const res = await fetch("/api/security/status", {
+    const res = await fetch(`${API_BASE}/security/status`, {
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     });
     return res.json();
@@ -663,7 +671,7 @@ export const securityApi = {
   setupPassphrase: async (
     passphrase: string,
   ): Promise<{ success: boolean; error?: string }> => {
-    const res = await fetch("/api/security/setup-passphrase", {
+    const res = await fetch(`${API_BASE}/security/setup-passphrase`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ passphrase }),
@@ -673,7 +681,7 @@ export const securityApi = {
   verifyPassphrase: async (
     passphrase: string,
   ): Promise<{ valid: boolean; error?: string }> => {
-    const res = await fetch("/api/security/verify-passphrase", {
+    const res = await fetch(`${API_BASE}/security/verify-passphrase`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ passphrase }),
@@ -687,7 +695,7 @@ export const securityApi = {
     status?: DbSecurityStatus;
     error?: string;
   }> => {
-    const res = await fetch("/api/security/recovery-key", {
+    const res = await fetch(`${API_BASE}/security/recovery-key`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ recoveryKey }),
@@ -706,7 +714,7 @@ export const authApi = {
     expiresIn: number;
     error?: string;
   }> => {
-    const res = await fetch("/api/auth/login", {
+    const res = await fetch(`${API_BASE}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ passphrase, ttl }),
@@ -770,20 +778,20 @@ export type EstatePlanType = {
 
 export const estatePlansApi = {
   list: async (): Promise<EstatePlanType[]> => {
-    const res = await fetch("/api/estate-plans", {
+    const res = await fetch(`${API_BASE}/estate-plans`, {
       headers: await getAuthHeaders(),
     });
     return res.json();
   },
   get: async (id: string): Promise<EstatePlanType | null> => {
-    const res = await fetch(`/api/estate-plans/${id}`, {
+    const res = await fetch(`${API_BASE}/estate-plans/${id}`, {
       headers: await getAuthHeaders(),
     });
     if (res.status === 404) return null;
     return res.json();
   },
   create: async (data: Partial<EstatePlanType>): Promise<EstatePlanType> => {
-    const res = await fetch("/api/estate-plans", {
+    const res = await fetch(`${API_BASE}/estate-plans`, {
       method: "POST",
       headers: await getAuthHeaders(),
       body: JSON.stringify(data),
@@ -794,7 +802,7 @@ export const estatePlansApi = {
     id: string,
     updates: Partial<EstatePlanType>,
   ): Promise<EstatePlanType> => {
-    const res = await fetch(`/api/estate-plans/${id}`, {
+    const res = await fetch(`${API_BASE}/estate-plans/${id}`, {
       method: "PATCH",
       headers: await getAuthHeaders(),
       body: JSON.stringify(updates),
@@ -802,7 +810,7 @@ export const estatePlansApi = {
     return res.json();
   },
   delete: async (id: string): Promise<void> => {
-    await fetch(`/api/estate-plans/${id}`, {
+    await fetch(`${API_BASE}/estate-plans/${id}`, {
       method: "DELETE",
       headers: await getAuthHeaders(),
     });
@@ -811,7 +819,7 @@ export const estatePlansApi = {
     planId: string,
     data: Record<string, unknown>,
   ): Promise<unknown> => {
-    const res = await fetch(`/api/estate-plans/${planId}/beneficiaries`, {
+    const res = await fetch(`${API_BASE}/estate-plans/${planId}/beneficiaries`, {
       method: "POST",
       headers: await getAuthHeaders(),
       body: JSON.stringify(data),
@@ -819,7 +827,7 @@ export const estatePlansApi = {
     return res.json();
   },
   removeBeneficiary: async (planId: string, id: string): Promise<void> => {
-    await fetch(`/api/estate-plans/${planId}/beneficiaries/${id}`, {
+    await fetch(`${API_BASE}/estate-plans/${planId}/beneficiaries/${id}`, {
       method: "DELETE",
       headers: await getAuthHeaders(),
     });
@@ -828,7 +836,7 @@ export const estatePlansApi = {
     planId: string,
     data: Record<string, unknown>,
   ): Promise<unknown> => {
-    const res = await fetch(`/api/estate-plans/${planId}/assets`, {
+    const res = await fetch(`${API_BASE}/estate-plans/${planId}/assets`, {
       method: "POST",
       headers: await getAuthHeaders(),
       body: JSON.stringify(data),
@@ -836,7 +844,7 @@ export const estatePlansApi = {
     return res.json();
   },
   removeAsset: async (planId: string, id: string): Promise<void> => {
-    await fetch(`/api/estate-plans/${planId}/assets/${id}`, {
+    await fetch(`${API_BASE}/estate-plans/${planId}/assets/${id}`, {
       method: "DELETE",
       headers: await getAuthHeaders(),
     });
@@ -845,7 +853,7 @@ export const estatePlansApi = {
     planId: string,
     data: Record<string, unknown>,
   ): Promise<unknown> => {
-    const res = await fetch(`/api/estate-plans/${planId}/documents`, {
+    const res = await fetch(`${API_BASE}/estate-plans/${planId}/documents`, {
       method: "POST",
       headers: await getAuthHeaders(),
       body: JSON.stringify(data),
@@ -857,7 +865,7 @@ export const estatePlansApi = {
     docId: string,
     updates: Record<string, unknown>,
   ): Promise<unknown> => {
-    const res = await fetch(`/api/estate-plans/${planId}/documents/${docId}`, {
+    const res = await fetch(`${API_BASE}/estate-plans/${planId}/documents/${docId}`, {
       method: "PATCH",
       headers: await getAuthHeaders(),
       body: JSON.stringify(updates),
@@ -865,7 +873,7 @@ export const estatePlansApi = {
     return res.json();
   },
   removeDocument: async (planId: string, id: string): Promise<void> => {
-    await fetch(`/api/estate-plans/${planId}/documents/${id}`, {
+    await fetch(`${API_BASE}/estate-plans/${planId}/documents/${id}`, {
       method: "DELETE",
       headers: await getAuthHeaders(),
     });
@@ -896,13 +904,13 @@ export type FaxStatus = {
 
 export const faxApi = {
   list: async (): Promise<FaxJob[]> => {
-    const res = await fetch("/api/fax-jobs", {
+    const res = await fetch(`${API_BASE}/fax-jobs`, {
       headers: await getAuthHeaders(),
     });
     return res.json();
   },
   get: async (id: string): Promise<FaxJob | null> => {
-    const res = await fetch(`/api/fax-jobs/${id}`, {
+    const res = await fetch(`${API_BASE}/fax-jobs/${id}`, {
       headers: await getAuthHeaders(),
     });
     if (res.status === 404) return null;
@@ -915,7 +923,7 @@ export const faxApi = {
     recipientFax: string;
     documentPath?: string;
   }): Promise<FaxJob> => {
-    const res = await fetch("/api/fax-jobs", {
+    const res = await fetch(`${API_BASE}/fax-jobs`, {
       method: "POST",
       headers: await getAuthHeaders(),
       body: JSON.stringify(data),
@@ -923,13 +931,13 @@ export const faxApi = {
     return res.json();
   },
   delete: async (id: string): Promise<void> => {
-    await fetch(`/api/fax-jobs/${id}`, {
+    await fetch(`${API_BASE}/fax-jobs/${id}`, {
       method: "DELETE",
       headers: await getAuthHeaders(),
     });
   },
   status: async (): Promise<FaxStatus> => {
-    const res = await fetch("/api/fax/status", {
+    const res = await fetch(`${API_BASE}/fax/status`, {
       headers: await getAuthHeaders(),
     });
     return res.json();
@@ -943,7 +951,7 @@ export const researchAgentApi = {
     reply: string;
     toolResults: Array<{ toolName: string; results: unknown }>;
   }> => {
-    const res = await fetch("/api/research/agent/chat", {
+    const res = await fetch(`${API_BASE}/research/agent/chat`, {
       method: "POST",
       headers: await getAuthHeaders(),
       body: JSON.stringify({ messages }),

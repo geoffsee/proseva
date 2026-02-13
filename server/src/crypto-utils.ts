@@ -1,6 +1,6 @@
 import { argon2id_hash, argon2_verify, initSync } from "wasm-pqc-subtle";
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
 
 const __dir =
   import.meta.dir ??
@@ -14,29 +14,40 @@ let wasmInitialized = false;
  */
 export function ensureWasmInit(): void {
   if (wasmInitialized) return;
-  try {
-    let wasmPath: string;
-    try {
-      // First, try to resolve from node_modules using require.resolve
-      // @ts-expect-error - require.resolve might not be available in all environments
-      const resolvedPath =
-        require.resolve("wasm-pqc-subtle/wasm_pqc_subtle_bg.wasm");
-      wasmPath = resolvedPath;
-    } catch {
-      // Fallback to relative path
-      wasmPath = join(
-        __dir,
-        "../../node_modules/wasm-pqc-subtle/wasm_pqc_subtle_bg.wasm",
-      );
-    }
 
-    const wasmBuffer = readFileSync(wasmPath);
-    initSync({ module: wasmBuffer });
-    wasmInitialized = true;
-  } catch (err) {
-    console.error("Failed to initialize WASM module:", err);
-    throw err;
+  const candidates: string[] = [
+    // 1. Next to compiled binary (production)
+    join(dirname(process.execPath), "wasm_pqc_subtle_bg.wasm"),
+  ];
+
+  // 2. require.resolve from node_modules (development)
+  try {
+    candidates.push(
+      require.resolve("wasm-pqc-subtle/wasm_pqc_subtle_bg.wasm"),
+    );
+  } catch {
+    // not available
   }
+
+  // 3. Relative to source (development fallback)
+  candidates.push(
+    join(__dir, "../../node_modules/wasm-pqc-subtle/wasm_pqc_subtle_bg.wasm"),
+  );
+
+  for (const wasmPath of candidates) {
+    try {
+      const wasmBuffer = readFileSync(wasmPath);
+      initSync({ module: wasmBuffer });
+      wasmInitialized = true;
+      return;
+    } catch {
+      // try next candidate
+    }
+  }
+
+  throw new Error(
+    "Failed to initialize WASM module: wasm_pqc_subtle_bg.wasm not found in any candidate path",
+  );
 }
 
 /**

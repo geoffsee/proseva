@@ -26,35 +26,52 @@ const __dir =
 
 const DB_ENCRYPTION_KEY_ENV_VAR = "PROSEVA_DB_ENCRYPTION_KEY";
 const DB_ENCRYPTION_V3_PAYLOAD_KEY = "__proseva_encrypted_v3";
-const DEFAULT_KEYPAIR_STORE_DIR = join(__dir, "../data/ml-kem-keys");
+const DEFAULT_KEYPAIR_STORE_DIR = process.env.PROSEVA_DATA_DIR
+  ? join(process.env.PROSEVA_DATA_DIR, "ml-kem-keys")
+  : join(__dir, "../data/ml-kem-keys");
 
 // Initialize ML-KEM WASM module
 let wasmInitialized = false;
 function ensureWasmInit(): void {
   if (wasmInitialized) return;
-  try {
-    // Try multiple path resolution strategies for robustness
-    let wasmPath: string;
-    try {
-      // First, try to resolve from node_modules
-      const resolvedPath =
-        require.resolve("wasm-pqc-subtle/wasm_pqc_subtle_bg.wasm");
-      wasmPath = resolvedPath;
-    } catch {
-      // Fallback to relative path
-      wasmPath = join(
-        __dir,
-        "../../node_modules/wasm-pqc-subtle/wasm_pqc_subtle_bg.wasm",
-      );
-    }
 
-    const wasmBuffer = readFileSync(wasmPath);
-    initSync({ module: wasmBuffer });
-    wasmInitialized = true;
-  } catch (err) {
-    console.error("Failed to initialize ML-KEM WASM module:", err);
-    throw err;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { dirname } = require("node:path") as typeof import("node:path");
+  const candidates: string[] = [
+    // 1. Next to compiled binary (production)
+    join(dirname(process.execPath), "wasm_pqc_subtle_bg.wasm"),
+  ];
+
+  // 2. require.resolve from node_modules (development)
+  try {
+    candidates.push(
+      require.resolve("wasm-pqc-subtle/wasm_pqc_subtle_bg.wasm"),
+    );
+  } catch {
+    // not available
   }
+
+  // 3. Relative to source (development fallback)
+  candidates.push(
+    join(__dir, "../../node_modules/wasm-pqc-subtle/wasm_pqc_subtle_bg.wasm"),
+  );
+
+  for (const wasmPath of candidates) {
+    try {
+      const wasmBuffer = readFileSync(wasmPath);
+      initSync({ module: wasmBuffer });
+      wasmInitialized = true;
+      return;
+    } catch {
+      // try next candidate
+    }
+  }
+
+  const err = new Error(
+    "Failed to initialize ML-KEM WASM module: WASM file not found in any candidate path",
+  );
+  console.error(err.message);
+  throw err;
 }
 
 export type DatabaseSnapshot = Record<string, Record<string, unknown>>;

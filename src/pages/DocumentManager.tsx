@@ -13,7 +13,7 @@ import {
 import { LuChevronDown, LuChevronRight, LuTrash2 } from "react-icons/lu";
 import { StatCard } from "../components/shared/StatCard";
 import FileUpload from "../components/FileUpload";
-import { getAuthToken } from "../lib/api";
+import { getAuthToken, API_BASE } from "../lib/api";
 import { useStore } from "../store/StoreContext";
 
 interface DocumentEntry {
@@ -57,7 +57,7 @@ export default function DocumentManager() {
     const headers: HeadersInit = token
       ? { Authorization: `Bearer ${token}` }
       : {};
-    fetch("/api/documents", { headers })
+    fetch(`${API_BASE}/documents`, { headers })
       .then((r) => {
         if (!r.ok) throw new Error(`Failed to load: ${r.status}`);
         return r.json();
@@ -77,7 +77,7 @@ export default function DocumentManager() {
       const headers: HeadersInit = token
         ? { Authorization: `Bearer ${token}` }
         : {};
-      return fetch("/api/ingest/status", { headers })
+      return fetch(`${API_BASE}/ingest/status`, { headers })
         .then((r) => (r.ok ? r.json() : Promise.resolve(null)))
         .then((data) => setIngestStatus(data))
         .catch(() =>
@@ -134,7 +134,7 @@ export default function DocumentManager() {
       const headers: HeadersInit = token
         ? { Authorization: `Bearer ${token}` }
         : {};
-      const res = await fetch(`/api/documents/${doc.id}`, {
+      const res = await fetch(`${API_BASE}/documents/${doc.id}`, {
         method: "DELETE",
         headers,
       });

@@ -1,10 +1,15 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 import {
   cosine_similarity,
   cosine_similarity_dataspace,
-} from "wasm-similarity";
+  ensureWasmSimilarityInit,
+} from "./wasm-similarity-init";
 import { Database, type Embedding } from "./db";
 import { InMemoryAdapter } from "./persistence";
+
+beforeAll(() => {
+  ensureWasmSimilarityInit();
+});
 
 describe("cosine_similarity (wasm-similarity)", () => {
   it("returns 1 for identical vectors", () => {
