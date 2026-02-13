@@ -854,6 +854,70 @@ export const estatePlansApi = {
   },
 };
 
+// --- Fax API ---
+export type FaxJob = {
+  id: string;
+  filingId: string;
+  caseId: string;
+  recipientName: string;
+  recipientFax: string;
+  documentPath?: string;
+  status: "pending" | "sending" | "sent" | "failed";
+  provider: string;
+  providerJobId?: string;
+  error?: string;
+  createdAt: string;
+  updatedAt: string;
+  sentAt?: string;
+};
+
+export type FaxStatus = {
+  configured: boolean;
+  provider: string;
+};
+
+export const faxApi = {
+  list: async (): Promise<FaxJob[]> => {
+    const res = await fetch("/api/fax-jobs", {
+      headers: await getAuthHeaders(),
+    });
+    return res.json();
+  },
+  get: async (id: string): Promise<FaxJob | null> => {
+    const res = await fetch(`/api/fax-jobs/${id}`, {
+      headers: await getAuthHeaders(),
+    });
+    if (res.status === 404) return null;
+    return res.json();
+  },
+  send: async (data: {
+    filingId: string;
+    caseId?: string;
+    recipientName?: string;
+    recipientFax: string;
+    documentPath?: string;
+  }): Promise<FaxJob> => {
+    const res = await fetch("/api/fax-jobs", {
+      method: "POST",
+      headers: await getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+  delete: async (id: string): Promise<void> => {
+    await fetch(`/api/fax-jobs/${id}`, {
+      method: "DELETE",
+      headers: await getAuthHeaders(),
+    });
+  },
+  status: async (): Promise<FaxStatus> => {
+    const res = await fetch("/api/fax/status", {
+      headers: await getAuthHeaders(),
+    });
+    return res.json();
+  },
+};
+
 export const researchAgentApi = {
   chat: async (
     messages: Array<{ role: string; content: string }>,
@@ -890,4 +954,5 @@ export const api = {
   auth: authApi,
   estatePlans: estatePlansApi,
   researchAgent: researchAgentApi,
+  fax: faxApi,
 };

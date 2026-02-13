@@ -129,6 +129,19 @@ export function AddContactDialog({
             </Box>
             <Box w="full">
               <Text fontSize="sm" mb="1">
+                Fax
+              </Text>
+              <Input
+                type="tel"
+                value={form.fax ?? ""}
+                onChange={(e) =>
+                  onFormChange({ ...form, fax: e.target.value })
+                }
+                placeholder="(555) 123-4567"
+              />
+            </Box>
+            <Box w="full">
+              <Text fontSize="sm" mb="1">
                 Email
               </Text>
               <Input

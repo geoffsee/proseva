@@ -530,6 +530,8 @@ export interface components {
       organization: string;
       /** @default  */
       phone: string;
+      /** @default  */
+      fax: string;
       /**
        * Format: email
        * @default
@@ -555,6 +557,7 @@ export interface components {
         | "other";
       organization?: string;
       phone?: string;
+      fax?: string;
       /** Format: email */
       email?: string;
       address?: string;
@@ -574,6 +577,7 @@ export interface components {
         | "other";
       organization?: string;
       phone?: string;
+      fax?: string;
       /** Format: email */
       email?: string;
       address?: string;
