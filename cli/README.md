@@ -10,11 +10,34 @@ bun install
 bun link
 ```
 
+## Authentication
+
+The server requires authentication for all API requests. You must log in before using any commands.
+
+```bash
+# Log in with your passphrase (prompted securely)
+proseva auth login
+
+# Log in with a custom token TTL
+proseva auth login --ttl 7d
+
+# Check authentication status
+proseva auth status
+
+# Log out (remove stored token)
+proseva auth logout
+```
+
+Tokens are stored locally at `~/.proseva/token.json` and automatically included in all subsequent requests. Expired tokens are cleaned up automatically.
+
 ## Usage
 
 ### Basic Commands
 
 ```bash
+# Log in first
+proseva auth login
+
 # Show server status
 proseva status
 
@@ -48,10 +71,11 @@ proseva scan /path/to/documents
 
 ```bash
 # Connect to remote server
-proseva --api-url https://proseva.example.com status
+proseva --api-url https://proseva.example.com auth login
 
 # Or set environment variable
 export PROSEVA_API_URL=https://proseva.example.com
+proseva auth login
 proseva config get
 ```
 
@@ -82,6 +106,26 @@ Show system status dashboard including:
 Options:
 
 - `--watch` - Refresh every 5 seconds
+
+### `proseva auth`
+
+Authentication management:
+
+#### `auth login`
+
+Log in with your passphrase and receive an authentication token. The passphrase is prompted securely (hidden input).
+
+Options:
+
+- `--ttl <duration>` - Token time-to-live (default: `24h`). Accepts values like `30m`, `24h`, `7d`.
+
+#### `auth logout`
+
+Remove the stored authentication token.
+
+#### `auth status`
+
+Show current authentication status, including token expiration time and storage location.
 
 ### `proseva config`
 
@@ -266,6 +310,9 @@ bun run dev config get
 ### Initial Server Setup
 
 ```bash
+# Log in first
+proseva auth login
+
 # Set OpenAI API key
 proseva config set ai.openaiApiKey sk-...
 
@@ -295,6 +342,9 @@ proseva notifications test
 ### Daily Operations
 
 ```bash
+# Log in (if token has expired)
+proseva auth login
+
 # Check server status
 proseva status
 
@@ -313,6 +363,9 @@ proseva db export json > backup-$(date +%Y%m%d).json
 ```bash
 # Connect to production server
 export PROSEVA_API_URL=https://proseva.example.com
+
+# Authenticate
+proseva auth login
 
 # Update configuration
 proseva config set scheduler.timezone "America/Chicago"

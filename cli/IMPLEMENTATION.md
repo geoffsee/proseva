@@ -13,6 +13,7 @@ app/cli/
 ├── bin/
 │   └── proseva.ts              # Main entry point with Commander setup
 ├── commands/
+│   ├── auth.ts                 # Authentication (login, logout, status)
 │   ├── config.ts               # Configuration management
 │   ├── db.ts                   # Database operations
 │   ├── status.ts               # System status dashboard
@@ -21,7 +22,8 @@ app/cli/
 ├── lib/
 │   ├── api-client.ts           # API wrapper with error handling
 │   ├── api-types.d.ts          # Generated from openapi.json
-│   └── formatters.ts           # Output formatting utilities
+│   ├── formatters.ts           # Output formatting utilities
+│   └── globals.d.ts            # Global type definitions
 ├── package.json
 ├── tsconfig.json
 ├── README.md
@@ -52,31 +54,36 @@ All API operations are fully type-safe through generated TypeScript types from t
 
 ### Core Commands
 
-1. **status** - System status dashboard
+1. **auth** - Authentication management
+   - `login` - Log in with passphrase, receive and store a Bearer token
+   - `logout` - Remove stored token
+   - `status` - Show authentication status and token expiration
+
+2. **status** - System status dashboard
    - Shows database entity counts
    - Service configuration status
    - Scheduler status
    - Recent evaluations
    - Supports `--watch` mode for continuous updates
 
-2. **config** - Configuration management
+3. **config** - Configuration management
    - `get [key]` - View all or specific config
    - `set <key> <value>` - Update configuration
    - `reset [group]` - Reset to environment defaults
    - `test <service>` - Test service connections
    - `reinit <service>` - Reinitialize services
 
-3. **db** - Database operations
+4. **db** - Database operations
    - `stats` - Entity counts per collection
    - `export <format>` - Export database (JSON)
 
-4. **scan <directory>** - Document ingestion
+5. **scan <directory>** - Document ingestion
    - Scans directory for PDFs
    - Extracts text using OpenAI
    - Auto-populates case data
    - Reports added/skipped/error counts
 
-5. **notifications** - Notification management
+6. **notifications** - Notification management
    - `devices list/add/remove` - FCM device tokens
    - `sms list/add/remove` - SMS recipients
    - `test` - Trigger test evaluation
@@ -95,6 +102,7 @@ All API operations are fully type-safe through generated TypeScript types from t
 
 Wraps openapi-fetch with:
 
+- Bearer token authentication (set via constructor or `setToken()`)
 - Consistent error handling via `ApiError` class
 - Verbose logging support
 - Type-safe request/response handling
@@ -337,6 +345,10 @@ Generate completion scripts for:
 
 ### Manual Testing Checklist
 
+- [x] Auth login prompts for passphrase and stores token
+- [x] Auth logout removes stored token
+- [x] Auth status shows token expiration
+- [x] Commands fail with helpful message when not authenticated
 - [x] Status command shows correct info
 - [x] Config get displays all configuration
 - [x] Config get <key> shows specific value
@@ -364,12 +376,20 @@ Should add tests for:
 
 ## Security Considerations
 
+### Authentication
+
+1. **Passphrase-based login**: Users authenticate via `proseva auth login`, which prompts for the server passphrase (hidden input) and receives a time-limited Bearer token
+2. **Token storage**: Tokens are stored at `~/.proseva/token.json` with expiration tracking. Expired tokens are automatically cleaned up on next read
+3. **Automatic inclusion**: The `preAction` hook loads the stored token and includes it as a `Bearer` token in the `Authorization` header for all API requests
+4. **Token TTL**: Configurable via `--ttl` flag (default: 24h). Accepts durations like `30m`, `24h`, `7d`
+
 ### Sensitive Data Handling
 
 1. **Configuration values**: API keys, tokens, and passwords are masked in output
 2. **Network traffic**: Uses HTTPS when connecting to remote servers
-3. **Local storage**: No credentials stored locally
+3. **Local token storage**: Auth tokens stored at `~/.proseva/token.json` with expiration-based auto-cleanup
 4. **Environment variables**: Respects PROSEVA_API_URL for configuration
+5. **Passphrase input**: Collected via raw terminal mode with character masking (asterisks)
 
 ### Remote Server Access
 
@@ -377,7 +397,7 @@ When connecting to remote servers:
 
 - Always use HTTPS URLs
 - Verify SSL certificates
-- Use API authentication (future enhancement)
+- Authenticate via `proseva auth login` before running commands
 - Rate limiting (future enhancement)
 
 ## Performance Considerations
@@ -411,6 +431,7 @@ The CLI provides a robust, type-safe interface for managing the Pro-Se-VA server
 
 Key achievements:
 
+- ✓ Passphrase-based authentication with token management
 - ✓ Full type safety via OpenAPI spec
 - ✓ Comprehensive error handling
 - ✓ Beautiful, colored terminal output

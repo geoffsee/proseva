@@ -48,7 +48,13 @@ bun run lint           # Lint code
 ./manage-db.sh         # Database management menu
 ```
 
-## 5. License
+## 5. Resources
+
+- User Manual: `docs/user-manual/README.md`
+- CLI: `cli/README.md`
+- SDK: `proseva-sdk/README.md`
+
+## 6. License
 
 MIT - see [LICENSE.md](./LICENSE.md)
 
