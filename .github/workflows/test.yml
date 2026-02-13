@@ -15,5 +15,6 @@ jobs:
         with:
           bun-version: latest
       - run: bun install
+      - run: cd proseva-sdk && bun run build
       - run: bun run test:coverage
       - run: bun run typecheck
