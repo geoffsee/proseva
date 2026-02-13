@@ -63,10 +63,36 @@ jobs:
       - name: Write Apple API key to file
         if: matrix.platform == 'mac'
         env:
-          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY }}
         run: |
-          mkdir -p "$RUNNER_TEMP/apple-keys"
-          echo "$APPLE_API_KEY" > "$RUNNER_TEMP/apple-keys/AuthKey.p8"
+          set -euo pipefail
+          KEY_PATH="$RUNNER_TEMP/apple-keys/AuthKey.p8"
+          mkdir -p "$(dirname "$KEY_PATH")"
+
+          python - <<'PY'
+import base64
+import os
+import pathlib
+
+data = os.environ["APPLE_API_KEY_CONTENT"]
+key_path = pathlib.Path(os.environ["RUNNER_TEMP"]) / "apple-keys" / "AuthKey.p8"
+
+# Replace escaped newlines so secrets stored as single-line strings still work
+processed = data.replace("\\n", "\n")
+
+# If it still doesn't look like a PEM key, try base64 decoding
+if "BEGIN PRIVATE KEY" not in processed:
+    try:
+        candidate = base64.b64decode(processed)
+        if b"BEGIN PRIVATE KEY" in candidate:
+            processed = candidate.decode()
+    except Exception:
+        pass
+
+key_path.write_text(processed)
+PY
+
+          echo "APPLE_API_KEY=$KEY_PATH" >> "$GITHUB_ENV"
 
       - name: Package
         run: npx electron-builder --${{ matrix.platform }} --${{ matrix.arch }}
@@ -76,7 +102,7 @@ jobs:
           CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
           # macOS notarization (API key)
-          APPLE_API_KEY: ${{ runner.temp }}/apple-keys/AuthKey.p8
+          APPLE_API_KEY: ${{ env.APPLE_API_KEY }}
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           # Windows code signing
