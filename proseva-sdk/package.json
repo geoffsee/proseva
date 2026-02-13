@@ -1,6 +1,6 @@
 {
   "name": "proseva-sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Type-safe client for the ProSeVA API generated from openapi.json",
   "type": "module",
   "main": "dist/index.js",
