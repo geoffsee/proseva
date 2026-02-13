@@ -1,10 +1,127 @@
 import { render, screen, waitFor, fireEvent } from "../test-utils";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import DocumentManager from "./DocumentManager";
+import { StoreProvider } from "../store/StoreContext";
+import { RootStore } from "../store/RootStore";
 
 vi.mock("../lib/api", () => ({
   getAuthToken: vi.fn().mockResolvedValue("test-token-123"),
+  api: {
+    cases: {
+      list: vi.fn().mockResolvedValue([]),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      addParty: vi.fn(),
+      removeParty: vi.fn(),
+      addFiling: vi.fn(),
+      removeFiling: vi.fn(),
+    },
+    deadlines: {
+      list: vi.fn().mockResolvedValue([]),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      toggleComplete: vi.fn(),
+    },
+    filings: {
+      list: vi.fn().mockResolvedValue([]),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    evidences: {
+      list: vi.fn().mockResolvedValue([]),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    finances: {
+      list: vi.fn().mockResolvedValue([]),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    contacts: {
+      list: vi.fn().mockResolvedValue([]),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    notes: {
+      list: vi.fn().mockResolvedValue([]),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    documents: { list: vi.fn().mockResolvedValue([]) },
+  },
 }));
+
+function createTestStore() {
+  return RootStore.create({
+    caseStore: { cases: [] },
+    deadlineStore: {
+      deadlines: [],
+      selectedType: "all",
+      selectedUrgency: "all",
+      selectedCaseId: "all",
+      searchQuery: "",
+    },
+    financeStore: { entries: [] },
+    contactStore: { contacts: [] },
+    chatStore: { messages: [] },
+    documentStore: { documents: [] },
+    noteStore: { notes: [] },
+    taskStore: { tasks: [] },
+    evidenceStore: {
+      evidences: [],
+      selectedType: "all",
+      selectedRelevance: "all",
+      selectedCaseId: "all",
+      selectedAdmissible: "all",
+      searchQuery: "",
+    },
+    filingStore: {
+      filings: [],
+      selectedType: "all",
+      selectedCaseId: "all",
+      searchQuery: "",
+      dateFrom: "",
+      dateTo: "",
+    },
+    evaluationStore: {
+      evaluations: [],
+      deviceTokens: [],
+      smsRecipients: [],
+      schedulerStatus: null,
+      isLoading: false,
+      isTriggering: false,
+    },
+    configStore: {
+      config: null,
+      isLoading: false,
+      isTesting: false,
+      error: null,
+    },
+    estatePlanStore: {
+      plans: [],
+      selectedStatus: "all",
+      searchQuery: "",
+    },
+    researchStore: {
+      messages: [],
+    },
+  });
+}
+
+function renderDocManager(store = createTestStore()) {
+  return render(
+    <StoreProvider store={store}>
+      <DocumentManager />
+    </StoreProvider>,
+  );
+}
 
 const MOCK_DOCS = [
   {
@@ -82,7 +199,10 @@ function mockFetch(
     errors: 0,
   },
 ) {
-  global.fetch = vi.fn().mockImplementation((url: string) => {
+  global.fetch = vi.fn().mockImplementation((url: string, opts?: any) => {
+    if (opts?.method === "DELETE") {
+      return Promise.resolve({ ok: true, status: 204 });
+    }
     if (url.startsWith("/texts/")) {
       return Promise.resolve({
         ok: true,
@@ -120,7 +240,7 @@ describe("DocumentManager", () => {
       skipped: 0,
       errors: 0,
     });
-    render(<DocumentManager />);
+    renderDocManager();
     await waitFor(() => {
       expect(screen.getByText("Total Documents")).toBeInTheDocument();
     });
@@ -141,7 +261,7 @@ describe("DocumentManager", () => {
       skipped: 1,
       errors: 0,
     });
-    render(<DocumentManager />);
+    renderDocManager();
     await waitFor(() => {
       expect(screen.getByText(/Auto-ingest Running/)).toBeInTheDocument();
     });
@@ -152,7 +272,7 @@ describe("DocumentManager", () => {
 
   it("renders all documents in the table", async () => {
     mockFetch(MOCK_DOCS);
-    render(<DocumentManager />);
+    renderDocManager();
     await waitFor(() => {
       expect(screen.getByText("Motion to Dismiss")).toBeInTheDocument();
     });
@@ -162,7 +282,7 @@ describe("DocumentManager", () => {
 
   it("filters by category", async () => {
     mockFetch(MOCK_DOCS);
-    render(<DocumentManager />);
+    renderDocManager();
     await waitFor(() => {
       expect(screen.getByText("Motion to Dismiss")).toBeInTheDocument();
     });
@@ -177,7 +297,7 @@ describe("DocumentManager", () => {
 
   it("filters by search text", async () => {
     mockFetch(MOCK_DOCS);
-    render(<DocumentManager />);
+    renderDocManager();
     await waitFor(() => {
       expect(screen.getByText("Motion to Dismiss")).toBeInTheDocument();
     });
@@ -192,7 +312,7 @@ describe("DocumentManager", () => {
 
   it("expands row to lazy-load extracted text", async () => {
     mockFetch(MOCK_DOCS);
-    render(<DocumentManager />);
+    renderDocManager();
     await waitFor(() => {
       expect(screen.getByText("Court Order")).toBeInTheDocument();
     });
@@ -207,7 +327,7 @@ describe("DocumentManager", () => {
 
   it("shows error on fetch failure", async () => {
     mockFetch(null, false);
-    render(<DocumentManager />);
+    renderDocManager();
     await waitFor(() => {
       expect(screen.getByText(/Error: Failed to load/)).toBeInTheDocument();
     });
@@ -215,7 +335,7 @@ describe("DocumentManager", () => {
 
   it("shows empty state when no documents indexed", async () => {
     mockFetch([]);
-    render(<DocumentManager />);
+    renderDocManager();
     await waitFor(() => {
       expect(screen.queryByText("Loading documents…")).not.toBeInTheDocument();
     });
@@ -224,7 +344,7 @@ describe("DocumentManager", () => {
 
   it("renders upload component", async () => {
     mockFetch(MOCK_DOCS);
-    render(<DocumentManager />);
+    renderDocManager();
     await waitFor(() => {
       expect(screen.getByTestId("drop-zone")).toBeInTheDocument();
     });
@@ -269,7 +389,7 @@ describe("DocumentManager", () => {
       });
     });
 
-    render(<DocumentManager />);
+    renderDocManager();
     await waitFor(() => {
       expect(screen.getByText("Motion to Dismiss")).toBeInTheDocument();
     });
@@ -288,7 +408,7 @@ describe("DocumentManager", () => {
 
   it("renders caseId as link when present", async () => {
     mockFetch(MOCK_DOCS);
-    render(<DocumentManager />);
+    renderDocManager();
     await waitFor(() => {
       expect(screen.getByText("Court Order")).toBeInTheDocument();
     });
@@ -299,7 +419,7 @@ describe("DocumentManager", () => {
 
   it("marks duplicate documents", async () => {
     mockFetch(DUP_DOCS);
-    render(<DocumentManager />);
+    renderDocManager();
     await waitFor(() =>
       expect(screen.getAllByText("Duplicate").length).toBe(2),
     );
@@ -308,7 +428,7 @@ describe("DocumentManager", () => {
 
   it("sends Authorization header with /api/documents request", async () => {
     mockFetch(MOCK_DOCS);
-    render(<DocumentManager />);
+    renderDocManager();
     await waitFor(() => {
       expect(screen.getByText("Motion to Dismiss")).toBeInTheDocument();
     });
@@ -328,7 +448,7 @@ describe("DocumentManager", () => {
 
   it("sends Authorization header with /api/ingest/status request", async () => {
     mockFetch(MOCK_DOCS);
-    render(<DocumentManager />);
+    renderDocManager();
     await waitFor(() => {
       expect(screen.getByText("Motion to Dismiss")).toBeInTheDocument();
     });
@@ -348,7 +468,7 @@ describe("DocumentManager", () => {
 
   it("sends Authorization header when loading extracted text", async () => {
     mockFetch(MOCK_DOCS);
-    render(<DocumentManager />);
+    renderDocManager();
     await waitFor(() => {
       expect(screen.getByText("Court Order")).toBeInTheDocument();
     });
@@ -371,5 +491,149 @@ describe("DocumentManager", () => {
         }),
       }),
     );
+  });
+
+  it("deletes a document when delete button is clicked and confirmed", async () => {
+    mockFetch(MOCK_DOCS);
+    window.confirm = vi.fn().mockReturnValue(true);
+    renderDocManager();
+    await waitFor(() => {
+      expect(screen.getByText("Motion to Dismiss")).toBeInTheDocument();
+    });
+
+    // Override fetch for the DELETE call
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(
+      (url: string, opts?: any) => {
+        if (opts?.method === "DELETE") {
+          return Promise.resolve({ ok: true, status: 204 });
+        }
+        if (url === "/api/ingest/status") {
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({
+                active: false,
+                directory: "",
+                running: false,
+                lastRunStarted: null,
+                lastRunFinished: null,
+                added: 0,
+                skipped: 0,
+                errors: 0,
+              }),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve(MOCK_DOCS),
+        });
+      },
+    );
+
+    const deleteBtn = screen.getByLabelText("Delete Motion to Dismiss");
+    fireEvent.click(deleteBtn);
+
+    expect(window.confirm).toHaveBeenCalledWith('Delete "Motion to Dismiss"?');
+    await waitFor(() => {
+      expect(screen.queryByText("Motion to Dismiss")).not.toBeInTheDocument();
+    });
+
+    const deleteCall = (
+      global.fetch as ReturnType<typeof vi.fn>
+    ).mock.calls.find(
+      (c: unknown[]) =>
+        typeof c[1] === "object" &&
+        (c[1] as Record<string, unknown>).method === "DELETE",
+    );
+    expect(deleteCall).toBeDefined();
+    expect(deleteCall![0]).toBe("/api/documents/1");
+    expect((deleteCall![1] as Record<string, unknown>).headers).toEqual(
+      expect.objectContaining({ Authorization: "Bearer test-token-123" }),
+    );
+  });
+
+  it("does not delete when confirm is cancelled", async () => {
+    mockFetch(MOCK_DOCS);
+    window.confirm = vi.fn().mockReturnValue(false);
+    renderDocManager();
+    await waitFor(() => {
+      expect(screen.getByText("Motion to Dismiss")).toBeInTheDocument();
+    });
+
+    const deleteBtn = screen.getByLabelText("Delete Motion to Dismiss");
+    fireEvent.click(deleteBtn);
+
+    expect(window.confirm).toHaveBeenCalled();
+    expect(screen.getByText("Motion to Dismiss")).toBeInTheDocument();
+  });
+
+  it("reloads stores after successful upload for timeline sync", async () => {
+    // Import the mocked api module to check calls on store reload methods.
+    // loadCases() calls api.cases.list(), loadFilings() calls api.filings.list(), etc.
+    const { api } = await import("../lib/api");
+    const casesListSpy = vi.mocked(api.cases.list);
+    const filingsListSpy = vi.mocked(api.filings.list);
+    const evidencesListSpy = vi.mocked(api.evidences.list);
+    const deadlinesListSpy = vi.mocked(api.deadlines.list);
+    const contactsListSpy = vi.mocked(api.contacts.list);
+    const notesListSpy = vi.mocked(api.notes.list);
+
+    global.fetch = vi.fn().mockImplementation((url: string, opts?: any) => {
+      if (opts?.method === "POST") {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      }
+      if (url === "/api/ingest/status") {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              active: false,
+              directory: "",
+              running: false,
+              lastRunStarted: null,
+              lastRunFinished: null,
+              added: 0,
+              skipped: 0,
+              errors: 0,
+            }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(MOCK_DOCS),
+      });
+    });
+
+    const store = createTestStore();
+    renderDocManager(store);
+    await waitFor(() => {
+      expect(screen.getByText("Motion to Dismiss")).toBeInTheDocument();
+    });
+
+    // Clear call counts so we only track calls triggered by upload
+    casesListSpy.mockClear();
+    filingsListSpy.mockClear();
+    evidencesListSpy.mockClear();
+    deadlinesListSpy.mockClear();
+    contactsListSpy.mockClear();
+    notesListSpy.mockClear();
+
+    const input = screen.getByTestId("file-input");
+    const file = new File([new ArrayBuffer(1024)], "new.pdf", {
+      type: "application/pdf",
+    });
+    fireEvent.change(input, { target: { files: [file] } });
+    fireEvent.click(screen.getByText("Upload 1 file"));
+
+    await waitFor(() => {
+      expect(casesListSpy).toHaveBeenCalled();
+    });
+    expect(filingsListSpy).toHaveBeenCalled();
+    expect(evidencesListSpy).toHaveBeenCalled();
+    expect(deadlinesListSpy).toHaveBeenCalled();
+    expect(contactsListSpy).toHaveBeenCalled();
+    expect(notesListSpy).toHaveBeenCalled();
   });
 });

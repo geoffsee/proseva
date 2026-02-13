@@ -23,18 +23,14 @@ vi.mock("../../lib/kv", () => ({
   initAuthStore: vi.fn(),
   initKeysStore: vi.fn(),
   initDataStore: vi.fn(),
-  generateAndStoreMLKEMKeys: vi
-    .fn()
-    .mockResolvedValue({
-      publicKey: new Uint8Array(),
-      secretKey: new Uint8Array(),
-    }),
-  loadMLKEMKeys: vi
-    .fn()
-    .mockResolvedValue({
-      publicKey: new Uint8Array(),
-      secretKey: new Uint8Array(),
-    }),
+  generateAndStoreMLKEMKeys: vi.fn().mockResolvedValue({
+    publicKey: new Uint8Array(),
+    secretKey: new Uint8Array(),
+  }),
+  loadMLKEMKeys: vi.fn().mockResolvedValue({
+    publicKey: new Uint8Array(),
+    secretKey: new Uint8Array(),
+  }),
 }));
 
 describe("PassphraseGate", () => {

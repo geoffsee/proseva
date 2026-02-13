@@ -3,6 +3,21 @@ import { Box, VStack, HStack, Text, Button } from "@chakra-ui/react";
 import { LuUpload, LuX, LuFile } from "react-icons/lu";
 import { getAuthToken } from "../lib/api";
 
+const DEFAULT_CATEGORIES = [
+  "Motions",
+  "Orders",
+  "Pleadings",
+  "Discovery",
+  "Correspondence",
+  "Financial Records",
+  "Evidence",
+  "Agreements",
+  "Court Documents",
+  "Medical Records",
+  "Personal Documents",
+  "Other",
+];
+
 interface FileUploadProps {
   categories?: string[];
   onUploadComplete?: () => void;
@@ -19,6 +34,10 @@ export default function FileUpload({
   onUploadComplete,
 }: FileUploadProps) {
   const [files, setFiles] = useState<File[]>([]);
+  const allCategories = React.useMemo(() => {
+    const set = new Set([...DEFAULT_CATEGORIES, ...categories]);
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }, [categories]);
   const [category, setCategory] = useState("_new_filings");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -175,15 +194,14 @@ export default function FileUpload({
               }}
               value={category}
               onChange={(e) => setCategory(e.target.value)}
+              data-testid="category-select"
             >
-              <option value="_new_filings">_new_filings</option>
-              {categories
-                .filter((c) => c !== "_new_filings")
-                .map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
+              <option value="_new_filings">New Filings (Unsorted)</option>
+              {allCategories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
             </select>
             <Button
               colorPalette="blue"

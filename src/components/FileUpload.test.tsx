@@ -172,4 +172,64 @@ describe("FileUpload", () => {
       );
     });
   });
+
+  it("shows default categories in the dropdown", () => {
+    render(<FileUpload />);
+    fireEvent.change(screen.getByTestId("file-input"), {
+      target: { files: [createFile("doc.pdf")] },
+    });
+
+    const select = screen.getByTestId("category-select");
+    const options = Array.from(select.querySelectorAll("option")).map(
+      (o) => o.value,
+    );
+
+    expect(options).toContain("_new_filings");
+    expect(options).toContain("Motions");
+    expect(options).toContain("Orders");
+    expect(options).toContain("Evidence");
+    expect(options).toContain("Financial Records");
+    expect(options).toContain("Discovery");
+  });
+
+  it("merges existing categories with defaults", () => {
+    render(<FileUpload categories={["Custom Category", "Motions"]} />);
+    fireEvent.change(screen.getByTestId("file-input"), {
+      target: { files: [createFile("doc.pdf")] },
+    });
+
+    const select = screen.getByTestId("category-select");
+    const options = Array.from(select.querySelectorAll("option")).map(
+      (o) => o.value,
+    );
+
+    expect(options).toContain("Custom Category");
+    expect(options).toContain("Motions");
+    expect(options).toContain("Orders");
+    // No duplicates
+    expect(options.filter((o) => o === "Motions")).toHaveLength(1);
+  });
+
+  it("sends selected category in upload FormData", async () => {
+    global.fetch = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: () => Promise.resolve([]) });
+
+    render(<FileUpload />);
+    fireEvent.change(screen.getByTestId("file-input"), {
+      target: { files: [createFile("doc.pdf")] },
+    });
+
+    const select = screen.getByTestId("category-select");
+    fireEvent.change(select, { target: { value: "Evidence" } });
+    fireEvent.click(screen.getByText("Upload 1 file"));
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalled();
+    });
+
+    const call = (global.fetch as any).mock.calls[0];
+    const formData = call[1].body as FormData;
+    expect(formData.get("category")).toBe("Evidence");
+  });
 });

@@ -29,12 +29,12 @@ Set `OPENAI_API_KEY` in a `.env` file to enable AI features.
 
 ## 3. Tech Stack
 
-| Layer    | Technology                                          |
-| -------- | --------------------------------------------------- |
-| Frontend | React 19, MobX State Tree, Chakra UI, Vite          |
-| Backend  | Bun, Itty Router, JSON file DB                      |
-| Security | ML-KEM-1024 + AES-256-GCM, bcrypt passphrase auth   |
-| Testing  | Vitest, React Testing Library, 70% coverage target   |
+| Layer    | Technology                                         |
+| -------- | -------------------------------------------------- |
+| Frontend | React 19, MobX State Tree, Chakra UI, Vite         |
+| Backend  | Bun, Itty Router, JSON file DB                     |
+| Security | ML-KEM-1024 + AES-256-GCM, bcrypt passphrase auth  |
+| Testing  | Vitest, React Testing Library, 70% coverage target |
 
 ## 4. Scripts
 

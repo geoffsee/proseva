@@ -1,6 +1,6 @@
 import { AutoRouter, cors } from "itty-router";
 import { join, basename, relative } from "path";
-import { readFile, writeFile, mkdir, readdir, stat } from "fs/promises";
+import { readFile, writeFile, mkdir, readdir, stat, unlink } from "fs/promises";
 import OpenAI from "openai";
 import {
   db,
@@ -1288,6 +1288,44 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
     await writeFile(indexPath, JSON.stringify(allEntries, null, 2));
 
     return json201(newEntries);
+  })
+
+  .delete("/documents/:id", async ({ params }) => {
+    const baseDir = join(appRoot, "case-data/case-documents-app");
+    const indexPath = join(baseDir, "index.json");
+
+    let entries: DocumentEntry[] = [];
+    try {
+      const raw = await readFile(indexPath, "utf-8");
+      entries = JSON.parse(raw);
+    } catch {
+      return notFound();
+    }
+
+    const idx = entries.findIndex((e) => e.id === params.id);
+    if (idx === -1) return notFound();
+
+    const doc = entries[idx];
+
+    // Remove PDF and text files (best-effort)
+    if (doc.path) {
+      try {
+        await unlink(join(baseDir, doc.path));
+      } catch {
+        /* file may not exist */
+      }
+    }
+    if (doc.textFile) {
+      try {
+        await unlink(join(baseDir, doc.textFile));
+      } catch {
+        /* file may not exist */
+      }
+    }
+
+    entries.splice(idx, 1);
+    await writeFile(indexPath, JSON.stringify(entries, null, 2));
+    return noContent();
   })
 
   // --- Ingestion status ---

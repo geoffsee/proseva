@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Box,
+  Button,
   Heading,
   HStack,
   VStack,
@@ -9,10 +10,11 @@ import {
   Table,
   Badge,
 } from "@chakra-ui/react";
-import { LuChevronDown, LuChevronRight } from "react-icons/lu";
+import { LuChevronDown, LuChevronRight, LuTrash2 } from "react-icons/lu";
 import { StatCard } from "../components/shared/StatCard";
 import FileUpload from "../components/FileUpload";
 import { getAuthToken } from "../lib/api";
+import { useStore } from "../store/StoreContext";
 
 interface DocumentEntry {
   id: string;
@@ -28,6 +30,7 @@ interface DocumentEntry {
 }
 
 export default function DocumentManager() {
+  const store = useStore();
   const [docs, setDocs] = useState<DocumentEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -46,6 +49,7 @@ export default function DocumentManager() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [expandedText, setExpandedText] = useState<Record<string, string>>({});
   const [loadingText, setLoadingText] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState("");
 
   const fetchDocs = useCallback(async () => {
     setLoading(true);
@@ -108,17 +112,37 @@ export default function DocumentManager() {
     setExpandedId(doc.id);
     if (!expandedText[doc.id] && doc.textFile) {
       setLoadingText(doc.id);
-      getAuthToken().then((token) => {
-        const headers: HeadersInit = token
-          ? { Authorization: `Bearer ${token}` }
-          : {};
-        return fetch(`/texts/${doc.id}.txt`, { headers });
-      })
+      getAuthToken()
+        .then((token) => {
+          const headers: HeadersInit = token
+            ? { Authorization: `Bearer ${token}` }
+            : {};
+          return fetch(`/texts/${doc.id}.txt`, { headers });
+        })
         .then((r) => (r.ok ? r.text() : Promise.resolve("")))
         .then((text) =>
           setExpandedText((prev) => ({ ...prev, [doc.id]: text })),
         )
         .finally(() => setLoadingText(null));
+    }
+  }
+
+  async function handleDelete(doc: DocumentEntry) {
+    if (!confirm(`Delete "${doc.title || doc.filename}"?`)) return;
+    setDeleteError("");
+    try {
+      const token = await getAuthToken();
+      const headers: HeadersInit = token
+        ? { Authorization: `Bearer ${token}` }
+        : {};
+      const res = await fetch(`/api/documents/${doc.id}`, {
+        method: "DELETE",
+        headers,
+      });
+      if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
+      setDocs((prev) => prev.filter((d) => d.id !== doc.id));
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : "Delete failed");
     }
   }
 
@@ -217,7 +241,20 @@ export default function DocumentManager() {
         <StatCard label="Duplicates" value={duplicateInfo.duplicateIds.size} />
       </HStack>
 
-      <FileUpload categories={categories} onUploadComplete={fetchDocs} />
+      <FileUpload
+        categories={categories}
+        onUploadComplete={() => {
+          fetchDocs();
+          // Reload stores so Timeline and other pages reflect
+          // cases/filings/evidence/deadlines created during ingestion
+          store.caseStore.loadCases();
+          store.filingStore.loadFilings();
+          store.evidenceStore.loadEvidences();
+          store.deadlineStore.loadDeadlines();
+          store.contactStore.loadContacts();
+          store.noteStore.loadNotes();
+        }}
+      />
 
       <HStack gap="4" flexWrap="wrap">
         <Input
@@ -249,6 +286,12 @@ export default function DocumentManager() {
         {filtered.length} document{filtered.length !== 1 ? "s" : ""}
       </Text>
 
+      {deleteError && (
+        <Text color="red.500" fontSize="sm">
+          {deleteError}
+        </Text>
+      )}
+
       <Box overflowX="auto">
         <Table.Root size="sm">
           <Table.Header>
@@ -260,6 +303,7 @@ export default function DocumentManager() {
               <Table.ColumnHeader>Dates</Table.ColumnHeader>
               <Table.ColumnHeader>Size</Table.ColumnHeader>
               <Table.ColumnHeader>Case</Table.ColumnHeader>
+              <Table.ColumnHeader w="50px" />
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -312,10 +356,24 @@ export default function DocumentManager() {
                       "—"
                     )}
                   </Table.Cell>
+                  <Table.Cell>
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      colorPalette="red"
+                      aria-label={`Delete ${doc.title || doc.filename}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(doc);
+                      }}
+                    >
+                      <LuTrash2 />
+                    </Button>
+                  </Table.Cell>
                 </Table.Row>
                 {expandedId === doc.id && (
                   <Table.Row>
-                    <Table.Cell colSpan={7}>
+                    <Table.Cell colSpan={8}>
                       <Box
                         p="4"
                         bg="bg.subtle"
