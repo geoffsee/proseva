@@ -89,7 +89,8 @@ describe("SendFaxDialog", () => {
       />,
     );
 
-    const manualRadio = screen.getByText("Manual Entry")
+    const manualRadio = screen
+      .getByText("Manual Entry")
       .closest("label")
       ?.querySelector("input");
     if (manualRadio) {

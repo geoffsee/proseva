@@ -134,9 +134,7 @@ export function AddContactDialog({
               <Input
                 type="tel"
                 value={form.fax ?? ""}
-                onChange={(e) =>
-                  onFormChange({ ...form, fax: e.target.value })
-                }
+                onChange={(e) => onFormChange({ ...form, fax: e.target.value })}
                 placeholder="(555) 123-4567"
               />
             </Box>
