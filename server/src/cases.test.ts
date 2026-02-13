@@ -4,10 +4,8 @@ import { setupTestServer, api } from "./test-helpers";
 const ctx = setupTestServer();
 
 describe("Cases API", () => {
-  const url = (p = "") => `${ctx.baseUrl}/api/cases${p}`;
-
   it("lists empty", async () => {
-    const res = await fetch(url());
+    const res = await api.get("/api/cases", ctx.baseUrl);
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual([]);
   });
@@ -29,13 +27,13 @@ describe("Cases API", () => {
     const created = await (
       await api.post("/api/cases", { name: "C1" }, ctx.baseUrl)
     ).json();
-    const res = await fetch(url(`/${created.id}`));
+    const res = await api.get(`/api/cases/${created.id}`, ctx.baseUrl);
     expect(res.status).toBe(200);
     expect((await res.json()).name).toBe("C1");
   });
 
   it("returns 404 for missing case", async () => {
-    const res = await fetch(url("/nonexistent"));
+    const res = await api.get("/api/cases/nonexistent", ctx.baseUrl);
     expect(res.status).toBe(404);
   });
 

@@ -4,22 +4,20 @@ import { setupTestServer, api } from "./test-helpers";
 const ctx = setupTestServer();
 
 describe("Search API", () => {
-  const url = (params = "") => `${ctx.baseUrl}/api/search${params}`;
-
   it("requires query parameter (400 if missing)", async () => {
-    const res = await fetch(url());
+    const res = await api.get("/api/search", ctx.baseUrl);
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toBe("Query parameter 'q' is required");
   });
 
   it("requires non-empty query parameter", async () => {
-    const res = await fetch(url("?q=   "));
+    const res = await api.get("/api/search?q=   ", ctx.baseUrl);
     expect(res.status).toBe(400);
   });
 
   it("returns empty results for no matches", async () => {
-    const res = await fetch(url("?q=nonexistent"));
+    const res = await api.get("/api/search?q=nonexistent", ctx.baseUrl);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.totalResults).toBe(0);
@@ -50,7 +48,7 @@ describe("Search API", () => {
       ctx.baseUrl,
     );
 
-    const res = await fetch(url("?q=motion"));
+    const res = await api.get("/api/search?q=motion", ctx.baseUrl);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.query).toBe("motion");
@@ -70,7 +68,7 @@ describe("Search API", () => {
       ctx.baseUrl,
     );
 
-    const res = await fetch(url("?q=test&types=cases"));
+    const res = await api.get("/api/search?q=test&types=cases", ctx.baseUrl);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.results.cases.items.length).toBe(1);
@@ -90,7 +88,10 @@ describe("Search API", () => {
       ctx.baseUrl,
     );
 
-    const res = await fetch(url("?q=smith&types=cases,contacts"));
+    const res = await api.get(
+      "/api/search?q=smith&types=cases,contacts",
+      ctx.baseUrl,
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.results.cases.items.length).toBe(1);
@@ -104,7 +105,7 @@ describe("Search API", () => {
     await api.post("/api/cases", { name: "Alpha Beta Case" }, ctx.baseUrl);
     await api.post("/api/cases", { name: "Alpha Gamma Case" }, ctx.baseUrl);
 
-    const res = await fetch(url("?q=alpha&limit=2"));
+    const res = await api.get("/api/search?q=alpha&limit=2", ctx.baseUrl);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.results.cases.items.length).toBe(2);
@@ -117,7 +118,10 @@ describe("Search API", () => {
     await api.post("/api/cases", { name: "Case Two" }, ctx.baseUrl);
     await api.post("/api/cases", { name: "Case Three" }, ctx.baseUrl);
 
-    const res = await fetch(url("?q=case&offset=1&limit=2"));
+    const res = await api.get(
+      "/api/search?q=case&offset=1&limit=2",
+      ctx.baseUrl,
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.results.cases.items.length).toBe(2);
@@ -127,7 +131,7 @@ describe("Search API", () => {
   it("includes match highlights with <mark> tags", async () => {
     await api.post("/api/cases", { name: "Motion to Dismiss" }, ctx.baseUrl);
 
-    const res = await fetch(url("?q=motion"));
+    const res = await api.get("/api/search?q=motion", ctx.baseUrl);
     expect(res.status).toBe(200);
     const body = await res.json();
     const caseResult = body.results.cases.items[0];
@@ -146,7 +150,7 @@ describe("Search API", () => {
       ctx.baseUrl,
     );
 
-    const res = await fetch(url("?q=motion"));
+    const res = await api.get("/api/search?q=motion", ctx.baseUrl);
     expect(res.status).toBe(200);
     const body = await res.json();
     const items = body.results.cases.items;
@@ -160,7 +164,7 @@ describe("Search API", () => {
     await api.post("/api/cases", { name: "UPPERCASE MOTION" }, ctx.baseUrl);
     await api.post("/api/cases", { name: "lowercase motion" }, ctx.baseUrl);
 
-    const res = await fetch(url("?q=MOTION"));
+    const res = await api.get("/api/search?q=MOTION", ctx.baseUrl);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.results.cases.items.length).toBe(2);
@@ -179,7 +183,7 @@ describe("Search API", () => {
       ctx.baseUrl,
     );
 
-    const res = await fetch(url("?q=smith"));
+    const res = await api.get("/api/search?q=smith", ctx.baseUrl);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.results.cases.items.length).toBe(1);
@@ -193,7 +197,7 @@ describe("Search API", () => {
       ctx.baseUrl,
     );
 
-    const res = await fetch(url("?q=vacation"));
+    const res = await api.get("/api/search?q=vacation", ctx.baseUrl);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.results.evidences.items.length).toBe(1);
@@ -212,7 +216,7 @@ describe("Search API", () => {
       ctx.baseUrl,
     );
 
-    const res = await fetch(url("?q=custody"));
+    const res = await api.get("/api/search?q=custody", ctx.baseUrl);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.results.notes.items.length).toBe(1);
@@ -237,7 +241,10 @@ describe("Search API", () => {
       ctx.baseUrl,
     );
 
-    const res = await fetch(url(`?q=contact&caseId=${case1.id}`));
+    const res = await api.get(
+      `/api/search?q=contact&caseId=${case1.id}`,
+      ctx.baseUrl,
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.results.contacts.items.length).toBe(1);
@@ -245,7 +252,7 @@ describe("Search API", () => {
   });
 
   it("includes timing information", async () => {
-    const res = await fetch(url("?q=test"));
+    const res = await api.get("/api/search?q=test", ctx.baseUrl);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.timing).toBeDefined();
@@ -260,7 +267,7 @@ describe("Search API", () => {
       ctx.baseUrl,
     );
 
-    const res = await fetch(url("?q=(Test)"));
+    const res = await api.get("/api/search?q=(Test)", ctx.baseUrl);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.results.cases.items.length).toBe(1);
@@ -270,20 +277,20 @@ describe("Search API", () => {
     await api.post("/api/cases", { name: "Test Case" }, ctx.baseUrl);
 
     // Limit too high
-    const res1 = await fetch(url("?q=test&limit=1000"));
+    const res1 = await api.get("/api/search?q=test&limit=1000", ctx.baseUrl);
     expect(res1.status).toBe(200);
     const body1 = await res1.json();
     expect(body1.results.cases.items.length).toBe(1);
 
     // Limit too low
-    const res2 = await fetch(url("?q=test&limit=0"));
+    const res2 = await api.get("/api/search?q=test&limit=0", ctx.baseUrl);
     expect(res2.status).toBe(200);
   });
 
   it("handles negative offset gracefully", async () => {
     await api.post("/api/cases", { name: "Test Case" }, ctx.baseUrl);
 
-    const res = await fetch(url("?q=test&offset=-5"));
+    const res = await api.get("/api/search?q=test&offset=-5", ctx.baseUrl);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.results.cases.items.length).toBe(1);
@@ -292,14 +299,17 @@ describe("Search API", () => {
   it("ignores invalid types parameter", async () => {
     await api.post("/api/cases", { name: "Test Case" }, ctx.baseUrl);
 
-    const res = await fetch(url("?q=test&types=invalid,cases,alsobad"));
+    const res = await api.get(
+      "/api/search?q=test&types=invalid,cases,alsobad",
+      ctx.baseUrl,
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.results.cases.items.length).toBe(1);
   });
 
   it("returns all entity types in response even when empty", async () => {
-    const res = await fetch(url("?q=test"));
+    const res = await api.get("/api/search?q=test", ctx.baseUrl);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.results.cases).toBeDefined();
@@ -319,7 +329,7 @@ describe("Search API", () => {
       ctx.baseUrl,
     );
 
-    const res = await fetch(url("?q=test"));
+    const res = await api.get("/api/search?q=test", ctx.baseUrl);
     expect(res.status).toBe(200);
     const body = await res.json();
     const item = body.results.cases.items[0];
@@ -340,7 +350,7 @@ describe("Search API", () => {
       ctx.baseUrl,
     );
 
-    const res = await fetch(url("?q=retainer"));
+    const res = await api.get("/api/search?q=retainer", ctx.baseUrl);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.results.finances.items.length).toBe(1);
@@ -359,7 +369,7 @@ describe("Search API", () => {
       ctx.baseUrl,
     );
 
-    const res = await fetch(url("?q=filing"));
+    const res = await api.get("/api/search?q=filing", ctx.baseUrl);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.results.finances.items.length).toBe(1);

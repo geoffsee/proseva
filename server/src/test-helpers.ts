@@ -11,7 +11,7 @@ let testToken: string;
 /**
  * Generate a test JWT token
  */
-async function generateTestToken(): Promise<string> {
+export async function generateTestToken(): Promise<string> {
   // Ensure JWT secret exists
   const JWT_SECRET_KEY = "jwt_secret";
   let secret = db.serverConfig.get(JWT_SECRET_KEY) as

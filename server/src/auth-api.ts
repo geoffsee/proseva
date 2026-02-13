@@ -1,5 +1,6 @@
 import { Router } from "itty-router";
 import { SignJWT, jwtVerify } from "jose";
+import bcrypt from "bcryptjs";
 import { db } from "./db";
 
 const PASSPHRASE_HASH_KEY = "passphrase_hash";
@@ -61,7 +62,7 @@ async function verifyPassphrase(
   passphrase: string,
   hash: string,
 ): Promise<boolean> {
-  return Bun.password.verify(passphrase, hash);
+  return bcrypt.compare(passphrase, hash);
 }
 
 /**

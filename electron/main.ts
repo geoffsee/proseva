@@ -98,13 +98,12 @@ function startServer(): ChildProcess {
 async function waitForServer(maxRetries = 30, delayMs = 500): Promise<boolean> {
   for (let i = 0; i < maxRetries; i++) {
     try {
-      const response = await fetch(`${SERVER_URL}/api/cases`);
-      if (response.ok || response.status === 200) {
-        console.log("[electron] Server is ready");
-        return true;
-      }
+      // Any HTTP response (including 401) means the server is up
+      await fetch(`${SERVER_URL}/api/health`);
+      console.log("[electron] Server is ready");
+      return true;
     } catch {
-      // Server not ready yet
+      // Server not ready yet (connection refused)
     }
     await new Promise((resolve) => setTimeout(resolve, delayMs));
   }

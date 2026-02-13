@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("openai", () => ({
   default: class MockOpenAI {},
@@ -60,19 +60,28 @@ vi.mock("./scheduler", () => ({
   restartScheduler: vi.fn(),
 }));
 
-import { freshDb } from "./test-helpers";
+import { freshDb, generateTestToken } from "./test-helpers";
 import { router } from "./index";
 
-beforeEach(() => {
-  freshDb();
+let testToken: string;
+
+beforeEach(async () => {
+  await freshDb();
+  testToken = await generateTestToken();
 });
+
+function authRequest(url: string, init?: RequestInit): Request {
+  const headers = new Headers(init?.headers);
+  headers.set("Authorization", `Bearer ${testToken}`);
+  return new Request(url, { ...init, headers });
+}
 
 describe("Document Upload API", () => {
   it("returns 400 when no files provided", async () => {
     const form = new FormData();
     form.set("category", "test");
     const res = await router.fetch(
-      new Request("http://localhost/api/documents/upload", {
+      authRequest("http://localhost/api/documents/upload", {
         method: "POST",
         body: form,
       }),
@@ -89,7 +98,7 @@ describe("Document Upload API", () => {
     );
 
     const res = await router.fetch(
-      new Request("http://localhost/api/documents/upload", {
+      authRequest("http://localhost/api/documents/upload", {
         method: "POST",
         body: form,
       }),
@@ -108,7 +117,7 @@ describe("Document Upload API", () => {
     );
 
     const res = await router.fetch(
-      new Request("http://localhost/api/documents/upload", {
+      authRequest("http://localhost/api/documents/upload", {
         method: "POST",
         body: form,
       }),

@@ -69,6 +69,7 @@ const appRoot = process.env.PROSEVA_DATA_DIR ?? join(__dir, "../..");
 const { preflight, corsify } = cors();
 
 const ALLOWED_WHEN_DB_LOCKED = new Set([
+  "/api/health",
   "/api/security/status",
   "/api/security/recovery-key",
   "/api/security/setup-passphrase",
@@ -77,9 +78,8 @@ const ALLOWED_WHEN_DB_LOCKED = new Set([
 ]);
 
 const UNAUTHENTICATED_ROUTES = new Set([
+  "/api/health",
   "/api/security/status",
-  "/api/security/recovery-key",
-  "/api/security/setup-passphrase",
   "/api/security/verify-passphrase",
   "/api/auth/login",
 ]);
@@ -109,8 +109,18 @@ const requireAuthentication = async (request: Request) => {
 
   const pathname = new URL(request.url).pathname;
 
-  // Skip authentication for allowed routes
+  // Skip authentication for always-public routes
   if (UNAUTHENTICATED_ROUTES.has(pathname)) return;
+
+  // setup-passphrase is only unauthenticated during first-run (no passphrase yet)
+  if (
+    pathname === "/api/security/setup-passphrase" &&
+    !db.serverConfig.has("passphrase_hash")
+  )
+    return;
+
+  // recovery-key is only unauthenticated when the DB is locked (can't login)
+  if (pathname === "/api/security/recovery-key" && db.isLocked()) return;
 
   // Get Authorization header
   const authHeader = request.headers.get("Authorization");
@@ -196,6 +206,8 @@ export const router = AutoRouter({
   after: [persistAfterMutation, corsify],
   base: "/api",
 });
+
+router.get("/health", () => ({ status: "ok" }));
 
 // Initialize the database before handling any requests.
 await initDb();
