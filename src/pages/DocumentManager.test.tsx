@@ -6,6 +6,8 @@ import { RootStore } from "../store/RootStore";
 
 vi.mock("../lib/api", () => ({
   getAuthToken: vi.fn().mockResolvedValue("test-token-123"),
+  // DocumentManager builds URLs from API_BASE; keep it stable in tests.
+  API_BASE: "/api",
   api: {
     cases: {
       list: vi.fn().mockResolvedValue([]),

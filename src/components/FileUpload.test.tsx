@@ -4,6 +4,8 @@ import FileUpload from "./FileUpload";
 
 vi.mock("../lib/api", () => ({
   getAuthToken: vi.fn().mockResolvedValue("test-token-123"),
+  // Component builds fetch URLs from API_BASE; keep it stable in tests.
+  API_BASE: "/api",
 }));
 
 function createFile(name: string, size = 1024, type = "application/pdf"): File {
