@@ -17,7 +17,9 @@ import {
   type Beneficiary,
   type EstateAsset,
   type EstateDocument,
+  type FaxJob,
 } from "./db";
+import { sendFax, getFaxProvider } from "./fax";
 import {
   ingestPdfBuffer,
   type DocumentEntry,
@@ -508,6 +510,7 @@ router
       role: body.role,
       organization: body.organization ?? "",
       phone: body.phone ?? "",
+      fax: body.fax ?? "",
       email: body.email ?? "",
       address: body.address ?? "",
       notes: body.notes ?? "",
@@ -529,6 +532,7 @@ router
       "role",
       "organization",
       "phone",
+      "fax",
       "email",
       "address",
       "notes",
@@ -1579,6 +1583,58 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
     return new Response(JSON.stringify({ ...status, channels }), {
       headers: { "Content-Type": "application/json" },
     });
+  });
+
+// --- Fax Jobs ---
+router
+  .get("/fax-jobs", () => {
+    const jobs = [...db.faxJobs.values()].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+    return jobs;
+  })
+  .get("/fax-jobs/:jobId", ({ params }) => {
+    const job = db.faxJobs.get(params.jobId);
+    return job ?? notFound();
+  })
+  .post("/fax-jobs", async (req) => {
+    const body = await req.json();
+    if (!body.filingId || !body.recipientFax) {
+      return new Response(
+        JSON.stringify({ error: "filingId and recipientFax are required" }),
+        { status: 400, headers: { "content-type": "application/json" } },
+      );
+    }
+    const now = new Date().toISOString();
+    const job: FaxJob = {
+      id: crypto.randomUUID(),
+      filingId: body.filingId,
+      caseId: body.caseId ?? "",
+      recipientName: body.recipientName ?? "",
+      recipientFax: body.recipientFax,
+      documentPath: body.documentPath,
+      status: "pending",
+      provider: "",
+      createdAt: now,
+      updatedAt: now,
+    };
+    db.faxJobs.set(job.id, job);
+    db.persist();
+
+    // Kick off async send (non-blocking)
+    void sendFax(job, body.documentPath);
+
+    return json201(job);
+  })
+  .delete("/fax-jobs/:jobId", ({ params }) => {
+    if (!db.faxJobs.has(params.jobId)) return notFound();
+    db.faxJobs.delete(params.jobId);
+    return noContent();
+  })
+  .get("/fax/status", () => {
+    const p = getFaxProvider();
+    return { configured: p.isConfigured(), provider: p.name };
   });
 
 // --- Estate Plans ---

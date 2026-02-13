@@ -13,7 +13,7 @@ exports.default = async function notarizing(context) {
 
   if (!appleApiKey || !appleApiKeyId || !appleApiIssuer) {
     console.log(
-      "Skipping notarization: APPLE_API_KEY, APPLE_API_KEY_ID, or APPLE_API_ISSUER not set"
+      "Skipping notarization: APPLE_API_KEY, APPLE_API_KEY_ID, or APPLE_API_ISSUER not set",
     );
     return;
   }

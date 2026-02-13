@@ -237,8 +237,8 @@ describe("AddContactDialog", () => {
       />,
     );
 
-    const phoneInput = screen.getByPlaceholderText("(555) 123-4567");
-    fireEvent.change(phoneInput, { target: { value: "(555) 999-1234" } });
+    const phoneInputs = screen.getAllByPlaceholderText("(555) 123-4567");
+    fireEvent.change(phoneInputs[0], { target: { value: "(555) 999-1234" } });
     expect(onFormChange).toHaveBeenCalledWith(
       expect.objectContaining({ phone: "(555) 999-1234" }),
     );

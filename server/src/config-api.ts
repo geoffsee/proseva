@@ -2,6 +2,7 @@ import { Router } from "itty-router";
 import { db } from "./db";
 import {
   getConfig,
+  faxGatewayConfig,
   invalidateConfigCache,
   loadConfigFromDatabase,
 } from "./config";
@@ -15,6 +16,30 @@ import {
 } from "./notifications/twilio";
 import { restartScheduler } from "./scheduler";
 import { testOpenAIConnection } from "./reports";
+
+/**
+ * Build a minimal valid PDF containing a test message.
+ */
+function buildTestPdf(): Uint8Array {
+  const text = `Pro Se VA - Fax Gateway Test - ${new Date().toISOString()}`;
+  // Minimal PDF 1.4 with one page and one text line
+  const stream = `BT /F1 16 Tf 50 700 Td (${text}) Tj ET`;
+  const lines = [
+    "%PDF-1.4",
+    "1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj",
+    "2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj",
+    `3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj`,
+    `4 0 obj<</Length ${stream.length}>>stream\n${stream}\nendstream endobj`,
+    "5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj",
+    "xref",
+    "0 6",
+    "trailer<</Size 6/Root 1 0 R>>",
+    "startxref",
+    "0",
+    "%%EOF",
+  ];
+  return new TextEncoder().encode(lines.join("\n"));
+}
 
 const router = Router({ base: "/api/config" });
 
@@ -84,6 +109,29 @@ function maskSensitiveValue(value: string | undefined): string | undefined {
 }
 
 /**
+ * Check if a value is a masked placeholder (should not be saved to DB).
+ */
+function isMaskedValue(value: unknown): boolean {
+  return typeof value === "string" && value.includes("••");
+}
+
+/**
+ * Strip masked placeholder values from an object so they don't overwrite
+ * real secrets in the database.
+ */
+function stripMaskedValues<T extends Record<string, unknown>>(
+  obj: T,
+): Partial<T> {
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (!isMaskedValue(value)) {
+      result[key] = value;
+    }
+  }
+  return result as Partial<T>;
+}
+
+/**
  * Get current configuration with masked sensitive values.
  */
 router.get("/", () => {
@@ -115,6 +163,11 @@ router.get("/", () => {
       legiscanApiKey: process.env.LEGISCAN_API_KEY,
       govInfoApiKey: process.env.GOVINFO_API_KEY,
       serpapiBase: process.env.SERPAPI_BASE,
+    },
+    faxGateway: {
+      url: process.env.FAX_GATEWAY_URL,
+      username: process.env.FAX_GATEWAY_USERNAME,
+      password: process.env.FAX_GATEWAY_PASSWORD,
     },
   };
 
@@ -217,6 +270,20 @@ router.get("/", () => {
         ? "database"
         : "default",
     },
+    faxGateway: {
+      url: config?.faxGateway?.url || envConfig.faxGateway.url,
+      username: config?.faxGateway?.username || envConfig.faxGateway.username,
+      password: maskSensitiveValue(
+        config?.faxGateway?.password || envConfig.faxGateway.password,
+      ),
+      urlSource: config?.faxGateway?.url ? "database" : "environment",
+      usernameSource: config?.faxGateway?.username
+        ? "database"
+        : "environment",
+      passwordSource: config?.faxGateway?.password
+        ? "database"
+        : "environment",
+    },
   };
 
   return Response.json(response);
@@ -241,18 +308,25 @@ router.patch("/", async (req) => {
       config = { ...config, updatedAt: new Date().toISOString() };
     }
 
-    // Merge updates
+    // Merge updates (strip masked placeholder values so they don't
+    // overwrite real secrets stored in the database)
     if (updates.firebase) {
-      config.firebase = { ...config.firebase, ...updates.firebase };
+      config.firebase = {
+        ...config.firebase,
+        ...stripMaskedValues(updates.firebase),
+      };
     }
     if (updates.twilio) {
-      config.twilio = { ...config.twilio, ...updates.twilio };
+      config.twilio = {
+        ...config.twilio,
+        ...stripMaskedValues(updates.twilio),
+      };
     }
     if (updates.scheduler) {
       config.scheduler = { ...config.scheduler, ...updates.scheduler };
     }
     if (updates.ai) {
-      config.ai = { ...config.ai, ...updates.ai };
+      config.ai = { ...config.ai, ...stripMaskedValues(updates.ai) };
     }
     if (updates.autoIngest) {
       config.autoIngest = { ...config.autoIngest, ...updates.autoIngest };
@@ -260,11 +334,17 @@ router.patch("/", async (req) => {
     if (updates.legalResearch) {
       config.legalResearch = {
         ...config.legalResearch,
-        ...updates.legalResearch,
+        ...stripMaskedValues(updates.legalResearch),
       };
     }
     if (updates.prompts) {
       config.prompts = { ...config.prompts, ...updates.prompts };
+    }
+    if (updates.faxGateway) {
+      config.faxGateway = {
+        ...config.faxGateway,
+        ...stripMaskedValues(updates.faxGateway),
+      };
     }
 
     // Save to database
@@ -326,6 +406,9 @@ router.delete("/:group/:key", (req) => {
   } else if (group === "legalResearch" && config.legalResearch) {
     const legalResearch = config.legalResearch as Record<string, unknown>;
     delete legalResearch[key];
+  } else if (group === "faxGateway" && config.faxGateway) {
+    const faxGateway = config.faxGateway as Record<string, unknown>;
+    delete faxGateway[key];
   }
 
   config.updatedAt = new Date().toISOString();
@@ -461,6 +544,74 @@ router.get("/openai-models", async (req) => {
       },
       { status: 502 },
     );
+  }
+});
+
+/**
+ * Test fax gateway connection by sending a test fax.
+ */
+router.post("/test-fax", async (req) => {
+  try {
+    const body = await req.json();
+    const recipientNumber: string | undefined = body.recipientNumber;
+
+    if (!recipientNumber) {
+      return Response.json(
+        { success: false, error: "recipientNumber required in request body" },
+        { status: 400 },
+      );
+    }
+
+    const cfg = faxGatewayConfig();
+    if (!cfg.url) {
+      return Response.json(
+        { success: false, error: "Fax gateway URL not configured" },
+        { status: 400 },
+      );
+    }
+
+    // Build basic auth header
+    const headers: Record<string, string> = {};
+    if (cfg.username && cfg.password) {
+      headers["Authorization"] =
+        "Basic " +
+        Buffer.from(`${cfg.username}:${cfg.password}`).toString("base64");
+    }
+
+    // Generate a minimal test PDF
+    const testPdf = buildTestPdf();
+
+    // Send as multipart form data (matching: curl -F "to=..." -F "file=@...")
+    const form = new FormData();
+    form.append("to", recipientNumber);
+    form.append(
+      "file",
+      new Blob([testPdf], { type: "application/pdf" }),
+      "test-fax.pdf",
+    );
+
+    const gatewayUrl = cfg.url.replace(/\/+$/, "") + "/fax/send";
+    const response = await fetch(gatewayUrl, {
+      method: "POST",
+      headers,
+      body: form,
+    });
+
+    const result = await response.json();
+
+    if (response.ok && result.ok) {
+      return Response.json({ success: true, result });
+    } else {
+      return Response.json({
+        success: false,
+        error:
+          result.error ||
+          result.message ||
+          `Gateway returned HTTP ${response.status}`,
+      });
+    }
+  } catch (error) {
+    return Response.json({ success: false, error: String(error) });
   }
 });
 

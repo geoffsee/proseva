@@ -6,6 +6,7 @@ interface FilingListProps {
   filings: Filing[];
   onEdit: (filing: Filing) => void;
   onDelete: (id: string) => void;
+  onSendFax?: (filing: Filing) => void;
   getCaseName: (caseId?: string) => string | undefined;
 }
 
@@ -13,6 +14,7 @@ export function FilingList({
   filings,
   onEdit,
   onDelete,
+  onSendFax,
   getCaseName,
 }: FilingListProps) {
   return (
@@ -23,6 +25,7 @@ export function FilingList({
           filing={filing}
           onEdit={onEdit}
           onDelete={onDelete}
+          onSendFax={onSendFax}
           caseName={getCaseName(filing.caseId)}
         />
       ))}

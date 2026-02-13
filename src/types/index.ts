@@ -64,6 +64,7 @@ export interface Contact {
     | "other";
   organization?: string;
   phone?: string;
+  fax?: string;
   email?: string;
   address?: string;
   notes?: string;

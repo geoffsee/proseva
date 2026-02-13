@@ -1,5 +1,5 @@
 import { Box, HStack, VStack, Text, Badge, IconButton } from "@chakra-ui/react";
-import { LuTrash2, LuPencil, LuFileText } from "react-icons/lu";
+import { LuTrash2, LuPencil, LuFileText, LuSend } from "react-icons/lu";
 import type { Filing } from "../../types";
 import { formatDate } from "../../lib/dateUtils";
 
@@ -21,6 +21,7 @@ interface FilingCardProps {
   filing: Filing;
   onEdit: (filing: Filing) => void;
   onDelete: (id: string) => void;
+  onSendFax?: (filing: Filing) => void;
   caseName?: string;
 }
 
@@ -28,6 +29,7 @@ export function FilingCard({
   filing,
   onEdit,
   onDelete,
+  onSendFax,
   caseName,
 }: FilingCardProps) {
   return (
@@ -84,6 +86,16 @@ export function FilingCard({
         </HStack>
 
         <HStack gap="1">
+          {onSendFax && (
+            <IconButton
+              aria-label="Send Fax"
+              variant="ghost"
+              size="sm"
+              onClick={() => onSendFax(filing)}
+            >
+              <LuSend />
+            </IconButton>
+          )}
           <IconButton
             aria-label="Edit"
             variant="ghost"

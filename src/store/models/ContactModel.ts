@@ -26,6 +26,7 @@ export const ContactModel = types.model("Contact", {
   ]),
   organization: types.optional(types.string, ""),
   phone: types.optional(types.string, ""),
+  fax: types.optional(types.string, ""),
   email: types.optional(types.string, ""),
   address: types.optional(types.string, ""),
   notes: types.optional(types.string, ""),

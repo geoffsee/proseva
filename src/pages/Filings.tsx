@@ -13,6 +13,7 @@ import { useStore } from "../store/StoreContext";
 import { EmptyState } from "../components/shared/EmptyState";
 import { StatCard } from "../components/shared/StatCard";
 import { AddEditFilingDialog } from "../components/filings/AddEditFilingDialog";
+import { SendFaxDialog } from "../components/filings/SendFaxDialog";
 import { FilingList } from "../components/filings/FilingList";
 import { FilingFilters } from "../components/filings/FilingFilters";
 import type { Filing } from "../types";
@@ -38,6 +39,7 @@ const Filings = observer(function Filings() {
   const [open, setOpen] = useState(false);
   const [editingFiling, setEditingFiling] = useState<Filing | null>(null);
   const [form, setForm] = useState<FilingFormData>({ ...INITIAL_FORM });
+  const [faxFiling, setFaxFiling] = useState<Filing | null>(null);
 
   const handleAdd = () => {
     if (!form.title.trim() || !form.date) return;
@@ -81,6 +83,12 @@ const Filings = observer(function Filings() {
     if (!caseId) return undefined;
     const caseObj = caseStore.cases.find((c) => c.id === caseId);
     return caseObj?.name;
+  };
+
+  const getCourtName = (caseId?: string) => {
+    if (!caseId) return undefined;
+    const caseObj = caseStore.cases.find((c) => c.id === caseId);
+    return caseObj?.court;
   };
 
   const filteredFilings = filingStore.filteredFilings;
@@ -148,6 +156,7 @@ const Filings = observer(function Filings() {
               filings={filteredFilings}
               onEdit={handleEdit}
               onDelete={(id) => filingStore.deleteFiling(id)}
+              onSendFax={(filing) => setFaxFiling(filing)}
               getCaseName={getCaseName}
             />
           )}
@@ -162,6 +171,16 @@ const Filings = observer(function Filings() {
         onSave={handleSave}
         isEdit={!!editingFiling}
         cases={cases}
+      />
+
+      <SendFaxDialog
+        open={!!faxFiling}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setFaxFiling(null);
+        }}
+        filing={faxFiling}
+        courtName={getCourtName(faxFiling?.caseId)}
+        caseId={faxFiling?.caseId}
       />
     </VStack>
   );

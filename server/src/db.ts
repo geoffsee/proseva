@@ -53,6 +53,7 @@ export type Contact = {
   role: string;
   organization: string;
   phone: string;
+  fax: string;
   email: string;
   address: string;
   notes: string;
@@ -218,6 +219,12 @@ export type ServerConfig = {
     caseSummaryPrompt?: string;
     evaluatorPrompt?: string;
   };
+
+  faxGateway?: {
+    url?: string;
+    username?: string;
+    password?: string;
+  };
 };
 
 export type Beneficiary = {
@@ -327,6 +334,22 @@ export type ResearchAttachment = {
   name: string;
 };
 
+export type FaxJob = {
+  id: string;
+  filingId: string;
+  caseId: string;
+  recipientName: string;
+  recipientFax: string;
+  documentPath?: string;
+  status: "pending" | "sending" | "sent" | "failed";
+  provider: string;
+  providerJobId?: string;
+  error?: string;
+  createdAt: string;
+  updatedAt: string;
+  sentAt?: string;
+};
+
 type Collections = {
   cases: Map<string, Case>;
   contacts: Map<string, Contact>;
@@ -343,6 +366,7 @@ type Collections = {
   embeddings: Map<string, Embedding>;
   researchCases: Map<string, ResearchCase>;
   researchAttachments: Map<string, ResearchAttachment>;
+  faxJobs: Map<string, FaxJob>;
 };
 
 const COLLECTION_KEYS: (keyof Collections)[] = [
@@ -361,6 +385,7 @@ const COLLECTION_KEYS: (keyof Collections)[] = [
   "embeddings",
   "researchCases",
   "researchAttachments",
+  "faxJobs",
 ];
 
 function toMaps(raw: Partial<DatabaseSnapshot>): Collections {
@@ -398,6 +423,7 @@ function assignMaps(target: Database, maps: Collections): void {
   target.embeddings = maps.embeddings;
   target.researchCases = maps.researchCases;
   target.researchAttachments = maps.researchAttachments;
+  target.faxJobs = maps.faxJobs;
 }
 
 export class Database {
@@ -416,6 +442,7 @@ export class Database {
   embeddings!: Map<string, Embedding>;
   researchCases!: Map<string, ResearchCase>;
   researchAttachments!: Map<string, ResearchAttachment>;
+  faxJobs!: Map<string, FaxJob>;
 
   private adapter: PersistenceAdapter;
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
