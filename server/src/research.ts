@@ -14,6 +14,7 @@ import {
 } from "../services/webhookService";
 import { getConfig } from "./config";
 import { createPersistenceManager } from "./research-persistence";
+import { asIttyRoute, json, openapiFormat } from "./openapi";
 
 // CourtListener API base URL (Free Law Project)
 const COURTLISTENER_API_BASE = "https://www.courtlistener.com/api/rest/v4";
@@ -94,7 +95,7 @@ const SavedSearchSchema = z.object({
     .enum(["opinions", "regulations", "bills", "documents"])
     .optional()
     .default("opinions"),
-  filters: z.record(z.unknown()).optional(),
+  filters: z.record(z.string(), z.unknown()).optional(),
   resultCount: z.coerce.number().int().min(0).optional(),
 });
 
@@ -135,11 +136,17 @@ const GenerateDocumentSchema = z.object({
       motionType: z.string().max(200).optional(),
     })
     .optional()
-    .default({}),
+    .default({
+      citationStyle: "bluebook",
+      includeSummaries: true,
+      includeStatutes: true,
+      includeCases: true,
+      includeDocuments: true,
+    }),
   webhook: z
     .object({
       url: z.string().url(),
-      headers: z.record(z.string()).optional(),
+      headers: z.record(z.string(), z.string()).optional(),
     })
     .optional(),
 });
@@ -373,6 +380,7 @@ interface GovInfoSearchItem {
 interface GovInfoSearchResponse {
   results?: GovInfoSearchItem[];
   count?: number;
+  nextPageOffset?: number;
 }
 
 interface GovInfoPackageSummaryResponse {
@@ -501,12 +509,12 @@ interface StatuteSearchResult {
 }
 
 function createResearchRouter() {
-  const router = AutoRouter();
+  const router = AutoRouter({ base: "/api", format: openapiFormat });
 
   /**
    * Search court opinions using CourtListener API.
    *
-   * @endpoint GET /api/research/opinions/search
+   * @endpoint GET /research/opinions/search
    * @description Search federal and state court opinions by keyword with optional filters.
    * Provides access to the Free Law Project's CourtListener database.
    *
@@ -526,11 +534,13 @@ function createResearchRouter() {
    * @source CourtListener (Free Law Project) - https://www.courtlistener.com
    *
    * @example
-   * GET /api/research/opinions/search?q=patent%20infringement&limit=10
+   * GET /research/opinions/search?q=patent%20infringement&limit=10
    */
   // Search court opinions using CourtListener API
   // Rate limited: 20 requests per 15 minutes per IP
-  router.get("/api/research/opinions/search", async (request: Request) => {
+  router.get(
+    "/research/opinions/search",
+    asIttyRoute("get", "/research/opinions/search", async (request: Request) => {
     const requestId =
       request.headers.get("X-Request-Id") || crypto.randomUUID();
     const url = new URL(request.url);
@@ -541,7 +551,7 @@ function createResearchRouter() {
     const limit = Math.min(parseInt(url.searchParams.get("limit") || "20"), 50);
 
     console.log(
-      `[ResearchRouter ${requestId}] GET /api/research/opinions/search?q=${query}`,
+      `[ResearchRouter ${requestId}] GET /research/opinions/search?q=${query}`,
     );
 
     if (!query || query.length < 3) {
@@ -739,12 +749,13 @@ function createResearchRouter() {
         },
       );
     }
-  });
+    }),
+  );
 
   /**
    * Retrieve full details of a specific court opinion.
    *
-   * @endpoint GET /api/research/opinions/{id}
+   * @endpoint GET /research/opinions/{id}
    * @description Fetches the complete text and metadata for a single opinion.
    * Returns plain text, HTML with citations, and related case citations.
    *
@@ -768,17 +779,17 @@ function createResearchRouter() {
    * @cacheControl 24 hours
    *
    * @example
-   * GET /api/research/opinions/12345678
+   * GET /research/opinions/12345678
    */
   // Get specific opinion details
-  router.get("/api/research/opinions/:id", async (request: Request) => {
+  router.get("/research/opinions/:id", async (request: Request) => {
     const requestId =
       request.headers.get("X-Request-Id") || crypto.randomUUID();
     const url = new URL(request.url);
     const opinionId = url.pathname.split("/").pop();
 
     console.log(
-      `[ResearchRouter ${requestId}] GET /api/research/opinions/${opinionId}`,
+      `[ResearchRouter ${requestId}] GET /research/opinions/${opinionId}`,
     );
 
     if (!opinionId) {
@@ -908,7 +919,7 @@ function createResearchRouter() {
   /**
    * Retrieve detailed information about a specific docket/case.
    *
-   * @endpoint GET /api/research/dockets/{id}
+   * @endpoint GET /research/dockets/{id}
    * @description Fetch complete docket information including case parties, judges, dates,
    * case nature, and all filed documents from the RECAP Archive.
    *
@@ -931,10 +942,10 @@ function createResearchRouter() {
    * @cacheControl 24 hours
    *
    * @example
-   * GET /api/research/dockets/654321
+   * GET /research/dockets/654321
    */
   // Get specific docket details
-  router.get("/api/research/dockets/:id", async (request: Request) => {
+  router.get("/research/dockets/:id", async (request: Request) => {
     const requestId =
       request.headers.get("X-Request-Id") || crypto.randomUUID();
     const url = new URL(request.url);
@@ -942,7 +953,7 @@ function createResearchRouter() {
     const docketId = pathParts[pathParts.length - 1];
 
     console.log(
-      `[ResearchRouter ${requestId}] GET /api/research/dockets/${docketId}`,
+      `[ResearchRouter ${requestId}] GET /research/dockets/${docketId}`,
     );
 
     if (!docketId || docketId === "search") {
@@ -1096,7 +1107,7 @@ function createResearchRouter() {
   /**
    * Search federal court dockets (case filings and documents).
    *
-   * @endpoint GET /api/research/dockets/search
+   * @endpoint GET /research/dockets/search
    * @description Search dockets from the RECAP Archive (docket entries, filings, documents).
    * Includes case names, docket numbers, parties, and document metadata.
    *
@@ -1115,10 +1126,10 @@ function createResearchRouter() {
    * @source CourtListener RECAP Archive (Free Law Project)
    *
    * @example
-   * GET /api/research/dockets/search?q=john%20doe&limit=10
+   * GET /research/dockets/search?q=john%20doe&limit=10
    */
   // Search dockets (cases)
-  router.get("/api/research/dockets/search", async (request: Request) => {
+  router.get("/research/dockets/search", async (request: Request) => {
     const requestId =
       request.headers.get("X-Request-Id") || crypto.randomUUID();
     const url = new URL(request.url);
@@ -1127,7 +1138,7 @@ function createResearchRouter() {
     const limit = Math.min(parseInt(url.searchParams.get("limit") || "20"), 50);
 
     console.log(
-      `[ResearchRouter ${requestId}] GET /api/research/dockets/search?q=${query}`,
+      `[ResearchRouter ${requestId}] GET /research/dockets/search?q=${query}`,
     );
 
     if (!query || query.length < 3) {
@@ -1286,7 +1297,7 @@ function createResearchRouter() {
   /**
    * List all available courts for opinions and docket searches.
    *
-   * @endpoint GET /api/research/courts
+   * @endpoint GET /research/courts
    * @description Returns a grouped list of federal and state courts that can be used
    * for filtering opinions and docket searches.
    *
@@ -1300,14 +1311,14 @@ function createResearchRouter() {
    * @rateLimit Unlimited
    *
    * @example
-   * GET /api/research/courts
+   * GET /research/courts
    */
   // Get list of courts
-  router.get("/api/research/courts", async (request: Request) => {
+  router.get("/research/courts", async (request: Request) => {
     const requestId =
       request.headers.get("X-Request-Id") || crypto.randomUUID();
 
-    console.log(`[ResearchRouter ${requestId}] GET /api/research/courts`);
+    console.log(`[ResearchRouter ${requestId}] GET /research/courts`);
 
     try {
       await withRateLimit(request, "paralegal-courts", 30);
@@ -1434,7 +1445,7 @@ function createResearchRouter() {
   /**
    * Look up cases by legal citation.
    *
-   * @endpoint GET /api/research/citation/lookup
+   * @endpoint GET /research/citation/lookup
    * @description Search for court opinions using standard legal citations
    * (e.g., "347 U.S. 497", "123 F.3d 456", "100 Ill. 2d 100").
    * Returns all matching opinions for the given citation.
@@ -1454,17 +1465,17 @@ function createResearchRouter() {
    * @cacheControl 1 hour
    *
    * @example
-   * GET /api/research/citation/lookup?cite=347%20U.S.%20497
+   * GET /research/citation/lookup?cite=347%20U.S.%20497
    */
   // Citation lookup - find cases by citation
-  router.get("/api/research/citation/lookup", async (request: Request) => {
+  router.get("/research/citation/lookup", async (request: Request) => {
     const requestId =
       request.headers.get("X-Request-Id") || crypto.randomUUID();
     const url = new URL(request.url);
     const citation = url.searchParams.get("cite") || "";
 
     console.log(
-      `[ResearchRouter ${requestId}] GET /api/research/citation/lookup?cite=${citation}`,
+      `[ResearchRouter ${requestId}] GET /research/citation/lookup?cite=${citation}`,
     );
 
     if (!citation || citation.length < 5) {
@@ -1589,7 +1600,7 @@ function createResearchRouter() {
   /**
    * Search bills and statutes from U.S. Congress and all 50 states.
    *
-   * @endpoint GET /api/research/statutes/search
+   * @endpoint GET /research/statutes/search
    * @description Search federal and state legislation using the LegiScan API.
    * Covers all U.S. states, Congress, and DC with current and historical bills.
    *
@@ -1611,12 +1622,12 @@ function createResearchRouter() {
    * @source LegiScan API
    *
    * @example
-   * GET /api/research/statutes/search?q=data%20privacy&state=CA&limit=10
+   * GET /research/statutes/search?q=data%20privacy&state=CA&limit=10
    */
   // Search statutes/legislation via LegiScan API
   // Covers all 50 states + US Congress
   // Free API key required: https://legiscan.com/legiscan
-  router.get("/api/research/statutes/search", async (request: Request) => {
+  router.get("/research/statutes/search", async (request: Request) => {
     const requestId =
       request.headers.get("X-Request-Id") || crypto.randomUUID();
     const url = new URL(request.url);
@@ -1629,7 +1640,7 @@ function createResearchRouter() {
     const limit = Math.min(parseInt(url.searchParams.get("limit") || "20"), 50);
 
     console.log(
-      `[ResearchRouter ${requestId}] GET /api/research/statutes/search?q=${query}&state=${state}&year=${year}&status=${status}&type=${type}&page=${page}&limit=${limit}`,
+      `[ResearchRouter ${requestId}] GET /research/statutes/search?q=${query}&state=${state}&year=${year}&status=${status}&type=${type}&page=${page}&limit=${limit}`,
     );
 
     if (!query || query.length < 3) {
@@ -1679,7 +1690,7 @@ function createResearchRouter() {
 
       // LegiScan search API
       const searchUrl = new URL("https://api.legiscan.com/");
-      searchUrl.searchParams.set("key", getConfig("LEGISCAN_API_KEY"));
+      searchUrl.searchParams.set("key", getConfig("LEGISCAN_API_KEY")!);
       searchUrl.searchParams.set("op", "search");
       searchUrl.searchParams.set("query", query);
       searchUrl.searchParams.set("page", page.toString());
@@ -1745,13 +1756,13 @@ function createResearchRouter() {
       }
 
       // Transform LegiScan response
-      const searchResults = data.searchresult || {};
+      const searchResults = (data.searchresult || {}) as Record<string, any>;
       const results: StatuteSearchResult[] = [];
 
       // LegiScan returns results as numbered keys
       for (const key of Object.keys(searchResults)) {
         if (key === "summary") continue;
-        const bill = searchResults[key];
+        const bill = searchResults[key] as Record<string, any>;
         if (!bill || typeof bill !== "object") continue;
 
         results.push({
@@ -1771,7 +1782,7 @@ function createResearchRouter() {
         if (results.length >= limit) break;
       }
 
-      const summary = searchResults.summary || {};
+      const summary = (searchResults.summary || {}) as Record<string, any>;
       const totalCount =
         typeof summary.count === "number"
           ? summary.count
@@ -1833,7 +1844,7 @@ function createResearchRouter() {
   /**
    * Retrieve detailed information and full text of a bill or statute.
    *
-   * @endpoint GET /api/research/statutes/detail
+   * @endpoint GET /research/statutes/detail
    * @description Fetch complete bill information including sponsors, full text in multiple
    * versions, history, status, and analysis from LegiScan.
    *
@@ -1856,16 +1867,16 @@ function createResearchRouter() {
    * @source LegiScan API
    *
    * @example
-   * GET /api/research/statutes/detail?id=1234567
+   * GET /research/statutes/detail?id=1234567
    */
-  router.get("/api/research/statutes/detail", async (request: Request) => {
+  router.get("/research/statutes/detail", async (request: Request) => {
     const requestId =
       request.headers.get("X-Request-Id") || crypto.randomUUID();
     const url = new URL(request.url);
     const billId = url.searchParams.get("id") || "";
 
     console.log(
-      `[ResearchRouter ${requestId}] GET /api/research/statutes/detail?id=${billId}`,
+      `[ResearchRouter ${requestId}] GET /research/statutes/detail?id=${billId}`,
     );
 
     if (!billId) {
@@ -1904,7 +1915,7 @@ function createResearchRouter() {
       }
 
       const billUrl = new URL("https://api.legiscan.com/");
-      billUrl.searchParams.set("key", getConfig("LEGISCAN_API_KEY"));
+      billUrl.searchParams.set("key", getConfig("LEGISCAN_API_KEY")!);
       billUrl.searchParams.set("op", "getBill");
       billUrl.searchParams.set("id", billId);
 
@@ -1984,7 +1995,7 @@ function createResearchRouter() {
 
       if (textDocId) {
         const billTextUrl = new URL("https://api.legiscan.com/");
-        billTextUrl.searchParams.set("key", getConfig("LEGISCAN_API_KEY"));
+        billTextUrl.searchParams.set("key", getConfig("LEGISCAN_API_KEY")!);
         billTextUrl.searchParams.set("op", "getBillText");
         billTextUrl.searchParams.set("id", textDocId);
 
@@ -2082,7 +2093,7 @@ function createResearchRouter() {
   /**
    * List all available state and federal jurisdictions for statute/bill searches.
    *
-   * @endpoint GET /api/research/statutes/states
+   * @endpoint GET /research/statutes/states
    * @description Returns a list of all supported jurisdictions with state codes
    * (used to filter statute searches). Includes all 50 states, DC, Puerto Rico,
    * and US Congress (federal).
@@ -2096,7 +2107,7 @@ function createResearchRouter() {
    * @rateLimit Unlimited
    *
    * @example
-   * GET /api/research/statutes/states
+   * GET /research/statutes/states
    * Response: {
    *   "states": [
    *     {"code": "US", "name": "US Congress (Federal)"},
@@ -2106,7 +2117,7 @@ function createResearchRouter() {
    * }
    */
   // Get list of available states for statute search
-  router.get("/api/research/statutes/states", async (request: Request) => {
+  router.get("/research/statutes/states", async (request: Request) => {
     const requestId =
       request.headers.get("X-Request-Id") || crypto.randomUUID();
 
@@ -2185,7 +2196,7 @@ function createResearchRouter() {
   /**
    * Create a new legal case/matter in the research system.
    *
-   * @endpoint POST /api/research/cases
+   * @endpoint POST /research/cases
    * @description Create a new case to organize research, documents, and findings.
    * Once created, the case becomes the active case for the user.
    *
@@ -2205,17 +2216,17 @@ function createResearchRouter() {
    *
    * @status 201 Created
    * @example
-   * POST /api/research/cases
+   * POST /research/cases
    * {
    *   "name": "Smith v. Jones Trademark Dispute",
    *   "description": "Trademark infringement case in federal court"
    * }
    */
   // Create a new case
-  router.post("/api/research/cases", async (request: Request) => {
+  router.post("/research/cases", async (request: Request) => {
     const requestId =
       request.headers.get("X-Request-Id") || crypto.randomUUID();
-    console.log(`[ResearchRouter ${requestId}] POST /api/research/cases`);
+    console.log(`[ResearchRouter ${requestId}] POST /research/cases`);
 
     try {
       const userEmail = LOCAL_USER;
@@ -2287,7 +2298,7 @@ function createResearchRouter() {
   /**
    * List all cases for the current user.
    *
-   * @endpoint GET /api/research/cases
+   * @endpoint GET /research/cases
    * @description Retrieve all cases the user has created. Each case includes
    * basic metadata including whether it's the active case.
    *
@@ -2303,13 +2314,13 @@ function createResearchRouter() {
    * @returns {Array} documents - Uploaded documents
    *
    * @example
-   * GET /api/research/cases
+   * GET /research/cases
    */
   // List all cases for the user
-  router.get("/api/research/cases", async (request: Request) => {
+  router.get("/research/cases", async (request: Request) => {
     const requestId =
       request.headers.get("X-Request-Id") || crypto.randomUUID();
-    console.log(`[ResearchRouter ${requestId}] GET /api/research/cases`);
+    console.log(`[ResearchRouter ${requestId}] GET /research/cases`);
 
     try {
       const userEmail = LOCAL_USER;
@@ -2354,7 +2365,7 @@ function createResearchRouter() {
   /**
    * Retrieve details of a specific case.
    *
-   * @endpoint GET /api/research/cases/{id}
+   * @endpoint GET /research/cases/{id}
    * @description Fetch complete case information including all saved searches,
    * documents, summaries, and context items.
    *
@@ -2376,10 +2387,10 @@ function createResearchRouter() {
    * @status 404 Case not found
    *
    * @example
-   * GET /api/research/cases/case_1234567890_abc
+   * GET /research/cases/case_1234567890_abc
    */
   // Get a specific case
-  router.get("/api/research/cases/:id", async (request: Request) => {
+  router.get("/research/cases/:id", async (request: Request) => {
     const requestId =
       request.headers.get("X-Request-Id") || crypto.randomUUID();
     const url = new URL(request.url);
@@ -2387,7 +2398,7 @@ function createResearchRouter() {
     const caseId = pathParts[pathParts.length - 1];
 
     console.log(
-      `[ResearchRouter ${requestId}] GET /api/research/cases/${caseId}`,
+      `[ResearchRouter ${requestId}] GET /research/cases/${caseId}`,
     );
 
     try {
@@ -2434,7 +2445,7 @@ function createResearchRouter() {
   /**
    * Update case details (name and/or description).
    *
-   * @endpoint PUT /api/research/cases/{id}
+   * @endpoint PUT /research/cases/{id}
    * @description Modify the name and/or description of an existing case.
    *
    * @param {string} id - Case ID (path parameter)
@@ -2448,14 +2459,14 @@ function createResearchRouter() {
    * @status 404 Case not found
    *
    * @example
-   * PUT /api/research/cases/case_1234567890_abc
+   * PUT /research/cases/case_1234567890_abc
    * {
    *   "name": "Smith v. Jones (Updated)",
    *   "description": "Trademark infringement - federal court"
    * }
    */
   // Update a case
-  router.put("/api/research/cases/:id", async (request: Request) => {
+  router.put("/research/cases/:id", async (request: Request) => {
     const requestId =
       request.headers.get("X-Request-Id") || crypto.randomUUID();
     const url = new URL(request.url);
@@ -2463,7 +2474,7 @@ function createResearchRouter() {
     const caseId = pathParts[pathParts.length - 1];
 
     console.log(
-      `[ResearchRouter ${requestId}] PUT /api/research/cases/${caseId}`,
+      `[ResearchRouter ${requestId}] PUT /research/cases/${caseId}`,
     );
 
     try {
@@ -2531,7 +2542,7 @@ function createResearchRouter() {
   /**
    * Delete a case permanently.
    *
-   * @endpoint DELETE /api/research/cases/{id}
+   * @endpoint DELETE /research/cases/{id}
    * @description Permanently remove a case and all associated data
    * (searches, documents, summaries). This action cannot be undone.
    *
@@ -2544,10 +2555,10 @@ function createResearchRouter() {
    * @status 404 Case not found
    *
    * @example
-   * DELETE /api/research/cases/case_1234567890_abc
+   * DELETE /research/cases/case_1234567890_abc
    */
   // Delete a case
-  router.delete("/api/research/cases/:id", async (request: Request) => {
+  router.delete("/research/cases/:id", async (request: Request) => {
     const requestId =
       request.headers.get("X-Request-Id") || crypto.randomUUID();
     const url = new URL(request.url);
@@ -2555,7 +2566,7 @@ function createResearchRouter() {
     const caseId = pathParts[pathParts.length - 1];
 
     console.log(
-      `[ResearchRouter ${requestId}] DELETE /api/research/cases/${caseId}`,
+      `[ResearchRouter ${requestId}] DELETE /research/cases/${caseId}`,
     );
 
     try {
@@ -2604,7 +2615,7 @@ function createResearchRouter() {
   /**
    * Set a case as the active case.
    *
-   * @endpoint POST /api/research/cases/{id}/activate
+   * @endpoint POST /research/cases/{id}/activate
    * @description Make a case the active case. Only one case can be active at a time.
    * The active case is used as the default context for searches, document uploads,
    * and AI analysis.
@@ -2618,10 +2629,10 @@ function createResearchRouter() {
    * @status 404 Case not found
    *
    * @example
-   * POST /api/research/cases/case_1234567890_abc/activate
+   * POST /research/cases/case_1234567890_abc/activate
    */
   // Activate a case
-  router.post("/api/research/cases/:id/activate", async (request: Request) => {
+  router.post("/research/cases/:id/activate", async (request: Request) => {
     const requestId =
       request.headers.get("X-Request-Id") || crypto.randomUUID();
     const url = new URL(request.url);
@@ -2629,7 +2640,7 @@ function createResearchRouter() {
     const caseId = pathParts[pathParts.length - 2]; // /cases/:id/activate
 
     console.log(
-      `[ResearchRouter ${requestId}] POST /api/research/cases/${caseId}/activate`,
+      `[ResearchRouter ${requestId}] POST /research/cases/${caseId}/activate`,
     );
 
     try {
@@ -2672,7 +2683,7 @@ function createResearchRouter() {
   /**
    * Save a search query to a case for later reference.
    *
-   * @endpoint POST /api/research/cases/{caseId}/searches
+   * @endpoint POST /research/cases/{caseId}/searches
    * @description Save search parameters and results to a case. Searches can be
    * retrieved later to re-run the same query or compare results over time.
    *
@@ -2695,7 +2706,7 @@ function createResearchRouter() {
    * @status 404 Case not found
    *
    * @example
-   * POST /api/research/cases/case_123/searches
+   * POST /research/cases/case_123/searches
    * {
    *   "name": "Patent infringement cases",
    *   "query": "patent infringement",
@@ -2705,7 +2716,7 @@ function createResearchRouter() {
    */
   // Save a search to a case
   router.post(
-    "/api/research/cases/:caseId/searches",
+    "/research/cases/:caseId/searches",
     async (request: Request) => {
       const requestId =
         request.headers.get("X-Request-Id") || crypto.randomUUID();
@@ -2714,7 +2725,7 @@ function createResearchRouter() {
       const caseId = pathParts[pathParts.length - 2];
 
       console.log(
-        `[ResearchRouter ${requestId}] POST /api/research/cases/${caseId}/searches`,
+        `[ResearchRouter ${requestId}] POST /research/cases/${caseId}/searches`,
       );
 
       try {
@@ -2796,7 +2807,7 @@ function createResearchRouter() {
   /**
    * Generate an AI summary of a document or research finding.
    *
-   * @endpoint POST /api/research/cases/{caseId}/summarize
+   * @endpoint POST /research/cases/{caseId}/summarize
    * @description Use OpenAI to generate concise summaries of court opinions, statutes,
    * academic papers, or other legal documents in the case context.
    *
@@ -2822,7 +2833,7 @@ function createResearchRouter() {
    * @rateLimit 5 summaries per hour per user
    *
    * @example
-   * POST /api/research/cases/case_123/summarize
+   * POST /research/cases/case_123/summarize
    * {
    *   "sourceType": "opinion",
    *   "sourceId": "opinion_12345",
@@ -2832,7 +2843,7 @@ function createResearchRouter() {
    */
   // Generate AI summary for content
   router.post(
-    "/api/research/cases/:caseId/summarize",
+    "/research/cases/:caseId/summarize",
     async (request: Request) => {
       const requestId =
         request.headers.get("X-Request-Id") || crypto.randomUUID();
@@ -2841,7 +2852,7 @@ function createResearchRouter() {
       const caseId = pathParts[pathParts.length - 2];
 
       console.log(
-        `[ResearchRouter ${requestId}] POST /api/research/cases/${caseId}/summarize`,
+        `[ResearchRouter ${requestId}] POST /research/cases/${caseId}/summarize`,
       );
 
       try {
@@ -2987,7 +2998,7 @@ Respond in JSON format:
   /**
    * Upload a document to a case.
    *
-   * @endpoint POST /api/research/cases/{caseId}/documents/upload
+   * @endpoint POST /research/cases/{caseId}/documents/upload
    * @description Upload legal documents (PDF, DOCX, TXT) to a case for analysis
    * and AI processing. Files are stored and can be analyzed with summaries generated.
    *
@@ -3011,13 +3022,13 @@ Respond in JSON format:
    * @status 404 Case not found
    *
    * @example
-   * POST /api/research/cases/case_123/documents/upload
+   * POST /research/cases/case_123/documents/upload
    * Content-Type: multipart/form-data
    * [binary PDF file]
    */
   // Upload a document to a case
   router.post(
-    "/api/research/cases/:caseId/documents/upload",
+    "/research/cases/:caseId/documents/upload",
     async (request: Request) => {
       const requestId =
         request.headers.get("X-Request-Id") || crypto.randomUUID();
@@ -3026,7 +3037,7 @@ Respond in JSON format:
       const caseId = pathParts[pathParts.length - 3];
 
       console.log(
-        `[ResearchRouter ${requestId}] POST /api/research/cases/${caseId}/documents/upload`,
+        `[ResearchRouter ${requestId}] POST /research/cases/${caseId}/documents/upload`,
       );
 
       try {
@@ -3145,7 +3156,7 @@ Respond in JSON format:
   /**
    * Analyze a document and generate AI insights.
    *
-   * @endpoint POST /api/research/cases/{caseId}/documents/{docId}/analyze
+   * @endpoint POST /research/cases/{caseId}/documents/{docId}/analyze
    * @description Use AI to analyze a document with optional user questions.
    * Extracts key information, entities, relevant case law, and answers specific questions.
    *
@@ -3171,14 +3182,14 @@ Respond in JSON format:
    * @rateLimit 5 analyses per hour per user
    *
    * @example
-   * POST /api/research/cases/case_123/documents/doc_456/analyze
+   * POST /research/cases/case_123/documents/doc_456/analyze
    * {
    *   "query": "What are the main liability arguments?"
    * }
    */
   // Analyze a document
   router.post(
-    "/api/research/cases/:caseId/documents/:docId/analyze",
+    "/research/cases/:caseId/documents/:docId/analyze",
     async (request: Request) => {
       const requestId =
         request.headers.get("X-Request-Id") || crypto.randomUUID();
@@ -3188,7 +3199,7 @@ Respond in JSON format:
       const docId = pathParts[pathParts.length - 2];
 
       console.log(
-        `[ResearchRouter ${requestId}] POST /api/research/cases/${caseId}/documents/${docId}/analyze`,
+        `[ResearchRouter ${requestId}] POST /research/cases/${caseId}/documents/${docId}/analyze`,
       );
 
       try {
@@ -3220,7 +3231,12 @@ Respond in JSON format:
           });
         }
 
-        const document = existingCase.documents.find((d) => d.id === docId);
+        const documents = (existingCase.documents as Array<{
+          id: string;
+          attachmentId: string;
+          fileName?: string;
+        }>) ?? [];
+        const document = documents.find((d) => d.id === docId);
         if (!document) {
           return new Response(JSON.stringify({ error: "Document not found" }), {
             status: 404,
@@ -3274,7 +3290,7 @@ Respond in JSON format:
         } else {
           // For PDF/DOCX, we'd need more sophisticated extraction
           // For now, return a placeholder
-          textContent = `[Document: ${document.fileName}]`;
+          textContent = `[Document: ${document.fileName ?? ""}]`;
         }
 
         // Analyze with OpenAI
@@ -3329,7 +3345,7 @@ Respond in JSON format:
   /**
    * Search academic and scholarly works related to legal topics.
    *
-   * @endpoint GET /api/research/scholar/search
+   * @endpoint GET /research/scholar/search
    * @description Search the OpenAlex academic database for legal research papers,
    * law review articles, and scholarly works. Covers journals, conferences, and publications
    * from institutions worldwide.
@@ -3358,9 +3374,9 @@ Respond in JSON format:
    * @cacheControl 30 minutes
    *
    * @example
-   * GET /api/research/scholar/search?q=patent%20law&limit=10
+   * GET /research/scholar/search?q=patent%20law&limit=10
    */
-  router.get("/api/research/scholar/search", async (request: Request) => {
+  router.get("/research/scholar/search", async (request: Request) => {
     const requestId =
       request.headers.get("X-Request-Id") || crypto.randomUUID();
     const url = new URL(request.url);
@@ -3368,7 +3384,7 @@ Respond in JSON format:
     const limit = Math.min(parseInt(url.searchParams.get("limit") || "20"), 50);
 
     console.log(
-      `[ResearchRouter ${requestId}] GET /api/research/scholar/search?q=${query}`,
+      `[ResearchRouter ${requestId}] GET /research/scholar/search?q=${query}`,
     );
 
     if (!query || query.length < 3) {
@@ -3531,7 +3547,7 @@ Respond in JSON format:
   /**
    * Search official U.S. Government Publishing Office (GovInfo) collections.
    *
-   * @endpoint GET /api/research/govinfo/search
+   * @endpoint GET /research/govinfo/search
    * @description Search federal government documents including Congressional bills, regulations,
    * Federal Register notices, public laws, Congressional reports, and court opinions.
    * All documents are official government publications.
@@ -3554,9 +3570,9 @@ Respond in JSON format:
    * @source GovInfo API - https://api.govinfo.gov
    *
    * @example
-   * GET /api/research/govinfo/search?q=data%20protection&collection=CFR&limit=20
+   * GET /research/govinfo/search?q=data%20protection&collection=CFR&limit=20
    */
-  router.get("/api/research/govinfo/search", async (request: Request) => {
+  router.get("/research/govinfo/search", async (request: Request) => {
     const requestId =
       request.headers.get("X-Request-Id") || crypto.randomUUID();
     const url = new URL(request.url);
@@ -3569,7 +3585,7 @@ Respond in JSON format:
     const offset = parseInt(url.searchParams.get("offset") || "0");
 
     console.log(
-      `[ResearchRouter ${requestId}] GET /api/research/govinfo/search?q=${query}&collection=${collection}`,
+      `[ResearchRouter ${requestId}] GET /research/govinfo/search?q=${query}&collection=${collection}`,
     );
 
     if (!query || query.length < 3) {
@@ -3620,7 +3636,7 @@ Respond in JSON format:
 
       // Build GovInfo search URL
       const searchUrl = new URL(`${GOVINFO_API_BASE}/search`);
-      searchUrl.searchParams.set("api_key", getConfig("GOVINFO_API_KEY"));
+      searchUrl.searchParams.set("api_key", getConfig("GOVINFO_API_KEY")!);
       searchUrl.searchParams.set("query", query);
       searchUrl.searchParams.set("pageSize", limit.toString());
       searchUrl.searchParams.set("offsetMark", offset.toString());
@@ -3751,7 +3767,7 @@ Respond in JSON format:
   /**
    * Retrieve detailed metadata for a specific GovInfo package/document.
    *
-   * @endpoint GET /api/research/govinfo/package/{packageId}
+   * @endpoint GET /research/govinfo/package/{packageId}
    * @description Fetch complete information about a government document including
    * title, collection, date issued, download links, and related documents.
    *
@@ -3779,11 +3795,11 @@ Respond in JSON format:
    * @cacheControl 24 hours
    *
    * @example
-   * GET /api/research/govinfo/package/BILLS-117-s123
+   * GET /research/govinfo/package/BILLS-117-s123
    */
   // Get specific GovInfo package details
   router.get(
-    "/api/research/govinfo/package/:packageId",
+    "/research/govinfo/package/:packageId",
     async (request: Request) => {
       const requestId =
         request.headers.get("X-Request-Id") || crypto.randomUUID();
@@ -3792,7 +3808,7 @@ Respond in JSON format:
       const packageId = pathParts[pathParts.length - 1];
 
       console.log(
-        `[ResearchRouter ${requestId}] GET /api/research/govinfo/package/${packageId}`,
+        `[ResearchRouter ${requestId}] GET /research/govinfo/package/${packageId}`,
       );
 
       try {
@@ -3809,7 +3825,7 @@ Respond in JSON format:
           );
         }
 
-        const detailUrl = `${GOVINFO_API_BASE}/packages/${packageId}/summary?api_key=${getConfig("GOVINFO_API_KEY")}`;
+        const detailUrl = `${GOVINFO_API_BASE}/packages/${packageId}/summary?api_key=${getConfig("GOVINFO_API_KEY")!}`;
         const response = await fetch(detailUrl, {
           headers: { Accept: "application/json" },
         });
@@ -3827,7 +3843,9 @@ Respond in JSON format:
               title: data.title,
               collectionCode: data.collectionCode,
               collectionName:
-                GOVINFO_COLLECTIONS[data.collectionCode] || data.collectionCode,
+                (data.collectionCode
+                  ? GOVINFO_COLLECTIONS[data.collectionCode]
+                  : undefined) || data.collectionCode,
               dateIssued: data.dateIssued,
               lastModified: data.lastModified,
               category: data.category,
@@ -3879,7 +3897,7 @@ Respond in JSON format:
   /**
    * List all available GovInfo document collections and their descriptions.
    *
-   * @endpoint GET /api/research/govinfo/collections
+   * @endpoint GET /research/govinfo/collections
    * @description Returns all GovInfo collection codes with descriptions to help
    * users filter govinfo searches. Collections include Congressional bills, regulations,
    * Federal Register, codes, court opinions, and more.
@@ -3896,7 +3914,7 @@ Respond in JSON format:
    * @source GovInfo API
    *
    * @example
-   * GET /api/research/govinfo/collections
+   * GET /research/govinfo/collections
    * Response includes collections like:
    * - BILLS: Congressional Bills
    * - CFR: Code of Federal Regulations
@@ -3904,7 +3922,7 @@ Respond in JSON format:
    * - USCODE: United States Code
    */
   // List available GovInfo collections
-  router.get("/api/research/govinfo/collections", async (request: Request) => {
+  router.get("/research/govinfo/collections", async (request: Request) => {
     const requestId =
       request.headers.get("X-Request-Id") || crypto.randomUUID();
 
@@ -3936,7 +3954,7 @@ Respond in JSON format:
   /**
    * Get information about PACER (Public Access to Court Electronic Records).
    *
-   * @endpoint GET /api/research/pacer/info
+   * @endpoint GET /research/pacer/info
    * @description Provides information about PACER, the federal court electronic records system.
    * Explains how to register, access fees, and limitations. No actual PACER integration currently;
    * this is informational only.
@@ -3952,12 +3970,12 @@ Respond in JSON format:
    *       Full PACER integration is planned for future releases.
    *
    * @example
-   * GET /api/research/pacer/info
+   * GET /research/pacer/info
    * Response includes:
    * - Registration URL: https://pacer.uscourts.gov/
    * - Fee information: $0.10 per page with $3.00 cap per document
    */
-  router.get("/api/research/pacer/info", async (request: Request) => {
+  router.get("/research/pacer/info", async (request: Request) => {
     const requestId =
       request.headers.get("X-Request-Id") || crypto.randomUUID();
 
@@ -3986,7 +4004,7 @@ Respond in JSON format:
   /**
    * Search for lawyers by location and practice specialty.
    *
-   * @endpoint GET /api/research/lawyers/search
+   * @endpoint GET /research/lawyers/search
    * @description Find attorneys in a specific location who practice in a particular
    * legal specialty. Results are sourced via web search and may include law firm
    * websites and legal directories.
@@ -4011,9 +4029,9 @@ Respond in JSON format:
    * @source SerpAPI / Web search
    *
    * @example
-   * GET /api/research/lawyers/search?location=San%20Francisco,%20CA&specialty=patent&limit=10
+   * GET /research/lawyers/search?location=San%20Francisco,%20CA&specialty=patent&limit=10
    */
-  router.get("/api/research/lawyers/search", async (request: Request) => {
+  router.get("/research/lawyers/search", async (request: Request) => {
     const requestId =
       request.headers.get("X-Request-Id") || crypto.randomUUID();
     const url = new URL(request.url);
@@ -4022,7 +4040,7 @@ Respond in JSON format:
     const limit = Math.min(parseInt(url.searchParams.get("limit") || "20"), 50);
 
     console.log(
-      `[ResearchRouter ${requestId}] GET /api/research/lawyers/search?location=${location}&specialty=${specialty}`,
+      `[ResearchRouter ${requestId}] GET /research/lawyers/search?location=${location}&specialty=${specialty}`,
     );
 
     if (!location || location.length < 2) {
@@ -4166,7 +4184,7 @@ Respond in JSON format:
   /**
    * List all available legal practice areas/specialties for lawyer search filters.
    *
-   * @endpoint GET /api/research/lawyers/specialties
+   * @endpoint GET /research/lawyers/specialties
    * @description Returns all available legal specialties that can be used to filter
    * lawyer searches. Includes common practice areas from bankruptcy to workers' compensation.
    *
@@ -4180,7 +4198,7 @@ Respond in JSON format:
    * @rateLimit Unlimited
    *
    * @example
-   * GET /api/research/lawyers/specialties
+   * GET /research/lawyers/specialties
    * Response includes specialties like:
    * - bankruptcy: "Bankruptcy"
    * - divorce: "Divorce & Family Law"
@@ -4188,7 +4206,7 @@ Respond in JSON format:
    * - criminal: "Criminal Defense"
    */
   // Get lawyer specialties list
-  router.get("/api/research/lawyers/specialties", async (request: Request) => {
+  router.get("/research/lawyers/specialties", async (request: Request) => {
     const requestId =
       request.headers.get("X-Request-Id") || crypto.randomUUID();
 
@@ -4235,7 +4253,7 @@ Respond in JSON format:
   /**
    * Generate a legal document using AI based on case research and findings.
    *
-   * @endpoint POST /api/research/cases/{caseId}/generate-document
+   * @endpoint POST /research/cases/{caseId}/generate-document
    * @description Generate professional legal documents (memoranda, case briefs, motions, etc.)
    * using AI and case information. Documents can be output in Markdown, PDF, or DOCX format
    * with configurable citation styles and sections.
@@ -4273,7 +4291,7 @@ Respond in JSON format:
    * @rateLimit 5 generations per hour per user
    *
    * @example
-   * POST /api/research/cases/case_123/generate-document
+   * POST /research/cases/case_123/generate-document
    * {
    *   "template": "case_brief",
    *   "format": "pdf",
@@ -4285,7 +4303,7 @@ Respond in JSON format:
    */
   // Generate legal document from case research
   router.post(
-    "/api/research/cases/:caseId/generate-document",
+    "/research/cases/:caseId/generate-document",
     async (request: Request) => {
       const requestId =
         request.headers.get("X-Request-Id") || crypto.randomUUID();
@@ -4294,7 +4312,7 @@ Respond in JSON format:
       const caseId = pathParts[pathParts.length - 2];
 
       console.log(
-        `[ResearchRouter ${requestId}] POST /api/research/cases/${caseId}/generate-document`,
+        `[ResearchRouter ${requestId}] POST /research/cases/${caseId}/generate-document`,
       );
 
       try {
@@ -4333,7 +4351,7 @@ Respond in JSON format:
           return new Response(
             JSON.stringify({
               error: "Invalid request body",
-              details: validated.error.errors,
+              details: validated.error.issues,
             }),
             {
               status: 400,
@@ -4425,7 +4443,7 @@ Respond in JSON format:
         await persistence.paralegal.addGeneratedDocument(caseId, generatedDoc);
 
         console.log(
-          `[ResearchRouter ${requestId}] Document generated successfully: ${documentId} (${metadata.wordCount} words, ${metadata.citationCount} citations)`,
+          `[ResearchRouter ${requestId}] Document generated successfully: ${documentId} (${metadata.wordCount} words)`,
         );
 
         // Trigger webhook if configured
@@ -4433,7 +4451,6 @@ Respond in JSON format:
           const webhookConfig: WebhookConfig = {
             url: webhook.url,
             headers: webhook.headers || {},
-            enabled: true,
           };
 
           const webhookPayload = createDocumentGeneratedPayload(

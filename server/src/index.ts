@@ -57,6 +57,14 @@ import {
   generateChronologyReport,
 } from "./reports.js";
 import { analyzeCaseGraph, compressCaseGraphForPrompt } from "./chat-graph";
+import {
+  asIttyRoute,
+  created as openapiCreated,
+  json,
+  noContent as openapiNoContent,
+  notFound as openapiNotFound,
+  openapiFormat,
+} from "./openapi";
 
 const __dir =
   import.meta.dir ??
@@ -204,12 +212,16 @@ const ingestionStatus: IngestionStatus = {
 };
 
 export const router = AutoRouter({
+  format: openapiFormat,
   before: [preflight, requireAuthentication, requireUnlockedDatabase],
   finally: [persistAfterMutation, corsify],
   base: "/api",
 });
 
-router.get("/health", () => ({ status: "ok" }));
+router.get(
+  "/health",
+  asIttyRoute("get", "/health", () => ({ status: "ok" })),
+);
 
 // Initialize WASM modules and database before handling any requests.
 ensureWasmSimilarityInit();
@@ -362,57 +374,56 @@ process.on("SIGTERM", () => {
   void db.flush().then(() => process.exit(0));
 });
 
-const json201 = (data: unknown) =>
-  new Response(JSON.stringify(data), {
-    status: 201,
-    headers: { "content-type": "application/json" },
-  });
-const notFound = () => new Response("Not found", { status: 404 });
-const noContent = () => new Response(null, { status: 204 });
+const json201 = <T>(data: T) => openapiCreated(data);
+const notFound = () => openapiNotFound();
+const noContent = () => openapiNoContent();
 
 // --- Search ---
-router.get("/search", async (req) => {
-  const url = new URL(req.url);
-  const query = url.searchParams.get("q") ?? "";
+router.get(
+  "/search",
+  asIttyRoute("get", "/search", async (req) => {
+    const url = new URL(req.url);
+    const query = url.searchParams.get("q") ?? "";
 
-  if (!query.trim()) {
-    return new Response(
-      JSON.stringify({ error: "Query parameter 'q' is required" }),
-      { status: 400, headers: { "content-type": "application/json" } },
-    );
-  }
+    if (!query.trim()) {
+      return json(400, { error: "Query parameter 'q' is required" });
+    }
 
-  const typesParam = url.searchParams.get("types");
-  const types = typesParam
-    ? (typesParam.split(",").filter(Boolean) as EntityType[])
-    : undefined;
+    const typesParam = url.searchParams.get("types");
+    const types = typesParam
+      ? (typesParam.split(",").filter(Boolean) as EntityType[])
+      : undefined;
 
-  const limitParam = url.searchParams.get("limit");
-  const limit = limitParam ? parseInt(limitParam, 10) : undefined;
+    const limitParam = url.searchParams.get("limit");
+    const limit = limitParam ? parseInt(limitParam, 10) : undefined;
 
-  const offsetParam = url.searchParams.get("offset");
-  const offset = offsetParam ? parseInt(offsetParam, 10) : undefined;
+    const offsetParam = url.searchParams.get("offset");
+    const offset = offsetParam ? parseInt(offsetParam, 10) : undefined;
 
-  const caseId = url.searchParams.get("caseId") ?? undefined;
+    const caseId = url.searchParams.get("caseId") ?? undefined;
 
-  const params = {
-    query: query.trim(),
-    types,
-    limit,
-    offset,
-    caseId,
-  };
+    const params = {
+      query: query.trim(),
+      types,
+      limit,
+      offset,
+      caseId,
+    };
 
-  const result = await executeSearch(params);
-  return new Response(JSON.stringify(result), {
-    headers: { "content-type": "application/json" },
-  });
-});
+    const result = await executeSearch(params);
+    return result;
+  }),
+);
 
 // --- Cases ---
 router
-  .get("/cases", () => [...db.cases.values()])
-  .post("/cases", async (req) => {
+  .get(
+    "/cases",
+    asIttyRoute("get", "/cases", () => [...db.cases.values()]),
+  )
+  .post(
+    "/cases",
+    asIttyRoute("post", "/cases", async (req) => {
     const body = await req.json();
     const now = new Date().toISOString();
     const c: Case = {
@@ -430,12 +441,18 @@ router
     };
     db.cases.set(c.id, c);
     return json201(c);
-  })
-  .get("/cases/:caseId", ({ params }) => {
+    }),
+  )
+  .get(
+    "/cases/:caseId",
+    asIttyRoute("get", "/cases/:caseId", ({ params }) => {
     const c = db.cases.get(params.caseId);
     return c ?? notFound();
-  })
-  .patch("/cases/:caseId", async (req) => {
+    }),
+  )
+  .patch(
+    "/cases/:caseId",
+    asIttyRoute("patch", "/cases/:caseId", async (req) => {
     const c = db.cases.get(req.params.caseId);
     if (!c) return notFound();
     const body = await req.json();
@@ -452,13 +469,19 @@ router
     }
     c.updatedAt = new Date().toISOString();
     return c;
-  })
-  .delete("/cases/:caseId", ({ params }) => {
+    }),
+  )
+  .delete(
+    "/cases/:caseId",
+    asIttyRoute("delete", "/cases/:caseId", ({ params }) => {
     if (!db.cases.has(params.caseId)) return notFound();
     db.cases.delete(params.caseId);
     return noContent();
-  })
-  .post("/cases/:caseId/parties", async (req) => {
+    }),
+  )
+  .post(
+    "/cases/:caseId/parties",
+    asIttyRoute("post", "/cases/:caseId/parties", async (req) => {
     const c = db.cases.get(req.params.caseId);
     if (!c) return notFound();
     const body = await req.json();
@@ -471,8 +494,11 @@ router
     c.parties.push(party);
     c.updatedAt = new Date().toISOString();
     return json201(party);
-  })
-  .delete("/cases/:caseId/parties/:partyId", ({ params }) => {
+    }),
+  )
+  .delete(
+    "/cases/:caseId/parties/:partyId",
+    asIttyRoute("delete", "/cases/:caseId/parties/:partyId", ({ params }) => {
     const c = db.cases.get(params.caseId);
     if (!c) return notFound();
     const idx = c.parties.findIndex((p) => p.id === params.partyId);
@@ -480,8 +506,11 @@ router
     c.parties.splice(idx, 1);
     c.updatedAt = new Date().toISOString();
     return noContent();
-  })
-  .post("/cases/:caseId/filings", async (req) => {
+    }),
+  )
+  .post(
+    "/cases/:caseId/filings",
+    asIttyRoute("post", "/cases/:caseId/filings", async (req) => {
     const c = db.cases.get(req.params.caseId);
     if (!c) return notFound();
     const body = await req.json();
@@ -491,12 +520,16 @@ router
       date: body.date,
       type: body.type ?? "",
       notes: body.notes ?? "",
+      caseId: req.params.caseId,
     };
     c.filings.push(filing);
     c.updatedAt = new Date().toISOString();
     return json201(filing);
-  })
-  .delete("/cases/:caseId/filings/:filingId", ({ params }) => {
+    }),
+  )
+  .delete(
+    "/cases/:caseId/filings/:filingId",
+    asIttyRoute("delete", "/cases/:caseId/filings/:filingId", ({ params }) => {
     const c = db.cases.get(params.caseId);
     if (!c) return notFound();
     const idx = c.filings.findIndex((f) => f.id === params.filingId);
@@ -504,11 +537,17 @@ router
     c.filings.splice(idx, 1);
     c.updatedAt = new Date().toISOString();
     return noContent();
-  })
+    }),
+  )
 
   // --- Contacts ---
-  .get("/contacts", () => [...db.contacts.values()])
-  .post("/contacts", async (req) => {
+  .get(
+    "/contacts",
+    asIttyRoute("get", "/contacts", () => [...db.contacts.values()]),
+  )
+  .post(
+    "/contacts",
+    asIttyRoute("post", "/contacts", async (req) => {
     const body = await req.json();
     const c: Contact = {
       id: crypto.randomUUID(),
@@ -524,12 +563,18 @@ router
     };
     db.contacts.set(c.id, c);
     return json201(c);
-  })
-  .get("/contacts/:contactId", ({ params }) => {
+    }),
+  )
+  .get(
+    "/contacts/:contactId",
+    asIttyRoute("get", "/contacts/:contactId", ({ params }) => {
     const c = db.contacts.get(params.contactId);
     return c ?? notFound();
-  })
-  .patch("/contacts/:contactId", async (req) => {
+    }),
+  )
+  .patch(
+    "/contacts/:contactId",
+    asIttyRoute("patch", "/contacts/:contactId", async (req) => {
     const c = db.contacts.get(req.params.contactId);
     if (!c) return notFound();
     const body = await req.json();
@@ -548,16 +593,25 @@ router
         (c as Record<string, unknown>)[key] = body[key];
     }
     return c;
-  })
-  .delete("/contacts/:contactId", ({ params }) => {
+    }),
+  )
+  .delete(
+    "/contacts/:contactId",
+    asIttyRoute("delete", "/contacts/:contactId", ({ params }) => {
     if (!db.contacts.has(params.contactId)) return notFound();
     db.contacts.delete(params.contactId);
     return noContent();
-  })
+    }),
+  )
 
   // --- Deadlines ---
-  .get("/deadlines", () => [...db.deadlines.values()])
-  .post("/deadlines", async (req) => {
+  .get(
+    "/deadlines",
+    asIttyRoute("get", "/deadlines", () => [...db.deadlines.values()]),
+  )
+  .post(
+    "/deadlines",
+    asIttyRoute("post", "/deadlines", async (req) => {
     const body = await req.json();
     const d: Deadline = {
       id: crypto.randomUUID(),
@@ -569,12 +623,18 @@ router
     };
     db.deadlines.set(d.id, d);
     return json201(d);
-  })
-  .get("/deadlines/:deadlineId", ({ params }) => {
+    }),
+  )
+  .get(
+    "/deadlines/:deadlineId",
+    asIttyRoute("get", "/deadlines/:deadlineId", ({ params }) => {
     const d = db.deadlines.get(params.deadlineId);
     return d ?? notFound();
-  })
-  .patch("/deadlines/:deadlineId", async (req) => {
+    }),
+  )
+  .patch(
+    "/deadlines/:deadlineId",
+    asIttyRoute("patch", "/deadlines/:deadlineId", async (req) => {
     const d = db.deadlines.get(req.params.deadlineId);
     if (!d) return notFound();
     const body = await req.json();
@@ -589,22 +649,38 @@ router
         (d as Record<string, unknown>)[key] = body[key];
     }
     return d;
-  })
-  .delete("/deadlines/:deadlineId", ({ params }) => {
+    }),
+  )
+  .delete(
+    "/deadlines/:deadlineId",
+    asIttyRoute("delete", "/deadlines/:deadlineId", ({ params }) => {
     if (!db.deadlines.has(params.deadlineId)) return notFound();
     db.deadlines.delete(params.deadlineId);
     return noContent();
-  })
-  .post("/deadlines/:deadlineId/toggle-complete", ({ params }) => {
+    }),
+  )
+  .post(
+    "/deadlines/:deadlineId/toggle-complete",
+    asIttyRoute(
+      "post",
+      "/deadlines/:deadlineId/toggle-complete",
+      ({ params }) => {
     const d = db.deadlines.get(params.deadlineId);
     if (!d) return notFound();
     d.completed = !d.completed;
     return d;
-  })
+      },
+    ),
+  )
 
   // --- Finances ---
-  .get("/finances", () => [...db.finances.values()])
-  .post("/finances", async (req) => {
+  .get(
+    "/finances",
+    asIttyRoute("get", "/finances", () => [...db.finances.values()]),
+  )
+  .post(
+    "/finances",
+    asIttyRoute("post", "/finances", async (req) => {
     const body = await req.json();
     const e: FinancialEntry = {
       id: crypto.randomUUID(),
@@ -617,12 +693,18 @@ router
     };
     db.finances.set(e.id, e);
     return json201(e);
-  })
-  .get("/finances/:entryId", ({ params }) => {
+    }),
+  )
+  .get(
+    "/finances/:entryId",
+    asIttyRoute("get", "/finances/:entryId", ({ params }) => {
     const e = db.finances.get(params.entryId);
     return e ?? notFound();
-  })
-  .patch("/finances/:entryId", async (req) => {
+    }),
+  )
+  .patch(
+    "/finances/:entryId",
+    asIttyRoute("patch", "/finances/:entryId", async (req) => {
     const e = db.finances.get(req.params.entryId);
     if (!e) return notFound();
     const body = await req.json();
@@ -638,16 +720,25 @@ router
         (e as Record<string, unknown>)[key] = body[key];
     }
     return e;
-  })
-  .delete("/finances/:entryId", ({ params }) => {
+    }),
+  )
+  .delete(
+    "/finances/:entryId",
+    asIttyRoute("delete", "/finances/:entryId", ({ params }) => {
     if (!db.finances.has(params.entryId)) return notFound();
     db.finances.delete(params.entryId);
     return noContent();
-  })
+    }),
+  )
 
   // --- Evidences ---
-  .get("/evidences", () => [...db.evidences.values()])
-  .post("/evidences", async (req) => {
+  .get(
+    "/evidences",
+    asIttyRoute("get", "/evidences", () => [...db.evidences.values()]),
+  )
+  .post(
+    "/evidences",
+    asIttyRoute("post", "/evidences", async (req) => {
     const body = await req.json();
     const now = new Date().toISOString();
     const e: Evidence = {
@@ -670,12 +761,18 @@ router
     };
     db.evidences.set(e.id, e);
     return json201(e);
-  })
-  .get("/evidences/:evidenceId", ({ params }) => {
+    }),
+  )
+  .get(
+    "/evidences/:evidenceId",
+    asIttyRoute("get", "/evidences/:evidenceId", ({ params }) => {
     const e = db.evidences.get(params.evidenceId);
     return e ?? notFound();
-  })
-  .patch("/evidences/:evidenceId", async (req) => {
+    }),
+  )
+  .patch(
+    "/evidences/:evidenceId",
+    asIttyRoute("patch", "/evidences/:evidenceId", async (req) => {
     const e = db.evidences.get(req.params.evidenceId);
     if (!e) return notFound();
     const body = await req.json();
@@ -699,16 +796,25 @@ router
         (e as Record<string, unknown>)[key] = body[key];
     }
     return e;
-  })
-  .delete("/evidences/:evidenceId", ({ params }) => {
+    }),
+  )
+  .delete(
+    "/evidences/:evidenceId",
+    asIttyRoute("delete", "/evidences/:evidenceId", ({ params }) => {
     if (!db.evidences.has(params.evidenceId)) return notFound();
     db.evidences.delete(params.evidenceId);
     return noContent();
-  })
+    }),
+  )
 
   // --- Filings ---
-  .get("/filings", () => [...db.filings.values()])
-  .post("/filings", async (req) => {
+  .get(
+    "/filings",
+    asIttyRoute("get", "/filings", () => [...db.filings.values()]),
+  )
+  .post(
+    "/filings",
+    asIttyRoute("post", "/filings", async (req) => {
     const body = await req.json();
     const f: Filing = {
       id: crypto.randomUUID(),
@@ -720,12 +826,18 @@ router
     };
     db.filings.set(f.id, f);
     return json201(f);
-  })
-  .get("/filings/:filingId", ({ params }) => {
+    }),
+  )
+  .get(
+    "/filings/:filingId",
+    asIttyRoute("get", "/filings/:filingId", ({ params }) => {
     const f = db.filings.get(params.filingId);
     return f ?? notFound();
-  })
-  .patch("/filings/:filingId", async (req) => {
+    }),
+  )
+  .patch(
+    "/filings/:filingId",
+    asIttyRoute("patch", "/filings/:filingId", async (req) => {
     const f = db.filings.get(req.params.filingId);
     if (!f) return notFound();
     const body = await req.json();
@@ -734,16 +846,22 @@ router
         (f as Record<string, unknown>)[key] = body[key];
     }
     return f;
-  })
-  .delete("/filings/:filingId", ({ params }) => {
+    }),
+  )
+  .delete(
+    "/filings/:filingId",
+    asIttyRoute("delete", "/filings/:filingId", ({ params }) => {
     if (!db.filings.has(params.filingId)) return notFound();
     db.filings.delete(params.filingId);
     return noContent();
-  })
+    }),
+  )
 
   // --- Notes ---
-  .get("/notes", () => [...db.notes.values()])
-  .post("/notes", async (req) => {
+  .get("/notes", asIttyRoute("get", "/notes", () => [...db.notes.values()]))
+  .post(
+    "/notes",
+    asIttyRoute("post", "/notes", async (req) => {
     const body = await req.json();
     const now = new Date().toISOString();
     const n: Note = {
@@ -759,12 +877,18 @@ router
     };
     db.notes.set(n.id, n);
     return json201(n);
-  })
-  .get("/notes/:noteId", ({ params }) => {
+    }),
+  )
+  .get(
+    "/notes/:noteId",
+    asIttyRoute("get", "/notes/:noteId", ({ params }) => {
     const n = db.notes.get(params.noteId);
     return n ?? notFound();
-  })
-  .patch("/notes/:noteId", async (req) => {
+    }),
+  )
+  .patch(
+    "/notes/:noteId",
+    asIttyRoute("patch", "/notes/:noteId", async (req) => {
     const n = db.notes.get(req.params.noteId);
     if (!n) return notFound();
     const body = await req.json();
@@ -781,15 +905,19 @@ router
     }
     n.updatedAt = new Date().toISOString();
     return n;
-  })
-  .delete("/notes/:noteId", ({ params }) => {
+    }),
+  )
+  .delete(
+    "/notes/:noteId",
+    asIttyRoute("delete", "/notes/:noteId", ({ params }) => {
     if (!db.notes.has(params.noteId)) return notFound();
     db.notes.delete(params.noteId);
     return noContent();
-  })
+    }),
+  )
 
   // --- Chat ---
-  .post("/chat", async (req) => {
+  .post("/chat", asIttyRoute("post", "/chat", async (req) => {
     const { messages } = (await req.json()) as {
       messages: { role: string; content: string }[];
     };
@@ -1193,11 +1321,18 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
         choice.message.tool_calls?.length
       ) {
         chatMessages.push(choice.message);
-        for (const toolCall of choice.message.tool_calls!) {
-          const result = await executeTool(
-            toolCall.function.name,
-            JSON.parse(toolCall.function.arguments),
-          );
+        for (const toolCall of choice.message.tool_calls ?? []) {
+          if (toolCall.type !== "function") continue;
+          let args: Record<string, unknown> = {};
+          try {
+            args = JSON.parse(toolCall.function.arguments) as Record<
+              string,
+              unknown
+            >;
+          } catch {
+            args = {};
+          }
+          const result = await executeTool(toolCall.function.name, args);
           chatMessages.push({
             role: "tool",
             tool_call_id: toolCall.id,
@@ -1207,14 +1342,16 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
         continue;
       }
 
-      return { reply: choice.message.content };
+      return {
+        reply: choice.message.content ?? "Sorry, I was unable to complete the request.",
+      };
     }
 
     return { reply: "Sorry, I was unable to complete the request." };
-  })
+  }))
 
   // --- Reports ---
-  .post("/reports", async (req) => {
+  .post("/reports", asIttyRoute("post", "/reports", async (req) => {
     const config = await req.json();
 
     // Route to appropriate generator
@@ -1228,31 +1365,30 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
       case "chronology":
         return generateChronologyReport(config);
       default:
-        return new Response("Invalid report type", { status: 400 });
+        return json(400, { error: "Invalid report type" });
     }
-  })
+  }))
 
   // --- Documents ---
-  .get("/documents", async () => {
-    const indexPath = join(appRoot, "case-data/case-documents-app/index.json");
-    try {
-      const raw = await readFile(indexPath, "utf-8");
-      return new Response(raw, {
-        headers: { "Content-Type": "application/json" },
-      });
-    } catch {
-      return new Response("[]", {
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-  })
-  .post("/documents/upload", async (req) => {
+  .get(
+    "/documents",
+    asIttyRoute("get", "/documents", async () => {
+      const indexPath = join(appRoot, "case-data/case-documents-app/index.json");
+      try {
+        const raw = await readFile(indexPath, "utf-8");
+        return JSON.parse(raw) as DocumentEntry[];
+      } catch {
+        return [];
+      }
+    }),
+  )
+  .post("/documents/upload", asIttyRoute("post", "/documents/upload", async (req) => {
     const formData = await req.formData();
     const category = (formData.get("category") as string) || "_new_filings";
     const files = formData.getAll("files") as File[];
 
     if (files.length === 0) {
-      return new Response("No files provided", { status: 400 });
+      return json(400, { error: "No files provided" });
     }
 
     const baseDir = join(appRoot, "case-data/case-documents-app");
@@ -1304,101 +1440,79 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
     await writeFile(indexPath, JSON.stringify(allEntries, null, 2));
 
     return json201(newEntries);
-  })
+  }))
 
-  .delete("/documents/:id", async ({ params }) => {
-    const baseDir = join(appRoot, "case-data/case-documents-app");
-    const indexPath = join(baseDir, "index.json");
+  .delete(
+    "/documents/:id",
+    asIttyRoute("delete", "/documents/:id", async ({ params }) => {
+      const baseDir = join(appRoot, "case-data/case-documents-app");
+      const indexPath = join(baseDir, "index.json");
 
-    let entries: DocumentEntry[] = [];
-    try {
-      const raw = await readFile(indexPath, "utf-8");
-      entries = JSON.parse(raw);
-    } catch {
-      return notFound();
-    }
-
-    const idx = entries.findIndex((e) => e.id === params.id);
-    if (idx === -1) return notFound();
-
-    const doc = entries[idx];
-
-    // Remove PDF and text files (best-effort)
-    if (doc.path) {
+      let entries: DocumentEntry[] = [];
       try {
-        await unlink(join(baseDir, doc.path));
+        const raw = await readFile(indexPath, "utf-8");
+        entries = JSON.parse(raw);
       } catch {
-        /* file may not exist */
+        return notFound();
       }
-    }
-    if (doc.textFile) {
-      try {
-        await unlink(join(baseDir, doc.textFile));
-      } catch {
-        /* file may not exist */
-      }
-    }
 
-    entries.splice(idx, 1);
-    await writeFile(indexPath, JSON.stringify(entries, null, 2));
-    return noContent();
-  })
+      const idx = entries.findIndex((e) => e.id === params.id);
+      if (idx === -1) return notFound();
+
+      const doc = entries[idx];
+
+      // Remove PDF and text files (best-effort)
+      if (doc.path) {
+        try {
+          await unlink(join(baseDir, doc.path));
+        } catch {
+          /* file may not exist */
+        }
+      }
+      if (doc.textFile) {
+        try {
+          await unlink(join(baseDir, doc.textFile));
+        } catch {
+          /* file may not exist */
+        }
+      }
+
+      entries.splice(idx, 1);
+      await writeFile(indexPath, JSON.stringify(entries, null, 2));
+      return noContent();
+    }),
+  )
 
   // --- Ingestion status ---
-  .get("/ingest/status", () => {
-    return new Response(JSON.stringify(ingestionStatus), {
-      headers: { "Content-Type": "application/json" },
-    });
-  })
+  .get(
+    "/ingest/status",
+    asIttyRoute("get", "/ingest/status", () => ingestionStatus),
+  )
 
   // --- Scan directory for documents ---
-  .post("/ingest/scan", async (req) => {
+  .post("/ingest/scan", asIttyRoute("post", "/ingest/scan", async (req) => {
     try {
       const body = await req.json();
       const { directory } = body;
 
       if (!directory) {
-        return new Response(
-          JSON.stringify({ error: "directory is required" }),
-          {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          },
-        );
+        return json(400, { error: "directory is required" });
       }
 
       // Verify OpenAI is configured
       const openaiApiKey = getConfig("OPENAI_API_KEY");
       if (!openaiApiKey) {
-        return new Response(
-          JSON.stringify({ error: "OpenAI API key not configured" }),
-          {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          },
-        );
+        return json(400, { error: "OpenAI API key not configured" });
       }
 
       // Verify directory exists and is accessible
       try {
         const dirStat = await stat(directory);
         if (!dirStat.isDirectory()) {
-          return new Response(
-            JSON.stringify({ error: "Path is not a directory" }),
-            {
-              status: 400,
-              headers: { "Content-Type": "application/json" },
-            },
-          );
+          return json(400, { error: "Path is not a directory" });
         }
       } catch {
-        return new Response(
-          JSON.stringify({ error: "Directory not found or not accessible" }),
-          {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          },
-        );
+        return json(400, { error: "Directory not found or not accessible" });
       }
 
       const startedAt = new Date().toISOString();
@@ -1486,342 +1600,404 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
 
       const finishedAt = new Date().toISOString();
 
-      return new Response(
-        JSON.stringify({
-          status: "completed",
-          added,
-          skipped,
-          errors,
-          directory,
-          startedAt,
-          finishedAt,
-        }),
-        { headers: { "Content-Type": "application/json" } },
-      );
+      return {
+        status: "completed",
+        added,
+        skipped,
+        errors,
+        directory,
+        startedAt,
+        finishedAt,
+      };
     } catch (error) {
-      return new Response(
-        JSON.stringify({
-          error: error instanceof Error ? error.message : "Scan failed",
-        }),
-        { status: 500, headers: { "Content-Type": "application/json" } },
-      );
-    }
-  })
-
-  // --- Device Tokens (FCM) ---
-  .get("/device-tokens", () => {
-    return new Response(JSON.stringify(getDeviceTokens()), {
-      headers: { "Content-Type": "application/json" },
-    });
-  })
-  .post("/device-tokens", async (req) => {
-    const body = await req.json();
-    if (!body.token || !body.platform) {
-      return new Response(
-        JSON.stringify({ error: "token and platform are required" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
-    }
-    const token = registerDeviceToken(body.token, body.platform);
-    return json201(token);
-  })
-  .delete("/device-tokens/:tokenId", ({ params }) => {
-    const removed = removeDeviceToken(params.tokenId);
-    if (!removed) return notFound();
-    return noContent();
-  })
-
-  // --- SMS Recipients ---
-  .get("/sms-recipients", () => {
-    return new Response(JSON.stringify(getSmsRecipients()), {
-      headers: { "Content-Type": "application/json" },
-    });
-  })
-  .post("/sms-recipients", async (req) => {
-    const body = await req.json();
-    if (!body.phone) {
-      return new Response(JSON.stringify({ error: "phone is required" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
+      return json(500, {
+        error: error instanceof Error ? error.message : "Scan failed",
       });
     }
-    const recipient = registerSmsRecipient(body.phone, body.name);
-    return json201(recipient);
-  })
-  .delete("/sms-recipients/:recipientId", ({ params }) => {
-    const removed = removeSmsRecipient(params.recipientId);
-    if (!removed) return notFound();
-    return noContent();
-  })
+  }))
+
+  // --- Device Tokens (FCM) ---
+  .get(
+    "/device-tokens",
+    asIttyRoute("get", "/device-tokens", () => getDeviceTokens()),
+  )
+  .post(
+    "/device-tokens",
+    asIttyRoute("post", "/device-tokens", async (req) => {
+      const body = await req.json();
+      const token = typeof body?.token === "string" ? body.token : "";
+      const platform = body?.platform;
+
+      if (
+        !token ||
+        (platform !== "ios" && platform !== "android" && platform !== "web")
+      ) {
+        return json(400, { error: "token and platform are required" });
+      }
+
+      return json201(registerDeviceToken(token, platform));
+    }),
+  )
+  .delete(
+    "/device-tokens/:tokenId",
+    asIttyRoute("delete", "/device-tokens/:tokenId", ({ params }) => {
+      const removed = removeDeviceToken(params.tokenId);
+      if (!removed) return notFound();
+      return noContent();
+    }),
+  )
+
+  // --- SMS Recipients ---
+  .get(
+    "/sms-recipients",
+    asIttyRoute("get", "/sms-recipients", () => getSmsRecipients()),
+  )
+  .post(
+    "/sms-recipients",
+    asIttyRoute("post", "/sms-recipients", async (req) => {
+      const body = await req.json();
+      const phone = typeof body?.phone === "string" ? body.phone : "";
+      const name = typeof body?.name === "string" ? body.name : undefined;
+
+      if (!phone) {
+        return json(400, { error: "phone is required" });
+      }
+
+      return json201(registerSmsRecipient(phone, name));
+    }),
+  )
+  .delete(
+    "/sms-recipients/:recipientId",
+    asIttyRoute("delete", "/sms-recipients/:recipientId", ({ params }) => {
+      const removed = removeSmsRecipient(params.recipientId);
+      if (!removed) return notFound();
+      return noContent();
+    }),
+  )
 
   // --- Evaluations ---
-  .get("/evaluations", () => {
-    const evaluations = [...db.evaluations.values()].sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-    return new Response(JSON.stringify(evaluations), {
-      headers: { "Content-Type": "application/json" },
-    });
-  })
-  .get("/evaluations/:evaluationId", ({ params }) => {
-    const evaluation = db.evaluations.get(params.evaluationId);
-    return evaluation ?? notFound();
-  })
-  .post("/evaluations/trigger", async () => {
-    try {
-      const result = await triggerEvaluation();
-      return json201(result);
-    } catch (error) {
-      return new Response(
-        JSON.stringify({
-          error: error instanceof Error ? error.message : "Evaluation failed",
-        }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        },
+  .get(
+    "/evaluations",
+    asIttyRoute("get", "/evaluations", () => {
+      const evaluations = [...db.evaluations.values()].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
-    }
-  })
+      return evaluations;
+    }),
+  )
+  .get(
+    "/evaluations/:evaluationId",
+    asIttyRoute("get", "/evaluations/:evaluationId", ({ params }) => {
+      const evaluation = db.evaluations.get(params.evaluationId);
+      return evaluation ?? notFound();
+    }),
+  )
+  .post(
+    "/evaluations/trigger",
+    asIttyRoute("post", "/evaluations/trigger", async () => {
+      try {
+        const result = await triggerEvaluation();
+        return json201(result);
+      } catch (error) {
+        return json(500, {
+          error: error instanceof Error ? error.message : "Evaluation failed",
+        });
+      }
+    }),
+  )
 
   // --- Scheduler ---
-  .get("/scheduler/status", () => {
-    const status = getSchedulerStatus();
-    const channels = getChannelsStatus();
-    return new Response(JSON.stringify({ ...status, channels }), {
-      headers: { "Content-Type": "application/json" },
-    });
-  });
+  .get(
+    "/scheduler/status",
+    asIttyRoute("get", "/scheduler/status", () => {
+      const status = getSchedulerStatus();
+      const channels = getChannelsStatus();
+      return { ...status, channels };
+    }),
+  );
 
 // --- Fax Jobs ---
 router
-  .get("/fax-jobs", () => {
-    const jobs = [...db.faxJobs.values()].sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-    return jobs;
-  })
-  .get("/fax-jobs/:jobId", ({ params }) => {
-    const job = db.faxJobs.get(params.jobId);
-    return job ?? notFound();
-  })
-  .post("/fax-jobs", async (req) => {
-    const body = await req.json();
-    if (!body.filingId || !body.recipientFax) {
-      return new Response(
-        JSON.stringify({ error: "filingId and recipientFax are required" }),
-        { status: 400, headers: { "content-type": "application/json" } },
+  .get(
+    "/fax-jobs",
+    asIttyRoute("get", "/fax-jobs", () => {
+      const jobs = [...db.faxJobs.values()].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
-    }
-    const now = new Date().toISOString();
-    const job: FaxJob = {
-      id: crypto.randomUUID(),
-      filingId: body.filingId,
-      caseId: body.caseId ?? "",
-      recipientName: body.recipientName ?? "",
-      recipientFax: body.recipientFax,
-      documentPath: body.documentPath,
-      status: "pending",
-      provider: "",
-      createdAt: now,
-      updatedAt: now,
-    };
-    db.faxJobs.set(job.id, job);
-    db.persist();
+      return jobs;
+    }),
+  )
+  .get(
+    "/fax-jobs/:jobId",
+    asIttyRoute("get", "/fax-jobs/:jobId", ({ params }) => {
+      const job = db.faxJobs.get(params.jobId);
+      return job ?? notFound();
+    }),
+  )
+  .post(
+    "/fax-jobs",
+    asIttyRoute("post", "/fax-jobs", async (req) => {
+      const body = await req.json();
+      if (!body.filingId || !body.recipientFax) {
+        return json(400, { error: "filingId and recipientFax are required" });
+      }
+      const now = new Date().toISOString();
+      const job: FaxJob = {
+        id: crypto.randomUUID(),
+        filingId: body.filingId,
+        caseId: body.caseId ?? "",
+        recipientName: body.recipientName ?? "",
+        recipientFax: body.recipientFax,
+        documentPath: body.documentPath,
+        status: "pending",
+        provider: "",
+        createdAt: now,
+        updatedAt: now,
+      };
+      db.faxJobs.set(job.id, job);
+      db.persist();
 
-    // Kick off async send (non-blocking)
-    void sendFax(job, body.documentPath);
+      // Kick off async send (non-blocking)
+      void sendFax(job, body.documentPath);
 
-    return json201(job);
-  })
-  .delete("/fax-jobs/:jobId", ({ params }) => {
-    if (!db.faxJobs.has(params.jobId)) return notFound();
-    db.faxJobs.delete(params.jobId);
-    return noContent();
-  })
-  .get("/fax/status", () => {
-    const p = getFaxProvider();
-    return { configured: p.isConfigured(), provider: p.name };
-  });
+      return json201(job);
+    }),
+  )
+  .delete(
+    "/fax-jobs/:jobId",
+    asIttyRoute("delete", "/fax-jobs/:jobId", ({ params }) => {
+      if (!db.faxJobs.has(params.jobId)) return notFound();
+      db.faxJobs.delete(params.jobId);
+      return noContent();
+    }),
+  )
+  .get(
+    "/fax/status",
+    asIttyRoute("get", "/fax/status", () => {
+      const p = getFaxProvider();
+      return { configured: p.isConfigured(), provider: p.name };
+    }),
+  );
 
 // --- Estate Plans ---
 router
-  .get("/estate-plans", () => [...db.estatePlans.values()])
-  .post("/estate-plans", async (req) => {
-    const body = await req.json();
-    const now = new Date().toISOString();
-    const plan: EstatePlan = {
-      id: crypto.randomUUID(),
-      title: body.title ?? "Untitled Plan",
-      status: body.status ?? "planning",
-      testatorName: body.testatorName ?? "",
-      testatorDateOfBirth: body.testatorDateOfBirth ?? "",
-      testatorAddress: body.testatorAddress ?? "",
-      executorName: body.executorName ?? "",
-      executorPhone: body.executorPhone ?? "",
-      executorEmail: body.executorEmail ?? "",
-      guardianName: body.guardianName ?? "",
-      guardianPhone: body.guardianPhone ?? "",
-      beneficiaries: [],
-      assets: [],
-      documents: [],
-      notes: body.notes ?? "",
-      createdAt: now,
-      updatedAt: now,
-    };
-    db.estatePlans.set(plan.id, plan);
-    return json201(plan);
-  })
-  .get("/estate-plans/:planId", ({ params }) => {
-    return db.estatePlans.get(params.planId) ?? notFound();
-  })
-  .patch("/estate-plans/:planId", async (req) => {
-    const plan = db.estatePlans.get(req.params.planId);
-    if (!plan) return notFound();
-    const body = await req.json();
-    for (const key of [
-      "title",
-      "status",
-      "testatorName",
-      "testatorDateOfBirth",
-      "testatorAddress",
-      "executorName",
-      "executorPhone",
-      "executorEmail",
-      "guardianName",
-      "guardianPhone",
-      "notes",
-    ] as const) {
-      if (body[key] !== undefined)
-        (plan as Record<string, unknown>)[key] = body[key];
-    }
-    plan.updatedAt = new Date().toISOString();
-    return plan;
-  })
-  .delete("/estate-plans/:planId", ({ params }) => {
-    if (!db.estatePlans.has(params.planId)) return notFound();
-    db.estatePlans.delete(params.planId);
-    return noContent();
-  })
+  .get(
+    "/estate-plans",
+    asIttyRoute("get", "/estate-plans", () => [...db.estatePlans.values()]),
+  )
+  .post(
+    "/estate-plans",
+    asIttyRoute("post", "/estate-plans", async (req) => {
+      const body = await req.json();
+      const now = new Date().toISOString();
+      const plan: EstatePlan = {
+        id: crypto.randomUUID(),
+        title: body.title ?? "Untitled Plan",
+        status: body.status ?? "planning",
+        testatorName: body.testatorName ?? "",
+        testatorDateOfBirth: body.testatorDateOfBirth ?? "",
+        testatorAddress: body.testatorAddress ?? "",
+        executorName: body.executorName ?? "",
+        executorPhone: body.executorPhone ?? "",
+        executorEmail: body.executorEmail ?? "",
+        guardianName: body.guardianName ?? "",
+        guardianPhone: body.guardianPhone ?? "",
+        beneficiaries: [],
+        assets: [],
+        documents: [],
+        notes: body.notes ?? "",
+        createdAt: now,
+        updatedAt: now,
+      };
+      db.estatePlans.set(plan.id, plan);
+      return json201(plan);
+    }),
+  )
+  .get(
+    "/estate-plans/:planId",
+    asIttyRoute("get", "/estate-plans/:planId", ({ params }) => {
+      return db.estatePlans.get(params.planId) ?? notFound();
+    }),
+  )
+  .patch(
+    "/estate-plans/:planId",
+    asIttyRoute("patch", "/estate-plans/:planId", async (req) => {
+      const plan = db.estatePlans.get(req.params.planId);
+      if (!plan) return notFound();
+      const body = await req.json();
+      for (const key of [
+        "title",
+        "status",
+        "testatorName",
+        "testatorDateOfBirth",
+        "testatorAddress",
+        "executorName",
+        "executorPhone",
+        "executorEmail",
+        "guardianName",
+        "guardianPhone",
+        "notes",
+      ] as const) {
+        if (body[key] !== undefined)
+          (plan as Record<string, unknown>)[key] = body[key];
+      }
+      plan.updatedAt = new Date().toISOString();
+      return plan;
+    }),
+  )
+  .delete(
+    "/estate-plans/:planId",
+    asIttyRoute("delete", "/estate-plans/:planId", ({ params }) => {
+      if (!db.estatePlans.has(params.planId)) return notFound();
+      db.estatePlans.delete(params.planId);
+      return noContent();
+    }),
+  )
   // Beneficiaries
-  .post("/estate-plans/:planId/beneficiaries", async (req) => {
-    const plan = db.estatePlans.get(req.params.planId);
-    if (!plan) return notFound();
-    const body = await req.json();
-    const b: Beneficiary = {
-      id: crypto.randomUUID(),
-      name: body.name ?? "",
-      relationship: body.relationship ?? "",
-      dateOfBirth: body.dateOfBirth ?? "",
-      phone: body.phone ?? "",
-      email: body.email ?? "",
-      address: body.address ?? "",
-      notes: body.notes ?? "",
-    };
-    plan.beneficiaries.push(b);
-    plan.updatedAt = new Date().toISOString();
-    return json201(b);
-  })
-  .delete("/estate-plans/:planId/beneficiaries/:id", ({ params }) => {
-    const plan = db.estatePlans.get(params.planId);
-    if (!plan) return notFound();
-    const idx = plan.beneficiaries.findIndex((b) => b.id === params.id);
-    if (idx === -1) return notFound();
-    plan.beneficiaries.splice(idx, 1);
-    plan.updatedAt = new Date().toISOString();
-    return noContent();
-  })
+  .post(
+    "/estate-plans/:planId/beneficiaries",
+    asIttyRoute(
+      "post",
+      "/estate-plans/:planId/beneficiaries",
+      async (req) => {
+        const plan = db.estatePlans.get(req.params.planId);
+        if (!plan) return notFound();
+        const body = await req.json();
+        const b: Beneficiary = {
+          id: crypto.randomUUID(),
+          name: body.name ?? "",
+          relationship: body.relationship ?? "",
+          dateOfBirth: body.dateOfBirth ?? "",
+          phone: body.phone ?? "",
+          email: body.email ?? "",
+          address: body.address ?? "",
+          notes: body.notes ?? "",
+        };
+        plan.beneficiaries.push(b);
+        plan.updatedAt = new Date().toISOString();
+        return json201(b);
+      },
+    ),
+  )
+  .delete(
+    "/estate-plans/:planId/beneficiaries/:id",
+    asIttyRoute(
+      "delete",
+      "/estate-plans/:planId/beneficiaries/:id",
+      ({ params }) => {
+        const plan = db.estatePlans.get(params.planId);
+        if (!plan) return notFound();
+        const idx = plan.beneficiaries.findIndex((b) => b.id === params.id);
+        if (idx === -1) return notFound();
+        plan.beneficiaries.splice(idx, 1);
+        plan.updatedAt = new Date().toISOString();
+        return noContent();
+      },
+    ),
+  )
   // Assets
-  .post("/estate-plans/:planId/assets", async (req) => {
-    const plan = db.estatePlans.get(req.params.planId);
-    if (!plan) return notFound();
-    const body = await req.json();
-    const a: EstateAsset = {
-      id: crypto.randomUUID(),
-      name: body.name ?? "",
-      category: body.category ?? "other",
-      estimatedValue: body.estimatedValue ?? 0,
-      ownershipType: body.ownershipType ?? "",
-      accountNumber: body.accountNumber ?? "",
-      institution: body.institution ?? "",
-      beneficiaryIds: body.beneficiaryIds ?? [],
-      notes: body.notes ?? "",
-    };
-    plan.assets.push(a);
-    plan.updatedAt = new Date().toISOString();
-    return json201(a);
-  })
-  .delete("/estate-plans/:planId/assets/:id", ({ params }) => {
-    const plan = db.estatePlans.get(params.planId);
-    if (!plan) return notFound();
-    const idx = plan.assets.findIndex((a) => a.id === params.id);
-    if (idx === -1) return notFound();
-    plan.assets.splice(idx, 1);
-    plan.updatedAt = new Date().toISOString();
-    return noContent();
-  })
+  .post(
+    "/estate-plans/:planId/assets",
+    asIttyRoute("post", "/estate-plans/:planId/assets", async (req) => {
+      const plan = db.estatePlans.get(req.params.planId);
+      if (!plan) return notFound();
+      const body = await req.json();
+      const a: EstateAsset = {
+        id: crypto.randomUUID(),
+        name: body.name ?? "",
+        category: body.category ?? "other",
+        estimatedValue: body.estimatedValue ?? 0,
+        ownershipType: body.ownershipType ?? "",
+        accountNumber: body.accountNumber ?? "",
+        institution: body.institution ?? "",
+        beneficiaryIds: body.beneficiaryIds ?? [],
+        notes: body.notes ?? "",
+      };
+      plan.assets.push(a);
+      plan.updatedAt = new Date().toISOString();
+      return json201(a);
+    }),
+  )
+  .delete(
+    "/estate-plans/:planId/assets/:id",
+    asIttyRoute("delete", "/estate-plans/:planId/assets/:id", ({ params }) => {
+      const plan = db.estatePlans.get(params.planId);
+      if (!plan) return notFound();
+      const idx = plan.assets.findIndex((a) => a.id === params.id);
+      if (idx === -1) return notFound();
+      plan.assets.splice(idx, 1);
+      plan.updatedAt = new Date().toISOString();
+      return noContent();
+    }),
+  )
   // Documents
-  .post("/estate-plans/:planId/documents", async (req) => {
-    const plan = db.estatePlans.get(req.params.planId);
-    if (!plan) return notFound();
-    const body = await req.json();
-    const now = new Date().toISOString();
-    const d: EstateDocument = {
-      id: crypto.randomUUID(),
-      type: body.type ?? "other",
-      title: body.title ?? "",
-      status: body.status ?? "not-started",
-      content: body.content ?? "",
-      fieldValues: body.fieldValues ?? {},
-      templateId: body.templateId ?? "",
-      reviewDate: body.reviewDate ?? "",
-      signedDate: body.signedDate ?? "",
-      notes: body.notes ?? "",
-      createdAt: now,
-      updatedAt: now,
-    };
-    plan.documents.push(d);
-    plan.updatedAt = new Date().toISOString();
-    return json201(d);
-  })
-  .patch("/estate-plans/:planId/documents/:id", async (req) => {
-    const plan = db.estatePlans.get(req.params.planId);
-    if (!plan) return notFound();
-    const doc = plan.documents.find((d) => d.id === req.params.id);
-    if (!doc) return notFound();
-    const body = await req.json();
-    for (const key of [
-      "type",
-      "title",
-      "status",
-      "content",
-      "fieldValues",
-      "templateId",
-      "reviewDate",
-      "signedDate",
-      "notes",
-    ] as const) {
-      if (body[key] !== undefined)
-        (doc as Record<string, unknown>)[key] = body[key];
-    }
-    doc.updatedAt = new Date().toISOString();
-    plan.updatedAt = new Date().toISOString();
-    return doc;
-  })
-  .delete("/estate-plans/:planId/documents/:id", ({ params }) => {
-    const plan = db.estatePlans.get(params.planId);
-    if (!plan) return notFound();
-    const idx = plan.documents.findIndex((d) => d.id === params.id);
-    if (idx === -1) return notFound();
-    plan.documents.splice(idx, 1);
-    plan.updatedAt = new Date().toISOString();
-    return noContent();
-  });
+  .post(
+    "/estate-plans/:planId/documents",
+    asIttyRoute("post", "/estate-plans/:planId/documents", async (req) => {
+      const plan = db.estatePlans.get(req.params.planId);
+      if (!plan) return notFound();
+      const body = await req.json();
+      const now = new Date().toISOString();
+      const d: EstateDocument = {
+        id: crypto.randomUUID(),
+        type: body.type ?? "other",
+        title: body.title ?? "",
+        status: body.status ?? "not-started",
+        content: body.content ?? "",
+        fieldValues: body.fieldValues ?? {},
+        templateId: body.templateId ?? "",
+        reviewDate: body.reviewDate ?? "",
+        signedDate: body.signedDate ?? "",
+        notes: body.notes ?? "",
+        createdAt: now,
+        updatedAt: now,
+      };
+      plan.documents.push(d);
+      plan.updatedAt = new Date().toISOString();
+      return json201(d);
+    }),
+  )
+  .patch(
+    "/estate-plans/:planId/documents/:id",
+    asIttyRoute("patch", "/estate-plans/:planId/documents/:id", async (req) => {
+      const plan = db.estatePlans.get(req.params.planId);
+      if (!plan) return notFound();
+      const doc = plan.documents.find((d) => d.id === req.params.id);
+      if (!doc) return notFound();
+      const body = await req.json();
+      for (const key of [
+        "type",
+        "title",
+        "status",
+        "content",
+        "fieldValues",
+        "templateId",
+        "reviewDate",
+        "signedDate",
+        "notes",
+      ] as const) {
+        if (body[key] !== undefined)
+          (doc as Record<string, unknown>)[key] = body[key];
+      }
+      doc.updatedAt = new Date().toISOString();
+      plan.updatedAt = new Date().toISOString();
+      return doc;
+    }),
+  )
+  .delete(
+    "/estate-plans/:planId/documents/:id",
+    asIttyRoute("delete", "/estate-plans/:planId/documents/:id", ({ params }) => {
+      const plan = db.estatePlans.get(params.planId);
+      if (!plan) return notFound();
+      const idx = plan.documents.findIndex((d) => d.id === params.id);
+      if (idx === -1) return notFound();
+      plan.documents.splice(idx, 1);
+      plan.updatedAt = new Date().toISOString();
+      return noContent();
+    }),
+  );
 
 // Mount config router
 router.all("/config/*", configRouter.fetch);
@@ -1829,41 +2005,31 @@ router.all("/security/*", securityRouter.fetch);
 router.all("/auth/*", authRouter.fetch);
 
 // Research agent chat endpoint
-router.post("/research/agent/chat", async (request: Request) => {
-  try {
-    const body = (await request.json()) as {
-      messages?: Array<{ role: string; content: string }>;
-    };
-    if (!body.messages || !Array.isArray(body.messages)) {
-      return new Response(
-        JSON.stringify({ error: "messages array is required" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        },
+router.post(
+  "/research/agent/chat",
+  asIttyRoute("post", "/research/agent/chat", async (request: Request) => {
+    try {
+      const body = (await request.json()) as {
+        messages?: Array<{ role: string; content: string }>;
+      };
+      if (!body.messages || !Array.isArray(body.messages)) {
+        return json(400, { error: "messages array is required" });
+      }
+
+      const result = await handleResearchChat(
+        body.messages.map((m) => ({
+          role: m.role as "user" | "assistant",
+          content: m.content,
+        })),
       );
+
+      return result;
+    } catch (err) {
+      console.error("[ResearchAgent] Error:", (err as Error)?.message);
+      return json(500, { error: (err as Error)?.message ?? "Unknown error" });
     }
-    const result = await handleResearchChat(
-      body.messages.map((m) => ({
-        role: m.role as "user" | "assistant",
-        content: m.content,
-      })),
-    );
-    return new Response(JSON.stringify(result), {
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (err) {
-    console.error("[ResearchAgent] Error:", (err as Error)?.message);
-    return new Response(
-      JSON.stringify({
-        reply: "An error occurred while processing your research request.",
-        toolResults: [],
-        error: (err as Error)?.message,
-      }),
-      { status: 500, headers: { "Content-Type": "application/json" } },
-    );
-  }
-});
+  }),
+);
 
 // Mount research router
 router.all("/research/*", researchRouter.fetch);

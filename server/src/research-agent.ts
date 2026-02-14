@@ -17,7 +17,7 @@ function getSerpApiBase(): string {
   return getConfig("SERPAPI_BASE") || "https://serpapi.com/search.json";
 }
 
-function formatDate(dateStr: string | null): string {
+function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return "";
   try {
     return new Date(dateStr).toLocaleDateString("en-US", {
@@ -46,6 +46,10 @@ const COURT_NAMES: Record<string, string> = {
   cadc: "D.C. Circuit",
   cafc: "Federal Circuit",
 };
+
+function resolveCourtName(code: string | undefined): string {
+  return (code ? COURT_NAMES[code] : undefined) || code || "";
+}
 
 const GOVINFO_COLLECTIONS: Record<string, string> = {
   BILLS: "Congressional Bills",
@@ -393,7 +397,7 @@ async function searchOpinions(params: {
         .filter(Boolean)
         .join(", ") ||
       "",
-    court: COURT_NAMES[op.court] || op.court || "",
+    court: resolveCourtName(op.court),
     dateFiled: formatDate(op.dateFiled || op.date_filed),
     docketNumber: op.docketNumber || op.docket_number || "",
     snippet: op.snippet || "",
@@ -436,7 +440,7 @@ async function searchDockets(params: {
   const results = (data.results || []).map((d: CourtListenerResult) => ({
     id: d.docket_id?.toString() || d.id?.toString() || "",
     caseName: d.caseName || d.case_name || "Unknown Case",
-    court: COURT_NAMES[d.court] || d.court || "",
+    court: resolveCourtName(d.court),
     dateFiled: formatDate(d.dateFiled || d.date_filed),
     docketNumber: d.docketNumber || d.docket_number || "",
     cause: d.cause || "",
@@ -474,7 +478,7 @@ async function lookupCitation(params: { citation: string }) {
     id: op.id?.toString() || "",
     caseName: op.caseName || op.case_name || "Unknown Case",
     citation: op.citation || params.citation,
-    court: COURT_NAMES[op.court] || op.court || "",
+    court: resolveCourtName(op.court),
     dateFiled: formatDate(op.dateFiled || op.date_filed),
     absoluteUrl: op.absolute_url
       ? `https://www.courtlistener.com${op.absolute_url}`
@@ -826,6 +830,7 @@ Guidelines:
       chatMessages.push(choice.message);
 
       for (const toolCall of choice.message.tool_calls) {
+        if (toolCall.type !== "function") continue;
         let args: Record<string, unknown>;
         try {
           args = JSON.parse(toolCall.function.arguments) as Record<

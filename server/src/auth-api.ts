@@ -1,7 +1,8 @@
-import { Router } from "itty-router";
+import { AutoRouter } from "itty-router";
 import { SignJWT, jwtVerify } from "jose";
 import { db } from "./db";
 import { verifyPassphrase } from "./crypto-utils";
+import { asIttyRoute, json, openapiFormat } from "./openapi";
 
 const PASSPHRASE_HASH_KEY = "passphrase_hash";
 const JWT_SECRET_KEY = "jwt_secret";
@@ -86,60 +87,54 @@ export async function verifyToken(token: string): Promise<boolean> {
   }
 }
 
-const router = Router({ base: "/api/auth" });
+const router = AutoRouter({ base: "/api", format: openapiFormat });
 
 /**
  * POST /api/auth/login
  * Authenticate with passphrase and receive JWT token
  */
-router.post("/login", async (req) => {
-  try {
-    const body = await req.json();
-    const passphrase =
-      typeof body?.passphrase === "string" ? body.passphrase.trim() : "";
-    const ttl = typeof body?.ttl === "string" ? body.ttl : DEFAULT_TOKEN_TTL;
+router.post(
+  "/auth/login",
+  asIttyRoute("post", "/auth/login", async (req) => {
+    try {
+      const body = await req.json();
+      const passphrase =
+        typeof body?.passphrase === "string" ? body.passphrase.trim() : "";
+      const ttl = typeof body?.ttl === "string" ? body.ttl : DEFAULT_TOKEN_TTL;
 
-    if (!passphrase) {
-      return Response.json(
-        { success: false, error: "passphrase is required" },
-        { status: 400 },
-      );
+      if (!passphrase) {
+        return json(400, { success: false, error: "passphrase is required" });
+      }
+
+      // Get stored passphrase hash
+      const entry = db.serverConfig.get(PASSPHRASE_HASH_KEY) as
+        | { hash: string }
+        | undefined;
+
+      if (!entry?.hash) {
+        return json(404, { success: false, error: "No passphrase configured." });
+      }
+
+      // Verify passphrase
+      const valid = await verifyPassphrase(passphrase, entry.hash);
+      if (!valid) {
+        return json(401, { success: false, error: "Invalid passphrase." });
+      }
+
+      // Generate token
+      const token = await generateToken(ttl);
+
+      return {
+        success: true,
+        token,
+        expiresIn: parseTtl(ttl),
+      };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to generate token.";
+      return json(500, { success: false, error: message });
     }
-
-    // Get stored passphrase hash
-    const entry = db.serverConfig.get(PASSPHRASE_HASH_KEY) as
-      | { hash: string }
-      | undefined;
-
-    if (!entry?.hash) {
-      return Response.json(
-        { success: false, error: "No passphrase configured." },
-        { status: 404 },
-      );
-    }
-
-    // Verify passphrase
-    const valid = await verifyPassphrase(passphrase, entry.hash);
-    if (!valid) {
-      return Response.json(
-        { success: false, error: "Invalid passphrase." },
-        { status: 401 },
-      );
-    }
-
-    // Generate token
-    const token = await generateToken(ttl);
-
-    return Response.json({
-      success: true,
-      token,
-      expiresIn: parseTtl(ttl),
-    });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Failed to generate token.";
-    return Response.json({ success: false, error: message }, { status: 500 });
-  }
-});
+  }),
+);
 
 export { router as authRouter };

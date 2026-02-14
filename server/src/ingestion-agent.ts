@@ -426,7 +426,22 @@ export function executeTool(
     case "create_contact": {
       const caseId = pickCaseId(args.caseId as string | undefined) ?? "";
       const name = args.name as string;
-      const role = args.role as string;
+      const rawRole = args.role;
+      const role =
+        typeof rawRole === "string" &&
+        (
+          [
+            "attorney",
+            "judge",
+            "clerk",
+            "witness",
+            "expert",
+            "opposing_party",
+            "other",
+          ] as const
+        ).includes(rawRole as Contact["role"])
+          ? (rawRole as Contact["role"])
+          : "other";
       const existing = [...db.contacts.values()].find(
         (c) => c.name === name && c.role === role && c.caseId === caseId,
       );
@@ -441,6 +456,7 @@ export function executeTool(
         role,
         organization: (args.organization as string) ?? "",
         phone: (args.phone as string) ?? "",
+        fax: (args.fax as string) ?? "",
         email: (args.email as string) ?? "",
         address: (args.address as string) ?? "",
         notes: (args.notes as string) ?? "",
@@ -546,6 +562,7 @@ export async function autoPopulateFromDocument(
     if (choice.message.tool_calls?.length) {
       messages.push(choice.message);
       for (const toolCall of choice.message.tool_calls) {
+        if (toolCall.type !== "function") continue;
         try {
           const args = toolCall.function.arguments
             ? (JSON.parse(toolCall.function.arguments) as Record<

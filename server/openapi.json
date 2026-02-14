@@ -860,10 +860,28 @@
         },
         "responses": {
           "200": {
-            "description": "Generated report"
+            "description": "Generated report",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GeneratedReport" }
+              }
+            }
           },
           "400": {
-            "description": "Invalid report type"
+            "description": "Invalid report type",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Case not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
           }
         }
       }
@@ -904,7 +922,12 @@
             }
           },
           "400": {
-            "description": "No files provided"
+            "description": "No files provided",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
           }
         }
       }
@@ -967,10 +990,1385 @@
             }
           },
           "400": {
-            "description": "Invalid request or configuration"
+            "description": "Invalid request or configuration",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
           },
           "500": {
-            "description": "Scan failed"
+            "description": "Scan failed",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health",
+        "tags": ["System"],
+        "summary": "Health check",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HealthResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/search": {
+      "get": {
+        "operationId": "search",
+        "tags": ["Search"],
+        "summary": "Search across entities",
+        "responses": {
+          "200": {
+            "description": "Search results",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SearchResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid search query",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents": {
+      "get": {
+        "operationId": "listDocuments",
+        "tags": ["Documents"],
+        "summary": "List ingested documents",
+        "responses": {
+          "200": {
+            "description": "List of documents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/DocumentEntry" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "delete": {
+        "operationId": "deleteDocument",
+        "tags": ["Documents"],
+        "summary": "Delete an ingested document",
+        "responses": {
+          "204": { "description": "Deleted" },
+          "404": { "description": "Document not found" }
+        }
+      }
+    },
+    "/ingest/status": {
+      "get": {
+        "operationId": "getIngestionStatus",
+        "tags": ["Documents"],
+        "summary": "Get ingestion status",
+        "responses": {
+          "200": {
+            "description": "Ingestion status",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/IngestionStatus" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/device-tokens": {
+      "get": {
+        "operationId": "listDeviceTokens",
+        "tags": ["Notifications"],
+        "summary": "List registered device tokens",
+        "responses": {
+          "200": {
+            "description": "Device tokens",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/DeviceToken" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "registerDeviceToken",
+        "tags": ["Notifications"],
+        "summary": "Register a device token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["token", "platform"],
+                "properties": {
+                  "token": { "type": "string" },
+                  "platform": {
+                    "type": "string",
+                    "enum": ["ios", "android", "web"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Registered token",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeviceToken" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/device-tokens/{tokenId}": {
+      "parameters": [
+        {
+          "name": "tokenId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }
+      ],
+      "delete": {
+        "operationId": "removeDeviceToken",
+        "tags": ["Notifications"],
+        "summary": "Remove a device token",
+        "responses": {
+          "204": { "description": "Deleted" },
+          "404": { "description": "Token not found" }
+        }
+      }
+    },
+    "/sms-recipients": {
+      "get": {
+        "operationId": "listSmsRecipients",
+        "tags": ["Notifications"],
+        "summary": "List registered SMS recipients",
+        "responses": {
+          "200": {
+            "description": "SMS recipients",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/SmsRecipient" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "registerSmsRecipient",
+        "tags": ["Notifications"],
+        "summary": "Register an SMS recipient",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["phone"],
+                "properties": {
+                  "phone": { "type": "string" },
+                  "name": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Registered recipient",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SmsRecipient" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sms-recipients/{recipientId}": {
+      "parameters": [
+        {
+          "name": "recipientId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }
+      ],
+      "delete": {
+        "operationId": "removeSmsRecipient",
+        "tags": ["Notifications"],
+        "summary": "Remove an SMS recipient",
+        "responses": {
+          "204": { "description": "Deleted" },
+          "404": { "description": "Recipient not found" }
+        }
+      }
+    },
+    "/evaluations": {
+      "get": {
+        "operationId": "listEvaluations",
+        "tags": ["Evaluations"],
+        "summary": "List evaluations",
+        "responses": {
+          "200": {
+            "description": "Evaluations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Evaluation" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/evaluations/{evaluationId}": {
+      "parameters": [
+        {
+          "name": "evaluationId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }
+      ],
+      "get": {
+        "operationId": "getEvaluation",
+        "tags": ["Evaluations"],
+        "summary": "Get an evaluation by ID",
+        "responses": {
+          "200": {
+            "description": "Evaluation",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Evaluation" }
+              }
+            }
+          },
+          "404": { "description": "Evaluation not found" }
+        }
+      }
+    },
+    "/evaluations/trigger": {
+      "post": {
+        "operationId": "triggerEvaluation",
+        "tags": ["Evaluations"],
+        "summary": "Trigger an evaluation run",
+        "responses": {
+          "201": {
+            "description": "Evaluation triggered",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EvaluationTriggerResult" }
+              }
+            }
+          },
+          "500": {
+            "description": "Evaluation failed",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scheduler/status": {
+      "get": {
+        "operationId": "getSchedulerStatus",
+        "tags": ["Scheduler"],
+        "summary": "Get scheduler status",
+        "responses": {
+          "200": {
+            "description": "Scheduler status",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SchedulerStatusResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fax-jobs": {
+      "get": {
+        "operationId": "listFaxJobs",
+        "tags": ["Fax"],
+        "summary": "List fax jobs",
+        "responses": {
+          "200": {
+            "description": "Fax jobs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/FaxJob" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createFaxJob",
+        "tags": ["Fax"],
+        "summary": "Create a fax job",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["filingId", "recipientFax"],
+                "properties": {
+                  "filingId": { "type": "string" },
+                  "caseId": { "type": "string" },
+                  "recipientName": { "type": "string" },
+                  "recipientFax": { "type": "string" },
+                  "documentPath": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Fax job created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FaxJob" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fax-jobs/{jobId}": {
+      "parameters": [
+        {
+          "name": "jobId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }
+      ],
+      "get": {
+        "operationId": "getFaxJob",
+        "tags": ["Fax"],
+        "summary": "Get a fax job by ID",
+        "responses": {
+          "200": {
+            "description": "Fax job",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FaxJob" }
+              }
+            }
+          },
+          "404": { "description": "Fax job not found" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteFaxJob",
+        "tags": ["Fax"],
+        "summary": "Delete a fax job",
+        "responses": {
+          "204": { "description": "Deleted" },
+          "404": { "description": "Fax job not found" }
+        }
+      }
+    },
+    "/fax/status": {
+      "get": {
+        "operationId": "getFaxStatus",
+        "tags": ["Fax"],
+        "summary": "Get fax provider status",
+        "responses": {
+          "200": {
+            "description": "Fax status",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FaxStatus" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/estate-plans": {
+      "get": {
+        "operationId": "listEstatePlans",
+        "tags": ["EstatePlans"],
+        "summary": "List estate plans",
+        "responses": {
+          "200": {
+            "description": "Estate plans",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/EstatePlan" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createEstatePlan",
+        "tags": ["EstatePlans"],
+        "summary": "Create an estate plan",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created estate plan",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EstatePlan" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/estate-plans/{planId}": {
+      "parameters": [
+        {
+          "name": "planId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }
+      ],
+      "get": {
+        "operationId": "getEstatePlan",
+        "tags": ["EstatePlans"],
+        "summary": "Get an estate plan by ID",
+        "responses": {
+          "200": {
+            "description": "Estate plan",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EstatePlan" }
+              }
+            }
+          },
+          "404": { "description": "Estate plan not found" }
+        }
+      },
+      "patch": {
+        "operationId": "updateEstatePlan",
+        "tags": ["EstatePlans"],
+        "summary": "Update an estate plan",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated estate plan",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EstatePlan" }
+              }
+            }
+          },
+          "404": { "description": "Estate plan not found" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteEstatePlan",
+        "tags": ["EstatePlans"],
+        "summary": "Delete an estate plan",
+        "responses": {
+          "204": { "description": "Deleted" },
+          "404": { "description": "Estate plan not found" }
+        }
+      }
+    },
+    "/estate-plans/{planId}/beneficiaries": {
+      "parameters": [
+        {
+          "name": "planId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }
+      ],
+      "post": {
+        "operationId": "addEstateBeneficiary",
+        "tags": ["EstatePlans"],
+        "summary": "Add a beneficiary to an estate plan",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created beneficiary",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Beneficiary" }
+              }
+            }
+          },
+          "404": { "description": "Estate plan not found" }
+        }
+      }
+    },
+    "/estate-plans/{planId}/beneficiaries/{id}": {
+      "parameters": [
+        {
+          "name": "planId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }
+      ],
+      "delete": {
+        "operationId": "removeEstateBeneficiary",
+        "tags": ["EstatePlans"],
+        "summary": "Remove a beneficiary from an estate plan",
+        "responses": {
+          "204": { "description": "Deleted" },
+          "404": { "description": "Estate plan or beneficiary not found" }
+        }
+      }
+    },
+    "/estate-plans/{planId}/assets": {
+      "parameters": [
+        {
+          "name": "planId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }
+      ],
+      "post": {
+        "operationId": "addEstateAsset",
+        "tags": ["EstatePlans"],
+        "summary": "Add an asset to an estate plan",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created asset",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EstateAsset" }
+              }
+            }
+          },
+          "404": { "description": "Estate plan not found" }
+        }
+      }
+    },
+    "/estate-plans/{planId}/assets/{id}": {
+      "parameters": [
+        {
+          "name": "planId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }
+      ],
+      "delete": {
+        "operationId": "removeEstateAsset",
+        "tags": ["EstatePlans"],
+        "summary": "Remove an asset from an estate plan",
+        "responses": {
+          "204": { "description": "Deleted" },
+          "404": { "description": "Estate plan or asset not found" }
+        }
+      }
+    },
+    "/estate-plans/{planId}/documents": {
+      "parameters": [
+        {
+          "name": "planId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }
+      ],
+      "post": {
+        "operationId": "addEstateDocument",
+        "tags": ["EstatePlans"],
+        "summary": "Add a document to an estate plan",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created document",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EstateDocument" }
+              }
+            }
+          },
+          "404": { "description": "Estate plan not found" }
+        }
+      }
+    },
+    "/estate-plans/{planId}/documents/{id}": {
+      "parameters": [
+        {
+          "name": "planId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }
+      ],
+      "patch": {
+        "operationId": "updateEstateDocument",
+        "tags": ["EstatePlans"],
+        "summary": "Update an estate plan document",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated document",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EstateDocument" }
+              }
+            }
+          },
+          "404": { "description": "Estate plan or document not found" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteEstateDocument",
+        "tags": ["EstatePlans"],
+        "summary": "Delete an estate plan document",
+        "responses": {
+          "204": { "description": "Deleted" },
+          "404": { "description": "Estate plan or document not found" }
+        }
+      }
+    },
+    "/research/agent/chat": {
+      "post": {
+        "operationId": "researchAgentChat",
+        "tags": ["ResearchAgent"],
+        "summary": "Chat with the research agent",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["messages"],
+                "properties": {
+                  "messages": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["role", "content"],
+                      "properties": {
+                        "role": { "type": "string" },
+                        "content": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Agent response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchAgentChatResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Agent error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config": {
+      "get": {
+        "operationId": "getConfig",
+        "tags": ["Config"],
+        "summary": "Get configuration",
+        "responses": {
+          "200": {
+            "description": "Current configuration",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ConfigGetResponse" }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateConfig",
+        "tags": ["Config"],
+        "summary": "Update configuration",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Update result",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ConfigUpdateResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid update",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ConfigUpdateResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config/reset": {
+      "post": {
+        "operationId": "resetConfig",
+        "tags": ["Config"],
+        "summary": "Reset configuration",
+        "responses": {
+          "200": {
+            "description": "Reset result",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config/{group}/{key}": {
+      "parameters": [
+        {
+          "name": "group",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "key",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "delete": {
+        "operationId": "deleteConfigKey",
+        "tags": ["Config"],
+        "summary": "Delete a specific configuration key override",
+        "responses": {
+          "200": {
+            "description": "Deleted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Config not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config/test-firebase": {
+      "post": {
+        "operationId": "testFirebase",
+        "tags": ["Config"],
+        "summary": "Test Firebase connection",
+        "responses": {
+          "200": {
+            "description": "Test result",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ConfigTestResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config/test-twilio": {
+      "post": {
+        "operationId": "testTwilio",
+        "tags": ["Config"],
+        "summary": "Test Twilio connection",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["testPhone"],
+                "properties": {
+                  "testPhone": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Test result",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ConfigTestResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ConfigTestResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config/test-openai": {
+      "post": {
+        "operationId": "testOpenAI",
+        "tags": ["Config"],
+        "summary": "Test OpenAI connection",
+        "responses": {
+          "200": {
+            "description": "Test result",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ConfigTestResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config/openai-models": {
+      "get": {
+        "operationId": "listOpenAIModels",
+        "tags": ["Config"],
+        "summary": "List available OpenAI-compatible models",
+        "responses": {
+          "200": {
+            "description": "Model list",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OpenAIModelsResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing configuration",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OpenAIModelsResponse" }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OpenAIModelsResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config/test-fax": {
+      "post": {
+        "operationId": "testFaxGateway",
+        "tags": ["Config"],
+        "summary": "Test fax gateway connection",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["recipientNumber"],
+                "properties": {
+                  "recipientNumber": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Test result",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FaxGatewayTestResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FaxGatewayTestResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config/reinitialize/{service}": {
+      "parameters": [
+        {
+          "name": "service",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "post": {
+        "operationId": "reinitializeService",
+        "tags": ["Config"],
+        "summary": "Reinitialize a service after config change",
+        "responses": {
+          "200": {
+            "description": "Reinitialized",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown service",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Reinitialize failed",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "login",
+        "tags": ["Auth"],
+        "summary": "Authenticate with passphrase and receive JWT token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["passphrase"],
+                "properties": {
+                  "passphrase": { "type": "string" },
+                  "ttl": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login success",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthLoginResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing passphrase",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthLoginResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid passphrase",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthLoginResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "No passphrase configured",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthLoginResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Login failed",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthLoginResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/security/status": {
+      "get": {
+        "operationId": "getSecurityStatus",
+        "tags": ["Security"],
+        "summary": "Get security status",
+        "responses": {
+          "200": {
+            "description": "Security status",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SecurityStatusResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/security/setup-passphrase": {
+      "post": {
+        "operationId": "setupPassphrase",
+        "tags": ["Security"],
+        "summary": "Setup database passphrase",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["passphrase"],
+                "properties": {
+                  "passphrase": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Setup result",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SetupPassphraseResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid passphrase",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SetupPassphraseResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Setup failed",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SetupPassphraseResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/security/verify-passphrase": {
+      "post": {
+        "operationId": "verifyPassphrase",
+        "tags": ["Security"],
+        "summary": "Verify passphrase",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["passphrase"],
+                "properties": {
+                  "passphrase": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Verify result",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/VerifyPassphraseResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/VerifyPassphraseResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid passphrase",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/VerifyPassphraseResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "No passphrase configured",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/VerifyPassphraseResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Verification failed",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/VerifyPassphraseResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/security/recovery-key": {
+      "post": {
+        "operationId": "applyRecoveryKey",
+        "tags": ["Security"],
+        "summary": "Apply database recovery key",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["recoveryKey"],
+                "properties": {
+                  "recoveryKey": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Recovery key applied",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RecoveryKeyResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RecoveryKeyResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid recovery key",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RecoveryKeyResponse" }
+              }
+            }
           }
         }
       }
@@ -1553,6 +2951,645 @@
           },
           "fileSize": { "type": "integer" },
           "caseId": { "type": "string" }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": { "type": "string" }
+        }
+      },
+      "ReportSection": {
+        "type": "object",
+        "required": ["heading", "content", "type"],
+        "properties": {
+          "heading": { "type": "string" },
+          "content": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["narrative", "table", "list"]
+          }
+        }
+      },
+      "GeneratedReport": {
+        "type": "object",
+        "required": ["title", "sections", "metadata"],
+        "properties": {
+          "title": { "type": "string" },
+          "sections": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ReportSection" }
+          },
+          "metadata": {
+            "type": "object",
+            "required": ["generatedAt"],
+            "properties": {
+              "generatedAt": { "type": "string", "format": "date-time" },
+              "caseName": { "type": "string" },
+              "dateRange": { "type": "string" }
+            }
+          }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "status": { "type": "string" }
+        }
+      },
+      "IngestionStatus": {
+        "type": "object",
+        "required": [
+          "active",
+          "directory",
+          "running",
+          "lastRunStarted",
+          "lastRunFinished",
+          "added",
+          "skipped",
+          "errors"
+        ],
+        "properties": {
+          "active": { "type": "boolean" },
+          "directory": { "type": "string" },
+          "running": { "type": "boolean" },
+          "lastRunStarted": { "type": "string", "format": "date-time", "nullable": true },
+          "lastRunFinished": { "type": "string", "format": "date-time", "nullable": true },
+          "added": { "type": "integer" },
+          "skipped": { "type": "integer" },
+          "errors": { "type": "integer" }
+        }
+      },
+      "DeviceToken": {
+        "type": "object",
+        "required": ["id", "token", "platform", "createdAt", "active"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "token": { "type": "string" },
+          "platform": { "type": "string", "enum": ["ios", "android", "web"] },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "active": { "type": "boolean" }
+        }
+      },
+      "SmsRecipient": {
+        "type": "object",
+        "required": ["id", "phone", "createdAt", "active"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "phone": { "type": "string" },
+          "name": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "active": { "type": "boolean" }
+        }
+      },
+      "SearchHighlight": {
+        "type": "object",
+        "required": ["field", "snippet"],
+        "properties": {
+          "field": { "type": "string" },
+          "snippet": { "type": "string" }
+        }
+      },
+      "SearchResultItem": {
+        "type": "object",
+        "required": ["id", "type", "score", "matchedFields", "highlights", "data"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": [
+              "cases",
+              "contacts",
+              "deadlines",
+              "finances",
+              "evidences",
+              "filings",
+              "notes",
+              "documents"
+            ]
+          },
+          "score": { "type": "integer" },
+          "matchedFields": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "highlights": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SearchHighlight" }
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "EntityResults": {
+        "type": "object",
+        "required": ["total", "hasMore", "items"],
+        "properties": {
+          "total": { "type": "integer" },
+          "hasMore": { "type": "boolean" },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SearchResultItem" }
+          }
+        }
+      },
+      "SearchResponse": {
+        "type": "object",
+        "required": ["query", "totalResults", "results", "timing"],
+        "properties": {
+          "query": { "type": "string" },
+          "totalResults": { "type": "integer" },
+          "results": {
+            "type": "object",
+            "required": [
+              "cases",
+              "contacts",
+              "deadlines",
+              "finances",
+              "evidences",
+              "filings",
+              "notes",
+              "documents"
+            ],
+            "properties": {
+              "cases": { "$ref": "#/components/schemas/EntityResults" },
+              "contacts": { "$ref": "#/components/schemas/EntityResults" },
+              "deadlines": { "$ref": "#/components/schemas/EntityResults" },
+              "finances": { "$ref": "#/components/schemas/EntityResults" },
+              "evidences": { "$ref": "#/components/schemas/EntityResults" },
+              "filings": { "$ref": "#/components/schemas/EntityResults" },
+              "notes": { "$ref": "#/components/schemas/EntityResults" },
+              "documents": { "$ref": "#/components/schemas/EntityResults" }
+            }
+          },
+          "timing": {
+            "type": "object",
+            "required": ["searchMs"],
+            "properties": {
+              "searchMs": { "type": "integer" }
+            }
+          }
+        }
+      },
+      "DeadlineSummary": {
+        "type": "object",
+        "required": ["id", "title", "date", "caseId", "type"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "date": { "type": "string" },
+          "caseId": { "type": "string" },
+          "caseName": { "type": "string" },
+          "type": { "type": "string" },
+          "daysOverdue": { "type": "number" },
+          "daysUntil": { "type": "number" }
+        }
+      },
+      "Evaluation": {
+        "type": "object",
+        "required": ["id", "createdAt", "status", "analysis", "notification"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "analyzing", "sending", "sent", "failed"]
+          },
+          "analysis": {
+            "type": "object",
+            "required": [
+              "overdueDeadlines",
+              "upcomingDeadlines",
+              "tomorrowActions",
+              "aiSummary"
+            ],
+            "properties": {
+              "overdueDeadlines": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/DeadlineSummary" }
+              },
+              "upcomingDeadlines": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/DeadlineSummary" }
+              },
+              "tomorrowActions": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "aiSummary": { "type": "string" }
+            }
+          },
+          "notification": {
+            "type": "object",
+            "required": ["title", "body"],
+            "properties": {
+              "title": { "type": "string" },
+              "body": { "type": "string" },
+              "sentAt": { "type": "string", "format": "date-time" },
+              "pushSent": { "type": "boolean" },
+              "smsSent": { "type": "boolean" }
+            }
+          },
+          "error": { "type": "string" }
+        }
+      },
+      "EvaluationTriggerResult": {
+        "type": "object",
+        "required": ["evaluationId", "pushSent", "smsSent"],
+        "properties": {
+          "evaluationId": { "type": "string", "format": "uuid" },
+          "pushSent": { "type": "boolean" },
+          "smsSent": { "type": "boolean" }
+        }
+      },
+      "SchedulerStatusResponse": {
+        "type": "object",
+        "required": [
+          "enabled",
+          "running",
+          "lastRunTime",
+          "nextRunTime",
+          "timezone",
+          "cronExpression",
+          "channels"
+        ],
+        "properties": {
+          "enabled": { "type": "boolean" },
+          "running": { "type": "boolean" },
+          "lastRunTime": { "type": "string", "format": "date-time", "nullable": true },
+          "nextRunTime": { "type": "string", "format": "date-time", "nullable": true },
+          "timezone": { "type": "string" },
+          "cronExpression": { "type": "string" },
+          "channels": {
+            "type": "object",
+            "required": ["firebase", "twilio"],
+            "properties": {
+              "firebase": {
+                "type": "object",
+                "required": ["configured", "tokenCount"],
+                "properties": {
+                  "configured": { "type": "boolean" },
+                  "tokenCount": { "type": "integer" }
+                }
+              },
+              "twilio": {
+                "type": "object",
+                "required": ["configured", "recipientCount"],
+                "properties": {
+                  "configured": { "type": "boolean" },
+                  "recipientCount": { "type": "integer" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "FaxJob": {
+        "type": "object",
+        "required": [
+          "id",
+          "filingId",
+          "caseId",
+          "recipientName",
+          "recipientFax",
+          "status",
+          "provider",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "filingId": { "type": "string" },
+          "caseId": { "type": "string" },
+          "recipientName": { "type": "string" },
+          "recipientFax": { "type": "string" },
+          "documentPath": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "sending", "sent", "failed"]
+          },
+          "provider": { "type": "string" },
+          "providerJobId": { "type": "string" },
+          "error": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" },
+          "sentAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "FaxStatus": {
+        "type": "object",
+        "required": ["configured", "provider"],
+        "properties": {
+          "configured": { "type": "boolean" },
+          "provider": { "type": "string" }
+        }
+      },
+      "Beneficiary": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "relationship",
+          "dateOfBirth",
+          "phone",
+          "email",
+          "address",
+          "notes"
+        ],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "relationship": { "type": "string" },
+          "dateOfBirth": { "type": "string" },
+          "phone": { "type": "string" },
+          "email": { "type": "string" },
+          "address": { "type": "string" },
+          "notes": { "type": "string" }
+        }
+      },
+      "EstateAsset": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "category",
+          "estimatedValue",
+          "ownershipType",
+          "accountNumber",
+          "institution",
+          "beneficiaryIds",
+          "notes"
+        ],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "category": {
+            "type": "string",
+            "enum": [
+              "real-property",
+              "bank-account",
+              "investment",
+              "retirement",
+              "insurance",
+              "vehicle",
+              "personal-property",
+              "business-interest",
+              "digital-asset",
+              "other"
+            ]
+          },
+          "estimatedValue": { "type": "number" },
+          "ownershipType": { "type": "string" },
+          "accountNumber": { "type": "string" },
+          "institution": { "type": "string" },
+          "beneficiaryIds": {
+            "type": "array",
+            "items": { "type": "string", "format": "uuid" }
+          },
+          "notes": { "type": "string" }
+        }
+      },
+      "EstateDocument": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "title",
+          "status",
+          "content",
+          "fieldValues",
+          "templateId",
+          "reviewDate",
+          "signedDate",
+          "notes",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "type": {
+            "type": "string",
+            "enum": [
+              "last-will",
+              "living-will",
+              "power-of-attorney-financial",
+              "power-of-attorney-healthcare",
+              "healthcare-directive",
+              "trust",
+              "beneficiary-designation",
+              "letter-of-instruction",
+              "other"
+            ]
+          },
+          "title": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": [
+              "not-started",
+              "draft",
+              "review",
+              "signed",
+              "notarized",
+              "filed"
+            ]
+          },
+          "content": { "type": "string" },
+          "fieldValues": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          },
+          "templateId": { "type": "string" },
+          "reviewDate": { "type": "string" },
+          "signedDate": { "type": "string" },
+          "notes": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "EstatePlan": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "status",
+          "testatorName",
+          "testatorDateOfBirth",
+          "testatorAddress",
+          "executorName",
+          "executorPhone",
+          "executorEmail",
+          "guardianName",
+          "guardianPhone",
+          "beneficiaries",
+          "assets",
+          "documents",
+          "notes",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["planning", "drafting", "review", "complete"]
+          },
+          "testatorName": { "type": "string" },
+          "testatorDateOfBirth": { "type": "string" },
+          "testatorAddress": { "type": "string" },
+          "executorName": { "type": "string" },
+          "executorPhone": { "type": "string" },
+          "executorEmail": { "type": "string" },
+          "guardianName": { "type": "string" },
+          "guardianPhone": { "type": "string" },
+          "beneficiaries": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Beneficiary" }
+          },
+          "assets": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/EstateAsset" }
+          },
+          "documents": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/EstateDocument" }
+          },
+          "notes": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ResearchAgentChatResponse": {
+        "type": "object",
+        "required": ["reply", "toolResults"],
+        "properties": {
+          "reply": { "type": "string" },
+          "toolResults": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["toolName", "results"],
+              "properties": {
+                "toolName": { "type": "string" },
+                "results": {}
+              }
+            }
+          }
+        }
+      },
+      "ConfigGetResponse": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "ConfigUpdateResponse": {
+        "type": "object",
+        "required": ["success"],
+        "properties": {
+          "success": { "type": "boolean" },
+          "config": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "error": { "type": "string" }
+        }
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "required": ["success"],
+        "properties": {
+          "success": { "type": "boolean" },
+          "error": { "type": "string" }
+        }
+      },
+      "ConfigTestResponse": {
+        "type": "object",
+        "required": ["success"],
+        "properties": {
+          "success": { "type": "boolean" },
+          "error": { "type": "string" }
+        }
+      },
+      "OpenAIModelsResponse": {
+        "type": "object",
+        "required": ["success", "models"],
+        "properties": {
+          "success": { "type": "boolean" },
+          "models": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "endpoint": { "type": "string" },
+          "error": { "type": "string" },
+          "status": { "type": "integer" }
+        }
+      },
+      "FaxGatewayTestResponse": {
+        "type": "object",
+        "required": ["success"],
+        "properties": {
+          "success": { "type": "boolean" },
+          "result": {},
+          "error": { "type": "string" }
+        }
+      },
+      "AuthLoginResponse": {
+        "type": "object",
+        "required": ["success"],
+        "properties": {
+          "success": { "type": "boolean" },
+          "token": { "type": "string" },
+          "expiresIn": { "type": "integer" },
+          "error": { "type": "string" }
+        }
+      },
+      "SecurityStatusResponse": {
+        "type": "object",
+        "required": [
+          "locked",
+          "encryptedAtRest",
+          "keyLoaded",
+          "lockReason",
+          "passphraseConfigured"
+        ],
+        "properties": {
+          "locked": { "type": "boolean" },
+          "encryptedAtRest": { "type": "boolean" },
+          "keyLoaded": { "type": "boolean" },
+          "lockReason": {
+            "type": "string",
+            "enum": ["missing_key", "invalid_key"],
+            "nullable": true
+          },
+          "passphraseConfigured": { "type": "boolean" }
+        }
+      },
+      "SetupPassphraseResponse": {
+        "type": "object",
+        "required": ["success"],
+        "properties": {
+          "success": { "type": "boolean" },
+          "error": { "type": "string" }
+        }
+      },
+      "VerifyPassphraseResponse": {
+        "type": "object",
+        "required": ["valid"],
+        "properties": {
+          "valid": { "type": "boolean" },
+          "error": { "type": "string" }
+        }
+      },
+      "RecoveryKeyResponse": {
+        "type": "object",
+        "required": ["success"],
+        "properties": {
+          "success": { "type": "boolean" },
+          "status": { "$ref": "#/components/schemas/SecurityStatusResponse" },
+          "error": { "type": "string" }
         }
       }
     }

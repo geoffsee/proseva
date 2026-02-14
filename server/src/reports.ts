@@ -9,6 +9,8 @@ import {
 } from "./db";
 import { getConfig } from "./config";
 import { getCaseSummaryPrompt } from "./prompts";
+import type { components } from "./api-types.js";
+import { json } from "./openapi";
 
 interface ReportConfig {
   type: "case-summary" | "evidence-analysis" | "financial" | "chronology";
@@ -20,21 +22,9 @@ interface ReportConfig {
   };
 }
 
-interface ReportSection {
-  heading: string;
-  content: string;
-  type: "narrative" | "table" | "list";
-}
-
-interface GeneratedReport {
-  title: string;
-  sections: ReportSection[];
-  metadata: {
-    generatedAt: string;
-    caseName?: string;
-    dateRange?: string;
-  };
-}
+type ReportSection = components["schemas"]["ReportSection"];
+type GeneratedReport = components["schemas"]["GeneratedReport"];
+type ErrorResponse = components["schemas"]["ErrorResponse"];
 
 // Helper function to format dates
 function formatDate(dateStr: string): string {
@@ -205,14 +195,14 @@ async function generateAISummary(
 // Case Summary Report Generator
 export async function generateCaseSummary(
   config: ReportConfig,
-): Promise<Response> {
+): Promise<GeneratedReport | { __openapi: true; status: 400 | 404; body: ErrorResponse }> {
   if (!config.caseId) {
-    return new Response("Case ID required", { status: 400 });
+    return json(400, { error: "caseId is required" });
   }
 
   const caseData = db.cases.get(config.caseId);
   if (!caseData) {
-    return new Response("Case not found", { status: 404 });
+    return json(404, { error: "Case not found" });
   }
 
   const deadlines = [...db.deadlines.values()].filter(
@@ -280,20 +270,20 @@ export async function generateCaseSummary(
     },
   };
 
-  return Response.json(report);
+  return report;
 }
 
 // Evidence Analysis Report Generator
 export async function generateEvidenceAnalysis(
   config: ReportConfig,
-): Promise<Response> {
+): Promise<GeneratedReport | { __openapi: true; status: 400 | 404; body: ErrorResponse }> {
   if (!config.caseId) {
-    return new Response("Case ID required", { status: 400 });
+    return json(400, { error: "caseId is required" });
   }
 
   const caseData = db.cases.get(config.caseId);
   if (!caseData) {
-    return new Response("Case not found", { status: 404 });
+    return json(404, { error: "Case not found" });
   }
 
   const evidence = [...db.evidences.values()].filter(
@@ -352,13 +342,13 @@ export async function generateEvidenceAnalysis(
     },
   };
 
-  return Response.json(report);
+  return report;
 }
 
 // Financial Summary Report Generator
 export async function generateFinancialReport(
   config: ReportConfig,
-): Promise<Response> {
+): Promise<GeneratedReport> {
   let finances = [...db.finances.values()];
 
   // Apply date range filter if provided
@@ -422,13 +412,13 @@ export async function generateFinancialReport(
     },
   };
 
-  return Response.json(report);
+  return report;
 }
 
 // Chronology Report Generator
 export async function generateChronologyReport(
   config: ReportConfig,
-): Promise<Response> {
+): Promise<GeneratedReport> {
   // Collect all events from different sources
   interface TimelineEvent {
     date: string;
@@ -532,7 +522,7 @@ export async function generateChronologyReport(
     },
   };
 
-  return Response.json(report);
+  return report;
 }
 
 /**

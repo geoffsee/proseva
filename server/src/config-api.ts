@@ -1,4 +1,4 @@
-import { Router } from "itty-router";
+import { AutoRouter } from "itty-router";
 import { db } from "./db";
 import {
   getConfig,
@@ -16,6 +16,7 @@ import {
 } from "./notifications/twilio";
 import { restartScheduler } from "./scheduler";
 import { testOpenAIConnection } from "./reports";
+import { asIttyRoute, json, openapiFormat } from "./openapi";
 
 /**
  * Build a minimal valid PDF containing a test message.
@@ -41,7 +42,7 @@ function buildTestPdf(): Uint8Array {
   return new TextEncoder().encode(lines.join("\n"));
 }
 
-const router = Router({ base: "/api/config" });
+const router = AutoRouter({ base: "/api", format: openapiFormat });
 
 function buildOpenAIModelsUrl(endpoint?: string): string {
   const fallback = "https://api.openai.com/v1/models";
@@ -134,7 +135,9 @@ function stripMaskedValues<T extends Record<string, unknown>>(
 /**
  * Get current configuration with masked sensitive values.
  */
-router.get("/", () => {
+router.get(
+  "/config",
+  asIttyRoute("get", "/config", () => {
   const config = loadConfigFromDatabase();
   const envConfig = {
     firebase: {
@@ -286,15 +289,18 @@ router.get("/", () => {
     },
   };
 
-  return Response.json(response);
-});
+  return response;
+}),
+);
 
 /**
  * Update configuration (partial updates supported).
  */
-router.patch("/", async (req) => {
-  try {
-    const updates = await req.json();
+router.patch(
+  "/config",
+  asIttyRoute("patch", "/config", async (req) => {
+    try {
+      const updates = await req.json();
 
     // Get existing config or create new one
     let config = db.serverConfig.get("singleton");
@@ -354,293 +360,298 @@ router.patch("/", async (req) => {
     // Invalidate cache
     invalidateConfigCache();
 
-    return Response.json({ success: true, config });
-  } catch (error) {
-    return Response.json(
-      { success: false, error: String(error) },
-      { status: 400 },
-    );
-  }
-});
+      return { success: true, config };
+    } catch (error) {
+      return json(400, { success: false, error: String(error) });
+    }
+  }),
+);
 
 /**
  * Reset all configuration (clear database overrides).
  */
-router.post("/reset", () => {
-  db.serverConfig.delete("singleton");
-  db.persist();
-  invalidateConfigCache();
-  return Response.json({ success: true });
-});
+router.post(
+  "/config/reset",
+  asIttyRoute("post", "/config/reset", () => {
+    db.serverConfig.delete("singleton");
+    db.persist();
+    invalidateConfigCache();
+    return { success: true };
+  }),
+);
 
 /**
  * Delete specific configuration override.
  */
-router.delete("/:group/:key", (req) => {
-  const { group, key } = req.params;
-  const config = db.serverConfig.get("singleton");
+router.delete(
+  "/config/:group/:key",
+  asIttyRoute("delete", "/config/:group/:key", (req) => {
+    const { group, key } = req.params;
+    const config = db.serverConfig.get("singleton");
 
-  if (!config) {
-    return Response.json(
-      { success: false, error: "No configuration found" },
-      { status: 404 },
-    );
-  }
+    if (!config) {
+      return json(404, { success: false, error: "No configuration found" });
+    }
 
-  // Remove specific key
-  if (group === "firebase" && config.firebase) {
-    const firebase = config.firebase as Record<string, unknown>;
-    delete firebase[key];
-  } else if (group === "twilio" && config.twilio) {
-    const twilio = config.twilio as Record<string, unknown>;
-    delete twilio[key];
-  } else if (group === "scheduler" && config.scheduler) {
-    const scheduler = config.scheduler as Record<string, unknown>;
-    delete scheduler[key];
-  } else if (group === "ai" && config.ai) {
-    const ai = config.ai as Record<string, unknown>;
-    delete ai[key];
-  } else if (group === "autoIngest" && config.autoIngest) {
-    const autoIngest = config.autoIngest as Record<string, unknown>;
-    delete autoIngest[key];
-  } else if (group === "legalResearch" && config.legalResearch) {
-    const legalResearch = config.legalResearch as Record<string, unknown>;
-    delete legalResearch[key];
-  } else if (group === "faxGateway" && config.faxGateway) {
-    const faxGateway = config.faxGateway as Record<string, unknown>;
-    delete faxGateway[key];
-  }
+    // Remove specific key
+    if (group === "firebase" && config.firebase) {
+      const firebase = config.firebase as Record<string, unknown>;
+      delete firebase[key];
+    } else if (group === "twilio" && config.twilio) {
+      const twilio = config.twilio as Record<string, unknown>;
+      delete twilio[key];
+    } else if (group === "scheduler" && config.scheduler) {
+      const scheduler = config.scheduler as Record<string, unknown>;
+      delete scheduler[key];
+    } else if (group === "ai" && config.ai) {
+      const ai = config.ai as Record<string, unknown>;
+      delete ai[key];
+    } else if (group === "autoIngest" && config.autoIngest) {
+      const autoIngest = config.autoIngest as Record<string, unknown>;
+      delete autoIngest[key];
+    } else if (group === "legalResearch" && config.legalResearch) {
+      const legalResearch = config.legalResearch as Record<string, unknown>;
+      delete legalResearch[key];
+    } else if (group === "faxGateway" && config.faxGateway) {
+      const faxGateway = config.faxGateway as Record<string, unknown>;
+      delete faxGateway[key];
+    }
 
-  config.updatedAt = new Date().toISOString();
-  db.serverConfig.set("singleton", config);
-  db.persist();
-  invalidateConfigCache();
+    config.updatedAt = new Date().toISOString();
+    db.serverConfig.set("singleton", config);
+    db.persist();
+    invalidateConfigCache();
 
-  return Response.json({ success: true });
-});
+    return { success: true };
+  }),
+);
 
 /**
  * Test Firebase connection.
  */
-router.post("/test-firebase", async () => {
-  try {
-    const result = await testFirebaseConnection();
-    return Response.json(result);
-  } catch (error) {
-    return Response.json({ success: false, error: String(error) });
-  }
-});
+router.post(
+  "/config/test-firebase",
+  asIttyRoute("post", "/config/test-firebase", async () => {
+    try {
+      const result = await testFirebaseConnection();
+      return result;
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }),
+);
 
 /**
  * Test Twilio connection.
  */
-router.post("/test-twilio", async (req) => {
-  try {
-    const body = await req.json();
-    const testPhone = body.testPhone;
+router.post(
+  "/config/test-twilio",
+  asIttyRoute("post", "/config/test-twilio", async (req) => {
+    try {
+      const body = await req.json();
+      const testPhone = body.testPhone;
 
-    if (!testPhone) {
-      return Response.json(
-        { success: false, error: "testPhone required in request body" },
-        { status: 400 },
-      );
+      if (!testPhone) {
+        return json(400, {
+          success: false,
+          error: "testPhone required in request body",
+        });
+      }
+
+      const result = await testTwilioConnection(testPhone);
+      return result;
+    } catch (error) {
+      return { success: false, error: String(error) };
     }
-
-    const result = await testTwilioConnection(testPhone);
-    return Response.json(result);
-  } catch (error) {
-    return Response.json({ success: false, error: String(error) });
-  }
-});
+  }),
+);
 
 /**
  * Test OpenAI connection.
  */
-router.post("/test-openai", async () => {
-  try {
-    const result = await testOpenAIConnection();
-    return Response.json(result);
-  } catch (error) {
-    return Response.json({ success: false, error: String(error) });
-  }
-});
+router.post(
+  "/config/test-openai",
+  asIttyRoute("post", "/config/test-openai", async () => {
+    try {
+      const result = await testOpenAIConnection();
+      return result;
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }),
+);
 
 /**
  * List available OpenAI-compatible models from /v1/models.
  */
-router.get("/openai-models", async (req) => {
-  const apiKey = getConfig("OPENAI_API_KEY");
-  if (!apiKey) {
-    return Response.json(
-      {
+router.get(
+  "/config/openai-models",
+  asIttyRoute("get", "/config/openai-models", async (req) => {
+    const apiKey = getConfig("OPENAI_API_KEY");
+    if (!apiKey) {
+      return json(400, {
         success: false,
         models: [],
         error: "OpenAI API key not configured",
-      },
-      { status: 400 },
-    );
-  }
+      });
+    }
 
-  const endpointOverride = new URL(req.url).searchParams.get("endpoint");
+    const endpointOverride = new URL(req.url).searchParams.get("endpoint");
 
-  let modelsUrl: string;
-  try {
-    modelsUrl = buildOpenAIModelsUrl(
-      endpointOverride || getConfig("OPENAI_ENDPOINT"),
-    );
-  } catch {
-    return Response.json(
-      {
+    let modelsUrl: string;
+    try {
+      modelsUrl = buildOpenAIModelsUrl(
+        endpointOverride || getConfig("OPENAI_ENDPOINT"),
+      );
+    } catch {
+      return json(400, {
         success: false,
         models: [],
         error: "Invalid OpenAI endpoint URL",
-      },
-      { status: 400 },
-    );
-  }
-
-  try {
-    const response = await fetch(modelsUrl, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        Accept: "application/json",
-      },
-    });
-
-    const rawText = await response.text();
-    let payload: unknown = null;
-    try {
-      payload = rawText ? JSON.parse(rawText) : null;
-    } catch {
-      payload = null;
+      });
     }
 
-    if (!response.ok) {
-      return Response.json(
-        {
+    try {
+      const response = await fetch(modelsUrl, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          Accept: "application/json",
+        },
+      });
+
+      const rawText = await response.text();
+      let payload: unknown = null;
+      try {
+        payload = rawText ? JSON.parse(rawText) : null;
+      } catch {
+        payload = null;
+      }
+
+      if (!response.ok) {
+        return json(502, {
           success: false,
           models: [],
           error: openAIErrorMessage(
             payload,
             `Model listing failed: HTTP ${response.status}`,
           ),
-        },
-        { status: response.status },
-      );
-    }
+          status: response.status,
+        });
+      }
 
-    return Response.json({
-      success: true,
-      models: extractOpenAIModels(payload),
-      endpoint: modelsUrl,
-    });
-  } catch (error) {
-    return Response.json(
-      {
+      return {
+        success: true,
+        models: extractOpenAIModels(payload),
+        endpoint: modelsUrl,
+      };
+    } catch (error) {
+      return json(502, {
         success: false,
         models: [],
         error: `Failed to fetch models: ${String(error)}`,
-      },
-      { status: 502 },
-    );
-  }
-});
+      });
+    }
+  }),
+);
 
 /**
  * Test fax gateway connection by sending a test fax.
  */
-router.post("/test-fax", async (req) => {
-  try {
-    const body = await req.json();
-    const recipientNumber: string | undefined = body.recipientNumber;
+router.post(
+  "/config/test-fax",
+  asIttyRoute("post", "/config/test-fax", async (req) => {
+    try {
+      const body = await req.json();
+      const recipientNumber: string | undefined = body.recipientNumber;
 
-    if (!recipientNumber) {
-      return Response.json(
-        { success: false, error: "recipientNumber required in request body" },
-        { status: 400 },
+      if (!recipientNumber) {
+        return json(400, {
+          success: false,
+          error: "recipientNumber required in request body",
+        });
+      }
+
+      const cfg = faxGatewayConfig();
+      if (!cfg.url) {
+        return json(400, {
+          success: false,
+          error: "Fax gateway URL not configured",
+        });
+      }
+
+      // Build basic auth header
+      const headers: Record<string, string> = {};
+      if (cfg.username && cfg.password) {
+        headers["Authorization"] =
+          "Basic " +
+          Buffer.from(`${cfg.username}:${cfg.password}`).toString("base64");
+      }
+
+      // Generate a minimal test PDF
+      const testPdf = buildTestPdf();
+
+      // Send as multipart form data (matching: curl -F "to=..." -F "file=@...")
+      const form = new FormData();
+      form.append("to", recipientNumber);
+      form.append(
+        "file",
+        new Blob([testPdf as unknown as BlobPart], { type: "application/pdf" }),
+        "test-fax.pdf",
       );
-    }
 
-    const cfg = faxGatewayConfig();
-    if (!cfg.url) {
-      return Response.json(
-        { success: false, error: "Fax gateway URL not configured" },
-        { status: 400 },
-      );
-    }
+      const gatewayUrl = cfg.url.replace(/\/+$/, "") + "/fax/send";
+      const response = await fetch(gatewayUrl, {
+        method: "POST",
+        headers,
+        body: form,
+      });
 
-    // Build basic auth header
-    const headers: Record<string, string> = {};
-    if (cfg.username && cfg.password) {
-      headers["Authorization"] =
-        "Basic " +
-        Buffer.from(`${cfg.username}:${cfg.password}`).toString("base64");
-    }
+      const result = await response.json();
 
-    // Generate a minimal test PDF
-    const testPdf = buildTestPdf();
+      if (response.ok && result.ok) {
+        return { success: true, result };
+      }
 
-    // Send as multipart form data (matching: curl -F "to=..." -F "file=@...")
-    const form = new FormData();
-    form.append("to", recipientNumber);
-    form.append(
-      "file",
-      new Blob([testPdf], { type: "application/pdf" }),
-      "test-fax.pdf",
-    );
-
-    const gatewayUrl = cfg.url.replace(/\/+$/, "") + "/fax/send";
-    const response = await fetch(gatewayUrl, {
-      method: "POST",
-      headers,
-      body: form,
-    });
-
-    const result = await response.json();
-
-    if (response.ok && result.ok) {
-      return Response.json({ success: true, result });
-    } else {
-      return Response.json({
+      return {
         success: false,
         error:
           result.error ||
           result.message ||
           `Gateway returned HTTP ${response.status}`,
-      });
+      };
+    } catch (error) {
+      return { success: false, error: String(error) };
     }
-  } catch (error) {
-    return Response.json({ success: false, error: String(error) });
-  }
-});
+  }),
+);
 
 /**
  * Reinitialize a service after config change.
  */
-router.post("/reinitialize/:service", async (req) => {
-  const { service } = req.params;
+router.post(
+  "/config/reinitialize/:service",
+  asIttyRoute("post", "/config/reinitialize/:service", async (req) => {
+    const { service } = req.params;
 
-  try {
-    invalidateConfigCache();
+    try {
+      invalidateConfigCache();
 
-    if (service === "firebase") {
-      await reinitializeFirebase();
-    } else if (service === "twilio") {
-      await reinitializeTwilio();
-    } else if (service === "scheduler") {
-      await restartScheduler();
-    } else {
-      return Response.json(
-        { success: false, error: `Unknown service: ${service}` },
-        { status: 400 },
-      );
+      if (service === "firebase") {
+        await reinitializeFirebase();
+      } else if (service === "twilio") {
+        await reinitializeTwilio();
+      } else if (service === "scheduler") {
+        await restartScheduler();
+      } else {
+        return json(400, { success: false, error: `Unknown service: ${service}` });
+      }
+
+      return { success: true };
+    } catch (error) {
+      return json(500, { success: false, error: String(error) });
     }
-
-    return Response.json({ success: true });
-  } catch (error) {
-    return Response.json({ success: false, error: String(error) });
-  }
-});
+  }),
+);
 
 export { router as configRouter };

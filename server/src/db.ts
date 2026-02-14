@@ -10,6 +10,7 @@ import {
   DatabaseEncryptionError,
   normalizePassphrase,
   setPassphrase as setEncryptionPassphrase,
+  clearPassphrase as clearEncryptionPassphrase,
   hasPassphrase as hasEncryptionPassphrase,
   isEncryptedSnapshot,
   decryptSnapshot,
@@ -50,7 +51,14 @@ export type Filing = {
 export type Contact = {
   id: string;
   name: string;
-  role: string;
+  role:
+    | "attorney"
+    | "judge"
+    | "clerk"
+    | "witness"
+    | "expert"
+    | "opposing_party"
+    | "other";
   organization: string;
   phone: string;
   fax: string;
@@ -505,17 +513,19 @@ export class Database {
         throw new Error("Database is locked and unavailable.");
       }
 
+      await setEncryptionPassphrase(normalized);
+
       let decrypted: DatabaseSnapshot;
       try {
-        decrypted = await decryptSnapshot(this.lockedSnapshot, normalized);
+        decrypted = await decryptSnapshot(this.lockedSnapshot);
       } catch (error) {
+        clearEncryptionPassphrase();
         if (error instanceof DatabaseEncryptionError) {
           throw new Error("Invalid recovery key.");
         }
         throw error;
       }
 
-      await setEncryptionPassphrase(normalized);
       assignMaps(this, toMaps(decrypted));
 
       this.locked = false;
