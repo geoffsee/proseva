@@ -205,7 +205,7 @@ const ingestionStatus: IngestionStatus = {
 
 export const router = AutoRouter({
   before: [preflight, requireAuthentication, requireUnlockedDatabase],
-  after: [persistAfterMutation, corsify],
+  finally: [persistAfterMutation, corsify],
   base: "/api",
 });
 

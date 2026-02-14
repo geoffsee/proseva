@@ -212,7 +212,7 @@ async function handleRequest(req: BridgeRequest | Request): Promise<Response> {
   if (USE_INPROC_SERVER) {
     // Dev-only: run router in-process using the precompiled JS in `server/src/`.
     // This intentionally uses a dynamic import so Electron's tsc build doesn't typecheck server sources.
-    const modUrl = new URL("../server/src/index.server.js", import.meta.url);
+    const modUrl = new URL("../dist-server/index.server.js", import.meta.url);
     const mod = (await import(modUrl.href)) as any;
     const ProSeVaServer = mod?.ProSeVaServer;
     if (ProSeVaServer?.fetch) return ProSeVaServer.fetch(request);
