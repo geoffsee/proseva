@@ -13,7 +13,7 @@ import {
 import { LuChevronDown, LuChevronRight, LuTrash2 } from "react-icons/lu";
 import { StatCard } from "../components/shared/StatCard";
 import FileUpload from "../components/FileUpload";
-import { api } from "../lib/api";
+import { api, getAuthToken } from "../lib/api";
 import { useStore } from "../store/StoreContext";
 
 interface DocumentEntry {
