@@ -555,20 +555,15 @@ function createResearchRouter() {
     );
 
     if (!query || query.length < 3) {
-      return new Response(
-        JSON.stringify({
+      return json(
+        200,
+        {
           results: [],
           total: 0,
           disclaimer:
             "This information is for educational purposes only and does not constitute legal advice.",
-        }),
-        {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-            "X-Request-Id": requestId,
-          },
         },
+        { "X-Request-Id": requestId },
       );
     }
 
@@ -601,8 +596,9 @@ function createResearchRouter() {
         console.warn(
           `[ResearchRouter ${requestId}] COURTLISTENER_API_TOKEN not configured`,
         );
-        return new Response(
-          JSON.stringify({
+        return json(
+          503,
+          {
             error:
               "CourtListener API token not configured. Please add COURTLISTENER_API_TOKEN to your environment.",
             results: [],
@@ -610,14 +606,8 @@ function createResearchRouter() {
               "This information is for educational purposes only and does not constitute legal advice.",
             setup:
               "Get a free API token at https://www.courtlistener.com/sign-in/",
-          }),
-          {
-            status: 503,
-            headers: {
-              "Content-Type": "application/json",
-              "X-Request-Id": requestId,
-            },
           },
+          { "X-Request-Id": requestId },
         );
       }
 
@@ -630,28 +620,24 @@ function createResearchRouter() {
           console.error(
             `[ResearchRouter ${requestId}] CourtListener API rate limit exceeded`,
           );
-          return new Response(
-            JSON.stringify({
+          return json(
+            429,
+            {
               error: "API rate limit exceeded. Please try again later.",
               results: [],
               disclaimer:
                 "This information is for educational purposes only and does not constitute legal advice.",
-            }),
-            {
-              status: 429,
-              headers: {
-                "Content-Type": "application/json",
-                "X-Request-Id": requestId,
-              },
             },
+            { "X-Request-Id": requestId },
           );
         }
         if (response.status === 403) {
           console.error(
             `[ResearchRouter ${requestId}] CourtListener API authentication failed`,
           );
-          return new Response(
-            JSON.stringify({
+          return json(
+            403,
+            {
               error:
                 "API authentication failed. Please check your COURTLISTENER_API_TOKEN.",
               results: [],
@@ -659,14 +645,8 @@ function createResearchRouter() {
                 "This information is for educational purposes only and does not constitute legal advice.",
               setup:
                 "Get a free API token at https://www.courtlistener.com/sign-in/",
-            }),
-            {
-              status: 403,
-              headers: {
-                "Content-Type": "application/json",
-                "X-Request-Id": requestId,
-              },
             },
+            { "X-Request-Id": requestId },
           );
         }
         throw new Error(`CourtListener API returned ${response.status}`);
@@ -706,8 +686,9 @@ function createResearchRouter() {
         }),
       );
 
-      return new Response(
-        JSON.stringify({
+      return json(
+        200,
+        {
           results,
           total: data.count || results.length,
           next: data.next || null,
@@ -715,14 +696,10 @@ function createResearchRouter() {
           disclaimer:
             "This information is for educational purposes only and does not constitute legal advice. Always consult a licensed attorney for legal matters.",
           source: "CourtListener (Free Law Project)",
-        }),
+        },
         {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-            "X-Request-Id": requestId,
-            "Cache-Control": "public, max-age=3600",
-          },
+          "X-Request-Id": requestId,
+          "Cache-Control": "public, max-age=3600",
         },
       );
     } catch (err) {
@@ -733,20 +710,15 @@ function createResearchRouter() {
       const isRateLimitError = (err as Error)?.message?.includes(
         "Too many attempts",
       );
-      return new Response(
-        JSON.stringify({
+      return json(
+        isRateLimitError ? 429 : 500,
+        {
           error: sanitizeError(err, "Failed to search opinions"),
           results: [],
           disclaimer:
             "This information is for educational purposes only and does not constitute legal advice.",
-        }),
-        {
-          status: isRateLimitError ? 429 : 500,
-          headers: {
-            "Content-Type": "application/json",
-            "X-Request-Id": requestId,
-          },
         },
+        { "X-Request-Id": requestId },
       );
     }
     }),

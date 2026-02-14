@@ -1785,6 +1785,1269 @@
         }
       }
     },
+    "/research/opinions/search": {
+      "get": {
+        "operationId": "researchSearchOpinions",
+        "tags": ["Research"],
+        "summary": "Search court opinions",
+        "responses": {
+          "200": {
+            "description": "Opinion search results",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchOpinionSearchResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research/opinions/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "get": {
+        "operationId": "researchGetOpinion",
+        "tags": ["Research"],
+        "summary": "Get a court opinion by id",
+        "responses": {
+          "200": {
+            "description": "Opinion detail",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchOpinionDetailResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research/dockets/search": {
+      "get": {
+        "operationId": "researchSearchDockets",
+        "tags": ["Research"],
+        "summary": "Search federal court dockets",
+        "responses": {
+          "200": {
+            "description": "Docket search results",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchDocketSearchResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research/dockets/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "get": {
+        "operationId": "researchGetDocket",
+        "tags": ["Research"],
+        "summary": "Get docket details by id",
+        "responses": {
+          "200": {
+            "description": "Docket detail",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchDocketDetailResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research/courts": {
+      "get": {
+        "operationId": "researchListCourts",
+        "tags": ["Research"],
+        "summary": "List available courts",
+        "responses": {
+          "200": {
+            "description": "Courts list",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchCourtsResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research/citation/lookup": {
+      "get": {
+        "operationId": "researchCitationLookup",
+        "tags": ["Research"],
+        "summary": "Look up cases by citation",
+        "responses": {
+          "200": {
+            "description": "Citation lookup results",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchCitationLookupResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research/statutes/search": {
+      "get": {
+        "operationId": "researchSearchStatutes",
+        "tags": ["Research"],
+        "summary": "Search bills and statutes",
+        "responses": {
+          "200": {
+            "description": "Statute search results",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchStatuteSearchResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research/statutes/detail": {
+      "get": {
+        "operationId": "researchGetStatuteDetail",
+        "tags": ["Research"],
+        "summary": "Get statute detail by id",
+        "responses": {
+          "200": {
+            "description": "Statute detail",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchStatuteDetailResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research/statutes/states": {
+      "get": {
+        "operationId": "researchListStatuteStates",
+        "tags": ["Research"],
+        "summary": "List available jurisdictions for statute search",
+        "responses": {
+          "200": {
+            "description": "Jurisdictions list",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchStatesResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research/cases": {
+      "get": {
+        "operationId": "researchListCases",
+        "tags": ["Research"],
+        "summary": "List research cases",
+        "responses": {
+          "200": {
+            "description": "Cases list",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchCasesResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "researchCreateCase",
+        "tags": ["Research"],
+        "summary": "Create a research case",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created case",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchCaseResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research/cases/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "get": {
+        "operationId": "researchGetCase",
+        "tags": ["Research"],
+        "summary": "Get a research case",
+        "responses": {
+          "200": {
+            "description": "Case detail",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchCaseResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "researchUpdateCase",
+        "tags": ["Research"],
+        "summary": "Update a research case",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchSuccessResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "researchDeleteCase",
+        "tags": ["Research"],
+        "summary": "Delete a research case",
+        "responses": {
+          "200": {
+            "description": "Deleted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchSuccessResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research/cases/{id}/activate": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "post": {
+        "operationId": "researchActivateCase",
+        "tags": ["Research"],
+        "summary": "Activate a research case",
+        "responses": {
+          "200": {
+            "description": "Activated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchSuccessResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research/cases/{caseId}/searches": {
+      "parameters": [
+        {
+          "name": "caseId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "post": {
+        "operationId": "researchSaveSearch",
+        "tags": ["Research"],
+        "summary": "Save a search to a case",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "query": { "type": "string" },
+                  "searchType": { "type": "string" },
+                  "filters": { "type": "object", "additionalProperties": true },
+                  "resultCount": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Saved search",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchSavedSearchResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research/cases/{caseId}/summarize": {
+      "parameters": [
+        {
+          "name": "caseId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "post": {
+        "operationId": "researchSummarize",
+        "tags": ["Research"],
+        "summary": "Summarize content with AI",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["sourceType", "sourceId", "content", "title"],
+                "properties": {
+                  "sourceType": { "type": "string" },
+                  "sourceId": { "type": "string" },
+                  "content": { "type": "string" },
+                  "title": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Summary",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchSummaryResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research/cases/{caseId}/documents/upload": {
+      "parameters": [
+        {
+          "name": "caseId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "post": {
+        "operationId": "researchUploadDocument",
+        "tags": ["Research"],
+        "summary": "Upload a document to a case",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file"],
+                "properties": {
+                  "file": { "type": "string", "format": "binary" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Uploaded document metadata",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchDocumentUploadResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research/cases/{caseId}/documents/{docId}/analyze": {
+      "parameters": [
+        {
+          "name": "caseId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "docId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "post": {
+        "operationId": "researchAnalyzeDocument",
+        "tags": ["Research"],
+        "summary": "Analyze a document with AI",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "query": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Analysis",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchDocumentAnalyzeResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research/scholar/search": {
+      "get": {
+        "operationId": "researchScholarSearch",
+        "tags": ["Research"],
+        "summary": "Search academic works",
+        "responses": {
+          "200": {
+            "description": "Scholar search results",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchScholarSearchResponse" }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research/govinfo/search": {
+      "get": {
+        "operationId": "researchGovinfoSearch",
+        "tags": ["Research"],
+        "summary": "Search GovInfo collections",
+        "responses": {
+          "200": {
+            "description": "GovInfo search results",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchGovInfoSearchResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research/govinfo/package/{packageId}": {
+      "parameters": [
+        {
+          "name": "packageId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "get": {
+        "operationId": "researchGovinfoPackage",
+        "tags": ["Research"],
+        "summary": "Get GovInfo package summary",
+        "responses": {
+          "200": {
+            "description": "Package summary",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchGovInfoPackageResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research/govinfo/collections": {
+      "get": {
+        "operationId": "researchGovinfoCollections",
+        "tags": ["Research"],
+        "summary": "List GovInfo collections",
+        "responses": {
+          "200": {
+            "description": "Collections list",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchGovInfoCollectionsResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research/pacer/info": {
+      "get": {
+        "operationId": "researchPacerInfo",
+        "tags": ["Research"],
+        "summary": "PACER information",
+        "responses": {
+          "200": {
+            "description": "PACER information",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchPacerInfoResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research/lawyers/search": {
+      "get": {
+        "operationId": "researchLawyersSearch",
+        "tags": ["Research"],
+        "summary": "Search for lawyers",
+        "responses": {
+          "200": {
+            "description": "Lawyer search results",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchLawyerSearchResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research/lawyers/specialties": {
+      "get": {
+        "operationId": "researchLawyerSpecialties",
+        "tags": ["Research"],
+        "summary": "List lawyer specialties",
+        "responses": {
+          "200": {
+            "description": "Specialties list",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchLawyerSpecialtiesResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research/cases/{caseId}/generate-document": {
+      "parameters": [
+        {
+          "name": "caseId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "post": {
+        "operationId": "researchGenerateDocument",
+        "tags": ["Research"],
+        "summary": "Generate a legal document from case context",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["template", "format"],
+                "properties": {
+                  "template": { "type": "string" },
+                  "format": { "type": "string" },
+                  "options": { "type": "object", "additionalProperties": true },
+                  "webhook": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Generated document",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchGenerateDocumentResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/research/agent/chat": {
       "post": {
         "operationId": "researchAgentChat",
@@ -3590,6 +4853,657 @@
           "success": { "type": "boolean" },
           "status": { "$ref": "#/components/schemas/SecurityStatusResponse" },
           "error": { "type": "string" }
+        }
+      },
+      "ResearchErrorResponse": {
+        "type": "object",
+        "required": ["error"],
+        "additionalProperties": true,
+        "properties": {
+          "error": { "type": "string" }
+        }
+      },
+      "ResearchOpinionSearchResult": {
+        "type": "object",
+        "required": ["id", "caseName"],
+        "properties": {
+          "id": { "type": "string" },
+          "caseName": { "type": "string" },
+          "citation": { "type": "string" },
+          "court": { "type": "string" },
+          "courtId": { "type": "string" },
+          "dateFiled": { "type": "string" },
+          "dateArgued": { "type": "string" },
+          "docketNumber": { "type": "string" },
+          "snippet": { "type": "string" },
+          "absoluteUrl": { "type": "string" },
+          "status": { "type": "string" },
+          "suitNature": { "type": "string" }
+        }
+      },
+      "ResearchOpinionSearchResponse": {
+        "type": "object",
+        "required": ["results", "total", "disclaimer"],
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ResearchOpinionSearchResult" }
+          },
+          "total": { "type": "integer" },
+          "next": { "type": "string", "nullable": true },
+          "previous": { "type": "string", "nullable": true },
+          "disclaimer": { "type": "string" },
+          "source": { "type": "string" }
+        }
+      },
+      "ResearchOpinionDetailResponse": {
+        "type": "object",
+        "required": ["id", "caseName"],
+        "properties": {
+          "id": { "type": "string" },
+          "caseName": { "type": "string" },
+          "court": { "type": "string" },
+          "courtId": { "type": "string" },
+          "dateFiled": { "type": "string" },
+          "docketNumber": { "type": "string" },
+          "judges": { "type": "string" },
+          "plainText": { "type": "string" },
+          "htmlWithCitations": { "type": "string" },
+          "citations": { "type": "array", "items": {} },
+          "citesCases": { "type": "array", "items": {} },
+          "absoluteUrl": { "type": "string" },
+          "disclaimer": { "type": "string" },
+          "source": { "type": "string" }
+        }
+      },
+      "ResearchDocketSearchResult": {
+        "type": "object",
+        "required": ["id", "caseName"],
+        "properties": {
+          "id": { "type": "string" },
+          "caseName": { "type": "string" },
+          "court": { "type": "string" },
+          "courtId": { "type": "string" },
+          "dateFiled": { "type": "string" },
+          "dateTerminated": { "type": "string" },
+          "docketNumber": { "type": "string" },
+          "cause": { "type": "string" },
+          "suitNature": { "type": "string" },
+          "assignedTo": { "type": "string" },
+          "snippet": { "type": "string" },
+          "absoluteUrl": { "type": "string" }
+        }
+      },
+      "ResearchDocketSearchResponse": {
+        "type": "object",
+        "required": ["results", "total", "disclaimer"],
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ResearchDocketSearchResult" }
+          },
+          "total": { "type": "integer" },
+          "disclaimer": { "type": "string" },
+          "source": { "type": "string" }
+        }
+      },
+      "ResearchDocketAttorney": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "contact": { "type": "string" },
+          "roles": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      },
+      "ResearchDocketParty": {
+        "type": "object",
+        "required": ["name", "type", "attorneys"],
+        "properties": {
+          "name": { "type": "string" },
+          "type": { "type": "string" },
+          "attorneys": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ResearchDocketAttorney" }
+          }
+        }
+      },
+      "ResearchDocketEntry": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string" },
+          "dateEntered": { "type": "string" },
+          "dateFiled": { "type": "string" },
+          "entryNumber": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      },
+      "ResearchDocketDetailResponse": {
+        "type": "object",
+        "required": ["id", "caseName"],
+        "properties": {
+          "id": { "type": "string" },
+          "caseName": { "type": "string" },
+          "court": { "type": "string" },
+          "courtId": { "type": "string" },
+          "dateFiled": { "type": "string" },
+          "dateTerminated": { "type": "string" },
+          "dateLastFiling": { "type": "string" },
+          "docketNumber": { "type": "string" },
+          "docketNumberCore": { "type": "string" },
+          "cause": { "type": "string" },
+          "natureOfSuit": { "type": "string" },
+          "juryDemand": { "type": "string" },
+          "jurisdictionType": { "type": "string" },
+          "assignedTo": { "type": "string" },
+          "referredTo": { "type": "string" },
+          "parties": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ResearchDocketParty" }
+          },
+          "docketEntries": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ResearchDocketEntry" }
+          },
+          "absoluteUrl": { "type": "string" },
+          "pacerUrl": { "type": "string" },
+          "disclaimer": { "type": "string" },
+          "source": { "type": "string" }
+        }
+      },
+      "ResearchCourt": {
+        "type": "object",
+        "required": ["id", "name", "shortName", "jurisdiction", "inUse"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "shortName": { "type": "string" },
+          "jurisdiction": { "type": "string" },
+          "inUse": { "type": "boolean" }
+        }
+      },
+      "ResearchCourtsResponse": {
+        "type": "object",
+        "required": ["federalAppellate", "federalDistrict", "stateCourts", "otherCourts", "total"],
+        "properties": {
+          "federalAppellate": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ResearchCourt" }
+          },
+          "federalDistrict": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ResearchCourt" }
+          },
+          "stateCourts": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ResearchCourt" }
+          },
+          "otherCourts": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ResearchCourt" }
+          },
+          "total": { "type": "integer" }
+        }
+      },
+      "ResearchCitationLookupResult": {
+        "type": "object",
+        "required": ["id", "caseName"],
+        "properties": {
+          "id": { "type": "string" },
+          "caseName": { "type": "string" },
+          "citation": { "type": "string" },
+          "court": { "type": "string" },
+          "dateFiled": { "type": "string" },
+          "absoluteUrl": { "type": "string" }
+        }
+      },
+      "ResearchCitationLookupResponse": {
+        "type": "object",
+        "required": ["results", "searchedCitation", "disclaimer", "source"],
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ResearchCitationLookupResult" }
+          },
+          "searchedCitation": { "type": "string" },
+          "disclaimer": { "type": "string" },
+          "source": { "type": "string" }
+        }
+      },
+      "ResearchStatuteSearchResult": {
+        "type": "object",
+        "required": ["id", "title"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "citation": { "type": "string" },
+          "section": { "type": "string" },
+          "code": { "type": "string" },
+          "jurisdiction": { "type": "string" },
+          "snippet": { "type": "string" },
+          "url": { "type": "string" },
+          "lastAction": { "type": "string" },
+          "lastActionDate": { "type": "string" },
+          "relevance": { "type": "number" }
+        }
+      },
+      "ResearchStatuteSearchResponse": {
+        "type": "object",
+        "required": ["results", "total", "disclaimer"],
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ResearchStatuteSearchResult" }
+          },
+          "total": { "type": "integer" },
+          "page": { "type": "integer" },
+          "pageSize": { "type": "integer" },
+          "hasMore": { "type": "boolean" },
+          "disclaimer": { "type": "string" },
+          "source": { "type": "string" }
+        }
+      },
+      "ResearchStatuteBill": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "number": { "type": "string" },
+          "state": { "type": "string" },
+          "status": { "type": "string" },
+          "lastAction": { "type": "string" },
+          "lastActionDate": { "type": "string" },
+          "session": { "type": "string" },
+          "url": { "type": "string" },
+          "stateLink": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      },
+      "ResearchStatuteText": {
+        "type": "object",
+        "properties": {
+          "content": { "type": "string" },
+          "mime": { "type": "string" },
+          "url": { "type": "string" },
+          "stateLink": { "type": "string" },
+          "date": { "type": "string" },
+          "docId": { "type": "string" }
+        }
+      },
+      "ResearchStatuteDetailResponse": {
+        "type": "object",
+        "required": ["bill", "text", "disclaimer", "source"],
+        "properties": {
+          "bill": { "$ref": "#/components/schemas/ResearchStatuteBill" },
+          "text": { "$ref": "#/components/schemas/ResearchStatuteText" },
+          "disclaimer": { "type": "string" },
+          "source": { "type": "string" }
+        }
+      },
+      "ResearchJurisdiction": {
+        "type": "object",
+        "required": ["code", "name"],
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" }
+        }
+      },
+      "ResearchStatesResponse": {
+        "type": "object",
+        "required": ["states"],
+        "properties": {
+          "states": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ResearchJurisdiction" }
+          }
+        }
+      },
+      "ResearchCase": {
+        "type": "object",
+        "required": ["id", "name", "description", "createdAt", "updatedAt", "isActive"],
+        "additionalProperties": true,
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "createdAt": { "type": "integer" },
+          "updatedAt": { "type": "integer" },
+          "isActive": { "type": "boolean" },
+          "userEmail": { "type": "string" },
+          "savedSearches": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ResearchSavedSearch" }
+          },
+          "documents": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ResearchDocumentMetadata" }
+          },
+          "summaries": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ResearchSummary" }
+          },
+          "contextItems": {
+            "type": "array",
+            "items": { "type": "object", "additionalProperties": true }
+          }
+        }
+      },
+      "ResearchCaseResponse": {
+        "type": "object",
+        "required": ["case"],
+        "properties": {
+          "case": { "$ref": "#/components/schemas/ResearchCase" }
+        }
+      },
+      "ResearchCasesResponse": {
+        "type": "object",
+        "required": ["cases"],
+        "properties": {
+          "cases": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ResearchCase" }
+          }
+        }
+      },
+      "ResearchSuccessResponse": {
+        "type": "object",
+        "required": ["success"],
+        "properties": {
+          "success": { "type": "boolean" }
+        }
+      },
+      "ResearchSavedSearch": {
+        "type": "object",
+        "required": ["id", "name", "query", "searchType", "createdAt"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "query": { "type": "string" },
+          "searchType": { "type": "string" },
+          "filters": { "type": "object", "additionalProperties": true },
+          "resultCount": { "type": "integer" },
+          "createdAt": { "type": "integer" }
+        }
+      },
+      "ResearchSavedSearchResponse": {
+        "type": "object",
+        "required": ["search"],
+        "properties": {
+          "search": { "$ref": "#/components/schemas/ResearchSavedSearch" }
+        }
+      },
+      "ResearchSummary": {
+        "type": "object",
+        "required": [
+          "id",
+          "sourceType",
+          "sourceId",
+          "sourceTitle",
+          "summary",
+          "keyPoints",
+          "legalIssues",
+          "createdAt"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "sourceType": { "type": "string" },
+          "sourceId": { "type": "string" },
+          "sourceTitle": { "type": "string" },
+          "summary": { "type": "string" },
+          "keyPoints": { "type": "array", "items": { "type": "string" } },
+          "legalIssues": { "type": "array", "items": { "type": "string" } },
+          "createdAt": { "type": "integer" }
+        }
+      },
+      "ResearchSummaryResponse": {
+        "type": "object",
+        "required": ["summary"],
+        "properties": {
+          "summary": { "$ref": "#/components/schemas/ResearchSummary" }
+        }
+      },
+      "ResearchDocumentMetadata": {
+        "type": "object",
+        "required": [
+          "id",
+          "fileName",
+          "fileType",
+          "fileSize",
+          "attachmentId",
+          "summary",
+          "uploadedAt"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "fileName": { "type": "string" },
+          "fileType": { "type": "string" },
+          "fileSize": { "type": "integer" },
+          "attachmentId": { "type": "string" },
+          "summary": { "type": "string" },
+          "uploadedAt": { "type": "integer" }
+        }
+      },
+      "ResearchDocumentUploadResponse": {
+        "type": "object",
+        "required": ["document"],
+        "properties": {
+          "document": { "$ref": "#/components/schemas/ResearchDocumentMetadata" }
+        }
+      },
+      "ResearchDocumentAnalyzeResponse": {
+        "type": "object",
+        "required": ["analysis", "summary"],
+        "properties": {
+          "analysis": { "type": "string" },
+          "summary": { "type": "string" }
+        }
+      },
+      "ResearchScholarWork": {
+        "type": "object",
+        "required": ["id", "title"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "snippet": { "type": "string" },
+          "authors": { "type": "string" },
+          "year": { "type": "string" },
+          "citedBy": { "type": "integer" },
+          "pdfLink": { "type": "string" },
+          "link": { "type": "string" },
+          "doi": { "type": "string" },
+          "journal": { "type": "string" },
+          "openAccess": { "type": "boolean" }
+        }
+      },
+      "ResearchScholarSearchResponse": {
+        "type": "object",
+        "required": ["results", "total", "disclaimer"],
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ResearchScholarWork" }
+          },
+          "total": { "type": "integer" },
+          "disclaimer": { "type": "string" },
+          "source": { "type": "string" }
+        }
+      },
+      "ResearchGovInfoSearchResult": {
+        "type": "object",
+        "required": ["id", "title"],
+        "properties": {
+          "id": { "type": "string" },
+          "packageId": { "type": "string" },
+          "title": { "type": "string" },
+          "collectionCode": { "type": "string" },
+          "collectionName": { "type": "string" },
+          "dateIssued": { "type": "string" },
+          "lastModified": { "type": "string" },
+          "category": { "type": "string" },
+          "branch": { "type": "string" },
+          "governmentAuthor": { "type": "string" },
+          "suDocClass": { "type": "string" },
+          "congress": { "type": "string" },
+          "session": { "type": "string" },
+          "docType": { "type": "string" },
+          "pages": { "type": "integer" },
+          "pdfLink": { "type": "string" },
+          "xmlLink": { "type": "string" },
+          "txtLink": { "type": "string" },
+          "detailsLink": { "type": "string" }
+        }
+      },
+      "ResearchGovInfoSearchResponse": {
+        "type": "object",
+        "required": ["results", "total", "collections", "disclaimer"],
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ResearchGovInfoSearchResult" }
+          },
+          "total": { "type": "integer" },
+          "nextOffset": { "type": "integer", "nullable": true },
+          "collections": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          },
+          "disclaimer": { "type": "string" },
+          "source": { "type": "string" }
+        }
+      },
+      "ResearchGovInfoPackageSummary": {
+        "type": "object",
+        "required": ["packageId"],
+        "properties": {
+          "packageId": { "type": "string" },
+          "title": { "type": "string" },
+          "collectionCode": { "type": "string" },
+          "collectionName": { "type": "string" },
+          "dateIssued": { "type": "string" },
+          "lastModified": { "type": "string" },
+          "category": { "type": "string" },
+          "branch": { "type": "string" },
+          "governmentAuthor": { "type": "string" },
+          "publisher": { "type": "string" },
+          "suDocClass": { "type": "string" },
+          "congress": { "type": "string" },
+          "session": { "type": "string" },
+          "pages": { "type": "integer" },
+          "download": { "type": "object", "additionalProperties": true },
+          "relatedDocuments": { "type": "array", "items": {} },
+          "otherIdentifiers": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "ResearchGovInfoPackageResponse": {
+        "type": "object",
+        "required": ["package", "disclaimer"],
+        "properties": {
+          "package": { "$ref": "#/components/schemas/ResearchGovInfoPackageSummary" },
+          "disclaimer": { "type": "string" }
+        }
+      },
+      "ResearchGovInfoCollection": {
+        "type": "object",
+        "required": ["code", "name", "description"],
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      },
+      "ResearchGovInfoCollectionsResponse": {
+        "type": "object",
+        "required": ["collections", "source"],
+        "properties": {
+          "collections": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ResearchGovInfoCollection" }
+          },
+          "source": { "type": "string" }
+        }
+      },
+      "ResearchPacerInfoResponse": {
+        "type": "object",
+        "required": ["message", "info", "registration", "fees", "note"],
+        "properties": {
+          "message": { "type": "string" },
+          "info": { "type": "string" },
+          "registration": { "type": "string" },
+          "fees": { "type": "string" },
+          "note": { "type": "string" }
+        }
+      },
+      "ResearchLawyerResult": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "firm": { "type": "string" },
+          "address": { "type": "string" },
+          "city": { "type": "string" },
+          "state": { "type": "string" },
+          "zipCode": { "type": "string" },
+          "phone": { "type": "string" },
+          "email": { "type": "string" },
+          "website": { "type": "string" },
+          "specialty": { "type": "string" },
+          "rating": { "type": "number", "nullable": true },
+          "reviewCount": { "type": "integer" },
+          "yearsExperience": { "type": "integer", "nullable": true },
+          "barNumber": { "type": "string" },
+          "education": { "type": "string" },
+          "languages": { "type": "string" },
+          "profileUrl": { "type": "string" },
+          "imageUrl": { "type": "string" }
+        }
+      },
+      "ResearchLawyerSearchResponse": {
+        "type": "object",
+        "required": ["results", "total", "location", "specialty", "source", "disclaimer"],
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ResearchLawyerResult" }
+          },
+          "total": { "type": "integer" },
+          "location": { "type": "string" },
+          "specialty": { "type": "string" },
+          "source": { "type": "string" },
+          "disclaimer": { "type": "string" }
+        }
+      },
+      "ResearchLawyerSpecialty": {
+        "type": "object",
+        "required": ["code", "name"],
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" }
+        }
+      },
+      "ResearchLawyerSpecialtiesResponse": {
+        "type": "object",
+        "required": ["specialties", "source"],
+        "properties": {
+          "specialties": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ResearchLawyerSpecialty" }
+          },
+          "source": { "type": "string" }
+        }
+      },
+      "ResearchGenerateDocumentResponse": {
+        "type": "object",
+        "required": ["documentId", "content", "metadata"],
+        "properties": {
+          "documentId": { "type": "string" },
+          "content": { "type": "string" },
+          "metadata": { "type": "object", "additionalProperties": true }
         }
       }
     }
