@@ -68,7 +68,24 @@ const __dir =
 // Defaults to the project-relative layout used in development.
 const appRoot = process.env.PROSEVA_DATA_DIR ?? join(__dir, "../..");
 
-const { preflight, corsify } = cors();
+const DEFAULT_CORS_ORIGINS = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "file://",
+];
+
+const configuredOrigins =
+  process.env.CORS_ORIGINS?.split(",").map((o) => o.trim()).filter(Boolean) ??
+  [];
+
+const corsOrigins =
+  configuredOrigins.length > 0 ? configuredOrigins : DEFAULT_CORS_ORIGINS;
+
+const { preflight, corsify } = cors({
+  origin: corsOrigins,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  headers: ["Content-Type", "Authorization", "Accept", "X-Requested-With"],
+});
 
 const ALLOWED_WHEN_DB_LOCKED = new Set([
   "/api/health",

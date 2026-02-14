@@ -16,6 +16,7 @@ const USE_INPROC_SERVER = true;
 
 let mainWindow: BrowserWindow | null = null;
 let serverProcess: ChildProcess | null = null;
+const serverErrors: string[] = [];
 
 // --- Single instance lock ---
 const gotLock = app.requestSingleInstanceLock();
@@ -94,6 +95,32 @@ function startServer(): ChildProcess {
   });
 }
 
+async function ensureServerStarted(): Promise<boolean> {
+  if (serverProcess && !serverProcess.killed) {
+    return true;
+  }
+
+  serverProcess = startServer();
+
+  serverProcess.stdout?.on("data", (data: Buffer) => {
+    console.log(`[server] ${data.toString().trim()}`);
+  });
+  serverProcess.stderr?.on("data", (data: Buffer) => {
+    const msg = data.toString().trim();
+    console.error(`[server] ${msg}`);
+    serverErrors.push(msg);
+  });
+  serverProcess.on("exit", (code) => {
+    console.log(`[server] Process exited with code ${code}`);
+  });
+
+  const ready = await waitForServer();
+  if (!ready) {
+    console.error("[electron] Could not start server.");
+  }
+  return ready;
+}
+
 async function waitForServer(maxRetries = 30, delayMs = 500): Promise<boolean> {
   for (let i = 0; i < maxRetries; i++) {
     try {
@@ -170,6 +197,8 @@ function toServerUrl(input: string): string {
   return `${SERVER_URL}${input}`;
 }
 
+let inprocAvailable = true;
+
 async function handleRequest(req: BridgeRequest | Request): Promise<Response> {
   // Note: do not statically import server code here. Electron's `tsc -p electron/tsconfig.json`
   // must not pull `server/**` into this compilation unit.
@@ -209,17 +238,25 @@ async function handleRequest(req: BridgeRequest | Request): Promise<Response> {
     request = new Request(url, { method, headers, body });
   }
 
-  if (USE_INPROC_SERVER) {
+  if (USE_INPROC_SERVER && inprocAvailable) {
     // Dev-only: run router in-process using the precompiled JS in `server/src/`.
     // This intentionally uses a dynamic import so Electron's tsc build doesn't typecheck server sources.
-    const modUrl = new URL("../server/src/index.server.js", import.meta.url);
-    const mod = (await import(modUrl.href)) as any;
-    const ProSeVaServer = mod?.ProSeVaServer;
-    if (ProSeVaServer?.fetch) return ProSeVaServer.fetch(request);
-    throw new Error("ProSeVaServer.fetch not found (ELECTRON_INPROC_SERVER=1)");
+    try {
+      const modUrl = new URL("../server/src/index.server.js", import.meta.url);
+      const mod = (await import(modUrl.href)) as any;
+      const ProSeVaServer = mod?.ProSeVaServer;
+      if (ProSeVaServer?.fetch) return ProSeVaServer.fetch(request);
+      throw new Error("ProSeVaServer.fetch not found (ELECTRON_INPROC_SERVER=1)");
+    } catch (err) {
+      console.error("[electron] In-process server unavailable, falling back to spawned server:", err);
+      inprocAvailable = false;
+      await ensureServerStarted();
+      return fetch(request);
+    }
   }
 
   // Default: proxy to the already-running HTTP server process.
+  await ensureServerStarted();
   return fetch(request);
 }
 
@@ -251,33 +288,9 @@ app.whenReady().then(async () => {
   });
   initDataDir();
 
-  serverProcess = startServer();
-
-  const serverErrors: string[] = [];
-  serverProcess.stdout?.on("data", (data: Buffer) => {
-    console.log(`[server] ${data.toString().trim()}`);
-  });
-  serverProcess.stderr?.on("data", (data: Buffer) => {
-    const msg = data.toString().trim();
-    console.error(`[server] ${msg}`);
-    serverErrors.push(msg);
-  });
-  serverProcess.on("exit", (code) => {
-    console.log(`[server] Process exited with code ${code}`);
-  });
-
-  const ready = await waitForServer();
-  if (!ready) {
-    console.error("[electron] Could not start server, quitting.");
-    const detail = serverErrors.length
-      ? serverErrors.join("\n").slice(-1500)
-      : "The server did not respond in time. Check the logs for details.";
-    dialog.showErrorBox(
-      "Pro Se VA — Server Failed to Start",
-      `The backend server could not be started.\n\n${detail}`,
-    );
-    app.quit();
-    return;
+  if (USE_INPROC_SERVER) {
+    // Ensure server code uses the Electron data directory when running in-process.
+    process.env.PROSEVA_DATA_DIR = getDataDir();
   }
 
   createWindow();
