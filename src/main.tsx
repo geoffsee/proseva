@@ -8,6 +8,11 @@ import "./index.css";
 const isElectron = !!(window as { electronAPI?: unknown }).electronAPI;
 const Router = isElectron ? HashRouter : BrowserRouter;
 
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js");
+  import("./sw-bridge");
+}
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <Provider>

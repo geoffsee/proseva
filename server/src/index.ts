@@ -1877,7 +1877,9 @@ if (import.meta.main) {
   console.log(`ProSeVA server running on http://localhost:${port}`);
 }
 
-export default {
-  port,
+
+export const ittyServer = {
   fetch: router.fetch,
 };
+
+export default {...ittyServer, port}

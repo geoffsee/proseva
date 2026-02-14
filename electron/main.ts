@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, shell } from "electron";
+import { app, BrowserWindow, dialog, shell, ipcMain } from "electron";
 import { spawn, type ChildProcess } from "child_process";
 import path from "path";
 import fs from "fs";
@@ -11,6 +11,8 @@ const isDev = !app.isPackaged;
 const SERVER_PORT = 3001;
 const SERVER_URL = `http://localhost:${SERVER_PORT}`;
 const DEV_URL = "http://localhost:5173";
+// Always run the server router in-process for renderer requests.
+const USE_INPROC_SERVER = true;
 
 let mainWindow: BrowserWindow | null = null;
 let serverProcess: ChildProcess | null = null;
@@ -146,8 +148,107 @@ function createWindow(): void {
   });
 }
 
+type BridgeRequest = {
+  url?: string;
+  path?: string;
+  method?: string;
+  headers?: Record<string, string>;
+  body?: unknown;
+};
+
+type BridgeResponse = {
+  ok: boolean;
+  status: number;
+  headers: Record<string, string>;
+  text: string;
+  json?: unknown;
+};
+
+function toServerUrl(input: string): string {
+  if (input.startsWith("http://") || input.startsWith("https://")) return input;
+  if (!input.startsWith("/")) return `${SERVER_URL}/${input}`;
+  return `${SERVER_URL}${input}`;
+}
+
+async function handleRequest(req: BridgeRequest | Request): Promise<Response> {
+  // Note: do not statically import server code here. Electron's `tsc -p electron/tsconfig.json`
+  // must not pull `server/**` into this compilation unit.
+  let request: Request;
+
+  if (typeof (req as Request)?.url === "string") {
+    const r = req as Request;
+    const u = new URL(r.url);
+    request = new Request(toServerUrl(u.pathname + u.search), {
+      method: r.method,
+      headers: r.headers,
+      body: r.method === "GET" || r.method === "HEAD" ? undefined : (r as any).body,
+    });
+  } else {
+    const r = req as BridgeRequest;
+    const url = toServerUrl(r.url ?? r.path ?? "/");
+    const method = (r.method ?? "GET").toUpperCase();
+
+    const headers = new Headers(r.headers ?? {});
+    let body: any;
+
+    if (r.body !== undefined && method !== "GET" && method !== "HEAD") {
+      if (
+        typeof r.body === "string" ||
+        r.body instanceof ArrayBuffer ||
+        ArrayBuffer.isView(r.body)
+      ) {
+        body = r.body as any;
+      } else {
+        if (!headers.has("content-type")) {
+          headers.set("content-type", "application/json");
+        }
+        body = JSON.stringify(r.body);
+      }
+    }
+
+    request = new Request(url, { method, headers, body });
+  }
+
+  if (USE_INPROC_SERVER) {
+    // Dev-only: run router in-process using the precompiled JS in `server/src/`.
+    // This intentionally uses a dynamic import so Electron's tsc build doesn't typecheck server sources.
+    const modUrl = new URL("../server/src/index.server.js", import.meta.url);
+    const mod = (await import(modUrl.href)) as any;
+    const ProSeVaServer = mod?.ProSeVaServer;
+    if (ProSeVaServer?.fetch) return ProSeVaServer.fetch(request);
+    throw new Error("ProSeVaServer.fetch not found (ELECTRON_INPROC_SERVER=1)");
+  }
+
+  // Default: proxy to the already-running HTTP server process.
+  return fetch(request);
+}
+
 // --- App lifecycle ---
 app.whenReady().then(async () => {
+  // just for kicking the tires
+  ipcMain.handle("ipcMain-bridge-http", async (_event, payload) => {
+    const response = await handleRequest(payload as BridgeRequest);
+    const text = await response.text();
+
+    let json: unknown = undefined;
+    try {
+      json = text ? JSON.parse(text) : undefined;
+    } catch {
+      // not JSON
+    }
+
+    const headers = Object.fromEntries(response.headers.entries());
+    headers["x-ipc-bridge"] = "1";
+
+    const out: BridgeResponse = {
+      ok: response.ok,
+      status: response.status,
+      headers,
+      text,
+      json,
+    };
+    return out;
+  });
   initDataDir();
 
   serverProcess = startServer();
