@@ -10,6 +10,10 @@ export default defineConfig({
         import.meta.dirname ?? __dirname,
         "node_modules/idb-repo/dist/index-browser.js",
       ),
+      "proseva-sdk": resolve(
+        import.meta.dirname ?? __dirname,
+        "proseva-sdk/src/index.ts",
+      ),
     },
   },
   test: {

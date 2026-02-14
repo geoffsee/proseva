@@ -40,6 +40,7 @@ export default defineConfig({
         __dirname,
         "node_modules/idb-repo/dist/index-browser.js",
       ),
+      "proseva-sdk": path.resolve(__dirname, "proseva-sdk/src/index.ts"),
     },
   },
   server: {

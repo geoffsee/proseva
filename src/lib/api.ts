@@ -1,5 +1,4 @@
-import createClient from "openapi-fetch";
-import type { paths, components } from "./api-types.js";
+import { createProsevaClient, type components } from "proseva-sdk";
 import type { ReportConfig } from "../types";
 import {
   saveAuthToken as kvSaveAuthToken,
@@ -43,28 +42,9 @@ export async function clearAuthToken(): Promise<void> {
   }
 }
 
-// Resolve API base: absolute URL in Electron (file:// origin), relative in browser
-const electronAPI = (window as { electronAPI?: { serverUrl?: string } })
-  .electronAPI;
-export const API_BASE = electronAPI?.serverUrl
-  ? `${electronAPI.serverUrl}/api`
-  : "/api";
+export const API_BASE = "/api";
 
-// Create client and configure with middleware for dynamic auth headers
-export const client = createClient<paths>({
-  baseUrl: API_BASE,
-});
-
-// Add middleware to inject auth token on every request
-client.use({
-  async onRequest({ request }) {
-    const token = await getAuthToken();
-    if (token) {
-      request.headers.set("Authorization", `Bearer ${token}`);
-    }
-    return request;
-  },
-});
+export const client = createProsevaClient({ baseUrl: API_BASE, getAuthToken });
 
 // Helper to create fetch headers with auth token
 async function getAuthHeaders(additional?: HeadersInit): Promise<HeadersInit> {

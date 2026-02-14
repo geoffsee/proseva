@@ -31,6 +31,12 @@ const api = createProsevaClientWithToken("<jwt>", {
 const { data } = await api.GET("/cases");
 ```
 
+### Browser and Electron portability
+
+`createProsevaClient()` auto-selects an Electron IPC transport when `globalThis.electronAPI.send` is present
+(as exposed by a preload script) and you use a relative `baseUrl` (default `"/api"`). This allows the same
+SDK code to run in the browser and Electron renderer without changing configuration.
+
 ### Auth tokens
 
 Pass `getAuthToken` (sync or async) to attach `Authorization: Bearer <token>` automatically:
