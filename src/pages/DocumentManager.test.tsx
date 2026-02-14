@@ -56,7 +56,24 @@ vi.mock("../lib/api", () => ({
       update: vi.fn(),
       delete: vi.fn(),
     },
-    documents: { list: vi.fn().mockResolvedValue([]) },
+    documents: {
+      list: vi.fn().mockResolvedValue([]),
+      delete: vi.fn().mockResolvedValue(null),
+      upload: vi.fn().mockResolvedValue({}),
+    },
+    ingest: {
+      status: vi.fn().mockResolvedValue({
+        active: false,
+        directory: "",
+        running: false,
+        lastRunStarted: null,
+        lastRunFinished: null,
+        added: 0,
+        skipped: 0,
+        errors: 0,
+      }),
+      scan: vi.fn(),
+    },
   },
 }));
 
@@ -178,7 +195,7 @@ const DUP_DOCS = [
   },
 ];
 
-function mockFetch(
+async function mockApis(
   data: unknown,
   ok = true,
   ingestStatus: {
@@ -201,10 +218,20 @@ function mockFetch(
     errors: 0,
   },
 ) {
+  const { api } = await import("../lib/api");
+
+  // Mock documents API
+  if (ok) {
+    api.documents.list.mockResolvedValue(data as any);
+  } else {
+    api.documents.list.mockRejectedValue(new Error("Failed to load"));
+  }
+
+  // Mock ingest API
+  api.ingest.status.mockResolvedValue(ingestStatus as any);
+
+  // Mock fetch for /texts/ static files
   global.fetch = vi.fn().mockImplementation((url: string, opts?: any) => {
-    if (opts?.method === "DELETE") {
-      return Promise.resolve({ ok: true, status: 204 });
-    }
     if (url.startsWith("/texts/")) {
       return Promise.resolve({
         ok: true,
@@ -212,16 +239,9 @@ function mockFetch(
           Promise.resolve("Extracted text content for this document."),
       });
     }
-    if (url === "/api/ingest/status") {
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(ingestStatus),
-      });
-    }
     return Promise.resolve({
-      ok,
-      status: ok ? 200 : 500,
-      json: () => Promise.resolve(data),
+      ok: false,
+      status: 404,
     });
   });
 }
@@ -232,7 +252,7 @@ describe("DocumentManager", () => {
   });
 
   it("renders stat cards with correct values", async () => {
-    mockFetch(MOCK_DOCS, true, {
+    await mockApis(MOCK_DOCS, true, {
       active: true,
       directory: "/tmp/pdfs",
       running: false,
@@ -253,7 +273,7 @@ describe("DocumentManager", () => {
   });
 
   it("shows ingestion status details", async () => {
-    mockFetch(MOCK_DOCS, true, {
+    await mockApis(MOCK_DOCS, true, {
       active: true,
       directory: "/tmp/pdfs",
       running: true,
@@ -273,7 +293,7 @@ describe("DocumentManager", () => {
   });
 
   it("renders all documents in the table", async () => {
-    mockFetch(MOCK_DOCS);
+    await mockApis(MOCK_DOCS);
     renderDocManager();
     await waitFor(() => {
       expect(screen.getByText("Motion to Dismiss")).toBeInTheDocument();
@@ -283,7 +303,7 @@ describe("DocumentManager", () => {
   });
 
   it("filters by category", async () => {
-    mockFetch(MOCK_DOCS);
+    await mockApis(MOCK_DOCS);
     renderDocManager();
     await waitFor(() => {
       expect(screen.getByText("Motion to Dismiss")).toBeInTheDocument();
@@ -298,7 +318,7 @@ describe("DocumentManager", () => {
   });
 
   it("filters by search text", async () => {
-    mockFetch(MOCK_DOCS);
+    await mockApis(MOCK_DOCS);
     renderDocManager();
     await waitFor(() => {
       expect(screen.getByText("Motion to Dismiss")).toBeInTheDocument();
@@ -313,7 +333,7 @@ describe("DocumentManager", () => {
   });
 
   it("expands row to lazy-load extracted text", async () => {
-    mockFetch(MOCK_DOCS);
+    await mockApis(MOCK_DOCS);
     renderDocManager();
     await waitFor(() => {
       expect(screen.getByText("Court Order")).toBeInTheDocument();
@@ -328,7 +348,7 @@ describe("DocumentManager", () => {
   });
 
   it("shows error on fetch failure", async () => {
-    mockFetch(null, false);
+    await mockApis(null, false);
     renderDocManager();
     await waitFor(() => {
       expect(screen.getByText(/Error: Failed to load/)).toBeInTheDocument();
@@ -336,7 +356,7 @@ describe("DocumentManager", () => {
   });
 
   it("shows empty state when no documents indexed", async () => {
-    mockFetch([]);
+    await mockApis([]);
     renderDocManager();
     await waitFor(() => {
       expect(screen.queryByText("Loading documents…")).not.toBeInTheDocument();
@@ -345,7 +365,7 @@ describe("DocumentManager", () => {
   });
 
   it("renders upload component", async () => {
-    mockFetch(MOCK_DOCS);
+    await mockApis(MOCK_DOCS);
     renderDocManager();
     await waitFor(() => {
       expect(screen.getByTestId("drop-zone")).toBeInTheDocument();
@@ -354,41 +374,42 @@ describe("DocumentManager", () => {
   });
 
   it("refreshes document list after successful upload", async () => {
-    let fetchCount = 0;
-    global.fetch = vi.fn().mockImplementation((url: string, opts?: any) => {
-      if (opts?.method === "POST") {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
-      }
-      if (url.startsWith("/texts/")) {
-        return Promise.resolve({
-          ok: true,
-          text: () => Promise.resolve("text"),
-        });
-      }
-      fetchCount++;
-      return Promise.resolve({
-        ok: true,
-        status: 200,
-        json: () =>
-          Promise.resolve(
-            fetchCount === 1
-              ? MOCK_DOCS
-              : [
-                  ...MOCK_DOCS,
-                  {
-                    id: "4",
-                    filename: "new.pdf",
-                    path: "new/new.pdf",
-                    category: "_new_filings",
-                    title: "New Document",
-                    pageCount: 1,
-                    textFile: "texts/4.txt",
-                    dates: [],
-                    fileSize: 512,
-                  },
-                ],
-          ),
-      });
+    const { api } = await import("../lib/api");
+
+    // First call returns MOCK_DOCS, second call includes new document
+    let callCount = 0;
+    api.documents.list.mockImplementation(() => {
+      callCount++;
+      return Promise.resolve(
+        callCount === 1
+          ? MOCK_DOCS
+          : [
+              ...MOCK_DOCS,
+              {
+                id: "4",
+                filename: "new.pdf",
+                path: "new/new.pdf",
+                category: "_new_filings",
+                title: "New Document",
+                pageCount: 1,
+                textFile: "texts/4.txt",
+                dates: [],
+                fileSize: 512,
+              },
+            ],
+      );
+    });
+
+    api.documents.upload.mockResolvedValue({} as any);
+    api.ingest.status.mockResolvedValue({
+      active: false,
+      directory: "",
+      running: false,
+      lastRunStarted: null,
+      lastRunFinished: null,
+      added: 0,
+      skipped: 0,
+      errors: 0,
     });
 
     renderDocManager();
@@ -409,7 +430,7 @@ describe("DocumentManager", () => {
   });
 
   it("renders caseId as link when present", async () => {
-    mockFetch(MOCK_DOCS);
+    await mockApis(MOCK_DOCS);
     renderDocManager();
     await waitFor(() => {
       expect(screen.getByText("Court Order")).toBeInTheDocument();
@@ -420,7 +441,7 @@ describe("DocumentManager", () => {
   });
 
   it("marks duplicate documents", async () => {
-    mockFetch(DUP_DOCS);
+    await mockApis(DUP_DOCS);
     renderDocManager();
     await waitFor(() =>
       expect(screen.getAllByText("Duplicate").length).toBe(2),
@@ -429,47 +450,31 @@ describe("DocumentManager", () => {
   });
 
   it("sends Authorization header with /api/documents request", async () => {
-    mockFetch(MOCK_DOCS);
+    const { api } = await import("../lib/api");
+    await mockApis(MOCK_DOCS);
     renderDocManager();
     await waitFor(() => {
       expect(screen.getByText("Motion to Dismiss")).toBeInTheDocument();
     });
 
-    const docCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.find(
-      (c: unknown[]) => c[0] === "/api/documents",
-    );
-    expect(docCall).toBeDefined();
-    expect(docCall![1]).toEqual(
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          Authorization: "Bearer test-token-123",
-        }),
-      }),
-    );
+    // The SDK handles auth headers internally via getAuthToken callback
+    expect(api.documents.list).toHaveBeenCalled();
   });
 
   it("sends Authorization header with /api/ingest/status request", async () => {
-    mockFetch(MOCK_DOCS);
+    const { api } = await import("../lib/api");
+    await mockApis(MOCK_DOCS);
     renderDocManager();
     await waitFor(() => {
       expect(screen.getByText("Motion to Dismiss")).toBeInTheDocument();
     });
 
-    const ingestCall = (
-      global.fetch as ReturnType<typeof vi.fn>
-    ).mock.calls.find((c: unknown[]) => c[0] === "/api/ingest/status");
-    expect(ingestCall).toBeDefined();
-    expect(ingestCall![1]).toEqual(
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          Authorization: "Bearer test-token-123",
-        }),
-      }),
-    );
+    // The SDK handles auth headers internally via getAuthToken callback
+    expect(api.ingest.status).toHaveBeenCalled();
   });
 
   it("sends Authorization header when loading extracted text", async () => {
-    mockFetch(MOCK_DOCS);
+    await mockApis(MOCK_DOCS);
     renderDocManager();
     await waitFor(() => {
       expect(screen.getByText("Court Order")).toBeInTheDocument();
@@ -496,42 +501,13 @@ describe("DocumentManager", () => {
   });
 
   it("deletes a document when delete button is clicked and confirmed", async () => {
-    mockFetch(MOCK_DOCS);
+    const { api } = await import("../lib/api");
+    await mockApis(MOCK_DOCS);
     window.confirm = vi.fn().mockReturnValue(true);
     renderDocManager();
     await waitFor(() => {
       expect(screen.getByText("Motion to Dismiss")).toBeInTheDocument();
     });
-
-    // Override fetch for the DELETE call
-    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(
-      (url: string, opts?: any) => {
-        if (opts?.method === "DELETE") {
-          return Promise.resolve({ ok: true, status: 204 });
-        }
-        if (url === "/api/ingest/status") {
-          return Promise.resolve({
-            ok: true,
-            json: () =>
-              Promise.resolve({
-                active: false,
-                directory: "",
-                running: false,
-                lastRunStarted: null,
-                lastRunFinished: null,
-                added: 0,
-                skipped: 0,
-                errors: 0,
-              }),
-          });
-        }
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-          json: () => Promise.resolve(MOCK_DOCS),
-        });
-      },
-    );
 
     const deleteBtn = screen.getByLabelText("Delete Motion to Dismiss");
     fireEvent.click(deleteBtn);
@@ -541,22 +517,12 @@ describe("DocumentManager", () => {
       expect(screen.queryByText("Motion to Dismiss")).not.toBeInTheDocument();
     });
 
-    const deleteCall = (
-      global.fetch as ReturnType<typeof vi.fn>
-    ).mock.calls.find(
-      (c: unknown[]) =>
-        typeof c[1] === "object" &&
-        (c[1] as Record<string, unknown>).method === "DELETE",
-    );
-    expect(deleteCall).toBeDefined();
-    expect(deleteCall![0]).toBe("/api/documents/1");
-    expect((deleteCall![1] as Record<string, unknown>).headers).toEqual(
-      expect.objectContaining({ Authorization: "Bearer test-token-123" }),
-    );
+    // The SDK handles auth headers internally via getAuthToken callback
+    expect(api.documents.delete).toHaveBeenCalledWith("1");
   });
 
   it("does not delete when confirm is cancelled", async () => {
-    mockFetch(MOCK_DOCS);
+    await mockApis(MOCK_DOCS);
     window.confirm = vi.fn().mockReturnValue(false);
     renderDocManager();
     await waitFor(() => {

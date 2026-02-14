@@ -931,14 +931,57 @@ export const researchAgentApi = {
     reply: string;
     toolResults: Array<{ toolName: string; results: unknown }>;
   }> => {
-    const res = await fetch(`${API_BASE}/research/agent/chat`, {
+    const res = await unwrap(
+      client.POST("/research/agent/chat", { body: { messages } }),
+    );
+    if (!res) throw new Error("Research agent returned no response");
+    return res as {
+      reply: string;
+      toolResults: Array<{ toolName: string; results: unknown }>;
+    };
+  },
+};
+
+export const chatApi = {
+  chat: async (
+    messages: Array<{ role: string; content: string }>,
+  ): Promise<{ reply: string }> => {
+    const res = await unwrap(client.POST("/chat", { body: { messages } }));
+    if (!res) throw new Error("Chat API returned no response");
+    return res as { reply: string };
+  },
+};
+
+export const documentsApi = {
+  list: async (): Promise<DocumentEntry[]> => {
+    const res = await unwrap(client.GET("/documents"));
+    return (res as DocumentEntry[]) || [];
+  },
+  delete: (id: string) =>
+    unwrap(client.DELETE("/documents/{id}", { params: { path: { id } } })),
+  upload: async (formData: FormData): Promise<DocumentEntry> => {
+    const token = await getAuthToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    const res = await fetch(`${API_BASE}/documents/upload`, {
       method: "POST",
-      headers: await getAuthHeaders(),
-      body: JSON.stringify({ messages }),
+      headers,
+      body: formData,
     });
-    if (!res.ok) throw new Error(`Research agent error: ${res.status}`);
+    if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
     return res.json();
   },
+};
+
+export const ingestApi = {
+  status: async () => {
+    const res = await unwrap(client.GET("/ingest/status"));
+    return res;
+  },
+  scan: (directory: string) =>
+    unwrap(client.POST("/ingest/scan", { body: { directory } })),
 };
 
 export const api = {
@@ -961,4 +1004,7 @@ export const api = {
   estatePlans: estatePlansApi,
   researchAgent: researchAgentApi,
   fax: faxApi,
+  chat: chatApi,
+  documents: documentsApi,
+  ingest: ingestApi,
 };

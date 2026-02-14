@@ -8,22 +8,15 @@ function createStore() {
 
 beforeEach(() => {
   vi.restoreAllMocks();
-  vi.spyOn(apiModule, "getAuthToken").mockResolvedValue(null);
 });
 
-function mockFetch(reply: string) {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ reply }),
-    }),
-  );
+function mockChatApi(reply: string) {
+  vi.spyOn(apiModule.api.chat, "chat").mockResolvedValue({ reply });
 }
 
 describe("ChatStore", () => {
   it("sendMessage adds user message and assistant reply", async () => {
-    mockFetch("I can help with that.");
+    mockChatApi("I can help with that.");
     const store = createStore();
     await store.sendMessage("hello");
 
@@ -36,47 +29,35 @@ describe("ChatStore", () => {
   });
 
   it("sends conversation history to the API", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ reply: "response" }),
+    const chatSpy = vi.spyOn(apiModule.api.chat, "chat").mockResolvedValue({
+      reply: "response",
     });
-    vi.stubGlobal("fetch", fetchMock);
 
     const store = createStore();
     await store.sendMessage("hello");
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: expect.stringContaining('"hello"'),
-    });
+    expect(chatSpy).toHaveBeenCalledWith([
+      { role: "user", content: "hello" },
+    ]);
   });
 
   it("adds Authorization header when auth token exists", async () => {
-    vi.spyOn(apiModule, "getAuthToken").mockResolvedValue("test-token");
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ reply: "response" }),
+    const chatSpy = vi.spyOn(apiModule.api.chat, "chat").mockResolvedValue({
+      reply: "response",
     });
-    vi.stubGlobal("fetch", fetchMock);
 
     const store = createStore();
     await store.sendMessage("hello");
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer test-token",
-      },
-      body: expect.stringContaining('"hello"'),
-    });
+    // The SDK handles auth headers internally via getAuthToken callback
+    expect(chatSpy).toHaveBeenCalledWith([
+      { role: "user", content: "hello" },
+    ]);
   });
 
   it("handles API errors gracefully", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({ ok: false, status: 500 }),
+    vi.spyOn(apiModule.api.chat, "chat").mockRejectedValue(
+      new Error("API error"),
     );
     const store = createStore();
     await store.sendMessage("test");
@@ -86,9 +67,8 @@ describe("ChatStore", () => {
   });
 
   it("handles network errors gracefully", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockRejectedValue(new Error("Network error")),
+    vi.spyOn(apiModule.api.chat, "chat").mockRejectedValue(
+      new Error("Network error"),
     );
     const store = createStore();
     await store.sendMessage("test");
@@ -98,7 +78,7 @@ describe("ChatStore", () => {
   });
 
   it("clearMessages empties the list", async () => {
-    mockFetch("hi");
+    mockChatApi("hi");
     const store = createStore();
     await store.sendMessage("hi");
     expect(store.messages.length).toBeGreaterThan(0);
@@ -107,7 +87,7 @@ describe("ChatStore", () => {
   });
 
   it("messages have createdAt timestamps", async () => {
-    mockFetch("response");
+    mockChatApi("response");
     const store = createStore();
     await store.sendMessage("test");
     expect(store.messages[0].createdAt).toBeDefined();

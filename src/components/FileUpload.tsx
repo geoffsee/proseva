@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback } from "react";
 import { Box, VStack, HStack, Text, Button } from "@chakra-ui/react";
 import { LuUpload, LuX, LuFile } from "react-icons/lu";
-import { getAuthToken, API_BASE } from "../lib/api";
+import { api } from "../lib/api";
 
 const DEFAULT_CATEGORIES = [
   "Motions",
@@ -95,19 +95,7 @@ export default function FileUpload({
     formData.append("category", category);
 
     try {
-      const token = await getAuthToken();
-      const headers: HeadersInit = token
-        ? { Authorization: `Bearer ${token}` }
-        : {};
-      const res = await fetch(`${API_BASE}/documents/upload`, {
-        method: "POST",
-        headers,
-        body: formData,
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || `Upload failed: ${res.status}`);
-      }
+      await api.documents.upload(formData);
       setFiles([]);
       onUploadComplete?.();
     } catch (e: unknown) {

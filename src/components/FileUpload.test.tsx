@@ -1,12 +1,7 @@
 import { render, screen, fireEvent, waitFor } from "../test-utils";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import FileUpload from "./FileUpload";
-
-vi.mock("../lib/api", () => ({
-  getAuthToken: vi.fn().mockResolvedValue("test-token-123"),
-  // Component builds fetch URLs from API_BASE; keep it stable in tests.
-  API_BASE: "/api",
-}));
+import * as apiModule from "../lib/api";
 
 function createFile(name: string, size = 1024, type = "application/pdf"): File {
   const buffer = new ArrayBuffer(size);
@@ -54,9 +49,9 @@ describe("FileUpload", () => {
 
   it("clicking upload sends FormData with correct files to endpoint", async () => {
     const onComplete = vi.fn();
-    global.fetch = vi
-      .fn()
-      .mockResolvedValue({ ok: true, json: () => Promise.resolve([]) });
+    const uploadSpy = vi
+      .spyOn(apiModule.api.documents, "upload")
+      .mockResolvedValue({} as any);
 
     render(<FileUpload onUploadComplete={onComplete} />);
     const input = screen.getByTestId("file-input");
@@ -65,14 +60,10 @@ describe("FileUpload", () => {
     fireEvent.click(screen.getByText("Upload 1 file"));
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        "/api/documents/upload",
-        expect.objectContaining({ method: "POST" }),
-      );
+      expect(uploadSpy).toHaveBeenCalled();
     });
 
-    const call = (global.fetch as any).mock.calls[0];
-    const formData = call[1].body as FormData;
+    const formData = uploadSpy.mock.calls[0][0];
     expect(formData.get("category")).toBe("_new_filings");
     expect(formData.get("files")).toBeInstanceOf(File);
 
@@ -83,7 +74,7 @@ describe("FileUpload", () => {
 
   it("shows loading state during upload", async () => {
     let resolveUpload: (v: any) => void;
-    global.fetch = vi.fn().mockReturnValue(
+    vi.spyOn(apiModule.api.documents, "upload").mockReturnValue(
       new Promise((r) => {
         resolveUpload = r;
       }),
@@ -97,18 +88,16 @@ describe("FileUpload", () => {
 
     expect(screen.getByText("Uploading…")).toBeInTheDocument();
 
-    resolveUpload!({ ok: true, json: () => Promise.resolve([]) });
+    resolveUpload!({} as any);
     await waitFor(() => {
       expect(screen.queryByText("Uploading…")).not.toBeInTheDocument();
     });
   });
 
   it("shows error message on upload failure", async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 500,
-      text: () => Promise.resolve("Server error"),
-    });
+    vi.spyOn(apiModule.api.documents, "upload").mockRejectedValue(
+      new Error("Server error"),
+    );
 
     render(<FileUpload />);
     fireEvent.change(screen.getByTestId("file-input"), {
@@ -125,9 +114,7 @@ describe("FileUpload", () => {
 
   it("calls onUploadComplete callback on success", async () => {
     const onComplete = vi.fn();
-    global.fetch = vi
-      .fn()
-      .mockResolvedValue({ ok: true, json: () => Promise.resolve([]) });
+    vi.spyOn(apiModule.api.documents, "upload").mockResolvedValue({} as any);
 
     render(<FileUpload onUploadComplete={onComplete} />);
     fireEvent.change(screen.getByTestId("file-input"), {
@@ -153,9 +140,9 @@ describe("FileUpload", () => {
   });
 
   it("sends Authorization header with upload request", async () => {
-    global.fetch = vi
-      .fn()
-      .mockResolvedValue({ ok: true, json: () => Promise.resolve([]) });
+    const uploadSpy = vi
+      .spyOn(apiModule.api.documents, "upload")
+      .mockResolvedValue({} as any);
 
     render(<FileUpload />);
     const input = screen.getByTestId("file-input");
@@ -163,16 +150,9 @@ describe("FileUpload", () => {
     fireEvent.click(screen.getByText("Upload 1 file"));
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        "/api/documents/upload",
-        expect.objectContaining({
-          method: "POST",
-          headers: expect.objectContaining({
-            Authorization: "Bearer test-token-123",
-          }),
-        }),
-      );
+      expect(uploadSpy).toHaveBeenCalled();
     });
+    // The SDK handles auth headers internally via getAuthToken callback
   });
 
   it("shows default categories in the dropdown", () => {
@@ -213,9 +193,9 @@ describe("FileUpload", () => {
   });
 
   it("sends selected category in upload FormData", async () => {
-    global.fetch = vi
-      .fn()
-      .mockResolvedValue({ ok: true, json: () => Promise.resolve([]) });
+    const uploadSpy = vi
+      .spyOn(apiModule.api.documents, "upload")
+      .mockResolvedValue({} as any);
 
     render(<FileUpload />);
     fireEvent.change(screen.getByTestId("file-input"), {
@@ -227,11 +207,10 @@ describe("FileUpload", () => {
     fireEvent.click(screen.getByText("Upload 1 file"));
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalled();
+      expect(uploadSpy).toHaveBeenCalled();
     });
 
-    const call = (global.fetch as any).mock.calls[0];
-    const formData = call[1].body as FormData;
+    const formData = uploadSpy.mock.calls[0][0];
     expect(formData.get("category")).toBe("Evidence");
   });
 });

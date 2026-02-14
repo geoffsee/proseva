@@ -13,7 +13,7 @@ import {
 import { LuChevronDown, LuChevronRight, LuTrash2 } from "react-icons/lu";
 import { StatCard } from "../components/shared/StatCard";
 import FileUpload from "../components/FileUpload";
-import { getAuthToken, API_BASE } from "../lib/api";
+import { api } from "../lib/api";
 import { useStore } from "../store/StoreContext";
 
 interface DocumentEntry {
@@ -53,18 +53,14 @@ export default function DocumentManager() {
 
   const fetchDocs = useCallback(async () => {
     setLoading(true);
-    const token = await getAuthToken();
-    const headers: HeadersInit = token
-      ? { Authorization: `Bearer ${token}` }
-      : {};
-    fetch(`${API_BASE}/documents`, { headers })
-      .then((r) => {
-        if (!r.ok) throw new Error(`Failed to load: ${r.status}`);
-        return r.json();
-      })
-      .then((data: DocumentEntry[]) => setDocs(data))
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
+    try {
+      const data = await api.documents.list();
+      setDocs(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load documents");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -73,28 +69,24 @@ export default function DocumentManager() {
 
   useEffect(() => {
     const loadStatus = async () => {
-      const token = await getAuthToken();
-      const headers: HeadersInit = token
-        ? { Authorization: `Bearer ${token}` }
-        : {};
-      return fetch(`${API_BASE}/ingest/status`, { headers })
-        .then((r) => (r.ok ? r.json() : Promise.resolve(null)))
-        .then((data) => setIngestStatus(data))
-        .catch(() =>
-          setIngestStatus(
-            (prev) =>
-              prev ?? {
-                active: false,
-                directory: "",
-                running: false,
-                lastRunStarted: null,
-                lastRunFinished: null,
-                added: 0,
-                skipped: 0,
-                errors: 0,
-              },
-          ),
+      try {
+        const data = await api.ingest.status();
+        setIngestStatus(data as typeof ingestStatus);
+      } catch {
+        setIngestStatus(
+          (prev) =>
+            prev ?? {
+              active: false,
+              directory: "",
+              running: false,
+              lastRunStarted: null,
+              lastRunFinished: null,
+              added: 0,
+              skipped: 0,
+              errors: 0,
+            },
         );
+      }
     };
     loadStatus();
     const timer = setInterval(loadStatus, 10000);
@@ -130,15 +122,7 @@ export default function DocumentManager() {
     if (!confirm(`Delete "${doc.title || doc.filename}"?`)) return;
     setDeleteError("");
     try {
-      const token = await getAuthToken();
-      const headers: HeadersInit = token
-        ? { Authorization: `Bearer ${token}` }
-        : {};
-      const res = await fetch(`${API_BASE}/documents/${doc.id}`, {
-        method: "DELETE",
-        headers,
-      });
-      if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
+      await api.documents.delete(doc.id);
       setDocs((prev) => prev.filter((d) => d.id !== doc.id));
     } catch (e) {
       setDeleteError(e instanceof Error ? e.message : "Delete failed");

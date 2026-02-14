@@ -53,21 +53,8 @@ export const ResearchStore = types
           .filter((m) => m.role === "user" || m.role === "assistant")
           .map((m) => ({ role: m.role, content: m.text }));
 
-        const token: string | null = yield apiModule.getAuthToken();
-        const headers: Record<string, string> = {
-          "Content-Type": "application/json",
-        };
-        if (token) headers.Authorization = `Bearer ${token}`;
-
-        const res: Response = yield fetch(`${apiModule.API_BASE}/research/agent/chat`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ messages: apiMessages }),
-        });
-
-        if (!res.ok) throw new Error(`Research API error: ${res.status}`);
         const data: { reply: string; toolResults: ToolResultData[] } =
-          yield res.json();
+          yield apiModule.api.researchAgent.chat(apiMessages);
         replyText = data.reply;
         toolResults = data.toolResults || [];
       } catch {

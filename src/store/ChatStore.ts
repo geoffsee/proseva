@@ -25,20 +25,8 @@ export const ChatStore = types
         const apiMessages = self.messages
           .filter((m) => m.role === "user" || m.role === "assistant")
           .map((m) => ({ role: m.role, content: m.text }));
-        const token: string | null = yield apiModule.getAuthToken();
-        const headers: Record<string, string> = {
-          "Content-Type": "application/json",
-        };
-        if (token) headers.Authorization = `Bearer ${token}`;
 
-        const res: Response = yield fetch(`${apiModule.API_BASE}/chat`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ messages: apiMessages }),
-        });
-
-        if (!res.ok) throw new Error(`Chat API error: ${res.status}`);
-        const data: { reply: string } = yield res.json();
+        const data: { reply: string } = yield apiModule.api.chat.chat(apiMessages);
         replyText = data.reply;
       } catch {
         replyText =

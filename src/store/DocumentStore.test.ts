@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { DocumentStore } from "./DocumentStore";
+import * as apiModule from "../lib/api";
 
 const MOCK_DOCS = [
   {
@@ -39,10 +40,7 @@ describe("DocumentStore", () => {
   });
 
   it("loadDocuments fetches and populates documents", async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve(MOCK_DOCS),
-    });
+    vi.spyOn(apiModule.api.documents, "list").mockResolvedValue(MOCK_DOCS);
 
     const store = DocumentStore.create({ documents: [] });
     await store.loadDocuments();
@@ -53,7 +51,9 @@ describe("DocumentStore", () => {
   });
 
   it("loadDocuments handles fetch failure gracefully", async () => {
-    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500 });
+    vi.spyOn(apiModule.api.documents, "list").mockRejectedValue(
+      new Error("Failed to load"),
+    );
 
     const store = DocumentStore.create({ documents: [] });
     await store.loadDocuments();

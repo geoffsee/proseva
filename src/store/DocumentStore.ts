@@ -1,4 +1,5 @@
 import { types, flow } from "mobx-state-tree";
+import * as apiModule from "../lib/api";
 
 const DocumentEntryModel = types.model("DocumentEntry", {
   id: types.identifier,
@@ -54,9 +55,7 @@ export const DocumentStore = types
   .actions((self) => ({
     loadDocuments: flow(function* () {
       try {
-        const res: Response = yield fetch("/index-documents.json");
-        if (!res.ok) return;
-        const data = (yield res.json()) as DocumentEntry[];
+        const data: DocumentEntry[] = yield apiModule.api.documents.list();
         // @ts-expect-error - MST array replace type mismatch with plain array
         self.documents.replace(data);
       } catch {
