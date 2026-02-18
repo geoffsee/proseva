@@ -3,7 +3,11 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { DatabaseSnapshot } from "./encryption";
-import { DuckDbAdapter } from "./persistence";
+import {
+  DuckDbAdapter,
+  type StorageEncryptionFailureReason,
+} from "./persistence";
+import type { DatabaseEncryptionKeyProvider } from "./db-key-provider";
 
 const tempDirs: string[] = [];
 
@@ -20,6 +24,12 @@ afterEach(() => {
 });
 
 describe("DuckDbAdapter", () => {
+  const createProvider = (
+    key: string | undefined,
+  ): DatabaseEncryptionKeyProvider => ({
+    getEncryptionKey: () => key,
+  });
+
   it("round-trips snapshot data", async () => {
     const dir = createTempDir();
     const dbPath = join(dir, "db.duckdb");
@@ -57,5 +67,50 @@ describe("DuckDbAdapter", () => {
 
     rmSync(join(dir, "db.json"));
     expect(await adapter.load()).toEqual(legacySnapshot);
+  });
+
+  it("opens encrypted duckdb files with the configured key", async () => {
+    const dir = createTempDir();
+    const dbPath = join(dir, "db.duckdb");
+    const key = "abc123abc123abc123abc123abc12312";
+    const writer = new DuckDbAdapter(dbPath, createProvider(key));
+    const snapshot = {
+      cases: { "enc-1": { id: "enc-1", name: "Encrypted Case" } },
+    } as DatabaseSnapshot;
+    await writer.save(snapshot);
+
+    const reader = new DuckDbAdapter(dbPath, createProvider(key));
+    expect(await reader.load()).toEqual(snapshot);
+  });
+
+  it("throws missing_key when opening encrypted files without a key", async () => {
+    const dir = createTempDir();
+    const dbPath = join(dir, "db.duckdb");
+    const key = "abc123abc123abc123abc123abc12312";
+    const writer = new DuckDbAdapter(dbPath, createProvider(key));
+    await writer.save({ cases: { "1": { id: "1" } } } as DatabaseSnapshot);
+
+    const reader = new DuckDbAdapter(dbPath, createProvider(undefined));
+    await expect(reader.load()).rejects.toMatchObject({
+      reason: "missing_key" satisfies StorageEncryptionFailureReason,
+    });
+  });
+
+  it("throws invalid_key when opening encrypted files with the wrong key", async () => {
+    const dir = createTempDir();
+    const dbPath = join(dir, "db.duckdb");
+    const writer = new DuckDbAdapter(
+      dbPath,
+      createProvider("abc123abc123abc123abc123abc12312"),
+    );
+    await writer.save({ cases: { "1": { id: "1" } } } as DatabaseSnapshot);
+
+    const reader = new DuckDbAdapter(
+      dbPath,
+      createProvider("ffffffffffffffffffffffffffffffff"),
+    );
+    await expect(reader.load()).rejects.toMatchObject({
+      reason: "invalid_key" satisfies StorageEncryptionFailureReason,
+    });
   });
 });

@@ -3,10 +3,11 @@ import {
   Database,
   clearDbEncryptionPassphrase,
   setDbEncryptionPassphrase,
+  type PersistenceAdapter,
   type Case,
 } from "./db";
-import type { DatabaseSnapshot } from "./encryption";
-import { InMemoryAdapter } from "./persistence";
+import { encryptSnapshot, type DatabaseSnapshot } from "./encryption";
+import { InMemoryAdapter, StorageEncryptionError } from "./persistence";
 
 describe("Database", () => {
   let adapter: InMemoryAdapter;
@@ -60,6 +61,22 @@ describe("Database", () => {
     expect(db2.cases.get("1")).toEqual({ id: "1", name: "Test" });
   });
 
+  it("starts in locked mode when storage encryption key is missing", async () => {
+    const lockedAdapter: PersistenceAdapter = {
+      async load() {
+        throw new StorageEncryptionError(
+          "missing_key",
+          "Database is encrypted but no encryption key is configured.",
+        );
+      },
+      async save() {},
+    };
+
+    const lockedDb = await Database.create(lockedAdapter);
+    expect(lockedDb.isLocked()).toBe(true);
+    expect(lockedDb.securityStatus().lockReason).toBe("missing_key");
+  });
+
   describe("persist", () => {
     it("debounces saves to the adapter", async () => {
       const saveSpy = vi.spyOn(adapter, "save");
@@ -71,7 +88,7 @@ describe("Database", () => {
       // Not saved yet (debounced)
       expect(saveSpy).not.toHaveBeenCalled();
 
-      // Wait for debounce + async encrypt
+      // Wait for debounce timer
       await new Promise((r) => setTimeout(r, 250));
       expect(saveSpy).toHaveBeenCalledTimes(1);
     });
@@ -85,7 +102,6 @@ describe("Database", () => {
       await database.flush(); // force immediate save
 
       expect(saveSpy).toHaveBeenCalledTimes(1);
-      // Data is now encrypted with ML-KEM, so we can't inspect it directly
     });
 
     it("saves even without a pending persist", async () => {
@@ -95,71 +111,34 @@ describe("Database", () => {
     });
   });
 
-  describe("ML-KEM-1024 encryption", () => {
-    it("encrypts persisted payloads with ML-KEM-1024", async () => {
-      database.cases.set("1", { id: "1", name: "Encrypted" } as Case);
+  describe("native DuckDB migration behavior", () => {
+    it("persists plain snapshot payloads (no app-layer envelope)", async () => {
+      database.cases.set("1", { id: "1", name: "Plain" } as Case);
       await database.flush();
 
       const raw = await adapter.load();
-      expect(raw).toHaveProperty("__proseva_encrypted_v3");
-      expect(raw.__proseva_encrypted_v3).toHaveProperty("kemCiphertext");
-      expect(raw.__proseva_encrypted_v3).toHaveProperty(
-        "algorithm",
-        "ml-kem-1024-aes-256-gcm",
-      );
-      expect(raw.cases).toBeUndefined();
+      expect(raw).toHaveProperty("cases");
+      expect(raw.cases).toHaveProperty("1");
+      expect(raw).not.toHaveProperty("__proseva_encrypted_v3");
     });
 
-    it("decrypts ML-KEM-1024 encrypted data", async () => {
-      database.cases.set("1", { id: "1", name: "ML-KEM Test" } as Case);
-      await database.flush();
+    it("loads and migrates legacy ML-KEM envelope snapshots", async () => {
+      const legacySnapshot = await encryptSnapshot({
+        cases: { "1": { id: "1", name: "Legacy" } },
+      } as DatabaseSnapshot);
+      await adapter.save(legacySnapshot);
 
       const db2 = await Database.create(adapter);
-      expect(db2.cases.get("1")).toEqual({ id: "1", name: "ML-KEM Test" });
+      expect(db2.cases.get("1")).toEqual({ id: "1", name: "Legacy" });
+
+      const migrated = await adapter.load();
+      expect(migrated).not.toHaveProperty("__proseva_encrypted_v3");
+      expect(migrated.cases).toHaveProperty("1");
     });
 
-    it("round-trips data with ML-KEM-1024 encryption", async () => {
-      const testData = {
-        id: "test-123",
-        name: "Complex Test Case",
-        caseNumber: "2024-CV-001",
-        court: "Circuit Court",
-        caseType: "civil",
-        status: "active" as const,
-        parties: [
-          {
-            id: "p1",
-            name: "John Doe",
-            role: "Plaintiff",
-            contact: "john@example.com",
-          },
-        ],
-        filings: [],
-        notes: "Test notes with special characters: éñ™£",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      database.cases.set(testData.id, testData as Case);
-      await database.flush();
-
-      const db2 = await Database.create(adapter);
-      expect(db2.cases.get(testData.id)).toEqual(testData);
-    });
-
-    it("handles keypair passphrase encryption", async () => {
-      // Set a passphrase - this encrypts the keypair store
+    it("reports keyLoaded when an encryption key is configured", async () => {
       await setDbEncryptionPassphrase("test-passphrase");
-      database.cases.set("1", { id: "1", name: "Protected" } as Case);
-      await database.flush();
-
-      // Data should still be encrypted with ML-KEM
-      const raw = await adapter.load();
-      expect(raw).toHaveProperty("__proseva_encrypted_v3");
-
-      // Can still decrypt with the same passphrase
-      const db2 = await Database.create(adapter);
-      expect(db2.cases.get("1")).toEqual({ id: "1", name: "Protected" });
+      expect(database.securityStatus().keyLoaded).toBe(true);
     });
   });
 });

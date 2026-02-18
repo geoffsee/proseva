@@ -3,19 +3,21 @@ import {
   ElectronIdbRepoAdapter,
   DuckDbAdapter,
   InMemoryAdapter,
+  StorageEncryptionError,
 } from "./persistence";
 import {
   type DatabaseSnapshot,
   type EncryptionFailureReason,
   DatabaseEncryptionError,
-  normalizePassphrase,
-  setPassphrase as setEncryptionPassphrase,
-  clearPassphrase as clearEncryptionPassphrase,
-  hasPassphrase as hasEncryptionPassphrase,
   isEncryptedSnapshot,
   decryptSnapshot,
-  encryptSnapshot,
 } from "./encryption";
+import {
+  normalizeEncryptionKey,
+  setEncryptionKey as setEncryptionPassphrase,
+  clearEncryptionKey as clearEncryptionPassphrase,
+  hasEncryptionKey as hasEncryptionPassphrase,
+} from "./db-key-provider";
 export type { PersistenceAdapter };
 
 export type Case = {
@@ -466,12 +468,26 @@ export class Database {
 
   static async create(adapter: PersistenceAdapter): Promise<Database> {
     const db = new Database(adapter);
-    const raw = await adapter.load();
-    db.encryptedAtRest = isEncryptedSnapshot(raw);
+    let raw: DatabaseSnapshot;
+    try {
+      raw = await adapter.load();
+    } catch (error) {
+      if (error instanceof StorageEncryptionError) {
+        db.locked = true;
+        db.lockReason = error.reason;
+        db.lockedSnapshot = null;
+        db.encryptedAtRest = true;
+        return db;
+      }
+      throw error;
+    }
+
+    db.encryptedAtRest = hasEncryptionPassphrase();
+    const legacyEncryptedSnapshot = isEncryptedSnapshot(raw);
 
     let data: DatabaseSnapshot;
     try {
-      data = await decryptSnapshot(raw);
+      data = legacyEncryptedSnapshot ? await decryptSnapshot(raw) : raw;
     } catch (error) {
       if (error instanceof DatabaseEncryptionError) {
         db.locked = true;
@@ -483,6 +499,14 @@ export class Database {
     }
 
     assignMaps(db, toMaps(data));
+
+    if (legacyEncryptedSnapshot) {
+      // One-time migration from legacy app-layer envelope to plain snapshot.
+      await adapter.save(data).catch((err) => {
+        console.error("Failed to migrate legacy encrypted snapshot:", err);
+      });
+    }
+
     return db;
   }
 
@@ -505,37 +529,42 @@ export class Database {
   }
 
   async applyRecoveryKey(recoveryKey: string): Promise<void> {
-    const normalized = normalizePassphrase(recoveryKey);
+    const normalized = normalizeEncryptionKey(recoveryKey);
     if (!normalized) throw new Error("Recovery key is required.");
 
     if (this.locked) {
-      if (!this.lockedSnapshot) {
-        throw new Error("Database is locked and unavailable.");
-      }
-
       await setEncryptionPassphrase(normalized);
-
-      let decrypted: DatabaseSnapshot;
       try {
-        decrypted = await decryptSnapshot(this.lockedSnapshot);
+        const raw = this.lockedSnapshot ?? (await this.adapter.load());
+        const legacyEncryptedSnapshot = isEncryptedSnapshot(raw);
+        const decrypted = legacyEncryptedSnapshot
+          ? await decryptSnapshot(raw)
+          : raw;
+        assignMaps(this, toMaps(decrypted));
+
+        if (legacyEncryptedSnapshot) {
+          await this.adapter.save(decrypted);
+        }
       } catch (error) {
         clearEncryptionPassphrase();
-        if (error instanceof DatabaseEncryptionError) {
+        if (
+          error instanceof DatabaseEncryptionError ||
+          error instanceof StorageEncryptionError
+        ) {
           throw new Error("Invalid recovery key.");
         }
         throw error;
       }
 
-      assignMaps(this, toMaps(decrypted));
-
       this.locked = false;
       this.lockReason = null;
       this.lockedSnapshot = null;
-      this.encryptedAtRest = true;
+      this.encryptedAtRest = hasEncryptionPassphrase();
       return;
     }
 
     await setEncryptionPassphrase(normalized);
+    this.encryptedAtRest = hasEncryptionPassphrase();
   }
 
   /** Debounced write — coalesces rapid mutations into a single disk write. */
@@ -549,9 +578,8 @@ export class Database {
 
   private async persistAsync(): Promise<void> {
     try {
-      const toSave = await encryptSnapshot(fromMaps(this));
-      this.encryptedAtRest = isEncryptedSnapshot(toSave);
-      await this.adapter.save(toSave);
+      await this.adapter.save(fromMaps(this));
+      this.encryptedAtRest = hasEncryptionPassphrase();
     } catch (err) {
       console.error("Failed to persist database:", err);
     }
@@ -565,20 +593,20 @@ export class Database {
       clearTimeout(this.saveTimeout);
       this.saveTimeout = null;
     }
-    const toSave = await encryptSnapshot(fromMaps(this));
-    this.encryptedAtRest = isEncryptedSnapshot(toSave);
-    await this.adapter.save(toSave);
+    await this.adapter.save(fromMaps(this));
+    this.encryptedAtRest = hasEncryptionPassphrase();
   }
 }
 
 function createDefaultAdapter(): PersistenceAdapter {
-  const isElectron =
-    Boolean(process.versions.electron) || process.env.PROSEVA_DATA_DIR != null;
   try {
-    if (isElectron) return new ElectronIdbRepoAdapter();
     return new DuckDbAdapter();
   } catch {
-    return new InMemoryAdapter();
+    try {
+      return new ElectronIdbRepoAdapter();
+    } catch {
+      return new InMemoryAdapter();
+    }
   }
 }
 
@@ -596,9 +624,9 @@ export async function resetDb(adapter: PersistenceAdapter): Promise<void> {
   db = await Database.create(adapter);
 }
 
-// Re-export encryption utilities for backward compatibility
+// Re-export encryption key utilities for backward compatibility.
 export {
-  setPassphrase as setDbEncryptionPassphrase,
-  clearPassphrase as clearDbEncryptionPassphrase,
-  hasPassphrase as hasDbEncryptionPassphrase,
-} from "./encryption";
+  setEncryptionKey as setDbEncryptionPassphrase,
+  clearEncryptionKey as clearDbEncryptionPassphrase,
+  hasEncryptionKey as hasDbEncryptionPassphrase,
+} from "./db-key-provider";
