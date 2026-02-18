@@ -1,7 +1,7 @@
 import {
   type PersistenceAdapter,
   ElectronIdbRepoAdapter,
-  LocalFileAdapter,
+  DuckDbAdapter,
   InMemoryAdapter,
 } from "./persistence";
 import {
@@ -466,7 +466,7 @@ export class Database {
 
   static async create(adapter: PersistenceAdapter): Promise<Database> {
     const db = new Database(adapter);
-    const raw = adapter.load();
+    const raw = await adapter.load();
     db.encryptedAtRest = isEncryptedSnapshot(raw);
 
     let data: DatabaseSnapshot;
@@ -551,7 +551,7 @@ export class Database {
     try {
       const toSave = await encryptSnapshot(fromMaps(this));
       this.encryptedAtRest = isEncryptedSnapshot(toSave);
-      this.adapter.save(toSave);
+      await this.adapter.save(toSave);
     } catch (err) {
       console.error("Failed to persist database:", err);
     }
@@ -567,7 +567,7 @@ export class Database {
     }
     const toSave = await encryptSnapshot(fromMaps(this));
     this.encryptedAtRest = isEncryptedSnapshot(toSave);
-    this.adapter.save(toSave);
+    await this.adapter.save(toSave);
   }
 }
 
@@ -576,7 +576,7 @@ function createDefaultAdapter(): PersistenceAdapter {
     Boolean(process.versions.electron) || process.env.PROSEVA_DATA_DIR != null;
   try {
     if (isElectron) return new ElectronIdbRepoAdapter();
-    return new LocalFileAdapter();
+    return new DuckDbAdapter();
   } catch {
     return new InMemoryAdapter();
   }

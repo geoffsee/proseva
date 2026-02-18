@@ -3,34 +3,36 @@
 # Quick reset script - clears all data and starts fresh
 # Use this when you want a clean slate
 
-DB_FILE="server/data/db.json"
+DUCKDB_FILE="server/data/db.duckdb"
+LEGACY_JSON_FILE="server/data/db.json"
 BACKUP_DIR="server/data/backups"
 
 # Create backup directory if it doesn't exist
 mkdir -p "$BACKUP_DIR"
 
-# Backup current database if it exists
-if [ -f "$DB_FILE" ]; then
-    timestamp=$(date +"%Y%m%d_%H%M%S")
-    backup_file="$BACKUP_DIR/db_backup_$timestamp.json"
-    cp "$DB_FILE" "$backup_file"
-    echo "✓ Current database backed up to: $backup_file"
+timestamp=$(date +"%Y%m%d_%H%M%S")
+
+backup_and_remove() {
+    local source_file="$1"
+    local suffix="$2"
+    local backup_file="$BACKUP_DIR/db_backup_${timestamp}.${suffix}"
+    cp "$source_file" "$backup_file"
+    echo "✓ Database backed up to: $backup_file"
+    rm "$source_file"
+    echo "✓ Removed: $source_file"
+}
+
+if [ -f "$DUCKDB_FILE" ]; then
+    backup_and_remove "$DUCKDB_FILE" "duckdb"
 fi
 
-# Create fresh empty database
-cat > "$DB_FILE" << 'EOF'
-{
-  "cases": {},
-  "contacts": {},
-  "deadlines": {},
-  "finances": {},
-  "evidences": {}
-}
-EOF
+if [ -f "$LEGACY_JSON_FILE" ]; then
+    backup_and_remove "$LEGACY_JSON_FILE" "json"
+fi
 
 echo "✓ Database reset successfully!"
-echo "✓ All data cleared - ready for your own data"
+echo "✓ All data cleared - fresh database will be created on next startup"
 echo ""
 echo "Start the servers to begin using the app:"
-echo "  1. Backend:  cd server && bun run dev"
-echo "  2. Frontend: npm run dev"
+echo "  1. Backend:  bun run dev:server"
+echo "  2. Frontend: bun run dev:frontend"

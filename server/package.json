@@ -7,6 +7,7 @@
     "start": "bun run src/index.ts"
   },
   "dependencies": {
+    "@duckdb/node-api": "^1.4.4-r.1",
     "croner": "^9.0.0",
     "firebase-admin": "^13.0.2",
     "wasm-pqc-subtle": "^0.2.4",

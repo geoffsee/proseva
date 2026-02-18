@@ -47,7 +47,7 @@ describe("Database", () => {
   });
 
   it("loads existing data from adapter", async () => {
-    adapter.save({
+    await adapter.save({
       cases: { "1": { id: "1", name: "Test" } },
       contacts: {},
       deadlines: {},
@@ -100,7 +100,7 @@ describe("Database", () => {
       database.cases.set("1", { id: "1", name: "Encrypted" } as Case);
       await database.flush();
 
-      const raw = adapter.load();
+      const raw = await adapter.load();
       expect(raw).toHaveProperty("__proseva_encrypted_v3");
       expect(raw.__proseva_encrypted_v3).toHaveProperty("kemCiphertext");
       expect(raw.__proseva_encrypted_v3).toHaveProperty(
@@ -154,7 +154,7 @@ describe("Database", () => {
       await database.flush();
 
       // Data should still be encrypted with ML-KEM
-      const raw = adapter.load();
+      const raw = await adapter.load();
       expect(raw).toHaveProperty("__proseva_encrypted_v3");
 
       // Can still decrypt with the same passphrase
@@ -165,21 +165,21 @@ describe("Database", () => {
 });
 
 describe("InMemoryAdapter", () => {
-  it("round-trips data", () => {
+  it("round-trips data", async () => {
     const adapter = new InMemoryAdapter();
     const data = { cases: { "1": { id: "1" } } } as DatabaseSnapshot;
-    adapter.save(data);
-    expect(adapter.load()).toEqual(data);
+    await adapter.save(data);
+    expect(await adapter.load()).toEqual(data);
   });
 
-  it("returns cloned data (no shared references)", () => {
+  it("returns cloned data (no shared references)", async () => {
     const adapter = new InMemoryAdapter();
     const data = {
       cases: { "1": { id: "1", nested: { value: "x" } } },
     } as DatabaseSnapshot;
-    adapter.save(data);
+    await adapter.save(data);
 
-    const loaded = adapter.load();
+    const loaded = await adapter.load();
     expect(loaded).toEqual(data);
     expect(loaded).not.toBe(data);
 
