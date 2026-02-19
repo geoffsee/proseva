@@ -160,7 +160,7 @@ async function ocrTesseract(filePath: string): Promise<OcrResult> {
   const pages: OcrPage[] = [];
 
   for (let i = 0; i < pngs.length; i++) {
-    const input = binarize(pngs[i]);
+    const input = Buffer.from(binarize(pngs[i]));
     const {
       data: { text },
     } = await worker.recognize(input);

@@ -14,7 +14,7 @@ import {
 } from "./services/webhookService";
 import { getConfig } from "./config";
 import { createPersistenceManager } from "./research-persistence";
-import { asIttyRoute, json, openapiFormat } from "./openapi";
+import { json, openapiFormat } from "./openapi";
 
 // CourtListener API base URL (Free Law Project)
 const COURTLISTENER_API_BASE = "https://www.courtlistener.com/api/rest/v4";
@@ -540,7 +540,7 @@ function createResearchRouter() {
   // Rate limited: 20 requests per 15 minutes per IP
   router.get(
     "/research/opinions/search",
-    asIttyRoute("get", "/research/opinions/search", async (request: Request) => {
+    async (request: Request) => {
     const requestId =
       request.headers.get("X-Request-Id") || crypto.randomUUID();
     const url = new URL(request.url);
@@ -721,7 +721,7 @@ function createResearchRouter() {
         { "X-Request-Id": requestId },
       );
     }
-    }),
+    }
   );
 
   /**
