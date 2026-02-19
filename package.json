@@ -1,6 +1,7 @@
 {
   "name": "proseva",
   "private": true,
+  "workspaces": ["packages/*"],
   "version": "0.0.0-prerelease",
   "scripts": {
     "todo": "echo 'add workspace aliases here and expose core set of scripts to orchestrate the monorepo'"
