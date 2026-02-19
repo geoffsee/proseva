@@ -192,7 +192,7 @@ async function startMockOpenAI(): Promise<{ baseUrl: string; close: () => Promis
 
 async function startProsevaServer(): Promise<{ baseUrl: string; close: () => Promise<void> }> {
   const { router } = await import("../../server/src");
-  // Avoid LocalFileAdapter persistence writes (debounced) racing cleanup.
+  // Avoid persistence writes (debounced) racing cleanup.
   const [{ resetDb }, { InMemoryAdapter }] = await Promise.all([
     import("../../server/src/db.ts"),
     import("../../server/src/persistence.ts"),

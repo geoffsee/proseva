@@ -1,6 +1,5 @@
 import {
   type PersistenceAdapter,
-  ElectronIdbRepoAdapter,
   DuckDbAdapter,
   InMemoryAdapter,
   StorageEncryptionError,
@@ -602,11 +601,7 @@ function createDefaultAdapter(): PersistenceAdapter {
   try {
     return new DuckDbAdapter();
   } catch {
-    try {
-      return new ElectronIdbRepoAdapter();
-    } catch {
-      return new InMemoryAdapter();
-    }
+    return new InMemoryAdapter();
   }
 }
 

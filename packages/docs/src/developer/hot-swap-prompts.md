@@ -84,7 +84,7 @@ Some prompts support placeholders that are replaced with actual values at runtim
 
 The hot-swap prompts feature is implemented as follows:
 
-1. **Storage**: Custom prompts are stored in the `prompts` field of the `ServerConfig` in the database (`server/data/db.json`)
+1. **Storage**: Custom prompts are stored in the `prompts` field of the `ServerConfig` in the database
 
 2. **Retrieval**: Helper functions in `server/src/prompts.ts` retrieve prompts with automatic fallback to defaults:
    - `getChatSystemPrompt()`
@@ -156,7 +156,6 @@ Focus on practical, actionable advice for a self-represented litigant.
 ### Prompt Changes Not Taking Effect
 
 - Verify the configuration was saved: `curl http://localhost:3001/api/config`
-- Check the database file: `cat server/data/db.json | grep -A 10 prompts`
 - Ensure the feature is actually calling the prompt getter function (check the code)
 
 ### Unexpected AI Behavior

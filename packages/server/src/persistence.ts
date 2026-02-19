@@ -2,8 +2,6 @@ import { resolve } from "node:path";
 import {
   mkdirSync,
   existsSync,
-  readFileSync,
-  writeFileSync,
   renameSync,
 } from "node:fs";
 import { DuckDBInstance, type DuckDBConnection } from "@duckdb/node-api";
@@ -42,84 +40,6 @@ export class InMemoryAdapter implements PersistenceAdapter {
   }
 }
 
-export class LocalFileAdapter implements PersistenceAdapter {
-  private filePath: string;
-
-  constructor(
-    filePath = process.env.PROSEVA_DATA_DIR
-      ? resolve(process.env.PROSEVA_DATA_DIR, "db.json")
-      : resolve(import.meta.dir, "..", "data", "db.json"),
-  ) {
-    this.filePath = filePath;
-    const dir = resolve(filePath, "..");
-    if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-  }
-
-  async load(): Promise<Record<string, Record<string, unknown>>> {
-    if (!existsSync(this.filePath)) return {};
-    const raw = readFileSync(this.filePath, "utf-8");
-    return JSON.parse(raw);
-  }
-
-  async save(data: Record<string, Record<string, unknown>>): Promise<void> {
-    writeFileSync(this.filePath, JSON.stringify(data, null, 2));
-  }
-}
-
-type IndexedDbRepoLike = {
-  put: (
-    key: string,
-    value: unknown,
-    options?: { metadata?: Record<string, unknown> | null },
-  ) => Promise<void>;
-};
-
-/**
- * Electron adapter that keeps file persistence behavior but mirrors writes to IndexedDB via idb-repo.
- * The file remains the source of truth for sync startup compatibility with the current DB interface.
- */
-export class ElectronIdbRepoAdapter extends LocalFileAdapter {
-  private kvPromise: Promise<IndexedDbRepoLike | null>;
-
-  constructor(filePath?: string) {
-    super(filePath);
-    this.kvPromise = this.initIndexedDbRepo();
-  }
-
-  override async save(
-    data: Record<string, Record<string, unknown>>,
-  ): Promise<void> {
-    await super.save(data);
-    await this.mirrorToIndexedDb(data).catch(() => {
-      // File persistence is the source of truth; ignore IndexedDB mirror errors.
-    });
-  }
-
-  private async initIndexedDbRepo(): Promise<IndexedDbRepoLike | null> {
-    if (typeof indexedDB === "undefined") return null;
-    try {
-      const { createIndexedDbKV } = await import("idb-repo");
-      return createIndexedDbKV({
-        dbName: "proseva",
-        storeName: "server-db",
-        version: 1,
-      });
-    } catch {
-      return null;
-    }
-  }
-
-  private async mirrorToIndexedDb(
-    data: Record<string, Record<string, unknown>>,
-  ): Promise<void> {
-    const kv = await this.kvPromise;
-    if (!kv) return;
-    await kv.put("snapshot", data, {
-      metadata: { source: "server-local-file" },
-    });
-  }
-}
-
 type DuckDbSession = {
   instance: DuckDBInstance;
   connection: DuckDBConnection;
@@ -135,7 +55,6 @@ export class DuckDbAdapter implements PersistenceAdapter {
   private keyProvider: DatabaseEncryptionKeyProvider;
   private session: DuckDbSession | null = null;
   private writeQueue: Promise<void> = Promise.resolve();
-  private attemptedLegacyMigration = false;
 
   constructor(
     dbPath = process.env.PROSEVA_DATA_DIR
@@ -381,13 +300,7 @@ export class DuckDbAdapter implements PersistenceAdapter {
       }
     }
 
-    if (rows.length > 0 || this.attemptedLegacyMigration) {
-      return snapshot;
-    }
-
-    this.attemptedLegacyMigration = true;
-    const migrated = await this.migrateFromJson();
-    return Object.keys(migrated).length > 0 ? migrated : snapshot;
+    return snapshot;
   }
 
   async save(data: Record<string, Record<string, unknown>>): Promise<void> {
@@ -422,29 +335,8 @@ export class DuckDbAdapter implements PersistenceAdapter {
     }
   }
 
-  private async migrateFromJson(): Promise<Record<string, Record<string, unknown>>> {
-    const jsonPath = resolve(this.dbPath, "..", "db.json");
-    if (!existsSync(jsonPath)) return {};
-
-    try {
-      const raw = readFileSync(jsonPath, "utf-8");
-      const parsed = JSON.parse(raw) as unknown;
-      if (!isSnapshot(parsed)) return {};
-      await this.save(parsed);
-      return parsed;
-    } catch {
-      return {};
-    }
-  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function isSnapshot(
-  value: unknown,
-): value is Record<string, Record<string, unknown>> {
-  if (!isRecord(value)) return false;
-  return Object.values(value).every((entry) => isRecord(entry));
 }

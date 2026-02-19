@@ -56,19 +56,6 @@ function initDataDir(): void {
     fs.mkdirSync(dataDir, { recursive: true });
   }
 
-  // Copy seed db.json on first run if no db.json exists
-  const dbPath = path.join(dataDir, "db.json");
-  if (!fs.existsSync(dbPath)) {
-    const seedPath = getResourcePath("server", "data", "db.json");
-    if (fs.existsSync(seedPath)) {
-      fs.copyFileSync(seedPath, dbPath);
-      console.log("[electron] Copied seed db.json to", dbPath);
-    } else {
-      // Create minimal empty db
-      fs.writeFileSync(dbPath, JSON.stringify({}, null, 2));
-      console.log("[electron] Created empty db.json at", dbPath);
-    }
-  }
 }
 
 // --- Server management ---

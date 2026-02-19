@@ -112,7 +112,7 @@ proseva db stats
 
 ## Token Storage
 
-- **Server**: JWT secret is stored in the database (`server/data/db.json`) under `serverConfig.jwt_secret`
+- **Server**: JWT secret is stored in the database under `serverConfig.jwt_secret`
 - **CLI**: Token is stored in `~/.proseva/token.json` with expiration timestamp
 
 ## Security Notes
