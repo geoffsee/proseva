@@ -8,7 +8,7 @@ import { defineConfig, globalIgnores } from "eslint/config";
 export default defineConfig([
   globalIgnores(["dist", "playground"]),
   {
-    files: ["packages/**/**/*.{ts,tsx}"],
+    files: ["**/*.{ts,tsx}"],
     extends: [
       js.configs.recommended,
       tseslint.configs.recommended,
@@ -28,7 +28,7 @@ export default defineConfig([
       "e2e/**/*.{ts,tsx}",
     ],
     rules: {
-      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-explicit-any": "off",
     },
   },
 ]);

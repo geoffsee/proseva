@@ -2,8 +2,18 @@
   "name": "@proseva/electron",
   "version": "0.0.0-prerelease",
   "private": true,
+  "scripts": {
+    "build:electron": "tsc -p packages/electron/tsconfig.json && tsc -p electron/tsconfig.preload.json",
+    "build:all": "bun run build && bun run build:server && bun run build:electron",
+    "electron:dev": "rm -rf server/data && bun run build:electron && bun run build:server && concurrently -n vite,electron \"vite\" \"wait-on http://localhost:5173 && packages/electron .\"",
+    "electron:dist": "bun run build:all && electron-builder",
+    "electron:dist:local": "bun run build:all && electron-builder --mac --arm64"
+  },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@electron/notarize": "^3.1.1",
+    "electron": "^40.6.0",
+    "electron-builder": "^26.8.1"
   },
   "peerDependencies": {
     "typescript": "^5"

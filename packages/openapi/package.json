@@ -4,8 +4,14 @@
   "module": "src/index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "generate:api-types": "openapi-typescript server/openapi.json -o src/lib/api-types.d.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest"
+  },
+  "dependencies": {
+    "openapi-typescript": "^7.13.0"
   },
   "peerDependencies": {
     "typescript": "^5"

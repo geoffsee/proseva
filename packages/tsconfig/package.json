@@ -1,0 +1,16 @@
+{
+  "name": "@proseva/tsconfig",
+  "version": "0.0.0-prerelease",
+  "files": [
+    "index.ts",
+    "tsconfig.app.json",
+    "tsconfig.json",
+    "tsconfig.node.json"
+  ],
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

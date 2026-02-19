@@ -26,7 +26,7 @@
     "noUncheckedSideEffectImports": true,
 
     /* Local package aliases */
-    "baseUrl": ".",
+    "baseUrl": "../..",
     "paths": {
       "proseva-sdk": ["proseva-sdk/src/index.ts"],
       "proseva-sdk/*": ["proseva-sdk/src/*"]
