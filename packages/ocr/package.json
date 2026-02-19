@@ -1,0 +1,20 @@
+{
+  "name": "@proseva/ocr",
+  "version": "0.0.0-prerelease",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "exports": {
+    ".": "./ocr.ts"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.8.1",
+    "mupdf": "^1.27.0",
+    "onnxruntime-web": "^1.24.1",
+    "tesseract.js": "^7.0.0"
+  }
+}

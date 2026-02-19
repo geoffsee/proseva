@@ -77,3 +77,7 @@ server/data/backups/
 /dist-server/proseva-server
 /.output.txt
 package-lock.json
+**/apple-ocr
+/packages/ocr/tesseract/*.traineddata
+/packages/ocr/src/apple/apple-ocr
+**/eng.traineddata

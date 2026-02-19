@@ -1,0 +1,11 @@
+{
+  "name": "@proseva/integration",
+  "version": "0.0.0-prerelease",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

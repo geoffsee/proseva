@@ -1,0 +1,23 @@
+{
+  "name": "@proseva/server",
+  "version": "0.0.0-prerelease",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "@duckdb/node-api": "^1.4.4-r.1",
+    "croner": "^9.0.0",
+    "firebase-admin": "^13.0.2",
+    "wasm-pqc-subtle": "^0.2.4",
+    "idb-repo": "^1.3.0",
+    "itty-router": "^5.0.0",
+    "mst-graph": "^0.2.1",
+    "openai": "^6.17.0",
+    "twilio": "^5.4.3"
+  },
+  "devDependencies": {
+    "mupdf": "^1.27.0"
+  }
+}

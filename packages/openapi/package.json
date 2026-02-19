@@ -1,0 +1,13 @@
+{
+  "name": "@proseva/openapi",
+  "version": "0.0.0-prerelease",
+  "module": "src/index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
