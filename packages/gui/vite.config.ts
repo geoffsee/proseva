@@ -11,12 +11,12 @@ function resolveWasmPqcSubtlePath() {
   const candidates = [
     path.resolve(
       __dirname,
-      "node_modules/idb-repo/node_modules/wasm-pqc-subtle",
+      "../../node_modules/idb-repo/node_modules/wasm-pqc-subtle",
       WASM_PQC_SUBTLE_ASSET_NAME,
     ),
     path.resolve(
       __dirname,
-      "node_modules/wasm-pqc-subtle",
+      "../../node_modules/wasm-pqc-subtle",
       WASM_PQC_SUBTLE_ASSET_NAME,
     ),
   ];
@@ -38,9 +38,9 @@ export default defineConfig({
     alias: {
       "idb-repo": path.resolve(
         __dirname,
-        "node_modules/idb-repo/dist/index-browser.js",
+        "../../node_modules/idb-repo/dist/index-browser.js",
       ),
-      "proseva-sdk": path.resolve(__dirname, "proseva-sdk/src/index.ts"),
+      "@proseva/sdk": path.resolve(__dirname, "../sdk/src/index.ts"),
     },
   },
   server: {

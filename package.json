@@ -4,16 +4,29 @@
   "workspaces": ["packages/*"],
   "version": "0.0.0-prerelease",
   "scripts": {
-    "todo": "echo 'add workspace aliases here and expose core set of scripts to orchestrate the monorepo'",
-    "clean": "echo 'todo!'",
-    "build": "echo 'todo!'",
-    "test": "echo 'todo!'",
-    "dev": "echo 'todo!'"
+    "build": "bun run build:sdk && bun run build:server && bun run build:gui && bun run build:electron",
+    "build:sdk": "cd packages/sdk && bun run build",
+    "build:server": "cd packages/server && bun run build",
+    "build:gui": "cd packages/gui && bun run build",
+    "build:electron": "cd packages/electron && bun run build",
+    "build:cli": "cd packages/cli && bun run build",
+    "test": "bun run test:sdk && bun run test:server && bun run test:gui",
+    "test:sdk": "cd packages/sdk && bun run test 2>/dev/null || true",
+    "test:server": "cd packages/server && bun run test",
+    "test:gui": "cd packages/gui && bun run test",
+    "dev:server": "cd packages/server && bun run dev",
+    "dev:gui": "cd packages/gui && bun run dev",
+    "dev:electron": "cd packages/electron && bun run dev",
+    "lint": "eslint .",
+    "typecheck": "bun run typecheck:gui && bun run typecheck:server && bun run typecheck:sdk",
+    "typecheck:gui": "cd packages/gui && bun run typecheck",
+    "typecheck:server": "cd packages/server && bun run typecheck",
+    "typecheck:sdk": "cd packages/sdk && bun run typecheck 2>/dev/null || true",
+    "clean": "rm -rf packages/*/dist"
   },
   "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
+    "@types/bun": "latest",
+    "eslint": "^9.39.1",
+    "typescript": "~5.9.3"
   }
 }

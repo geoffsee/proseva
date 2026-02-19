@@ -1,4 +1,4 @@
-import { createProsevaClient, type components } from "proseva-sdk";
+import { createProsevaClient, type components } from "@proseva/sdk";
 import type { ReportConfig } from "../types";
 import {
   saveAuthToken as kvSaveAuthToken,

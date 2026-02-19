@@ -8,16 +8,16 @@ export default defineConfig({
     alias: {
       "idb-repo": resolve(
         import.meta.dirname ?? __dirname,
-        "node_modules/idb-repo/dist/index-browser.js",
+        "../../node_modules/idb-repo/dist/index-browser.js",
       ),
-      "proseva-sdk": resolve(
+      "@proseva/sdk": resolve(
         import.meta.dirname ?? __dirname,
-        "proseva-sdk/src/index.ts",
+        "../sdk/src/index.ts",
       ),
     },
   },
   test: {
-    exclude: ["node_modules/**", "e2e/**", "server/**"],
+    exclude: ["node_modules/**", "e2e/**"],
     environment: "happy-dom",
     globals: true,
     setupFiles: "./src/test-setup.ts",

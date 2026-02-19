@@ -1,4 +1,4 @@
-import courtsData from "../../../static/va-courts.json";
+import courtsData from "@proseva/datasets/courts/va-courts.json" assert { type: "json" };
 
 export interface CourtInfo {
   name: string;

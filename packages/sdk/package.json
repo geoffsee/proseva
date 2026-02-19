@@ -12,6 +12,7 @@
   "scripts": {
     "generate": "openapi-typescript ../openapi/src/openapi.json --output src/types.ts",
     "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "prepare": "npm run generate && npm run build"
   },
   "dependencies": {

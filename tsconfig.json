@@ -23,6 +23,34 @@
     // Some stricter flags (disabled by default)
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
-  }
+    "noPropertyAccessFromIndexSignature": false,
+
+    // Workspace paths
+    "baseUrl": ".",
+    "paths": {
+      "@proseva/cli": ["packages/cli/src/index.ts"],
+      "@proseva/datasets": ["packages/datasets/src/index.ts"],
+      "@proseva/electron": ["packages/electron/src/index.ts"],
+      "@proseva/experimental": ["packages/experimental/src/index.ts"],
+      "@proseva/gui": ["packages/gui/src/index.ts"],
+      "@proseva/integration": ["packages/integration/src/index.ts"],
+      "@proseva/ocr": ["packages/ocr/src/index.ts"],
+      "@proseva/openapi": ["packages/openapi/src/index.ts"],
+      "@proseva/sdk": ["packages/sdk/src/index.ts"],
+      "@proseva/server": ["packages/server/src/index.ts"]
+    }
+  },
+  "references": [
+    { "path": "packages/cli" },
+    { "path": "packages/datasets" },
+    { "path": "packages/docs" },
+    { "path": "packages/electron" },
+    { "path": "packages/experimental" },
+    { "path": "packages/gui" },
+    { "path": "packages/integration" },
+    { "path": "packages/ocr" },
+    { "path": "packages/openapi" },
+    { "path": "packages/sdk" },
+    { "path": "packages/server" }
+  ]
 }
