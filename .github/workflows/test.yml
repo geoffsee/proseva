@@ -1,20 +1,20 @@
-#name: Test
-#
-#on:
-#  push:
-#    branches: [main, ci]
-#  pull_request:
-#    branches: [main, ci]
-#
-#jobs:
-#  test:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v4
-#      - uses: oven-sh/setup-bun@v2
-#        with:
-#          bun-version: latest
-#      - run: bun install
-#      - run: cd proseva-sdk && bun run build
-#      - run: bun run test:coverage
-#      - run: bun run typecheck
+name: Test
+
+on:
+  push:
+    branches: [main, ci]
+  pull_request:
+    branches: [main, ci]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install
+      - run: bun run build
+      - run: bun run test:coverage
+      - run: bun run typecheck
