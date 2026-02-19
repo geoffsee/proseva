@@ -80,3 +80,4 @@ server/data/backups/
 apple-ocr
 **/eng.traineddata
 *.bak
+/packages/server/data/

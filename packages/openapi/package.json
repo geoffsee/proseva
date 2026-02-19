@@ -5,7 +5,9 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "generate:api-types": "openapi-typescript server/openapi.json -o src/lib/api-types.d.ts"
+    "generate:api-types": "openapi-typescript server/openapi.json -o src/lib/api-types.d.ts",
+    "build": "echo 'No build needed'",
+    "test": "echo 'No tests yet'"
   },
   "devDependencies": {
     "@types/bun": "latest"

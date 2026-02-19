@@ -2,6 +2,10 @@
   "name": "@proseva/integration",
   "version": "0.0.0-prerelease",
   "private": true,
+  "scripts": {
+    "build": "echo 'No build needed'",
+    "test": "echo 'No tests yet'"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
