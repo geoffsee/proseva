@@ -53,6 +53,7 @@ pids/
 .eslintcache
 
 # Database
+.proseva-data/
 server/data/backups/
 *.sqlite
 *.sqlite3

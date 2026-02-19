@@ -7,6 +7,9 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Get the project root (3 levels up from dist: dist -> src -> electron -> packages -> root)
+const PROJECT_ROOT = path.resolve(__dirname, "..", "..", "..");
+
 const isDev = !app.isPackaged;
 const SERVER_PORT = 3001;
 const SERVER_URL = `http://localhost:${SERVER_PORT}`;
@@ -34,15 +37,15 @@ app.on("second-instance", () => {
 // --- Data directory setup ---
 function getDataDir(): string {
   if (isDev) {
-    // In dev, use the project's server/data directory
-    return path.join(__dirname, "..", "server", "data");
+    // In dev, use .proseva-data at project root
+    return path.join(PROJECT_ROOT, ".proseva-data");
   }
   return path.join(app.getPath("userData"), "data");
 }
 
 function getResourcePath(...segments: string[]): string {
   if (isDev) {
-    return path.join(__dirname, "..", ...segments);
+    return path.join(PROJECT_ROOT, ...segments);
   }
   return path.join(process.resourcesPath, ...segments);
 }
@@ -79,7 +82,7 @@ function startServer(): ChildProcess {
 
   if (isDev) {
     console.log("[electron] Starting dev server with bun...");
-    const serverEntry = path.join(__dirname, "..", "server", "src", "index.ts");
+    const serverEntry = path.join(PROJECT_ROOT, "packages", "server", "src", "index.ts");
     return spawn("bun", ["run", serverEntry], {
       env,
       stdio: ["ignore", "pipe", "pipe"],
