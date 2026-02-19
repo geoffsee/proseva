@@ -594,6 +594,8 @@ describe("executeTool", () => {
   });
 
   describe("autoPopulateFromDocument", () => {
+    beforeEach(freshDb);
+
     it("processes tool calls from the model and returns log", async () => {
       seedCase({ id: "case-1", caseNumber: "CL-2024-001" });
 
@@ -609,6 +611,7 @@ describe("executeTool", () => {
                       tool_calls: [
                         {
                           id: "tc-1",
+                          type: "function",
                           function: {
                             name: "use_existing_case",
                             arguments: JSON.stringify({ caseId: "case-1" }),
@@ -616,6 +619,7 @@ describe("executeTool", () => {
                         },
                         {
                           id: "tc-2",
+                          type: "function",
                           function: {
                             name: "create_filing",
                             arguments: JSON.stringify({
@@ -675,6 +679,7 @@ describe("executeTool", () => {
                       tool_calls: [
                         {
                           id: "tc-bad",
+                          type: "function",
                           function: {
                             name: "create_case",
                             arguments: "{{invalid json",

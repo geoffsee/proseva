@@ -70,6 +70,7 @@ describe("Chat API", () => {
               tool_calls: [
                 {
                   id: "call_1",
+                  type: "function",
                   function: { name: "GetCases", arguments: "{}" },
                 },
               ],
@@ -127,6 +128,7 @@ describe("Chat API", () => {
               tool_calls: [
                 {
                   id: "call_1",
+                  type: "function",
                   function: {
                     name: "GetDeadlines",
                     arguments: '{"caseId":"c1"}',
@@ -180,6 +182,7 @@ describe("Chat API", () => {
               tool_calls: [
                 {
                   id: "call_1",
+                  type: "function",
                   function: {
                     name: "GetContacts",
                     arguments: '{"caseId":"c1"}',
@@ -218,6 +221,7 @@ describe("Chat API", () => {
               tool_calls: [
                 {
                   id: "call_1",
+                  type: "function",
                   function: { name: "GetFinances", arguments: "{}" },
                 },
               ],
@@ -253,6 +257,7 @@ describe("Chat API", () => {
               tool_calls: [
                 {
                   id: "call_1",
+                  type: "function",
                   function: { name: "GetDocuments", arguments: "{}" },
                 },
               ],
@@ -286,6 +291,7 @@ describe("Chat API", () => {
               tool_calls: [
                 {
                   id: "call_1",
+                  type: "function",
                   function: {
                     name: "GetDocumentText",
                     arguments: '{"id":"abc"}',
@@ -324,6 +330,7 @@ describe("Chat API", () => {
               tool_calls: [
                 {
                   id: "call_1",
+                  type: "function",
                   function: {
                     name: "SearchTimeline",
                     arguments: '{"query":"custody"}',
@@ -426,6 +433,7 @@ describe("Chat API", () => {
               tool_calls: [
                 {
                   id: "call_1",
+                  type: "function",
                   function: { name: "nonexistent_tool", arguments: "{}" },
                 },
               ],
@@ -459,7 +467,8 @@ describe("Chat API", () => {
             tool_calls: [
               {
                 id: "call_loop",
-                function: { name: "GetCases", arguments: "{}" },
+                  type: "function",
+                  function: { name: "GetCases", arguments: "{}" },
               },
             ],
           },

@@ -6,7 +6,7 @@ export default defineConfig({
     alias: {
       "idb-repo": resolve(
         import.meta.dirname ?? __dirname,
-        "node_modules/idb-repo/dist/index-node.js",
+        "../../node_modules/idb-repo/dist/index-node.js",
       ),
     },
   },
