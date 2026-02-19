@@ -4,6 +4,16 @@
   "workspaces": ["packages/*"],
   "version": "0.0.0-prerelease",
   "scripts": {
-    "todo": "echo 'add workspace aliases here and expose core set of scripts to orchestrate the monorepo'"
+    "todo": "echo 'add workspace aliases here and expose core set of scripts to orchestrate the monorepo'",
+    "clean": "echo 'todo!'",
+    "build": "echo 'todo!'",
+    "test": "echo 'todo!'",
+    "dev": "echo 'todo!'"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
   }
 }

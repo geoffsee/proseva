@@ -885,6 +885,438 @@ export interface paths {
         patch: operations["updateEstateDocument"];
         trace?: never;
     };
+    "/research/opinions/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search court opinions */
+        get: operations["researchSearchOpinions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/research/opinions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Get a court opinion by id */
+        get: operations["researchGetOpinion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/research/dockets/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search federal court dockets */
+        get: operations["researchSearchDockets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/research/dockets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Get docket details by id */
+        get: operations["researchGetDocket"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/research/courts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List available courts */
+        get: operations["researchListCourts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/research/citation/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Look up cases by citation */
+        get: operations["researchCitationLookup"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/research/statutes/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search bills and statutes */
+        get: operations["researchSearchStatutes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/research/statutes/detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get statute detail by id */
+        get: operations["researchGetStatuteDetail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/research/statutes/states": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List available jurisdictions for statute search */
+        get: operations["researchListStatuteStates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/research/cases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List research cases */
+        get: operations["researchListCases"];
+        put?: never;
+        /** Create a research case */
+        post: operations["researchCreateCase"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/research/cases/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Get a research case */
+        get: operations["researchGetCase"];
+        /** Update a research case */
+        put: operations["researchUpdateCase"];
+        post?: never;
+        /** Delete a research case */
+        delete: operations["researchDeleteCase"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/research/cases/{id}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Activate a research case */
+        post: operations["researchActivateCase"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/research/cases/{caseId}/searches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                caseId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Save a search to a case */
+        post: operations["researchSaveSearch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/research/cases/{caseId}/summarize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                caseId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Summarize content with AI */
+        post: operations["researchSummarize"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/research/cases/{caseId}/documents/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                caseId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload a document to a case */
+        post: operations["researchUploadDocument"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/research/cases/{caseId}/documents/{docId}/analyze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                caseId: string;
+                docId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Analyze a document with AI */
+        post: operations["researchAnalyzeDocument"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/research/scholar/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search academic works */
+        get: operations["researchScholarSearch"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/research/govinfo/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search GovInfo collections */
+        get: operations["researchGovinfoSearch"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/research/govinfo/package/{packageId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                packageId: string;
+            };
+            cookie?: never;
+        };
+        /** Get GovInfo package summary */
+        get: operations["researchGovinfoPackage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/research/govinfo/collections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List GovInfo collections */
+        get: operations["researchGovinfoCollections"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/research/pacer/info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** PACER information */
+        get: operations["researchPacerInfo"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/research/lawyers/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search for lawyers */
+        get: operations["researchLawyersSearch"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/research/lawyers/specialties": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List lawyer specialties */
+        get: operations["researchLawyerSpecialties"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/research/cases/{caseId}/generate-document": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                caseId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate a legal document from case context */
+        post: operations["researchGenerateDocument"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/research/agent/chat": {
         parameters: {
             query?: never;
@@ -1790,6 +2222,399 @@ export interface components {
             success: boolean;
             status?: components["schemas"]["SecurityStatusResponse"];
             error?: string;
+        };
+        ResearchErrorResponse: {
+            error: string;
+        } & {
+            [key: string]: unknown;
+        };
+        ResearchOpinionSearchResult: {
+            id: string;
+            caseName: string;
+            citation?: string;
+            court?: string;
+            courtId?: string;
+            dateFiled?: string;
+            dateArgued?: string;
+            docketNumber?: string;
+            snippet?: string;
+            absoluteUrl?: string;
+            status?: string;
+            suitNature?: string;
+        };
+        ResearchOpinionSearchResponse: {
+            results: components["schemas"]["ResearchOpinionSearchResult"][];
+            total: number;
+            next?: string | null;
+            previous?: string | null;
+            disclaimer: string;
+            source?: string;
+        };
+        ResearchOpinionDetailResponse: {
+            id: string;
+            caseName: string;
+            court?: string;
+            courtId?: string;
+            dateFiled?: string;
+            docketNumber?: string;
+            judges?: string;
+            plainText?: string;
+            htmlWithCitations?: string;
+            citations?: unknown[];
+            citesCases?: unknown[];
+            absoluteUrl?: string;
+            disclaimer?: string;
+            source?: string;
+        };
+        ResearchDocketSearchResult: {
+            id: string;
+            caseName: string;
+            court?: string;
+            courtId?: string;
+            dateFiled?: string;
+            dateTerminated?: string;
+            docketNumber?: string;
+            cause?: string;
+            suitNature?: string;
+            assignedTo?: string;
+            snippet?: string;
+            absoluteUrl?: string;
+        };
+        ResearchDocketSearchResponse: {
+            results: components["schemas"]["ResearchDocketSearchResult"][];
+            total: number;
+            disclaimer: string;
+            source?: string;
+        };
+        ResearchDocketAttorney: {
+            name: string;
+            contact?: string;
+            roles?: string[];
+        };
+        ResearchDocketParty: {
+            name: string;
+            type: string;
+            attorneys: components["schemas"]["ResearchDocketAttorney"][];
+        };
+        ResearchDocketEntry: {
+            id: string;
+            dateEntered?: string;
+            dateFiled?: string;
+            entryNumber?: string;
+            description?: string;
+        };
+        ResearchDocketDetailResponse: {
+            id: string;
+            caseName: string;
+            court?: string;
+            courtId?: string;
+            dateFiled?: string;
+            dateTerminated?: string;
+            dateLastFiling?: string;
+            docketNumber?: string;
+            docketNumberCore?: string;
+            cause?: string;
+            natureOfSuit?: string;
+            juryDemand?: string;
+            jurisdictionType?: string;
+            assignedTo?: string;
+            referredTo?: string;
+            parties?: components["schemas"]["ResearchDocketParty"][];
+            docketEntries?: components["schemas"]["ResearchDocketEntry"][];
+            absoluteUrl?: string;
+            pacerUrl?: string;
+            disclaimer?: string;
+            source?: string;
+        };
+        ResearchCourt: {
+            id: string;
+            name: string;
+            shortName: string;
+            jurisdiction: string;
+            inUse: boolean;
+        };
+        ResearchCourtsResponse: {
+            federalAppellate: components["schemas"]["ResearchCourt"][];
+            federalDistrict: components["schemas"]["ResearchCourt"][];
+            stateCourts: components["schemas"]["ResearchCourt"][];
+            otherCourts: components["schemas"]["ResearchCourt"][];
+            total: number;
+        };
+        ResearchCitationLookupResult: {
+            id: string;
+            caseName: string;
+            citation?: string;
+            court?: string;
+            dateFiled?: string;
+            absoluteUrl?: string;
+        };
+        ResearchCitationLookupResponse: {
+            results: components["schemas"]["ResearchCitationLookupResult"][];
+            searchedCitation: string;
+            disclaimer: string;
+            source: string;
+        };
+        ResearchStatuteSearchResult: {
+            id: string;
+            title: string;
+            citation?: string;
+            section?: string;
+            code?: string;
+            jurisdiction?: string;
+            snippet?: string;
+            url?: string;
+            lastAction?: string;
+            lastActionDate?: string;
+            relevance?: number;
+        };
+        ResearchStatuteSearchResponse: {
+            results: components["schemas"]["ResearchStatuteSearchResult"][];
+            total: number;
+            page?: number;
+            pageSize?: number;
+            hasMore?: boolean;
+            disclaimer: string;
+            source?: string;
+        };
+        ResearchStatuteBill: {
+            id: string;
+            title?: string;
+            number?: string;
+            state?: string;
+            status?: string;
+            lastAction?: string;
+            lastActionDate?: string;
+            session?: string;
+            url?: string;
+            stateLink?: string;
+            description?: string;
+        };
+        ResearchStatuteText: {
+            content?: string;
+            mime?: string;
+            url?: string;
+            stateLink?: string;
+            date?: string;
+            docId?: string;
+        };
+        ResearchStatuteDetailResponse: {
+            bill: components["schemas"]["ResearchStatuteBill"];
+            text: components["schemas"]["ResearchStatuteText"];
+            disclaimer: string;
+            source: string;
+        };
+        ResearchJurisdiction: {
+            code: string;
+            name: string;
+        };
+        ResearchStatesResponse: {
+            states: components["schemas"]["ResearchJurisdiction"][];
+        };
+        ResearchCase: {
+            id: string;
+            name: string;
+            description: string;
+            createdAt: number;
+            updatedAt: number;
+            isActive: boolean;
+            userEmail?: string;
+            savedSearches?: components["schemas"]["ResearchSavedSearch"][];
+            documents?: components["schemas"]["ResearchDocumentMetadata"][];
+            summaries?: components["schemas"]["ResearchSummary"][];
+            contextItems?: {
+                [key: string]: unknown;
+            }[];
+        } & {
+            [key: string]: unknown;
+        };
+        ResearchCaseResponse: {
+            case: components["schemas"]["ResearchCase"];
+        };
+        ResearchCasesResponse: {
+            cases: components["schemas"]["ResearchCase"][];
+        };
+        ResearchSuccessResponse: {
+            success: boolean;
+        };
+        ResearchSavedSearch: {
+            id: string;
+            name: string;
+            query: string;
+            searchType: string;
+            filters?: {
+                [key: string]: unknown;
+            };
+            resultCount?: number;
+            createdAt: number;
+        };
+        ResearchSavedSearchResponse: {
+            search: components["schemas"]["ResearchSavedSearch"];
+        };
+        ResearchSummary: {
+            id: string;
+            sourceType: string;
+            sourceId: string;
+            sourceTitle: string;
+            summary: string;
+            keyPoints: string[];
+            legalIssues: string[];
+            createdAt: number;
+        };
+        ResearchSummaryResponse: {
+            summary: components["schemas"]["ResearchSummary"];
+        };
+        ResearchDocumentMetadata: {
+            id: string;
+            fileName: string;
+            fileType: string;
+            fileSize: number;
+            attachmentId: string;
+            summary: string;
+            uploadedAt: number;
+        };
+        ResearchDocumentUploadResponse: {
+            document: components["schemas"]["ResearchDocumentMetadata"];
+        };
+        ResearchDocumentAnalyzeResponse: {
+            analysis: string;
+            summary: string;
+        };
+        ResearchScholarWork: {
+            id: string;
+            title: string;
+            snippet?: string;
+            authors?: string;
+            year?: string;
+            citedBy?: number;
+            pdfLink?: string;
+            link?: string;
+            doi?: string;
+            journal?: string;
+            openAccess?: boolean;
+        };
+        ResearchScholarSearchResponse: {
+            results: components["schemas"]["ResearchScholarWork"][];
+            total: number;
+            disclaimer: string;
+            source?: string;
+        };
+        ResearchGovInfoSearchResult: {
+            id: string;
+            packageId?: string;
+            title: string;
+            collectionCode?: string;
+            collectionName?: string;
+            dateIssued?: string;
+            lastModified?: string;
+            category?: string;
+            branch?: string;
+            governmentAuthor?: string;
+            suDocClass?: string;
+            congress?: string;
+            session?: string;
+            docType?: string;
+            pages?: number;
+            pdfLink?: string;
+            xmlLink?: string;
+            txtLink?: string;
+            detailsLink?: string;
+        };
+        ResearchGovInfoSearchResponse: {
+            results: components["schemas"]["ResearchGovInfoSearchResult"][];
+            total: number;
+            nextOffset?: number | null;
+            collections: {
+                [key: string]: string;
+            };
+            disclaimer: string;
+            source?: string;
+        };
+        ResearchGovInfoPackageSummary: {
+            packageId: string;
+            title?: string;
+            collectionCode?: string;
+            collectionName?: string;
+            dateIssued?: string;
+            lastModified?: string;
+            category?: string;
+            branch?: string;
+            governmentAuthor?: string;
+            publisher?: string;
+            suDocClass?: string;
+            congress?: string;
+            session?: string;
+            pages?: number;
+            download?: {
+                [key: string]: unknown;
+            };
+            relatedDocuments?: unknown[];
+            otherIdentifiers?: {
+                [key: string]: unknown;
+            };
+        };
+        ResearchGovInfoPackageResponse: {
+            package: components["schemas"]["ResearchGovInfoPackageSummary"];
+            disclaimer: string;
+        };
+        ResearchGovInfoCollection: {
+            code: string;
+            name: string;
+            description: string;
+        };
+        ResearchGovInfoCollectionsResponse: {
+            collections: components["schemas"]["ResearchGovInfoCollection"][];
+            source: string;
+        };
+        ResearchPacerInfoResponse: {
+            message: string;
+            info: string;
+            registration: string;
+            fees: string;
+            note: string;
+        };
+        ResearchLawyerResult: {
+            id: string;
+            name: string;
+            firm?: string;
+            address?: string;
+            city?: string;
+            state?: string;
+            zipCode?: string;
+            phone?: string;
+            email?: string;
+            website?: string;
+            specialty?: string;
+            rating?: number | null;
+            reviewCount?: number;
+            yearsExperience?: number | null;
+            barNumber?: string;
+            education?: string;
+            languages?: string;
+            profileUrl?: string;
+            imageUrl?: string;
+        };
+        ResearchLawyerSearchResponse: {
+            results: components["schemas"]["ResearchLawyerResult"][];
+            total: number;
+            location: string;
+            specialty: string;
+            source: string;
+            disclaimer: string;
+        };
+        ResearchLawyerSpecialty: {
+            code: string;
+            name: string;
+        };
+        ResearchLawyerSpecialtiesResponse: {
+            specialties: components["schemas"]["ResearchLawyerSpecialty"][];
+            source: string;
+        };
+        ResearchGenerateDocumentResponse: {
+            documentId: string;
+            content: string;
+            metadata: {
+                [key: string]: unknown;
+            };
         };
     };
     responses: never;
@@ -3939,6 +4764,1325 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    researchSearchOpinions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Opinion search results */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchOpinionSearchResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Service unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+        };
+    };
+    researchGetOpinion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Opinion detail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchOpinionDetailResponse"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Service unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+        };
+    };
+    researchSearchDockets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Docket search results */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchDocketSearchResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Service unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+        };
+    };
+    researchGetDocket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Docket detail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchDocketDetailResponse"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Service unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+        };
+    };
+    researchListCourts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Courts list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchCourtsResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Service unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+        };
+    };
+    researchCitationLookup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Citation lookup results */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchCitationLookupResponse"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Service unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+        };
+    };
+    researchSearchStatutes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Statute search results */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchStatuteSearchResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Service unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+        };
+    };
+    researchGetStatuteDetail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Statute detail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchStatuteDetailResponse"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Service unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+        };
+    };
+    researchListStatuteStates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Jurisdictions list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchStatesResponse"];
+                };
+            };
+        };
+    };
+    researchListCases: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cases list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchCasesResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+        };
+    };
+    researchCreateCase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                    description?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Created case */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchCaseResponse"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+        };
+    };
+    researchGetCase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Case detail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchCaseResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+        };
+    };
+    researchUpdateCase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name?: string;
+                    description?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchSuccessResponse"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+        };
+    };
+    researchDeleteCase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchSuccessResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+        };
+    };
+    researchActivateCase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Activated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchSuccessResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+        };
+    };
+    researchSaveSearch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                caseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    name?: string;
+                    query?: string;
+                    searchType?: string;
+                    filters?: {
+                        [key: string]: unknown;
+                    };
+                    resultCount?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Saved search */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchSavedSearchResponse"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+        };
+    };
+    researchSummarize: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                caseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    sourceType: string;
+                    sourceId: string;
+                    content: string;
+                    title: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Summary */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchSummaryResponse"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Service unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+        };
+    };
+    researchUploadDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                caseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Uploaded document metadata */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchDocumentUploadResponse"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+        };
+    };
+    researchAnalyzeDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                caseId: string;
+                docId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    query?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Analysis */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchDocumentAnalyzeResponse"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Service unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+        };
+    };
+    researchScholarSearch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Scholar search results */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchScholarSearchResponse"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+        };
+    };
+    researchGovinfoSearch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description GovInfo search results */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchGovInfoSearchResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Service unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+        };
+    };
+    researchGovinfoPackage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                packageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Package summary */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchGovInfoPackageResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Service unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+        };
+    };
+    researchGovinfoCollections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Collections list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchGovInfoCollectionsResponse"];
+                };
+            };
+        };
+    };
+    researchPacerInfo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description PACER information */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchPacerInfoResponse"];
+                };
+            };
+        };
+    };
+    researchLawyersSearch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lawyer search results */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchLawyerSearchResponse"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+        };
+    };
+    researchLawyerSpecialties: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Specialties list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchLawyerSpecialtiesResponse"];
+                };
+            };
+        };
+    };
+    researchGenerateDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                caseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    template: string;
+                    format: string;
+                    options?: {
+                        [key: string]: unknown;
+                    };
+                    webhook?: {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description Generated document */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchGenerateDocumentResponse"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
+            };
+            /** @description Service unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchErrorResponse"];
+                };
             };
         };
     };

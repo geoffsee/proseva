@@ -1,7 +1,7 @@
 {
   "name": "@proseva/cli",
-  "version": "0.1.0",
-  "description": "CLI for managing Pro-Se-VA server remotely",
+  "version": "0.0.0-prerelease",
+  "description": "CLI for managing proseva remotely",
   "type": "module",
   "bin": {
     "proseva": "bin/proseva.ts"

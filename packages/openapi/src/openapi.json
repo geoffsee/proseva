@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "ProSeVA API",
-    "description": "API for the legal assistant software",
-    "version": "0.1.0"
+    "title": "proseva API",
+    "description": "API for proseva",
+    "version": "0.0.0-prerelease"
   },
   "servers": [
     {

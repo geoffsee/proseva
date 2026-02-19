@@ -1,132 +1,132 @@
-name: Electron Release
-
-on:
-  push:
-#    branches:
-#      - electron-notary-debug
-    tags:
-      - "v*"
-
-permissions:
-  contents: write
-
-jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: macos-latest
-            platform: mac
-            arch: arm64
-            bun_target: "--target=bun-darwin-arm64"
-          - os: macos-latest
-            platform: mac
-            arch: x64
-            bun_target: "--target=bun-darwin-x64"
-          - os: windows-latest
-            platform: win
-            arch: x64
-            bun_target: ""
-          - os: ubuntu-latest
-            platform: linux
-            arch: x64
-            bun_target: ""
-
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install dependencies
-        run: bun install
-
-      - name: Build frontend
-        run: bun run build
-
-      - name: Build server
-        shell: bash
-        run: bun run build:server:${{ matrix.os }}:${{ matrix.arch }}
-
-      - name: Build electron
-        run: bun run build:electron
-
-      - name: Import macOS signing certificate
-        if: matrix.platform == 'mac'
-        env:
-          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
-        run: echo "Certificate will be imported by electron-builder"
-
-      - name: Write Apple API key to file
-        if: matrix.platform == 'mac'
-        env:
-          APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY }}
-        run: |
-          set -euo pipefail
-          KEY_PATH="$RUNNER_TEMP/apple-keys/AuthKey.p8"
-          mkdir -p "$(dirname "$KEY_PATH")"
-
-          python -c 'import base64, os, pathlib
-          data = os.environ["APPLE_API_KEY_CONTENT"]
-          key_path = pathlib.Path(os.environ["RUNNER_TEMP"]) / "apple-keys" / "AuthKey.p8"
-          processed = data.replace("\\n", "\n")
-          if "BEGIN PRIVATE KEY" not in processed:
-              try:
-                  candidate = base64.b64decode(processed)
-                  if b"BEGIN PRIVATE KEY" in candidate:
-                      processed = candidate.decode()
-              except Exception:
-                  pass
-          key_path.write_text(processed)'
-
-          echo "APPLE_API_KEY=$KEY_PATH" >> "$GITHUB_ENV"
-
-      - name: Package
-        run: npx electron-builder --${{ matrix.platform }} --${{ matrix.arch }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # macOS code signing
-          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
-          # macOS notarization (API key)
-          APPLE_API_KEY: ${{ env.APPLE_API_KEY }}
-          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
-          # Windows code signing
-          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
-          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-${{ matrix.platform }}-${{ matrix.arch }}
-          path: |
-            release/*.dmg
-            release/*.zip
-            release/*.exe
-            release/*.AppImage
-            release/*.yml
-            release/*.blockmap
-          if-no-files-found: ignore
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-          merge-multiple: true
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          draft: false
-          generate_release_notes: false
-          files: artifacts/*
+#name: Electron Release
+#
+#on:
+#  push:
+##    branches:
+##      - electron-notary-debug
+#    tags:
+#      - "v*"
+#
+#permissions:
+#  contents: write
+#
+#jobs:
+#  build:
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        include:
+#          - os: macos-latest
+#            platform: mac
+#            arch: arm64
+#            bun_target: "--target=bun-darwin-arm64"
+#          - os: macos-latest
+#            platform: mac
+#            arch: x64
+#            bun_target: "--target=bun-darwin-x64"
+#          - os: windows-latest
+#            platform: win
+#            arch: x64
+#            bun_target: ""
+#          - os: ubuntu-latest
+#            platform: linux
+#            arch: x64
+#            bun_target: ""
+#
+#    runs-on: ${{ matrix.os }}
+#
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      - uses: oven-sh/setup-bun@v2
+#        with:
+#          bun-version: latest
+#
+#      - name: Install dependencies
+#        run: bun install
+#
+#      - name: Build frontend
+#        run: bun run build
+#
+#      - name: Build server
+#        shell: bash
+#        run: bun run build:server:${{ matrix.os }}:${{ matrix.arch }}
+#
+#      - name: Build electron
+#        run: bun run build:electron
+#
+#      - name: Import macOS signing certificate
+#        if: matrix.platform == 'mac'
+#        env:
+#          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+#          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+#        run: echo "Certificate will be imported by electron-builder"
+#
+#      - name: Write Apple API key to file
+#        if: matrix.platform == 'mac'
+#        env:
+#          APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY }}
+#        run: |
+#          set -euo pipefail
+#          KEY_PATH="$RUNNER_TEMP/apple-keys/AuthKey.p8"
+#          mkdir -p "$(dirname "$KEY_PATH")"
+#
+#          python -c 'import base64, os, pathlib
+#          data = os.environ["APPLE_API_KEY_CONTENT"]
+#          key_path = pathlib.Path(os.environ["RUNNER_TEMP"]) / "apple-keys" / "AuthKey.p8"
+#          processed = data.replace("\\n", "\n")
+#          if "BEGIN PRIVATE KEY" not in processed:
+#              try:
+#                  candidate = base64.b64decode(processed)
+#                  if b"BEGIN PRIVATE KEY" in candidate:
+#                      processed = candidate.decode()
+#              except Exception:
+#                  pass
+#          key_path.write_text(processed)'
+#
+#          echo "APPLE_API_KEY=$KEY_PATH" >> "$GITHUB_ENV"
+#
+#      - name: Package
+#        run: npx electron-builder --${{ matrix.platform }} --${{ matrix.arch }}
+#        env:
+#          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#          # macOS code signing
+#          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+#          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+#          # macOS notarization (API key)
+#          APPLE_API_KEY: ${{ env.APPLE_API_KEY }}
+#          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+#          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+#          # Windows code signing
+#          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+#          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+#
+#      - name: Upload artifacts
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: release-${{ matrix.platform }}-${{ matrix.arch }}
+#          path: |
+#            release/*.dmg
+#            release/*.zip
+#            release/*.exe
+#            release/*.AppImage
+#            release/*.yml
+#            release/*.blockmap
+#          if-no-files-found: ignore
+#
+#  release:
+#    needs: build
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Download all artifacts
+#        uses: actions/download-artifact@v4
+#        with:
+#          path: artifacts
+#          merge-multiple: true
+#
+#      - name: Create GitHub Release
+#        uses: softprops/action-gh-release@v2
+#        with:
+#          draft: false
+#          generate_release_notes: false
+#          files: artifacts/*
