@@ -2,32 +2,7 @@
   "name": "proseva",
   "private": true,
   "version": "0.0.0-prerelease",
-  "type": "module",
-  "main": "dist-electron/main.js",
   "scripts": {
-    "dev": "bun run dev:frontend & bun run dev:server & wait",
-    "dev:frontend": "vite",
-    "dev:server": "cd server && bun run dev",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "test": "vitest run --silent=true",
-    "test:integration:sdk": "vitest run --silent=true packages/integration/tests/sdk.integration.test.ts",
-    "harness:sdk:openapi": "bun packages/integration/tests/sdk-openapi-harness.ts",
-    "typecheck": "tsc -b --noEmit",
-    "test:server": "vitest run --silent=true --config vitest.config.server.ts",
-    "test:coverage": "vitest run --silent=true --coverage",
-    "test:e2e": "playwright test",
-    "test:e2e:headed": "playwright test --headed",
-    "test:e2e:debug": "playwright test --debug",
-    "test:e2e:report": "playwright show-report",
-    "generate:api-types": "openapi-typescript server/openapi.json -o src/lib/api-types.d.ts",
-
-    "build:server": "packages/server/scripts/build-server.sh auto",
-    "build:electron": "tsc -p packages/electron/tsconfig.json && tsc -p electron/tsconfig.preload.json",
-    "build:all": "bun run build && bun run build:server && bun run build:electron",
-    "electron:dev": "rm -rf server/data && bun run build:electron && bun run build:server && concurrently -n vite,electron \"vite\" \"wait-on http://localhost:5173 && packages/electron .\"",
-    "electron:dist": "bun run build:all && electron-builder",
-    "electron:dist:local": "bun run build:all && electron-builder --mac --arm64"
+    "todo": "echo 'add workspace aliases here and expose core set of scripts to orchestrate the monorepo'"
   }
 }
