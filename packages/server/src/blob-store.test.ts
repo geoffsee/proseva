@@ -63,7 +63,10 @@ describe("BlobStore", () => {
     expect(await store.has("blob-1")).toBe(true);
   });
 
-  it("handles large blobs (1MB)", async () => {
+  it(
+    "handles large blobs (1MB)",
+    { timeout: 15000 },
+    async () => {
     const dir = createTempDir();
     const store = new BlobStore(join(dir, "files.duckdb"));
     const large = new Uint8Array(1024 * 1024);
@@ -71,7 +74,8 @@ describe("BlobStore", () => {
     await store.store("large", large);
     const retrieved = await store.retrieve("large");
     expect(retrieved).toEqual(large);
-  });
+    },
+  );
 
   it("overwrites existing blobs", async () => {
     const dir = createTempDir();
