@@ -1,12 +1,18 @@
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import { mkdirSync, existsSync, renameSync } from "node:fs";
 import { createHash } from "node:crypto";
+import { fileURLToPath } from "node:url";
 import { DuckDBInstance, type DuckDBConnection } from "@duckdb/node-api";
 import {
   getDatabaseEncryptionKeyProvider,
   type DatabaseEncryptionKeyProvider,
 } from "./db-key-provider";
 import { StorageEncryptionError } from "./persistence";
+
+const moduleDir =
+  (import.meta as ImportMeta & { dir?: string; dirname?: string }).dir ??
+  (import.meta as ImportMeta & { dir?: string; dirname?: string }).dirname ??
+  dirname(fileURLToPath(import.meta.url));
 
 type BlobSession = {
   instance: DuckDBInstance;
@@ -24,13 +30,42 @@ export class BlobStore {
     dbPath?: string,
     keyProvider?: DatabaseEncryptionKeyProvider,
   ) {
-    this.dbPath = dbPath ??
-      (process.env.PROSEVA_DATA_DIR
-        ? resolve(process.env.PROSEVA_DATA_DIR, "files.duckdb")
-        : resolve(import.meta.dir, "..", "data", "files.duckdb"));
+    const defaultDbPath = process.env.PROSEVA_DATA_DIR
+      ? resolve(process.env.PROSEVA_DATA_DIR, "files.duckdb")
+      : resolve(moduleDir, "..", "data", "files.duckdb");
+    this.dbPath = dbPath ?? defaultDbPath;
     this.keyProvider = keyProvider ?? getDatabaseEncryptionKeyProvider();
     const dir = resolve(this.dbPath, "..");
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  }
+
+  private static toUint8Array(value: unknown): Uint8Array | null {
+    if (value instanceof Uint8Array) {
+      // Normalize Node.js Buffer into a plain Uint8Array.
+      return new Uint8Array(value);
+    }
+    if (value instanceof ArrayBuffer) {
+      return new Uint8Array(value);
+    }
+    if (ArrayBuffer.isView(value)) {
+      const view = value as ArrayBufferView;
+      const bytes = new Uint8Array(view.byteLength);
+      bytes.set(
+        new Uint8Array(view.buffer, view.byteOffset, view.byteLength),
+      );
+      return bytes;
+    }
+    if (
+      value &&
+      typeof value === "object" &&
+      "type" in value &&
+      (value as { type?: unknown }).type === "Buffer" &&
+      "data" in value &&
+      Array.isArray((value as { data?: unknown }).data)
+    ) {
+      return new Uint8Array((value as { data: number[] }).data);
+    }
+    return null;
   }
 
   private static escapeSqlLiteral(value: string): string {
@@ -169,8 +204,8 @@ export class BlobStore {
 
     if (reader.currentRowCount === 0) return null;
 
-    const rows = reader.getRowObjectsJS() as Array<{ data: Uint8Array }>;
-    return rows[0]?.data ?? null;
+    const rows = reader.getRowObjectsJS() as Array<{ data?: unknown }>;
+    return BlobStore.toUint8Array(rows[0]?.data);
   }
 
   async delete(id: string): Promise<boolean> {
@@ -210,7 +245,10 @@ export class BlobStore {
       if (Number(existsRows[0]?.count ?? 0) === 0) return;
 
       const reader = await connection.runAndReadAll("SELECT id, data FROM blobs");
-      const rows = reader.getRowObjectsJS() as Array<{ id: string; data: Uint8Array }>;
+      const rows = reader.getRowObjectsJS() as Array<{
+        id: string;
+        data?: unknown;
+      }>;
 
       const tempEncPath = `${this.dbPath}.enc.tmp.${Date.now()}`;
       const encInstance = await DuckDBInstance.create(":memory:");
@@ -229,11 +267,13 @@ export class BlobStore {
           )
         `);
         for (const row of rows) {
+          const data = BlobStore.toUint8Array(row.data);
+          if (!data) continue;
           const stmt = await encConn.prepare(
             "INSERT INTO blobs (id, data) VALUES ($1, $2)",
           );
           stmt.bindVarchar(1, row.id);
-          stmt.bindBlob(2, row.data);
+          stmt.bindBlob(2, data);
           await stmt.run();
           stmt.destroySync();
         }
