@@ -117,6 +117,21 @@ const FaxGatewayConfigModel = types.model("FaxGatewayConfig", {
   ),
 });
 
+const DocumentScannerConfigModel = types.model("DocumentScannerConfig", {
+  enabled: types.maybeNull(types.boolean),
+  endpoints: types.maybeNull(types.string),
+  outputDirectory: types.maybeNull(types.string),
+  enabledSource: types.maybeNull(
+    types.enumeration(["database", "environment"]),
+  ),
+  endpointsSource: types.maybeNull(
+    types.enumeration(["database", "environment"]),
+  ),
+  outputDirectorySource: types.maybeNull(
+    types.enumeration(["database", "environment"]),
+  ),
+});
+
 const ServerConfigModel = types.model("ServerConfigModel", {
   firebase: types.maybeNull(FirebaseConfigModel),
   twilio: types.maybeNull(TwilioConfigModel),
@@ -126,6 +141,7 @@ const ServerConfigModel = types.model("ServerConfigModel", {
   legalResearch: types.maybeNull(LegalResearchConfigModel),
   prompts: types.maybeNull(PromptsConfigModel),
   faxGateway: types.maybeNull(FaxGatewayConfigModel),
+  documentScanner: types.maybeNull(DocumentScannerConfigModel),
 });
 
 export const ConfigStore = types
@@ -277,6 +293,25 @@ export const ConfigStore = types
       }
     });
 
+    const testScanner = flow(function* testScanner() {
+      self.isTesting = true;
+      self.error = null;
+      try {
+        const result: { success: boolean; error?: string; model?: string } =
+          yield api.config.testScanner();
+        if (!result.success) {
+          self.error = result.error || "Test failed";
+        }
+        return result;
+      } catch (error) {
+        self.error = String(error);
+        console.error("Failed to test scanner:", error);
+        return { success: false, error: String(error) };
+      } finally {
+        self.isTesting = false;
+      }
+    });
+
     const reinitializeService = flow(function* reinitializeService(
       service: string,
     ) {
@@ -301,6 +336,7 @@ export const ConfigStore = types
       testTwilio,
       testOpenAI,
       testFax,
+      testScanner,
       reinitializeService,
     };
   });

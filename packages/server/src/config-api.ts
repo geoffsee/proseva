@@ -172,6 +172,11 @@ router.get(
       username: process.env.FAX_GATEWAY_USERNAME,
       password: process.env.FAX_GATEWAY_PASSWORD,
     },
+    documentScanner: {
+      enabled: process.env.SCANNER_ENABLED === "true",
+      endpoints: process.env.SCANNER_ENDPOINTS,
+      outputDirectory: process.env.SCANNER_OUTPUT_DIR,
+    },
   };
 
   // Merge config with environment fallbacks and mask sensitive fields
@@ -287,6 +292,26 @@ router.get(
         ? "database"
         : "environment",
     },
+    documentScanner: {
+      enabled:
+        config?.documentScanner?.enabled ?? envConfig.documentScanner.enabled,
+      endpoints:
+        config?.documentScanner?.endpoints ||
+        envConfig.documentScanner.endpoints,
+      outputDirectory:
+        config?.documentScanner?.outputDirectory ||
+        envConfig.documentScanner.outputDirectory,
+      enabledSource:
+        config?.documentScanner?.enabled !== undefined
+          ? "database"
+          : "environment",
+      endpointsSource: config?.documentScanner?.endpoints
+        ? "database"
+        : "environment",
+      outputDirectorySource: config?.documentScanner?.outputDirectory
+        ? "database"
+        : "environment",
+    },
   };
 
   return response;
@@ -352,6 +377,12 @@ router.patch(
         ...stripMaskedValues(updates.faxGateway),
       };
     }
+    if (updates.documentScanner) {
+      config.documentScanner = {
+        ...config.documentScanner,
+        ...updates.documentScanner,
+      };
+    }
 
     // Save to database
     db.serverConfig.set("singleton", config);
@@ -415,6 +446,9 @@ router.delete(
     } else if (group === "faxGateway" && config.faxGateway) {
       const faxGateway = config.faxGateway as Record<string, unknown>;
       delete faxGateway[key];
+    } else if (group === "documentScanner" && config.documentScanner) {
+      const documentScanner = config.documentScanner as Record<string, unknown>;
+      delete documentScanner[key];
     }
 
     config.updatedAt = new Date().toISOString();
@@ -627,6 +661,22 @@ router.post(
 );
 
 /**
+ * Test document scanner connection.
+ */
+router.post(
+  "/config/test-scanner",
+  asIttyRoute("post", "/config/test-scanner", async () => {
+    try {
+      const { testScannerConnection } = await import("./scanner");
+      const result = await testScannerConnection();
+      return result;
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }),
+);
+
+/**
  * Reinitialize a service after config change.
  */
 router.post(
@@ -643,6 +693,9 @@ router.post(
         await reinitializeTwilio();
       } else if (service === "scheduler") {
         await restartScheduler();
+      } else if (service === "scanner") {
+        const { restartScanner } = await import("./scanner");
+        restartScanner();
       } else {
         return json(400, { success: false, error: `Unknown service: ${service}` });
       }

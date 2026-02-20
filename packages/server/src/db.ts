@@ -259,6 +259,12 @@ export type ServerConfig = {
     username?: string;
     password?: string;
   };
+
+  documentScanner?: {
+    enabled?: boolean;
+    endpoints?: string;
+    outputDirectory?: string;
+  };
 };
 
 export type Beneficiary = {

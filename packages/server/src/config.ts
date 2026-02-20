@@ -122,6 +122,26 @@ export function getConfig(key: string): string | undefined {
     if (key === "FAX_GATEWAY_PASSWORD" && configCache.faxGateway?.password) {
       return configCache.faxGateway.password;
     }
+
+    // Document scanner keys
+    if (
+      key === "SCANNER_ENABLED" &&
+      configCache.documentScanner?.enabled !== undefined
+    ) {
+      return configCache.documentScanner.enabled.toString();
+    }
+    if (
+      key === "SCANNER_ENDPOINTS" &&
+      configCache.documentScanner?.endpoints
+    ) {
+      return configCache.documentScanner.endpoints;
+    }
+    if (
+      key === "SCANNER_OUTPUT_DIR" &&
+      configCache.documentScanner?.outputDirectory
+    ) {
+      return configCache.documentScanner.outputDirectory;
+    }
   }
 
   // Fallback to environment variable
@@ -208,5 +228,17 @@ export function faxGatewayConfig() {
     url: getConfig("FAX_GATEWAY_URL"),
     username: getConfig("FAX_GATEWAY_USERNAME"),
     password: getConfig("FAX_GATEWAY_PASSWORD"),
+  };
+}
+
+/**
+ * Get document scanner configuration.
+ */
+export function documentScannerConfig() {
+  return {
+    enabled: getConfig("SCANNER_ENABLED") === "true",
+    endpoints: getConfig("SCANNER_ENDPOINTS") ?? "",
+    outputDirectory:
+      getConfig("SCANNER_OUTPUT_DIR") || getConfig("AUTO_INGEST_DIR") || "",
   };
 }
