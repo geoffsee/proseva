@@ -68,7 +68,7 @@
         "@electron/notarize": "^3.1.1",
         "@types/bun": "latest",
         "@types/node": "^24.10.1",
-        "electron": "^34.2.0",
+        "electron": "34.5.8",
         "electron-builder": "^26.0.12",
         "typescript": "~5.9.3",
       },

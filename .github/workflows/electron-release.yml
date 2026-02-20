@@ -82,7 +82,9 @@ jobs:
           echo "APPLE_API_KEY=$KEY_PATH" >> "$GITHUB_ENV"
 
       - name: Package
-        run: npx electron-builder --${{ matrix.platform }} --${{ matrix.arch }}
+        run: |
+          cd packages/electron
+          npx electron-builder --config src/electron-builder.yml --${{ matrix.platform }} --${{ matrix.arch }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # macOS code signing
@@ -101,12 +103,12 @@ jobs:
         with:
           name: release-${{ matrix.platform }}-${{ matrix.arch }}
           path: |
-            release/*.dmg
-            release/*.zip
-            release/*.exe
-            release/*.AppImage
-            release/*.yml
-            release/*.blockmap
+            packages/electron/release/*.dmg
+            packages/electron/release/*.zip
+            packages/electron/release/*.exe
+            packages/electron/release/*.AppImage
+            packages/electron/release/*.yml
+            packages/electron/release/*.blockmap
           if-no-files-found: ignore
 
   release:
@@ -122,6 +124,6 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          draft: false
+          draft: true
           generate_release_notes: false
           files: artifacts/*
