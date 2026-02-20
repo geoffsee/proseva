@@ -1,7 +1,19 @@
-import * as mupdf from "mupdf";
+import type * as MupdfTypes from "mupdf";
 import { createWorker } from "tesseract.js";
 import fs from "fs";
 import path from "path";
+
+// Lazy-load mupdf so the server can start even when the WASM package is
+// not resolvable (e.g. VLM-only OCR mode).  The module is cached after
+// the first successful import.
+let _mupdf: typeof MupdfTypes | undefined;
+function mupdf(): typeof MupdfTypes {
+  if (!_mupdf) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    _mupdf = require("mupdf") as typeof MupdfTypes;
+  }
+  return _mupdf;
+}
 
 // ── Types ──────────────────────────────────────────────
 export interface OcrPage {
@@ -78,16 +90,17 @@ async function ocrApple(filePath: string): Promise<OcrResult> {
 
 // ── Tesseract + mupdf binarization backend ─────────────
 function renderPagesToPng(filePath: string): Uint8Array[] {
+  const m = mupdf();
   const bytes = fs.readFileSync(filePath);
-  const doc = mupdf.Document.openDocument(bytes, "application/pdf");
+  const doc = m.Document.openDocument(bytes, "application/pdf");
   const pngs: Uint8Array[] = [];
   const scale = 300 / 72;
 
   for (let i = 0; i < doc.countPages(); i++) {
     const page = doc.loadPage(i);
     const pix = page.toPixmap(
-      mupdf.Matrix.scale(scale, scale),
-      mupdf.ColorSpace.DeviceRGB,
+      m.Matrix.scale(scale, scale),
+      m.ColorSpace.DeviceRGB,
       false
     );
     pngs.push(pix.asPNG());
@@ -99,7 +112,8 @@ function renderPagesToPng(filePath: string): Uint8Array[] {
 }
 
 function binarize(png: Uint8Array): Uint8Array {
-  const pix = new mupdf.Image(new mupdf.Buffer(png)).toPixmap();
+  const m = mupdf();
+  const pix = new m.Image(new m.Buffer(png)).toPixmap();
   const w = pix.getWidth();
   const h = pix.getHeight();
   const channels = pix.getNumberOfComponents();
@@ -140,7 +154,7 @@ function binarize(png: Uint8Array): Uint8Array {
     }
   }
 
-  const outPix = new mupdf.Pixmap(mupdf.ColorSpace.DeviceRGB, [0, 0, w, h], false);
+  const outPix = new m.Pixmap(m.ColorSpace.DeviceRGB, [0, 0, w, h], false);
   const outData = outPix.getPixels();
   for (let i = 0; i < w * h; i++) {
     const val = gray[i] < threshold ? 0 : 255;
