@@ -6,7 +6,7 @@
   "scripts": {
     "build": "bun --filter=@proseva/* run --parallel build",
     "dev": "bun --filter=@proseva/server --filter=@proseva/gui run --parallel dev",
-    "test": "vitest run --silent",
+    "test": "vitest run --silent='passed-only'",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint .",
     "typecheck": "bun --filter @proseva/* typecheck",
