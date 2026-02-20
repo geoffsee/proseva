@@ -24,6 +24,12 @@ const POLL_INTERVAL_MS = 1500;
 const SCAN_TIMEOUT_MS = 120_000;
 const SCAN_POLL_MS = 750;
 
+/**
+ * Callback invoked after a document is successfully scanned and saved.
+ * The outputPath is the full path to the saved file.
+ */
+export type OnScanComplete = (outputPath: string) => void;
+
 // Module-level state (mirrors scheduler.ts pattern).
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 let sdk: BrotherAds3300wSdk | null = null;
@@ -34,6 +40,7 @@ let previousPaperState: PaperState | undefined;
 let scanCount = 0;
 let configuredEndpoints: string[] = [];
 let configuredOutputDir = "";
+let onScanComplete: OnScanComplete | null = null;
 
 function detectPaperState(adfState: string | undefined): PaperState {
   if (!adfState) return "unknown";
@@ -87,6 +94,14 @@ async function performScan(
       `[scanner:${id}] saved ${document.sizeBytes} bytes to ${outputPath}`,
     );
     lastError = undefined;
+
+    if (onScanComplete) {
+      try {
+        onScanComplete(outputPath);
+      } catch (cbError) {
+        console.error(`[scanner:${id}] onScanComplete callback failed:`, cbError);
+      }
+    }
   } catch (error) {
     const message = asErrorMessage(error);
     lastError = `scan failed: ${message}`;
@@ -130,8 +145,9 @@ async function pollScanner(outputDirectory: string): Promise<void> {
 /**
  * Initialize the document scanner service.
  * Reads config to determine if scanning is enabled and starts polling.
+ * @param options.onComplete - called after each successful scan with the output file path
  */
-export function initScanner(): void {
+export function initScanner(options?: { onComplete?: OnScanComplete }): void {
   const enabled = getConfig("SCANNER_ENABLED") === "true";
   if (!enabled) {
     console.log("[scanner] Document scanner disabled");
@@ -159,6 +175,7 @@ export function initScanner(): void {
 
   configuredEndpoints = endpoints;
   configuredOutputDir = outputDir;
+  onScanComplete = options?.onComplete ?? null;
 
   sdk = new BrotherAds3300wSdk({ endpoints });
   previousPaperState = undefined;
@@ -189,6 +206,7 @@ export function stopScanner(): void {
   previousPaperState = undefined;
   configuredEndpoints = [];
   configuredOutputDir = "";
+  onScanComplete = null;
   console.log("[scanner] Stopped");
 }
 
