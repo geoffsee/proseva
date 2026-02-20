@@ -22,6 +22,7 @@ import {
   FiSearch,
   FiMessageSquare,
   FiPrinter,
+  FiAperture,
 } from "react-icons/fi";
 import { useStore } from "../store/StoreContext";
 import { toaster } from "../components/ui/toaster";
@@ -91,6 +92,10 @@ const Config = observer(() => {
   const [faxGatewayUsername, setFaxGatewayUsername] = useState("");
   const [faxGatewayPassword, setFaxGatewayPassword] = useState("");
   const [faxTestRecipient, setFaxTestRecipient] = useState("");
+
+  const [scannerEnabled, setScannerEnabled] = useState(false);
+  const [scannerEndpoints, setScannerEndpoints] = useState("");
+  const [scannerOutputDir, setScannerOutputDir] = useState("");
 
   const [hasChanges, setHasChanges] = useState(false);
   const [dbSecurityStatus, setDbSecurityStatus] =
@@ -169,6 +174,14 @@ const Config = observer(() => {
       setFaxGatewayUrl(configStore.config.faxGateway?.url || "");
       setFaxGatewayUsername(configStore.config.faxGateway?.username || "");
       setFaxGatewayPassword(configStore.config.faxGateway?.password || "");
+
+      setScannerEnabled(configStore.config.documentScanner?.enabled ?? false);
+      setScannerEndpoints(
+        configStore.config.documentScanner?.endpoints || "",
+      );
+      setScannerOutputDir(
+        configStore.config.documentScanner?.outputDirectory || "",
+      );
     }
   }, [configStore.config]);
 
@@ -214,12 +227,18 @@ const Config = observer(() => {
           username: faxGatewayUsername || undefined,
           password: faxGatewayPassword || undefined,
         },
+        documentScanner: {
+          enabled: scannerEnabled,
+          endpoints: scannerEndpoints || undefined,
+          outputDirectory: scannerOutputDir || undefined,
+        },
       });
 
       // Reinitialize services
       await configStore.reinitializeService("firebase");
       await configStore.reinitializeService("twilio");
       await configStore.reinitializeService("scheduler");
+      await configStore.reinitializeService("scanner");
       await loadOpenAIModels(openaiEndpoint);
 
       setHasChanges(false);
@@ -329,6 +348,22 @@ const Config = observer(() => {
     } else {
       toaster.create({
         title: "Fax gateway test failed",
+        description: result.error,
+        type: "error",
+      });
+    }
+  };
+
+  const handleTestScanner = async () => {
+    const result = await configStore.testScanner();
+    if (result.success) {
+      toaster.create({
+        title: `Scanner connected: ${result.model || "Unknown model"}`,
+        type: "success",
+      });
+    } else {
+      toaster.create({
+        title: "Scanner connection failed",
         description: result.error,
         type: "error",
       });
@@ -456,6 +491,13 @@ const Config = observer(() => {
     configStore.config?.faxGateway?.urlSource === "database" ||
     configStore.config?.faxGateway?.usernameSource === "database" ||
     configStore.config?.faxGateway?.passwordSource === "database"
+      ? "database"
+      : "environment";
+
+  const documentScannerStatus =
+    configStore.config?.documentScanner?.enabledSource === "database" ||
+    configStore.config?.documentScanner?.endpointsSource === "database" ||
+    configStore.config?.documentScanner?.outputDirectorySource === "database"
       ? "database"
       : "environment";
 
@@ -1094,6 +1136,76 @@ const Config = observer(() => {
               </Button>
             </Alert.Root>
           )}
+        </ConfigSection>
+
+        {/* Document Scanner Section */}
+        <ConfigSection
+          title="Document Scanner"
+          icon={<FiAperture />}
+          status={documentScannerStatus}
+          isTesting={configStore.isTesting}
+        >
+          <Text fontSize="sm" color="gray.600" mb={1}>
+            Automatically scan documents from a Brother ADS-3300W scanner into
+            the auto-ingest pipeline when paper is detected in the feeder.
+          </Text>
+          <Box>
+            <Text fontSize="sm" mb={1} fontWeight="medium">
+              Enabled
+            </Text>
+            <HStack>
+              <input
+                type="checkbox"
+                checked={scannerEnabled}
+                onChange={(e) => {
+                  setScannerEnabled(e.target.checked);
+                  setHasChanges(true);
+                }}
+                style={{ width: "20px", height: "20px", cursor: "pointer" }}
+              />
+              <Text>{scannerEnabled ? "Enabled" : "Disabled"}</Text>
+            </HStack>
+          </Box>
+          <Box>
+            <Text fontSize="sm" mb={1} fontWeight="medium">
+              Scanner Endpoints
+            </Text>
+            <Input
+              value={scannerEndpoints}
+              onChange={(e) => {
+                setScannerEndpoints(e.target.value);
+                setHasChanges(true);
+              }}
+              placeholder="http://192.168.1.162:8080"
+            />
+            <Text fontSize="xs" color="gray.500" mt={1}>
+              Comma-separated eSCL endpoint URLs for the scanner
+            </Text>
+          </Box>
+          <Box>
+            <Text fontSize="sm" mb={1} fontWeight="medium">
+              Output Directory (optional)
+            </Text>
+            <Input
+              value={scannerOutputDir}
+              onChange={(e) => {
+                setScannerOutputDir(e.target.value);
+                setHasChanges(true);
+              }}
+              placeholder="Defaults to Auto-Ingest directory"
+            />
+            <Text fontSize="xs" color="gray.500" mt={1}>
+              Leave blank to save scanned documents to the Auto-Ingest directory
+            </Text>
+          </Box>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleTestScanner}
+            loading={configStore.isTesting}
+          >
+            Test Scanner Connection
+          </Button>
         </ConfigSection>
 
         {/* Auto-Ingest Section */}

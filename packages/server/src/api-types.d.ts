@@ -1042,6 +1042,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/config/test-scanner": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Test document scanner connection */
+        post: operations["testScanner"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/config/reinitialize/{service}": {
         parameters: {
             query?: never;
@@ -4240,6 +4257,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FaxGatewayTestResponse"];
+                };
+            };
+        };
+    };
+    testScanner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Test result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        error?: string;
+                        model?: string;
+                    };
                 };
             };
         };

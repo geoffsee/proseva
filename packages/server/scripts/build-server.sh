@@ -14,6 +14,7 @@ EXTERNAL_FLAGS=(
   "--external" "@duckdb/node-bindings-darwin-x64"
   "--external" "@duckdb/node-bindings-darwin-arm64"
   "--external" "@duckdb/node-bindings-win32-x64"
+  "--external" "mupdf"
 )
 
 detect_platform() {
@@ -46,13 +47,36 @@ install_server_deps() {
   bun install --frozen-lockfile
 }
 
+get_bun_compile_target() {
+  local platform="$1"
+  case "$platform" in
+    macos-latest:arm64)  echo "bun-darwin-arm64"  ;;
+    macos-latest:x64)    echo "bun-darwin-x64"    ;;
+    ubuntu-latest:x64)   echo "bun-linux-x64"     ;;
+    windows-latest:x64)  echo "bun-windows-x64"   ;;
+    *) echo "Unsupported compile target: $platform" >&2; exit 1 ;;
+  esac
+}
+
 run_bundler() {
-  local _platform="$1"
+  local platform="$1"
+  local compile_target
+  compile_target="$(get_bun_compile_target "$platform")"
   cd "$SERVER_DIR"
   mkdir -p "$DIST_SERVER_DIR"
+
+  # Compile standalone server executable
+  bun build \
+    --compile \
+    --target "$compile_target" \
+    src/index.ts \
+    "${EXTERNAL_FLAGS[@]}" \
+    --outfile "$DIST_SERVER_DIR/proseva-server"
+
+  # Bundle the in-process server module (for ELECTRON_INPROC_SERVER mode)
   bun build \
     --target node \
-    src/index.ts src/index.server.ts \
+    src/index.server.ts \
     "${EXTERNAL_FLAGS[@]}" \
     --outdir="$DIST_SERVER_DIR"
 }
@@ -64,6 +88,11 @@ copy_runtime_assets() {
   mkdir -p "$DIST_SERVER_DIR/node_modules"
   rm -rf "$DIST_SERVER_DIR/node_modules/@duckdb"
   cp -R "$NODE_MODULES_DIR/@duckdb" "$DIST_SERVER_DIR/node_modules/"
+
+  # mupdf WASM cannot be embedded in the compiled binary; copy the
+  # package so it can be required at runtime.
+  rm -rf "$DIST_SERVER_DIR/node_modules/mupdf"
+  cp -R "$NODE_MODULES_DIR/mupdf" "$DIST_SERVER_DIR/node_modules/"
 }
 
 main() {

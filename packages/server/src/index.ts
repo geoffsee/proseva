@@ -41,6 +41,7 @@ import {
   getSchedulerStatus,
   triggerEvaluation,
 } from "./scheduler";
+import { initScanner, stopScanner } from "./scanner";
 import {
   registerDeviceToken,
   getDeviceTokens,
@@ -610,9 +611,11 @@ async function maybeAutoIngestFromEnv(): Promise<void> {
 
 process.on("beforeExit", () => void db.flush());
 process.on("SIGINT", () => {
+  stopScanner();
   void db.flush().then(() => process.exit(0));
 });
 process.on("SIGTERM", () => {
+  stopScanner();
   void db.flush().then(() => process.exit(0));
 });
 
@@ -2380,6 +2383,17 @@ router.all("/research/*", researchRouter.fetch);
 
 // Initialize the scheduler on server startup
 initScheduler();
+
+// Initialize the document scanner service on server startup.
+// When a scan completes, re-run the auto-ingest pipeline so the new
+// PDF is immediately OCR'd and indexed rather than sitting on disk.
+initScanner({
+  onComplete: () => {
+    void maybeAutoIngestFromEnv().catch((err) =>
+      console.error("[scanner] post-scan auto-ingest failed:", err),
+    );
+  },
+});
 
 const port = parseInt(process.env.PORT || "3001", 10);
 

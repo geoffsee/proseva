@@ -1,8 +1,12 @@
 import { createServer, type Server } from "node:http";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { InMemoryAdapter } from "./persistence";
 import { resetDb, db } from "./db";
 import { router } from "./index";
 import { SignJWT } from "jose";
+import { BlobStore, setBlobStore, resetBlobStore } from "./blob-store";
 
 let server: Server;
 let baseUrl: string;
@@ -40,8 +44,13 @@ export async function generateTestToken(): Promise<string> {
 }
 
 export function setupTestServer() {
+  let tempDir: string | null = null;
+
   beforeAll(async () => {
     await freshDb();
+    // Use a temp BlobStore to avoid DuckDB file locks with the dev server
+    tempDir = mkdtempSync(join(tmpdir(), "proseva-test-blobs-"));
+    setBlobStore(new BlobStore(join(tempDir, "files.duckdb")));
     testToken = await generateTestToken();
     server = createServer(async (req, res) => {
       const url = `http://localhost${req.url}`;
@@ -83,6 +92,11 @@ export function setupTestServer() {
 
   afterAll(async () => {
     await new Promise<void>((resolve) => server.close(() => resolve()));
+    resetBlobStore();
+    if (tempDir) {
+      rmSync(tempDir, { recursive: true, force: true });
+      tempDir = null;
+    }
   });
 
   beforeEach(async () => {

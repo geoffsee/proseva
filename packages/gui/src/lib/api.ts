@@ -658,6 +658,14 @@ export interface ServerConfig {
     usernameSource?: "database" | "environment";
     passwordSource?: "database" | "environment";
   };
+  documentScanner?: {
+    enabled?: boolean;
+    endpoints?: string;
+    outputDirectory?: string;
+    enabledSource?: "database" | "environment";
+    endpointsSource?: "database" | "environment";
+    outputDirectorySource?: "database" | "environment";
+  };
 }
 
 export type DbSecurityStatus = {
@@ -747,6 +755,17 @@ export const configApi = {
       method: "POST",
       headers: await getAuthHeaders(),
       body: JSON.stringify({ recipientNumber }),
+    });
+    return res.json();
+  },
+  testScanner: async (): Promise<{
+    success: boolean;
+    error?: string;
+    model?: string;
+  }> => {
+    const res = await fetch(`${API_BASE}/config/test-scanner`, {
+      method: "POST",
+      headers: await getAuthHeaders(),
     });
     return res.json();
   },
