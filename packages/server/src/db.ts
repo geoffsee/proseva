@@ -343,6 +343,18 @@ export type ResearchAttachment = {
   name: string;
 };
 
+export type FileMetadata = {
+  id: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  hash: string;
+  createdAt: string;
+  ownerEmail?: string;
+  sourceType: "research-attachment" | "evidence" | "document" | "other";
+  sourceRef?: string;
+};
+
 export type FaxJob = {
   id: string;
   filingId: string;
@@ -375,6 +387,7 @@ type Collections = {
   embeddings: Map<string, Embedding>;
   researchCases: Map<string, ResearchCase>;
   researchAttachments: Map<string, ResearchAttachment>;
+  fileMetadata: Map<string, FileMetadata>;
   faxJobs: Map<string, FaxJob>;
 };
 
@@ -394,6 +407,7 @@ const COLLECTION_KEYS: (keyof Collections)[] = [
   "embeddings",
   "researchCases",
   "researchAttachments",
+  "fileMetadata",
   "faxJobs",
 ];
 
@@ -432,6 +446,7 @@ function assignMaps(target: Database, maps: Collections): void {
   target.embeddings = maps.embeddings;
   target.researchCases = maps.researchCases;
   target.researchAttachments = maps.researchAttachments;
+  target.fileMetadata = maps.fileMetadata;
   target.faxJobs = maps.faxJobs;
 }
 
@@ -451,6 +466,7 @@ export class Database {
   embeddings!: Map<string, Embedding>;
   researchCases!: Map<string, ResearchCase>;
   researchAttachments!: Map<string, ResearchAttachment>;
+  fileMetadata!: Map<string, FileMetadata>;
   faxJobs!: Map<string, FaxJob>;
 
   private adapter: PersistenceAdapter;

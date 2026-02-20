@@ -1,4 +1,5 @@
 import { db, type ResearchCase, type ResearchAttachment } from "./db";
+import { getBlobStore, BlobStore } from "./blob-store";
 
 interface PersistenceManager {
   paralegal: {
@@ -115,15 +116,49 @@ export function createPersistenceManager(): PersistenceManager {
         attachmentId: string,
         data: { data: number[]; type: string; name: string },
       ) {
+        const blobStore = getBlobStore();
+        const bytes = new Uint8Array(data.data);
+
+        await blobStore.store(attachmentId, bytes);
+
+        db.fileMetadata.set(attachmentId, {
+          id: attachmentId,
+          filename: data.name,
+          mimeType: data.type,
+          size: bytes.length,
+          hash: BlobStore.computeHash(bytes),
+          createdAt: new Date().toISOString(),
+          ownerEmail: userEmail,
+          sourceType: "research-attachment",
+        });
+
         db.researchAttachments.set(attachmentId, {
           id: attachmentId,
           userEmail,
-          ...data,
+          data: [],
+          type: data.type,
+          name: data.name,
         });
+
         db.persist();
       },
 
       async findByUser(userEmail: string, attachmentId: string) {
+        const meta = db.fileMetadata.get(attachmentId);
+        if (meta && meta.ownerEmail === userEmail) {
+          const blobStore = getBlobStore();
+          const bytes = await blobStore.retrieve(attachmentId);
+          if (bytes) {
+            return {
+              id: attachmentId,
+              userEmail,
+              data: Array.from(bytes),
+              type: meta.mimeType,
+              name: meta.filename,
+            };
+          }
+        }
+
         const att = db.researchAttachments.get(attachmentId);
         if (!att || att.userEmail !== userEmail) return null;
         return att;

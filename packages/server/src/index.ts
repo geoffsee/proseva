@@ -227,6 +227,17 @@ router.get(
 ensureWasmSimilarityInit();
 await initDb();
 
+// Initialize the blob store and migrate any legacy research attachments.
+import { getBlobStore, migrateResearchAttachmentsToBlobStore } from "./blob-store";
+getBlobStore();
+void migrateResearchAttachmentsToBlobStore()
+  .then(({ migrated }) => {
+    if (migrated > 0) {
+      console.log(`[blob-store] Migrated ${migrated} research attachments to blob store`);
+    }
+  })
+  .catch((err) => console.error("[blob-store] Migration failed:", err));
+
 // Kick off optional bulk ingestion when AUTO_INGEST_DIR is set.
 void maybeAutoIngestFromEnv().catch((err) =>
   console.error("[auto-ingest] Failed to start", err),
