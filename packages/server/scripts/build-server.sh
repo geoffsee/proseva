@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SERVER_DIR="$ROOT_DIR/server"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SERVER_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+DIST_SERVER_DIR="$REPO_ROOT/dist-server"
+NODE_MODULES_DIR="$REPO_ROOT/node_modules"
 
 EXTERNAL_FLAGS=(
   "--external" "@duckdb/node-bindings"
@@ -39,28 +42,28 @@ validate_platform() {
 }
 
 install_server_deps() {
-  cd "$SERVER_DIR"
+  cd "$REPO_ROOT"
   bun install --frozen-lockfile
 }
 
 run_bundler() {
   local _platform="$1"
   cd "$SERVER_DIR"
+  mkdir -p "$DIST_SERVER_DIR"
   bun build \
     --target node \
     src/index.ts src/index.server.ts \
     "${EXTERNAL_FLAGS[@]}" \
-    --outdir=../dist-server
+    --outdir="$DIST_SERVER_DIR"
 }
 
 copy_runtime_assets() {
-  cd "$SERVER_DIR"
-  cp node_modules/wasm-similarity/wasm_similarity_bg.wasm ../dist-server/
-  cp node_modules/wasm-pqc-subtle/wasm_pqc_subtle_bg.wasm ../dist-server/
+  cp "$NODE_MODULES_DIR/wasm-similarity/wasm_similarity_bg.wasm" "$DIST_SERVER_DIR/"
+  cp "$NODE_MODULES_DIR/wasm-pqc-subtle/wasm_pqc_subtle_bg.wasm" "$DIST_SERVER_DIR/"
 
-  mkdir -p ../dist-server/node_modules
-  rm -rf ../dist-server/node_modules/@duckdb
-  cp -R node_modules/@duckdb ../dist-server/node_modules/
+  mkdir -p "$DIST_SERVER_DIR/node_modules"
+  rm -rf "$DIST_SERVER_DIR/node_modules/@duckdb"
+  cp -R "$NODE_MODULES_DIR/@duckdb" "$DIST_SERVER_DIR/node_modules/"
 }
 
 main() {

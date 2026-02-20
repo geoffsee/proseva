@@ -2,6 +2,7 @@ name: Electron Release
 
 on:
   push:
+    branches: [ electron-release-debug ]
     tags:
       - "v*"
 
