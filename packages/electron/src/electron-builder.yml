@@ -26,6 +26,7 @@ extraResources:
 afterSign: src/notarize.cjs
 
 mac:
+  icon: icon.icns
   category: public.app-category.productivity
   target:
     - dmg
@@ -35,6 +36,7 @@ mac:
   hardenedRuntime: true
 
 win:
+  icon: icon.ico
   target:
     - target: nsis
       arch:
@@ -46,6 +48,7 @@ nsis:
   allowToChangeInstallationDirectory: true
 
 linux:
+  icon: icon-512.png
   target:
     - target: AppImage
       arch:
