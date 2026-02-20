@@ -3,35 +3,35 @@ productName: ProSeVA
 copyright: Copyright © Seemueller 2026
 
 directories:
-  buildResources: build
+  buildResources: src
   output: release
 
 files:
-  - dist-electron/**/*
+  - dist/**/*
 
 extraResources:
-  - from: dist-server/
+  - from: ../../dist-server/
     to: dist-server/
     filter:
       - "**/*"
-  - from: dist/
+  - from: ../gui/dist/
     to: dist/
     filter:
       - "**/*"
-  - from: server/data/
+  - from: ../server/data/
     to: server/data/
     filter:
       - "**/*"
 
-afterSign: scripts/notarize.cjs
+afterSign: src/notarize.cjs
 
 mac:
   category: public.app-category.productivity
   target:
     - dmg
     - zip
-  entitlements: build/entitlements.mac.plist
-  entitlementsInherit: build/entitlements.mac.plist
+  entitlements: src/entitlements.mac.plist
+  entitlementsInherit: src/entitlements.mac.plist
   hardenedRuntime: true
 
 win:
