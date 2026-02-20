@@ -7,6 +7,7 @@
         "@types/bun": "latest",
         "eslint": "^9.39.1",
         "typescript": "~5.9.3",
+        "vitest": "^4.0.18",
       },
     },
     "packages/cli": {
@@ -26,6 +27,15 @@
       "devDependencies": {
         "@types/node": "^20.0.0",
         "openapi-typescript": "^7.4.3",
+      },
+    },
+    "packages/correspondence": {
+      "name": "@proseva/correspondence",
+      "devDependencies": {
+        "@types/bun": "latest",
+      },
+      "peerDependencies": {
+        "typescript": "^5",
       },
     },
     "packages/datasets": {
@@ -583,6 +593,8 @@
     "@playwright/test": ["@playwright/test@1.58.2", "", { "dependencies": { "playwright": "1.58.2" }, "bin": { "playwright": "cli.js" } }, "sha512-akea+6bHYBBfA9uQqSYmlJXn61cTa+jbO87xVLCWbTqbWadRVmhxlXATaOjOgcBaWU4ePo0wB41KMFv3o35IXA=="],
 
     "@proseva/cli": ["@proseva/cli@workspace:packages/cli"],
+
+    "@proseva/correspondence": ["@proseva/correspondence@workspace:packages/correspondence"],
 
     "@proseva/datasets": ["@proseva/datasets@workspace:packages/datasets"],
 

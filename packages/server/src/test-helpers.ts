@@ -128,6 +128,13 @@ export const api = {
       body: JSON.stringify(body),
     });
   },
+  async postForm(path: string, formData: FormData, base: string) {
+    return fetch(`${base}${path}`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: formData,
+    });
+  },
   async delete(path: string, base: string) {
     return fetch(`${base}${path}`, {
       method: "DELETE",

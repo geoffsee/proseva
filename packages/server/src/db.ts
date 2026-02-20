@@ -49,6 +49,31 @@ export type Filing = {
   caseId: string;
 };
 
+export type Correspondence = {
+  id: string;
+  caseId: string;
+  date: string;
+  direction: "incoming" | "outgoing";
+  channel: "email" | "mail" | "fax" | "phone" | "sms" | "other";
+  subject: string;
+  sender: string;
+  recipient: string;
+  summary: string;
+  notes: string;
+  attachments: CorrespondenceAttachment[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CorrespondenceAttachment = {
+  id: string;
+  filename: string;
+  contentType: string;
+  size: number;
+  hash: string;
+  createdAt: string;
+};
+
 export type Contact = {
   id: string;
   name: string;
@@ -351,7 +376,12 @@ export type FileMetadata = {
   hash: string;
   createdAt: string;
   ownerEmail?: string;
-  sourceType: "research-attachment" | "evidence" | "document" | "other";
+  sourceType:
+    | "research-attachment"
+    | "correspondence-attachment"
+    | "evidence"
+    | "document"
+    | "other";
   sourceRef?: string;
 };
 
@@ -378,6 +408,7 @@ type Collections = {
   finances: Map<string, FinancialEntry>;
   evidences: Map<string, Evidence>;
   filings: Map<string, Filing>;
+  correspondences: Map<string, Correspondence>;
   notes: Map<string, Note>;
   deviceTokens: Map<string, DeviceToken>;
   smsRecipients: Map<string, SmsRecipient>;
@@ -398,6 +429,7 @@ const COLLECTION_KEYS: (keyof Collections)[] = [
   "finances",
   "evidences",
   "filings",
+  "correspondences",
   "notes",
   "deviceTokens",
   "smsRecipients",
@@ -437,6 +469,7 @@ function assignMaps(target: Database, maps: Collections): void {
   target.finances = maps.finances;
   target.evidences = maps.evidences;
   target.filings = maps.filings;
+  target.correspondences = maps.correspondences;
   target.notes = maps.notes;
   target.deviceTokens = maps.deviceTokens;
   target.smsRecipients = maps.smsRecipients;
@@ -457,6 +490,7 @@ export class Database {
   finances!: Map<string, FinancialEntry>;
   evidences!: Map<string, Evidence>;
   filings!: Map<string, Filing>;
+  correspondences!: Map<string, Correspondence>;
   notes!: Map<string, Note>;
   deviceTokens!: Map<string, DeviceToken>;
   smsRecipients!: Map<string, SmsRecipient>;

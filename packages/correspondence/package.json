@@ -1,0 +1,14 @@
+{
+  "name": "@proseva/correspondence",
+  "main": "index.ts",
+  "module": "index.ts",
+  "types": "index.d.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

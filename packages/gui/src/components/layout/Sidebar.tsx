@@ -23,6 +23,7 @@ import {
   LuBell,
   LuSettings,
   LuScroll,
+  LuMail,
 } from "react-icons/lu";
 import { useState } from "react";
 import { ColorModeButton } from "../ui/color-mode";
@@ -33,6 +34,7 @@ const NAV_SECTIONS = [
     items: [
       { to: "/deadlines", label: "Deadlines", icon: LuClock },
       { to: "/filings", label: "Filings", icon: LuUpload },
+      { to: "/correspondence", label: "Correspondence", icon: LuMail },
       { to: "/evidence", label: "Evidence", icon: LuImage },
       { to: "/timeline", label: "Timeline", icon: LuChartGantt },
     ],

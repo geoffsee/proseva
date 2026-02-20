@@ -15,6 +15,37 @@ export type FinancialEntry = components["schemas"]["FinancialEntry"];
 export type Evidence = components["schemas"]["Evidence"];
 export type Note = components["schemas"]["Note"];
 export type DocumentEntry = components["schemas"]["DocumentEntry"];
+export type Correspondence = {
+  id: string;
+  caseId: string;
+  date: string;
+  direction: "incoming" | "outgoing";
+  channel: "email" | "mail" | "fax" | "phone" | "sms" | "other";
+  subject: string;
+  sender: string;
+  recipient: string;
+  summary: string;
+  notes: string;
+  attachments: CorrespondenceAttachment[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CorrespondenceAttachment = {
+  id: string;
+  filename: string;
+  contentType: string;
+  size: number;
+  hash: string;
+  createdAt: string;
+};
+
+export type CorrespondenceEmailImportResult = {
+  created: Correspondence[];
+  createdCount: number;
+  errors: Array<{ fileName: string; error: string }>;
+  errorCount: number;
+};
 
 // --- Token Management ---
 export async function setAuthToken(token: string): Promise<void> {
@@ -321,6 +352,97 @@ export const searchApi = {
       headers: await getAuthHeaders(),
     });
     return res.json();
+  },
+};
+
+export const correspondenceApi = {
+  list: async (): Promise<Correspondence[]> => {
+    const res = await fetch(`${API_BASE}/correspondences`, {
+      headers: await getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
+    return res.json();
+  },
+  get: async (id: string): Promise<Correspondence | null> => {
+    const res = await fetch(`${API_BASE}/correspondences/${id}`, {
+      headers: await getAuthHeaders(),
+    });
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
+    return res.json();
+  },
+  create: async (
+    data: Partial<Correspondence>,
+  ): Promise<Correspondence> => {
+    const res = await fetch(`${API_BASE}/correspondences`, {
+      method: "POST",
+      headers: await getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
+    return res.json();
+  },
+  update: async (
+    id: string,
+    updates: Partial<Correspondence>,
+  ): Promise<Correspondence> => {
+    const res = await fetch(`${API_BASE}/correspondences/${id}`, {
+      method: "PATCH",
+      headers: await getAuthHeaders(),
+      body: JSON.stringify(updates),
+    });
+    if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
+    return res.json();
+  },
+  delete: async (id: string): Promise<void> => {
+    const res = await fetch(`${API_BASE}/correspondences/${id}`, {
+      method: "DELETE",
+      headers: await getAuthHeaders(),
+    });
+    if (!res.ok && res.status !== 404) {
+      throw new Error(`API error: ${res.status} ${res.statusText}`);
+    }
+  },
+  importEmails: async (
+    formData: FormData,
+  ): Promise<CorrespondenceEmailImportResult> => {
+    const token = await getAuthToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${API_BASE}/correspondences/import-email`, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+    if (!res.ok) throw new Error(`Import failed: ${res.status}`);
+    return res.json();
+  },
+  downloadAttachment: async (
+    correspondenceId: string,
+    attachmentId: string,
+  ): Promise<{ blob: Blob; filename: string; contentType: string }> => {
+    const res = await fetch(
+      `${API_BASE}/correspondences/${correspondenceId}/attachments/${attachmentId}`,
+      {
+        headers: await getAuthHeaders(),
+      },
+    );
+
+    if (!res.ok) {
+      throw new Error(`Download failed: ${res.status}`);
+    }
+
+    const blob = await res.blob();
+    const contentType =
+      res.headers.get("content-type") || "application/octet-stream";
+    const disposition = res.headers.get("content-disposition") || "";
+    const filenameMatch = disposition.match(/filename=\"?([^\";]+)\"?/i);
+    const filename = filenameMatch?.[1] || "attachment.bin";
+
+    return { blob, filename, contentType };
   },
 };
 
@@ -992,6 +1114,7 @@ export const api = {
   notes: notesApi,
   evidences: evidencesApi,
   filings: filingsApi,
+  correspondence: correspondenceApi,
   reports: reportsApi,
   search: searchApi,
   deviceTokens: deviceTokensApi,

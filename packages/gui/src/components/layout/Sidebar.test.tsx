@@ -33,6 +33,9 @@ describe("Sidebar", () => {
     render(<Sidebar />, { withRouter: true });
     expect(screen.getByRole("link", { name: /Deadlines/ })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Filings/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /Correspondence/ }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Evidence/ })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Timeline/ })).toBeInTheDocument();
   });
@@ -160,7 +163,7 @@ describe("Sidebar", () => {
 
     // Verify we have all the expected navigation links
     const allLinks = screen.getAllByRole("link");
-    // 4 Core + 6 Data + 6 Tools = 16 navigation links
-    expect(allLinks.length).toBeGreaterThanOrEqual(16);
+    // 5 Core + 6 Data + 9 Tools + 1 System + 1 Search = 22 navigation links
+    expect(allLinks.length).toBeGreaterThanOrEqual(22);
   });
 });

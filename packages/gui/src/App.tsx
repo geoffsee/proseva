@@ -15,6 +15,7 @@ import Research from "./pages/Research";
 import DocumentManager from "./pages/DocumentManager";
 import Deadlines from "./pages/Deadlines";
 import Filings from "./pages/Filings";
+import Correspondence from "./pages/Correspondence";
 import Evidence from "./pages/Evidence";
 import Timeline from "./pages/Timeline";
 import Reports from "./pages/Reports";
@@ -38,6 +39,7 @@ function App() {
             <Route path="/search" element={<Search />} />
             <Route path="/deadlines" element={<Deadlines />} />
             <Route path="/filings" element={<Filings />} />
+            <Route path="/correspondence" element={<Correspondence />} />
             <Route path="/evidence" element={<Evidence />} />
             <Route path="/timeline" element={<Timeline />} />
             <Route path="/cases" element={<CaseTracker />} />
