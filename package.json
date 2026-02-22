@@ -23,7 +23,10 @@
     "cli": "bun --filter=@proseva/cli run",
     "sdk": "bun --filter=@proseva/sdk run",
     "dist:electron": "bun run build && bun --filter=@proseva/electron run dist:local",
-    "fake:scan": "./tools/fake-scanner/generate-doc.ts"
+    "scan:random": "./tools/fake-scanner/generate-doc.ts",
+    "scanner:run": "(cd tools/fake-scanner && docker compose up -d)",
+    "scanner:stop": "(cd tools/fake-scanner && docker compose down)",
+    "scanner:logs": "(cd tools/fake-scanner && docker compose logs -f)"
   },
   "workspaces": ["packages/*"],
   "dependencies": {

@@ -243,7 +243,7 @@ export async function classifyDocument(
   try {
     const tokens = encode(text).slice(0, 1000);
     const truncated = decode(tokens);
-    const model = getConfig("TEXT_MODEL_SMALL") || "gpt-4o-mini";
+    const model = getConfig("TEXT_MODEL_SMALL") || "gpt-4.1-mini";
 
     console.log(`[classify] Classifying document (${tokens.length} tokens) with model=${model}`);
 
