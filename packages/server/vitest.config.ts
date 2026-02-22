@@ -4,6 +4,10 @@ import { resolve } from "path";
 export default defineConfig({
   resolve: {
     alias: {
+      "bun:sqlite": resolve(
+        import.meta.dirname ?? __dirname,
+        "src/__mocks__/bun-sqlite.ts",
+      ),
       "idb-repo": resolve(
         import.meta.dirname ?? __dirname,
         "../../node_modules/idb-repo/dist/index-node.js",

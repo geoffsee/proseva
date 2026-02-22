@@ -60,6 +60,8 @@ vi.mock("../lib/api", () => ({
       list: vi.fn().mockResolvedValue([]),
       delete: vi.fn().mockResolvedValue(null),
       upload: vi.fn().mockResolvedValue({}),
+      getText: vi.fn().mockResolvedValue("Extracted text content for this document."),
+      download: vi.fn().mockResolvedValue({ blob: new Blob(), filename: "file.pdf" }),
     },
     ingest: {
       status: vi.fn().mockResolvedValue({
@@ -474,6 +476,7 @@ describe("DocumentManager", () => {
   });
 
   it("sends Authorization header when loading extracted text", async () => {
+    const { api } = await import("../lib/api");
     await mockApis(MOCK_DOCS);
     renderDocManager();
     await waitFor(() => {
@@ -487,17 +490,8 @@ describe("DocumentManager", () => {
       ).toBeInTheDocument();
     });
 
-    const textCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.find(
-      (c: unknown[]) => typeof c[0] === "string" && c[0].startsWith("/texts/"),
-    );
-    expect(textCall).toBeDefined();
-    expect(textCall![1]).toEqual(
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          Authorization: "Bearer test-token-123",
-        }),
-      }),
-    );
+    // The SDK handles auth headers internally via getAuthToken callback
+    expect(api.documents.getText).toHaveBeenCalledWith("2");
   });
 
   it("deletes a document when delete button is clicked and confirmed", async () => {

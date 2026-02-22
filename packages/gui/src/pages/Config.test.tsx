@@ -88,7 +88,7 @@ describe("Config", () => {
     });
     (api.config.getOpenAIModels as any).mockResolvedValue({
       success: true,
-      models: ["gpt-4", "gpt-3.5-turbo"],
+      models: ["gpt-3.5-turbo", "gpt-4", "gpt-4o"],
       endpoint: "https://api.openai.com/v1",
     });
   });
@@ -247,12 +247,17 @@ describe("Config", () => {
     });
   });
 
-  it("handles AI model toggling", async () => {
+  it("handles AI model selection via dropdown", async () => {
     render(<Config />);
 
-    // Wait for models to load
-    const gpt3Checkbox = await screen.findByLabelText("gpt-3.5-turbo");
-    fireEvent.click(gpt3Checkbox);
+    // Wait for models to load and dropdowns to appear
+    await waitFor(() => {
+      expect(screen.getByText("Visual Model")).toBeInTheDocument();
+    });
+
+    // Change the Visual Model dropdown to a different model
+    const vlmSelect = screen.getByDisplayValue("gpt-4o");
+    fireEvent.change(vlmSelect, { target: { value: "gpt-4" } });
 
     const saveButton = screen.getByRole("button", {
       name: /Save All Changes/i,
@@ -263,7 +268,7 @@ describe("Config", () => {
       expect(mockConfigStore.updateConfig).toHaveBeenCalledWith(
         expect.objectContaining({
           ai: expect.objectContaining({
-            selectedModels: expect.arrayContaining(["gpt-4", "gpt-3.5-turbo"]),
+            vlmModel: "gpt-4",
           }),
         }),
       );

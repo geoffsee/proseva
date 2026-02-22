@@ -26,6 +26,7 @@ vi.mock("../../lib/api", () => ({
   getAuthToken: vi.fn(),
   clearAuthToken: vi.fn(),
   setAuthExpiredCallback: vi.fn(),
+  setDbLockedCallback: vi.fn(),
 }));
 
 // Mock KV

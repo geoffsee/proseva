@@ -64,7 +64,7 @@ describe("FileUpload", () => {
     });
 
     const formData = uploadSpy.mock.calls[0][0];
-    expect(formData.get("category")).toBe("_new_filings");
+    expect(formData.get("category")).toBe("_auto");
     expect(formData.get("files")).toBeInstanceOf(File);
 
     await waitFor(() => {

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, mock } from "bun:test";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   executeTool,
   chunkText,
@@ -601,7 +601,7 @@ describe("executeTool", () => {
       const mockOpenai = {
         chat: {
           completions: {
-            create: mock()
+            create: vi.fn()
               .mockResolvedValueOnce({
                 choices: [
                   {
@@ -670,7 +670,7 @@ describe("executeTool", () => {
       const mockOpenai = {
         chat: {
           completions: {
-            create: mock()
+            create: vi.fn()
               .mockResolvedValueOnce({
                 choices: [
                   {
@@ -722,7 +722,7 @@ describe("executeTool", () => {
       const mockOpenai = {
         chat: {
           completions: {
-            create: mock().mockResolvedValueOnce({
+            create: vi.fn().mockResolvedValueOnce({
               choices: [{ message: { content: "No actions needed." } }],
             }),
           },

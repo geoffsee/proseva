@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, mock } from "bun:test";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 
-const mockIngestPdfToBlob = mock(async () => ({
+const mockIngestPdfToBlob = vi.fn(async () => ({
   record: {
     id: "test-id",
     filename: "test.pdf",
@@ -15,12 +15,12 @@ const mockIngestPdfToBlob = mock(async () => ({
     createdAt: "2024-01-01T00:00:00.000Z",
   },
 }));
-const mockDeriveCategory = mock(() => "uploads");
-const mockOpenAICompletionCreate = mock(async () => ({
+const mockDeriveCategory = vi.fn(() => "uploads");
+const mockOpenAICompletionCreate = vi.fn(async () => ({
   choices: [{ message: { content: "No actions needed." } }],
 }));
-const mockInitScheduler = mock(() => {});
-const mockGetSchedulerStatus = mock(() => ({
+const mockInitScheduler = vi.fn(() => {});
+const mockGetSchedulerStatus = vi.fn(() => ({
   enabled: false,
   running: false,
   lastRunTime: null,
@@ -28,22 +28,22 @@ const mockGetSchedulerStatus = mock(() => ({
   timezone: "UTC",
   cronExpression: "0 0 18 * * *",
 }));
-const mockTriggerEvaluation = mock(() => {});
-const mockStopScheduler = mock(() => {});
-const mockRestartScheduler = mock(() => {});
+const mockTriggerEvaluation = vi.fn(() => {});
+const mockStopScheduler = vi.fn(() => {});
+const mockRestartScheduler = vi.fn(() => {});
 
-mock.module("openai", () => ({
+vi.mock("openai", () => ({
   default: class MockOpenAI {
     chat = { completions: { create: mockOpenAICompletionCreate } };
   },
 }));
 
-mock.module("./ingest", () => ({
+vi.mock("./ingest", () => ({
   ingestPdfToBlob: mockIngestPdfToBlob,
   deriveCategory: mockDeriveCategory,
 }));
 
-mock.module("./scheduler", () => ({
+vi.mock("./scheduler", () => ({
   initScheduler: mockInitScheduler,
   getSchedulerStatus: mockGetSchedulerStatus,
   triggerEvaluation: mockTriggerEvaluation,
