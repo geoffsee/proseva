@@ -166,6 +166,7 @@ router.get(
       legiscanApiKey: process.env.LEGISCAN_API_KEY,
       govInfoApiKey: process.env.GOVINFO_API_KEY,
       serpapiBase: process.env.SERPAPI_BASE,
+      serpapiApiKey: process.env.SERPAPI_API_KEY,
     },
     faxGateway: {
       url: process.env.FAX_GATEWAY_URL,
@@ -251,6 +252,10 @@ router.get(
       serpapiBase:
         config?.legalResearch?.serpapiBase ||
         envConfig.legalResearch.serpapiBase,
+      serpapiApiKey: maskSensitiveValue(
+        config?.legalResearch?.serpapiApiKey ||
+          envConfig.legalResearch.serpapiApiKey,
+      ),
       courtListenerApiTokenSource: config?.legalResearch?.courtListenerApiToken
         ? "database"
         : "environment",
@@ -261,6 +266,9 @@ router.get(
         ? "database"
         : "environment",
       serpapiBaseSource: config?.legalResearch?.serpapiBase
+        ? "database"
+        : "environment",
+      serpapiApiKeySource: config?.legalResearch?.serpapiApiKey
         ? "database"
         : "environment",
     },

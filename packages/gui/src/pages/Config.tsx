@@ -76,6 +76,10 @@ const Config = observer(() => {
   const [openaiEndpoint, setOpenaiEndpoint] = useState("");
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
   const [vlmModel, setVlmModel] = useState("");
+  const [largeModel, setLargeModel] = useState("");
+  const [smallModel, setSmallModel] = useState("");
+  const [reasoningModel, setReasoningModel] = useState("");
+  const [embeddingsModel, setEmbeddingsModel] = useState("");
 
   const [autoIngestDir, setAutoIngestDir] = useState("");
 
@@ -83,6 +87,7 @@ const Config = observer(() => {
   const [legiscanApiKey, setLegiscanApiKey] = useState("");
   const [govInfoApiKey, setGovInfoApiKey] = useState("");
   const [serpapiBase, setSerpapiBase] = useState("");
+  const [serpapiApiKey, setSerpapiApiKey] = useState("");
 
   const [chatSystemPrompt, setChatSystemPrompt] = useState("");
   const [caseSummaryPrompt, setCaseSummaryPrompt] = useState("");
@@ -156,6 +161,10 @@ const Config = observer(() => {
       setOpenaiEndpoint(configuredEndpoint);
       setSelectedModels(configStore.config.ai?.selectedModels || []);
       setVlmModel(configStore.config.ai?.vlmModel || "");
+      setLargeModel(configStore.config.ai?.largeModel || "");
+      setSmallModel(configStore.config.ai?.smallModel || "");
+      setReasoningModel(configStore.config.ai?.reasoningModel || "");
+      setEmbeddingsModel(configStore.config.ai?.embeddingsModel || "");
       void loadOpenAIModels(configuredEndpoint);
 
       setAutoIngestDir(configStore.config.autoIngest?.directory || "");
@@ -166,6 +175,7 @@ const Config = observer(() => {
       setLegiscanApiKey(configStore.config.legalResearch?.legiscanApiKey || "");
       setGovInfoApiKey(configStore.config.legalResearch?.govInfoApiKey || "");
       setSerpapiBase(configStore.config.legalResearch?.serpapiBase || "");
+      setSerpapiApiKey(configStore.config.legalResearch?.serpapiApiKey || "");
 
       setChatSystemPrompt(configStore.config.prompts?.chatSystemPrompt || "");
       setCaseSummaryPrompt(configStore.config.prompts?.caseSummaryPrompt || "");
@@ -207,6 +217,10 @@ const Config = observer(() => {
           openaiEndpoint: openaiEndpoint || undefined,
           selectedModels: selectedModels,
           vlmModel: vlmModel || undefined,
+          largeModel: largeModel || undefined,
+          smallModel: smallModel || undefined,
+          reasoningModel: reasoningModel || undefined,
+          embeddingsModel: embeddingsModel || undefined,
         },
         autoIngest: {
           directory: autoIngestDir || undefined,
@@ -216,6 +230,7 @@ const Config = observer(() => {
           legiscanApiKey: legiscanApiKey || undefined,
           govInfoApiKey: govInfoApiKey || undefined,
           serpapiBase: serpapiBase || undefined,
+          serpapiApiKey: serpapiApiKey || undefined,
         },
         prompts: {
           chatSystemPrompt: chatSystemPrompt || undefined,
@@ -437,15 +452,6 @@ const Config = observer(() => {
     }
   };
 
-  const toggleModel = (model: string, checked: boolean) => {
-    if (checked) {
-      setSelectedModels(Array.from(new Set([...selectedModels, model])));
-    } else {
-      setSelectedModels(selectedModels.filter((m) => m !== model));
-    }
-    setHasChanges(true);
-  };
-
   if (configStore.isLoading && !configStore.config) {
     return (
       <Box p={8}>
@@ -483,7 +489,8 @@ const Config = observer(() => {
       "database" ||
     configStore.config?.legalResearch?.legiscanApiKeySource === "database" ||
     configStore.config?.legalResearch?.govInfoApiKeySource === "database" ||
-    configStore.config?.legalResearch?.serpapiBaseSource === "database"
+    configStore.config?.legalResearch?.serpapiBaseSource === "database" ||
+    configStore.config?.legalResearch?.serpapiApiKeySource === "database"
       ? "database"
       : "environment";
 
@@ -743,22 +750,6 @@ const Config = observer(() => {
             />
           </Box>
           <Box>
-            <Text fontSize="sm" mb={1} fontWeight="medium">
-              VLM Model (vision/document processing)
-            </Text>
-            <Input
-              value={vlmModel}
-              onChange={(e) => {
-                setVlmModel(e.target.value);
-                setHasChanges(true);
-              }}
-              placeholder="gpt-4o-mini"
-            />
-          </Box>
-          <Box>
-            <Text fontSize="sm" mb={3} fontWeight="medium">
-              Available Models
-            </Text>
             <HStack mb={2}>
               <Button
                 size="xs"
@@ -782,37 +773,52 @@ const Config = observer(() => {
                 <Alert.Description>{modelsError}</Alert.Description>
               </Alert.Root>
             )}
-            {modelOptions.length === 0 ? (
-              <Text fontSize="sm" color="gray.600">
-                No models available. Check endpoint/API key and refresh.
-              </Text>
-            ) : (
-              <VStack gap={2} align="stretch">
-                {modelOptions.map((model) => (
-                  <label
-                    key={model}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedModels.includes(model)}
-                      onChange={(e) => toggleModel(model, e.target.checked)}
-                      style={{
-                        width: "16px",
-                        height: "16px",
-                        cursor: "pointer",
-                      }}
-                    />
-                    <Text fontSize="sm">{model}</Text>
-                  </label>
-                ))}
-              </VStack>
-            )}
           </Box>
+          {[
+            { label: "Large Model", value: largeModel, setter: setLargeModel, placeholder: "gpt-4o" },
+            { label: "Small Model", value: smallModel, setter: setSmallModel, placeholder: "gpt-4o-mini" },
+            { label: "Reasoning Model", value: reasoningModel, setter: setReasoningModel, placeholder: "o1-mini" },
+            { label: "Visual Model", value: vlmModel, setter: setVlmModel, placeholder: "gpt-4o-mini" },
+            { label: "Embeddings Model", value: embeddingsModel, setter: setEmbeddingsModel, placeholder: "text-embedding-3-small" },
+          ].map(({ label, value, setter, placeholder }) => (
+            <Box key={label}>
+              <Text fontSize="sm" mb={1} fontWeight="medium">
+                {label}
+              </Text>
+              {modelOptions.length > 0 ? (
+                <select
+                  value={value}
+                  onChange={(e) => {
+                    setter(e.target.value);
+                    setHasChanges(true);
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: "6px 8px",
+                    borderRadius: "6px",
+                    border: "1px solid var(--chakra-colors-border)",
+                    background: "transparent",
+                    color: "inherit",
+                    fontSize: "14px",
+                  }}
+                >
+                  <option value="">{placeholder} (default)</option>
+                  {modelOptions.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              ) : (
+                <Input
+                  value={value}
+                  onChange={(e) => {
+                    setter(e.target.value);
+                    setHasChanges(true);
+                  }}
+                  placeholder={placeholder}
+                />
+              )}
+            </Box>
+          ))}
           <Button
             size="sm"
             variant="outline"
@@ -979,6 +985,20 @@ const Config = observer(() => {
               }}
               placeholder="your-govinfo-api-key"
               label="GovInfo API Key"
+            />
+          </Box>
+          <Box>
+            <Text fontSize="sm" mb={1} fontWeight="medium">
+              SerpAPI API Key
+            </Text>
+            <MaskedInput
+              value={serpapiApiKey}
+              onChange={(value) => {
+                setSerpapiApiKey(value);
+                setHasChanges(true);
+              }}
+              placeholder="your-serpapi-api-key"
+              label="SerpAPI API Key"
             />
           </Box>
           <Box>

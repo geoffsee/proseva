@@ -83,6 +83,18 @@ export function getConfig(key: string): string | undefined {
     if (key === "VLM_MODEL" && configCache.ai?.vlmModel) {
       return configCache.ai.vlmModel;
     }
+    if (key === "TEXT_MODEL_LARGE" && configCache.ai?.largeModel) {
+      return configCache.ai.largeModel;
+    }
+    if (key === "TEXT_MODEL_SMALL" && configCache.ai?.smallModel) {
+      return configCache.ai.smallModel;
+    }
+    if (key === "REASONING_MODEL" && configCache.ai?.reasoningModel) {
+      return configCache.ai.reasoningModel;
+    }
+    if (key === "EMBEDDINGS_MODEL" && configCache.ai?.embeddingsModel) {
+      return configCache.ai.embeddingsModel;
+    }
     if (key === "OCR_MODE" && (configCache.ai as any)?.ocrMode) {
       return (configCache.ai as any).ocrMode;
     }
@@ -110,6 +122,9 @@ export function getConfig(key: string): string | undefined {
     }
     if (key === "SERPAPI_BASE" && configCache.legalResearch?.serpapiBase) {
       return configCache.legalResearch.serpapiBase;
+    }
+    if (key === "SERPAPI_API_KEY" && configCache.legalResearch?.serpapiApiKey) {
+      return configCache.legalResearch.serpapiApiKey;
     }
 
     // Fax gateway keys
@@ -217,6 +232,7 @@ export function legalResearchConfig() {
     legiscanApiKey: getConfig("LEGISCAN_API_KEY"),
     govInfoApiKey: getConfig("GOVINFO_API_KEY"),
     serpapiBase: getConfig("SERPAPI_BASE"),
+    serpapiApiKey: getConfig("SERPAPI_API_KEY"),
   };
 }
 

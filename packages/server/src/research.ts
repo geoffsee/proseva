@@ -4044,6 +4044,8 @@ Respond in JSON format:
       serpUrl.searchParams.set("q", query);
       serpUrl.searchParams.set("engine", "google");
       serpUrl.searchParams.set("num", String(limit));
+      const serpApiKey = getConfig("SERPAPI_API_KEY");
+      if (serpApiKey) serpUrl.searchParams.set("api_key", serpApiKey);
 
       console.log(
         `[ResearchRouter ${requestId}] Fetching lawyers via SerpAPI: ${query}`,

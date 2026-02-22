@@ -235,6 +235,10 @@ export type ServerConfig = {
     openaiEndpoint?: string;
     selectedModels?: string[];
     vlmModel?: string;
+    largeModel?: string;
+    smallModel?: string;
+    reasoningModel?: string;
+    embeddingsModel?: string;
   };
 
   autoIngest?: {
@@ -246,6 +250,7 @@ export type ServerConfig = {
     legiscanApiKey?: string;
     govInfoApiKey?: string;
     serpapiBase?: string;
+    serpapiApiKey?: string;
   };
 
   prompts?: {

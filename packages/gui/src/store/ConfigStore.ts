@@ -47,6 +47,10 @@ const AIConfigModel = types.model("AIConfig", {
   openaiEndpoint: types.maybeNull(types.string),
   selectedModels: types.optional(types.array(types.string), []),
   vlmModel: types.maybeNull(types.string),
+  largeModel: types.maybeNull(types.string),
+  smallModel: types.maybeNull(types.string),
+  reasoningModel: types.maybeNull(types.string),
+  embeddingsModel: types.maybeNull(types.string),
   openaiApiKeySource: types.maybeNull(
     types.enumeration(["database", "environment"]),
   ),
@@ -73,6 +77,7 @@ const LegalResearchConfigModel = types.model("LegalResearchConfig", {
   legiscanApiKey: types.maybeNull(types.string),
   govInfoApiKey: types.maybeNull(types.string),
   serpapiBase: types.maybeNull(types.string),
+  serpapiApiKey: types.maybeNull(types.string),
   courtListenerApiTokenSource: types.maybeNull(
     types.enumeration(["database", "environment"]),
   ),
@@ -83,6 +88,9 @@ const LegalResearchConfigModel = types.model("LegalResearchConfig", {
     types.enumeration(["database", "environment"]),
   ),
   serpapiBaseSource: types.maybeNull(
+    types.enumeration(["database", "environment"]),
+  ),
+  serpapiApiKeySource: types.maybeNull(
     types.enumeration(["database", "environment"]),
   ),
 });
