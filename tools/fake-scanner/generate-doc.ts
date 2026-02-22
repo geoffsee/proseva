@@ -2,6 +2,7 @@
 
 import { PDFDocument, StandardFonts, PDFPage, PDFFont, rgb } from "pdf-lib";
 import fs from "fs/promises";
+import fsSync from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { marked } from "marked";
@@ -428,11 +429,19 @@ async function generateVirginiaLegalPDF(
 //   done
 //
 const allDocTypes = Object.keys(vaLegalConfig.documentPresets) as DocumentType[];
-const randomType = allDocTypes[Math.floor(Math.random() * allDocTypes.length)];
+
+const LAST_TYPE_FILE = path.join(__dirname, ".last-doc-type");
+let lastType: string | null = null;
+try { lastType = fsSync.readFileSync(LAST_TYPE_FILE, "utf-8").trim(); } catch {}
+
+const eligible = allDocTypes.filter(t => t !== lastType);
+const randomType = eligible[Math.floor(Math.random() * eligible.length)];
 
 const docType = (process.argv[2] as DocumentType) || randomType;
 const overrides: Partial<typeof vaLegalConfig.caseInfo> = {};
 if (process.argv[3]) overrides.plaintiff = process.argv[3];
 if (process.argv[4]) overrides.defendant = process.argv[4];
 
-generateVirginiaLegalPDF(docType, overrides).catch(console.error);
+generateVirginiaLegalPDF(docType, overrides)
+    .then(() => fs.writeFile(LAST_TYPE_FILE, docType))
+    .catch(console.error);

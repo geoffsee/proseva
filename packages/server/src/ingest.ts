@@ -104,7 +104,7 @@ async function extractTextVlm(
           },
           {
             type: "text",
-            text: "Extract ALL text from this PDF verbatim. Return ONLY the extracted text, nothing else. At the very end, on a new line, write PAGE_COUNT:<number> with the number of pages in the document.",
+            text: "Convert content to Commonmark without additional dialog. At the very end, on a new line, write PAGE_COUNT:<number> with the number of pages in the document.",
           },
         ],
       },
