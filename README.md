@@ -5,27 +5,18 @@
 
 > This software is without warranty or guarantee of any kind. Designed for educational and personal legal case management purposes. Users are responsible for legal accuracy and compliance with Virginia state laws. Always consult a legal professional.
 
-## Features
-[//]: # (todo: update with relevant content after monorepo refactor is complete)
+## Download
 
-## Quick Start
+Grab the latest release for your platform from the [Releases](https://github.com/geoffsee/proseva/releases/latest) page.
 
-```bash
-[//]: # (todo: update with relevant content after monorepo refactor is complete)
-```
+| Platform          | File                                  |
+| ----------------- | ------------------------------------- |
+| macOS (Apple Silicon) | `ProSeVA-*-arm64.dmg`             |
+| macOS (Intel)     | `ProSeVA-*.dmg`                       |
+| Windows           | `ProSeVA.Setup.*.exe`                 |
+| Linux             | `ProSeVA-*.AppImage`                  |
 
-## Tech Stack
-[//]: # (todo: update with relevant content after monorepo refactor is complete)
+## License
 
-## Scripts
-```bash
-[//]: # (todo: update with relevant content after monorepo refactor is complete) 
-```
-
-## Additional Information
-
-[//]: # (todo: update with relevant content after monorepo refactor is complete)
-
-## 6. License
 MIT - Copyright 2026 Geoff Seemueller
 Details: [LICENSE.md](./LICENSE.md)
