@@ -1,7 +1,4 @@
-import { join } from "path";
-import { readFile } from "fs/promises";
-import { db } from "./db";
-import type { DocumentEntry } from "./ingest";
+import { db, type DocumentRecord } from "./db";
 
 // --- Type Definitions ---
 
@@ -279,20 +276,8 @@ function searchEntity<T extends { id: string; caseId?: string }>(
 
 // --- Document Loading ---
 
-async function loadDocuments(): Promise<DocumentEntry[]> {
-  const __dir =
-    import.meta.dir ??
-    import.meta.dirname ??
-    new URL(".", import.meta.url).pathname;
-  const appRoot = process.env.PROSEVA_DATA_DIR ?? join(__dir, "../..");
-  const indexPath = join(appRoot, "case-data/case-documents-app/index.json");
-
-  try {
-    const raw = await readFile(indexPath, "utf-8");
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
+function loadDocuments(): DocumentRecord[] {
+  return [...db.documents.values()];
 }
 
 // --- Main Search Function ---
@@ -334,7 +319,7 @@ export async function executeSearch(
     let allResults: SearchResultItem[];
 
     if (entityType === "documents") {
-      const documents = await loadDocuments();
+      const documents = loadDocuments();
       // Filter documents by caseId if specified
       const filtered = caseId
         ? documents.filter((d) => d.caseId === caseId)

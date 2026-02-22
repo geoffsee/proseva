@@ -1132,6 +1132,26 @@ export const documentsApi = {
     if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
     return res.json();
   },
+  getText: async (id: string): Promise<string> => {
+    const token = await getAuthToken();
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const res = await fetch(`${API_BASE}/documents/${id}/text`, { headers });
+    if (!res.ok) return "";
+    return res.text();
+  },
+  download: async (id: string): Promise<{ blob: Blob; filename: string }> => {
+    const token = await getAuthToken();
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const res = await fetch(`${API_BASE}/documents/${id}/download`, { headers });
+    if (!res.ok) throw new Error(`Download failed: ${res.status}`);
+    const blob = await res.blob();
+    const disposition = res.headers.get("content-disposition") || "";
+    const filenameMatch = disposition.match(/filename="?([^";]+)"?/i);
+    const filename = filenameMatch?.[1] || "document.pdf";
+    return { blob, filename };
+  },
 };
 
 export const ingestApi = {

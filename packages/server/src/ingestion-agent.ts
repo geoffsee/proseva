@@ -5,17 +5,17 @@ import {
   type Case,
   type Contact,
   type Deadline,
+  type DocumentRecord,
   type Evidence,
   type Filing,
   type Note,
   type Party,
 } from "./db";
-import type { DocumentEntry } from "./ingest";
 import { getConfig } from "./config";
 
 type AutoPopulateParams = {
   openai: OpenAI;
-  entry: DocumentEntry;
+  entry: DocumentRecord;
   text: string;
 };
 

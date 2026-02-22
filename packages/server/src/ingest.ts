@@ -5,6 +5,8 @@ import { tmpdir } from "os";
 import OpenAI from "openai";
 import { getConfig } from "./config";
 import { ocrPdf } from "../../ocr/src/ocr";
+import { db, type DocumentRecord } from "./db";
+import { BlobStore, getBlobStore } from "./blob-store";
 
 export interface DocumentEntry {
   id: string;
@@ -163,4 +165,47 @@ export async function ingestPdfBuffer(
     },
     text,
   };
+}
+
+export async function ingestPdfToBlob(
+  buffer: Buffer,
+  filename: string,
+  category: string,
+  openai?: OpenAI | null,
+): Promise<{ record: DocumentRecord }> {
+  const { text, pageCount } = await extractTextFromPdf(buffer, openai);
+
+  const bytes = new Uint8Array(buffer);
+  const id = crypto.randomUUID();
+  const hash = BlobStore.computeHash(bytes);
+
+  await getBlobStore().store(id, bytes);
+
+  db.fileMetadata.set(id, {
+    id,
+    filename,
+    mimeType: "application/pdf",
+    size: bytes.byteLength,
+    hash,
+    createdAt: new Date().toISOString(),
+    sourceType: "document",
+  });
+
+  const record: DocumentRecord = {
+    id,
+    filename,
+    category,
+    title: cleanTitle(filename),
+    pageCount,
+    dates: extractDates(text),
+    fileSize: bytes.byteLength,
+    hash,
+    caseId: "",
+    extractedText: text,
+    createdAt: new Date().toISOString(),
+  };
+
+  db.documents.set(id, record);
+
+  return { record };
 }

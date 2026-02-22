@@ -10,23 +10,23 @@ import {
   Table,
   Badge,
 } from "@chakra-ui/react";
-import { LuChevronDown, LuChevronRight, LuTrash2 } from "react-icons/lu";
+import { LuChevronDown, LuChevronRight, LuDownload, LuTrash2 } from "react-icons/lu";
 import { StatCard } from "../components/shared/StatCard";
 import FileUpload from "../components/FileUpload";
-import { api, getAuthToken } from "../lib/api";
+import { api } from "../lib/api";
 import { useStore } from "../store/StoreContext";
 
 interface DocumentEntry {
   id: string;
   filename: string;
-  path: string;
   category: string;
   title: string;
   pageCount: number;
-  textFile: string;
   dates: string[];
   fileSize: number;
+  hash?: string;
   caseId?: string;
+  createdAt?: string;
 }
 
 export default function DocumentManager() {
@@ -101,16 +101,10 @@ export default function DocumentManager() {
       return;
     }
     setExpandedId(doc.id);
-    if (!expandedText[doc.id] && doc.textFile) {
+    if (!expandedText[doc.id]) {
       setLoadingText(doc.id);
-      getAuthToken()
-        .then((token) => {
-          const headers: HeadersInit = token
-            ? { Authorization: `Bearer ${token}` }
-            : {};
-          return fetch(`/texts/${doc.id}.txt`, { headers });
-        })
-        .then((r) => (r.ok ? r.text() : Promise.resolve("")))
+      api.documents
+        .getText(doc.id)
         .then((text) =>
           setExpandedText((prev) => ({ ...prev, [doc.id]: text })),
         )
@@ -286,7 +280,7 @@ export default function DocumentManager() {
               <Table.ColumnHeader>Dates</Table.ColumnHeader>
               <Table.ColumnHeader>Size</Table.ColumnHeader>
               <Table.ColumnHeader>Case</Table.ColumnHeader>
-              <Table.ColumnHeader w="50px" />
+              <Table.ColumnHeader w="80px" />
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -340,18 +334,42 @@ export default function DocumentManager() {
                     )}
                   </Table.Cell>
                   <Table.Cell>
-                    <Button
-                      size="xs"
-                      variant="ghost"
-                      colorPalette="red"
-                      aria-label={`Delete ${doc.title || doc.filename}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(doc);
-                      }}
-                    >
-                      <LuTrash2 />
-                    </Button>
+                    <HStack gap="1">
+                      <Button
+                        size="xs"
+                        variant="ghost"
+                        aria-label={`Download ${doc.title || doc.filename}`}
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          try {
+                            const { blob, filename } =
+                              await api.documents.download(doc.id);
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = url;
+                            a.download = filename;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                          } catch {
+                            setDeleteError("Download failed");
+                          }
+                        }}
+                      >
+                        <LuDownload />
+                      </Button>
+                      <Button
+                        size="xs"
+                        variant="ghost"
+                        colorPalette="red"
+                        aria-label={`Delete ${doc.title || doc.filename}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(doc);
+                        }}
+                      >
+                        <LuTrash2 />
+                      </Button>
+                    </HStack>
                   </Table.Cell>
                 </Table.Row>
                 {expandedId === doc.id && (
@@ -365,7 +383,7 @@ export default function DocumentManager() {
                         overflowY="auto"
                       >
                         <Text fontSize="xs" color="fg.muted" mb="1">
-                          File: {doc.path}
+                          File: {doc.filename}
                         </Text>
                         {loadingText === doc.id ? (
                           <Text fontSize="sm" color="fg.muted">

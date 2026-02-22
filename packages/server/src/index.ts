@@ -1,6 +1,6 @@
 import { AutoRouter, cors } from "itty-router";
-import { join, basename, relative } from "path";
-import { readFile, writeFile, mkdir, readdir, stat, unlink } from "fs/promises";
+import { join, basename } from "path";
+import { readFile, readdir, stat } from "fs/promises";
 import OpenAI from "openai";
 import { parseEml } from "@proseva/correspondence";
 import {
@@ -29,10 +29,8 @@ import {
 } from "./blob-store";
 import { sendFax, getFaxProvider } from "./fax";
 import {
-  ingestPdfBuffer,
-  type DocumentEntry,
+  ingestPdfToBlob,
   deriveCategory,
-  generateId,
 } from "./ingest";
 import { autoPopulateFromDocument } from "./ingestion-agent";
 import { executeSearch, type EntityType } from "./search";
@@ -501,20 +499,8 @@ async function maybeAutoIngestFromEnv(): Promise<void> {
   ingestionStatus.errors = 0;
   ingestionStatus.lastRunStarted = new Date().toISOString();
 
-  const baseDir = join(appRoot, "server/app-data");
-  await mkdir(baseDir, { recursive: true });
-  const indexPath = join(baseDir, "index.json");
-
-  let existingEntries: DocumentEntry[] = [];
-  try {
-    const raw = await readFile(indexPath, "utf-8");
-    existingEntries = JSON.parse(raw);
-  } catch {
-    existingEntries = [];
-  }
-
   const existingSignatures = new Set(
-    existingEntries.map((e) => `${e.filename}|${e.fileSize}`),
+    [...db.documents.values()].map((e) => `${e.filename}|${e.fileSize}`),
   );
 
   let openai: OpenAI;
@@ -523,8 +509,6 @@ async function maybeAutoIngestFromEnv(): Promise<void> {
       apiKey: getConfig('OPENAI_API_KEY'),
       baseURL: getConfig('OPENAI_ENDPOINT'),
     });
-
-
   } catch (err) {
     console.error("[auto-ingest] OpenAI client init failed:", err);
     ingestionStatus.running = false;
@@ -541,7 +525,7 @@ async function maybeAutoIngestFromEnv(): Promise<void> {
     return;
   }
 
-  const newEntries: DocumentEntry[] = [];
+  let added = 0;
 
   for (const filePath of pdfFiles) {
     const fileStats = await stat(filePath);
@@ -558,48 +542,38 @@ async function maybeAutoIngestFromEnv(): Promise<void> {
         ? derivedCategory
         : "_bulk_import";
 
-    // Skip if destination file already exists to avoid overwriting prior imports.
-    const categoryDir = join(baseDir, category);
-    try {
-      await stat(join(categoryDir, filename));
-      ingestionStatus.skipped += 1;
-      continue;
-    } catch {
-      /* file doesn't exist yet, proceed with ingestion */
-    }
-
     const buffer = await readFile(filePath);
-    const { entry, text } = await ingestPdfBuffer(
+    const { record } = await ingestPdfToBlob(
       buffer,
       filename,
       category,
-      baseDir,
       openai,
     );
 
-    let finalEntry = entry;
     try {
       const { caseId } = await autoPopulateFromDocument({
         openai,
-        entry,
-        text,
+        entry: record,
+        text: record.extractedText,
       });
-      if (caseId) finalEntry = { ...entry, caseId };
+      if (caseId) {
+        record.caseId = caseId;
+        db.documents.set(record.id, record);
+      }
     } catch (err) {
       console.error("Structured auto-ingest failed (auto ingester)", err);
       ingestionStatus.errors += 1;
     }
 
     existingSignatures.add(signature);
-    newEntries.push(finalEntry);
+    added += 1;
     ingestionStatus.added += 1;
   }
 
-  if (newEntries.length > 0) {
-    const all = [...existingEntries, ...newEntries];
-    await writeFile(indexPath, JSON.stringify(all, null, 2));
+  if (added > 0) {
+    db.persist();
     console.log(
-      `[auto-ingest] Added ${newEntries.length} documents from ${sourceDir}`,
+      `[auto-ingest] Added ${added} documents from ${sourceDir}`,
     );
   } else {
     console.log("[auto-ingest] No new documents found in source directory");
@@ -1412,8 +1386,6 @@ router
       },
     ];
 
-    const baseDir = join(appRoot, "case-data/case-documents-app");
-    const indexPath = join(baseDir, "index.json");
     const parseStringArg = (value: unknown): string | undefined => {
       if (typeof value !== "string") return undefined;
       const trimmed = value.trim();
@@ -1433,19 +1405,7 @@ router
       if (value === "false") return false;
       return undefined;
     };
-    let documentEntriesCache: DocumentEntry[] | null = null;
-    const loadDocumentEntries = async (): Promise<DocumentEntry[]> => {
-      if (documentEntriesCache) return documentEntriesCache;
-      try {
-        const raw = await readFile(indexPath, "utf-8");
-        documentEntriesCache = JSON.parse(raw) as DocumentEntry[];
-        return documentEntriesCache;
-      } catch {
-        documentEntriesCache = [];
-        return [];
-      }
-    };
-    const documentEntries = await loadDocumentEntries();
+    const documentEntries = [...db.documents.values()];
     const graphSnapshotText = (() => {
       try {
         const graphAnalysis = analyzeCaseGraph(
@@ -1499,9 +1459,9 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
         case "GetFinances":
           return JSON.stringify([...db.finances.values()]);
         case "GetDocuments": {
-          const entries = await loadDocumentEntries();
+          const docs = [...db.documents.values()];
           return JSON.stringify(
-            entries.map(({ id, title, category, pageCount }) => ({
+            docs.map(({ id, title, category, pageCount }) => ({
               id,
               title,
               category,
@@ -1514,16 +1474,9 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
           if (!documentId) {
             return JSON.stringify({ error: "Document ID is required" });
           }
-          try {
-            const entries = await loadDocumentEntries();
-            const doc = entries.find((e) => e.id === documentId);
-            if (!doc) return JSON.stringify({ error: "Document not found" });
-            const textPath = join(baseDir, doc.textFile);
-            const text = await readFile(textPath, "utf-8");
-            return JSON.stringify({ id: doc.id, title: doc.title, text });
-          } catch {
-            return JSON.stringify({ error: "Could not read document" });
-          }
+          const doc = db.documents.get(documentId);
+          if (!doc) return JSON.stringify({ error: "Document not found" });
+          return JSON.stringify({ id: doc.id, title: doc.title, text: doc.extractedText });
         }
         case "SearchTimeline": {
           interface TimelineEvent {
@@ -1720,13 +1673,7 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
   .get(
     "/documents",
     asIttyRoute("get", "/documents", async () => {
-      const indexPath = join(appRoot, "case-data/case-documents-app/index.json");
-      try {
-        const raw = await readFile(indexPath, "utf-8");
-        return JSON.parse(raw) as DocumentEntry[];
-      } catch {
-        return [];
-      }
+      return [...db.documents.values()].map(({ extractedText, ...rest }) => rest);
     }),
   )
   .post("/documents/upload", asIttyRoute("post", "/documents/upload", async (req) => {
@@ -1738,94 +1685,98 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
       return json(400, { error: "No files provided" });
     }
 
-    const baseDir = join(appRoot, "case-data/case-documents-app");
-    await mkdir(baseDir, { recursive: true });
-
     const openai = new OpenAI({
       apiKey: getConfig('OPENAI_API_KEY'),
       baseURL: getConfig('OPENAI_ENDPOINT'),
     });
-    const indexPath = join(baseDir, "index.json");
 
-    let existingEntries: DocumentEntry[] = [];
-    try {
-      const raw = await readFile(indexPath, "utf-8");
-      existingEntries = JSON.parse(raw);
-    } catch {
-      /* index file doesn't exist yet */
-    }
-
-    const newEntries: DocumentEntry[] = [];
+    const newEntries: Array<Omit<import("./db").DocumentRecord, "extractedText">> = [];
 
     for (const file of files) {
       if (!file.name.toLowerCase().endsWith(".pdf")) continue;
       const buffer = Buffer.from(await file.arrayBuffer());
-      const { entry, text } = await ingestPdfBuffer(
+      const { record } = await ingestPdfToBlob(
         buffer,
         file.name,
         category,
-        baseDir,
         openai,
       );
 
-      let finalEntry = entry;
       try {
         const { caseId } = await autoPopulateFromDocument({
           openai,
-          entry,
-          text,
+          entry: record,
+          text: record.extractedText,
         });
-        if (caseId) finalEntry = { ...entry, caseId };
+        if (caseId) {
+          record.caseId = caseId;
+          db.documents.set(record.id, record);
+        }
       } catch (err) {
         console.error("Structured auto-ingest failed", err);
       }
 
-      newEntries.push(finalEntry);
+      const { extractedText, ...rest } = record;
+      newEntries.push(rest);
     }
 
-    const allEntries = [...existingEntries, ...newEntries];
-    await writeFile(indexPath, JSON.stringify(allEntries, null, 2));
+    if (newEntries.length > 0) {
+      db.persist();
+    }
 
     return json201(newEntries);
   }))
 
+  .get(
+    "/documents/:id/download",
+    async ({ params }) => {
+      const doc = db.documents.get(params.id);
+      if (!doc) return notFound();
+
+      const blob = await getBlobStore().retrieve(params.id);
+      if (!blob) return notFound();
+
+      const filename = safeDownloadFilename(doc.filename);
+      const normalizedBytes = new Uint8Array(blob.byteLength);
+      normalizedBytes.set(blob);
+      const responseBlob = new Blob([normalizedBytes], { type: "application/pdf" });
+
+      return new Response(responseBlob, {
+        status: 200,
+        headers: {
+          "content-type": "application/pdf",
+          "content-length": String(responseBlob.size),
+          "content-disposition": `attachment; filename="${filename}"`,
+        },
+      });
+    },
+  )
+  .get(
+    "/documents/:id/text",
+    async ({ params }) => {
+      const doc = db.documents.get(params.id);
+      if (!doc) return notFound();
+
+      return new Response(doc.extractedText, {
+        status: 200,
+        headers: { "content-type": "text/plain; charset=utf-8" },
+      });
+    },
+  )
   .delete(
     "/documents/:id",
     asIttyRoute("delete", "/documents/:id", async ({ params }) => {
-      const baseDir = join(appRoot, "case-data/case-documents-app");
-      const indexPath = join(baseDir, "index.json");
+      const doc = db.documents.get(params.id);
+      if (!doc) return notFound();
 
-      let entries: DocumentEntry[] = [];
       try {
-        const raw = await readFile(indexPath, "utf-8");
-        entries = JSON.parse(raw);
+        await getBlobStore().delete(params.id);
       } catch {
-        return notFound();
+        /* best effort */
       }
-
-      const idx = entries.findIndex((e) => e.id === params.id);
-      if (idx === -1) return notFound();
-
-      const doc = entries[idx];
-
-      // Remove PDF and text files (best-effort)
-      if (doc.path) {
-        try {
-          await unlink(join(baseDir, doc.path));
-        } catch {
-          /* file may not exist */
-        }
-      }
-      if (doc.textFile) {
-        try {
-          await unlink(join(baseDir, doc.textFile));
-        } catch {
-          /* file may not exist */
-        }
-      }
-
-      entries.splice(idx, 1);
-      await writeFile(indexPath, JSON.stringify(entries, null, 2));
+      db.fileMetadata.delete(params.id);
+      db.documents.delete(params.id);
+      db.persist();
       return noContent();
     }),
   )
@@ -1864,17 +1815,10 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
 
       const startedAt = new Date().toISOString();
       const openai = new OpenAI({ apiKey: openaiApiKey, baseURL: getConfig('OPENAI_ENDPOINT') });
-      const baseDir = join(appRoot, "case-data/case-documents-app");
-      const indexPath = join(baseDir, "index.json");
 
-      // Load existing entries
-      let existingEntries: DocumentEntry[] = [];
-      try {
-        const raw = await readFile(indexPath, "utf-8");
-        existingEntries = JSON.parse(raw);
-      } catch {
-        /* index file doesn't exist yet */
-      }
+      const existingSignatures = new Set(
+        [...db.documents.values()].map((e) => `${e.filename}|${e.fileSize}`),
+      );
 
       // Find all PDFs in directory recursively
       const { readdirSync, statSync } = await import("fs");
@@ -1902,39 +1846,37 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
         try {
           const buffer = await readFile(pdfPath);
           const filename = basename(pdfPath);
-          const category = deriveCategory(pdfPath, directory);
+          const fileStats = await stat(pdfPath);
+          const signature = `${filename}|${fileStats.size}`;
 
-          // Check if already indexed
-          const existingId = generateId(
-            relative(baseDir, join(baseDir, category, filename)),
-          );
-          if (existingEntries.some((e) => e.id === existingId)) {
+          if (existingSignatures.has(signature)) {
             skipped++;
             continue;
           }
 
-          const { entry, text } = await ingestPdfBuffer(
+          const category = deriveCategory(pdfPath, directory);
+          const { record } = await ingestPdfToBlob(
             buffer,
             filename,
             category,
-            baseDir,
             openai,
           );
 
-          // Try auto-populate
-          let finalEntry = entry;
           try {
             const { caseId } = await autoPopulateFromDocument({
               openai,
-              entry,
-              text,
+              entry: record,
+              text: record.extractedText,
             });
-            if (caseId) finalEntry = { ...entry, caseId };
+            if (caseId) {
+              record.caseId = caseId;
+              db.documents.set(record.id, record);
+            }
           } catch (err) {
             console.error("Auto-populate failed for", filename, err);
           }
 
-          existingEntries.push(finalEntry);
+          existingSignatures.add(signature);
           added++;
         } catch (err) {
           console.error("Failed to ingest", pdfPath, err);
@@ -1942,8 +1884,9 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
         }
       }
 
-      // Save updated index
-      await writeFile(indexPath, JSON.stringify(existingEntries, null, 2));
+      if (added > 0) {
+        db.persist();
+      }
 
       const finishedAt = new Date().toISOString();
 

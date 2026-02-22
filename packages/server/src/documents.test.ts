@@ -1,73 +1,69 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, mock } from "bun:test";
 
-vi.mock("openai", () => ({
-  default: class MockOpenAI {},
-}));
-
-const { mockReadFile, mockWriteFile, mockMkdir, mockStat } = vi.hoisted(() => ({
-  mockReadFile: vi.fn().mockResolvedValue("[]"),
-  mockWriteFile: vi.fn().mockResolvedValue(undefined),
-  mockMkdir: vi.fn().mockResolvedValue(undefined),
-  mockStat: vi.fn().mockResolvedValue({ size: 100 }),
-}));
-
-vi.mock("fs/promises", () => ({
-  default: {
-    readFile: mockReadFile,
-    writeFile: mockWriteFile,
-    mkdir: mockMkdir,
-    stat: mockStat,
+const mockIngestPdfToBlob = mock(async () => ({
+  record: {
+    id: "test-id",
+    filename: "test.pdf",
+    category: "uploads",
+    title: "test",
+    pageCount: 1,
+    dates: [],
+    fileSize: 100,
+    hash: "abc123",
+    caseId: "",
+    extractedText: "test text",
+    createdAt: "2024-01-01T00:00:00.000Z",
   },
-  readFile: mockReadFile,
-  writeFile: mockWriteFile,
-  mkdir: mockMkdir,
-  stat: mockStat,
+}));
+const mockDeriveCategory = mock(() => "uploads");
+const mockOpenAICompletionCreate = mock(async () => ({
+  choices: [{ message: { content: "No actions needed." } }],
+}));
+const mockInitScheduler = mock(() => {});
+const mockGetSchedulerStatus = mock(() => ({
+  enabled: false,
+  running: false,
+  lastRunTime: null,
+  nextRunTime: null,
+  timezone: "UTC",
+  cronExpression: "0 0 18 * * *",
+}));
+const mockTriggerEvaluation = mock(() => {});
+const mockStopScheduler = mock(() => {});
+const mockRestartScheduler = mock(() => {});
+
+mock.module("openai", () => ({
+  default: class MockOpenAI {
+    chat = { completions: { create: mockOpenAICompletionCreate } };
+  },
 }));
 
-vi.mock("./ingest", () => ({
-  ingestPdfBuffer: vi.fn().mockResolvedValue({
-    entry: {
-      id: "test-id",
-      filename: "test.pdf",
-      path: "uploads/test.pdf",
-      category: "uploads",
-      title: "test",
-      pageCount: 1,
-      textFile: "texts/test-id.txt",
-      dates: [],
-      fileSize: 100,
-      caseId: "",
-    },
-  }),
+mock.module("./ingest", () => ({
+  ingestPdfToBlob: mockIngestPdfToBlob,
+  deriveCategory: mockDeriveCategory,
 }));
 
-vi.mock("./ingestion-agent", () => ({
-  autoPopulateFromDocument: vi.fn().mockResolvedValue({ caseId: "" }),
+mock.module("./scheduler", () => ({
+  initScheduler: mockInitScheduler,
+  getSchedulerStatus: mockGetSchedulerStatus,
+  triggerEvaluation: mockTriggerEvaluation,
+  stopScheduler: mockStopScheduler,
+  restartScheduler: mockRestartScheduler,
 }));
 
-vi.mock("./scheduler", () => ({
-  initScheduler: vi.fn(),
-  getSchedulerStatus: vi.fn().mockReturnValue({
-    enabled: false,
-    running: false,
-    lastRunTime: null,
-    nextRunTime: null,
-    timezone: "UTC",
-    cronExpression: "0 0 18 * * *",
-  }),
-  triggerEvaluation: vi.fn(),
-  stopScheduler: vi.fn(),
-  restartScheduler: vi.fn(),
-}));
-
-import { freshDb, generateTestToken } from "./test-helpers";
-import { router } from "./index";
+const [{ freshDb, generateTestToken }, { router }] = await Promise.all([
+  import("./test-helpers"),
+  import("./index"),
+]);
 
 let testToken: string;
 
 beforeEach(async () => {
   await freshDb();
   testToken = await generateTestToken();
+  mockIngestPdfToBlob.mockClear();
+  mockDeriveCategory.mockClear();
+  mockOpenAICompletionCreate.mockClear();
 });
 
 function authRequest(url: string, init?: RequestInit): Request {

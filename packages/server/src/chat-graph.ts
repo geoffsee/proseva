@@ -1,6 +1,5 @@
 import { createKnowledgeGraph } from "mst-graph";
-import type { Case, Contact, Deadline, Evidence, Filing, Note } from "./db";
-import type { DocumentEntry } from "./ingest";
+import type { Case, Contact, Deadline, DocumentRecord, Evidence, Filing, Note } from "./db";
 
 type GraphEntity =
   | "Workspace"
@@ -30,7 +29,7 @@ export interface ChatGraphInput {
   filings: Filing[];
   evidences: Evidence[];
   notes: Note[];
-  documents: DocumentEntry[];
+  documents: DocumentRecord[];
 }
 
 export interface AnalyzeCaseGraphOptions {

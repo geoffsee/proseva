@@ -4,8 +4,7 @@ import {
   compressCaseGraphForPrompt,
   type AnalyzeCaseGraphResult,
 } from "./chat-graph";
-import type { Case, Contact, Deadline, Evidence, Filing, Note } from "./db";
-import type { DocumentEntry } from "./ingest";
+import type { Case, Contact, Deadline, DocumentRecord, Evidence, Filing, Note } from "./db";
 
 const now = "2024-01-01T00:00:00.000Z";
 
@@ -107,18 +106,19 @@ function makeNote(id: string, caseId: string): Note {
   };
 }
 
-function makeDocument(id: string, caseId?: string): DocumentEntry {
+function makeDocument(id: string, caseId?: string): DocumentRecord {
   return {
     id,
-    caseId,
+    caseId: caseId ?? "",
     filename: `${id}.pdf`,
-    path: `docs/${id}.pdf`,
     category: "case",
     title: `${id} Doc`,
     pageCount: 3,
-    textFile: `texts/${id}.txt`,
     dates: [],
     fileSize: 1000,
+    hash: "abc123",
+    extractedText: "",
+    createdAt: now,
   };
 }
 

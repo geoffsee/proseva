@@ -1,13 +1,12 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, mock } from "bun:test";
 import {
   executeTool,
   truncateText,
   snapshotExistingData,
   autoPopulateFromDocument,
 } from "./ingestion-agent";
-import { db, resetDb } from "./db";
+import { db, resetDb, type DocumentRecord } from "./db";
 import { InMemoryAdapter } from "./persistence";
-import type { DocumentEntry } from "./ingest";
 
 function freshDb() {
   resetDb(new InMemoryAdapter());
@@ -602,8 +601,7 @@ describe("executeTool", () => {
       const mockOpenai = {
         chat: {
           completions: {
-            create: vi
-              .fn()
+            create: mock()
               .mockResolvedValueOnce({
                 choices: [
                   {
@@ -640,16 +638,18 @@ describe("executeTool", () => {
         },
       } as unknown as OpenAI;
 
-      const entry: DocumentEntry = {
+      const entry: DocumentRecord = {
         id: "doc-1",
         filename: "order.pdf",
-        path: "filings/order.pdf",
         category: "filings",
         title: "order",
         pageCount: 2,
-        textFile: "texts/doc-1.txt",
         dates: ["03/01/2024"],
         fileSize: 1024,
+        hash: "abc",
+        caseId: "",
+        extractedText: "",
+        createdAt: "2024-01-01T00:00:00.000Z",
       };
 
       const result = await autoPopulateFromDocument({
@@ -670,8 +670,7 @@ describe("executeTool", () => {
       const mockOpenai = {
         chat: {
           completions: {
-            create: vi
-              .fn()
+            create: mock()
               .mockResolvedValueOnce({
                 choices: [
                   {
@@ -697,16 +696,18 @@ describe("executeTool", () => {
         },
       } as unknown as OpenAI;
 
-      const entry: DocumentEntry = {
+      const entry: DocumentRecord = {
         id: "doc-2",
         filename: "bad.pdf",
-        path: "bad.pdf",
         category: "misc",
         title: "bad",
         pageCount: 1,
-        textFile: "",
         dates: [],
         fileSize: 0,
+        hash: "abc",
+        caseId: "",
+        extractedText: "",
+        createdAt: "2024-01-01T00:00:00.000Z",
       };
 
       const result = await autoPopulateFromDocument({
@@ -721,23 +722,25 @@ describe("executeTool", () => {
       const mockOpenai = {
         chat: {
           completions: {
-            create: vi.fn().mockResolvedValueOnce({
+            create: mock().mockResolvedValueOnce({
               choices: [{ message: { content: "No actions needed." } }],
             }),
           },
         },
       } as unknown as OpenAI;
 
-      const entry: DocumentEntry = {
+      const entry: DocumentRecord = {
         id: "doc-3",
         filename: "info.pdf",
-        path: "info.pdf",
         category: "misc",
         title: "info",
         pageCount: 1,
-        textFile: "",
         dates: [],
         fileSize: 0,
+        hash: "abc",
+        caseId: "",
+        extractedText: "",
+        createdAt: "2024-01-01T00:00:00.000Z",
       };
 
       const result = await autoPopulateFromDocument({

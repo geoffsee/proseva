@@ -13,11 +13,6 @@ import {
 } from "./db-key-provider";
 import { StorageEncryptionError } from "./persistence";
 
-const moduleDir =
-  (import.meta as ImportMeta & { dir?: string; dirname?: string }).dir ??
-  (import.meta as ImportMeta & { dir?: string; dirname?: string }).dirname ??
-  dirname(fileURLToPath(import.meta.url));
-
 type BlobSession = {
   instance: DatabaseInstance;
   connection: DatabaseConnection;

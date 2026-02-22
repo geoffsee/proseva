@@ -1089,6 +1089,58 @@
         }
       }
     },
+    "/documents/{id}/download": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "get": {
+        "operationId": "downloadDocument",
+        "tags": ["Documents"],
+        "summary": "Download the original PDF document",
+        "responses": {
+          "200": {
+            "description": "PDF file",
+            "content": {
+              "application/pdf": {
+                "schema": { "type": "string", "format": "binary" }
+              }
+            }
+          },
+          "404": { "description": "Document not found" }
+        }
+      }
+    },
+    "/documents/{id}/text": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "get": {
+        "operationId": "getDocumentText",
+        "tags": ["Documents"],
+        "summary": "Get extracted text of a document",
+        "responses": {
+          "200": {
+            "description": "Extracted text",
+            "content": {
+              "text/plain": {
+                "schema": { "type": "string" }
+              }
+            }
+          },
+          "404": { "description": "Document not found" }
+        }
+      }
+    },
     "/ingest/status": {
       "get": {
         "operationId": "getIngestionStatus",
@@ -3357,6 +3409,31 @@
         }
       }
     },
+    "/config/test-scanner": {
+      "post": {
+        "operationId": "testScanner",
+        "tags": ["Config"],
+        "summary": "Test document scanner connection",
+        "responses": {
+          "200": {
+            "description": "Test result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["success"],
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "error": { "type": "string" },
+                    "model": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/config/reinitialize/{service}": {
       "parameters": [
         {
@@ -4192,28 +4269,28 @@
         "required": [
           "id",
           "filename",
-          "path",
           "category",
           "title",
           "pageCount",
-          "textFile",
           "dates",
-          "fileSize"
+          "fileSize",
+          "hash",
+          "createdAt"
         ],
         "properties": {
           "id": { "type": "string" },
           "filename": { "type": "string" },
-          "path": { "type": "string" },
           "category": { "type": "string" },
           "title": { "type": "string" },
           "pageCount": { "type": "integer" },
-          "textFile": { "type": "string" },
           "dates": {
             "type": "array",
             "items": { "type": "string" }
           },
           "fileSize": { "type": "integer" },
-          "caseId": { "type": "string" }
+          "hash": { "type": "string" },
+          "caseId": { "type": "string" },
+          "createdAt": { "type": "string" }
         }
       },
       "ErrorResponse": {
