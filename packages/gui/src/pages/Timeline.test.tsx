@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "../test-utils";
+import { render, screen, fireEvent, act } from "../test-utils";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import Timeline from "./Timeline";
 import { StoreProvider } from "../store/StoreContext";
@@ -343,6 +343,303 @@ describe("Timeline", () => {
     fireEvent.click(deadlinesElements[0]);
     fireEvent.click(deadlinesElements[0]);
     expect(screen.getByText(/1 events/)).toBeInTheDocument();
+  });
+
+  describe("scroll-to-zoom", () => {
+    function createZoomStore() {
+      return createTestStore({
+        deadlineStore: {
+          deadlines: [
+            {
+              id: "d1",
+              title: "Early event",
+              date: "2024-01-01",
+              type: "filing",
+              completed: false,
+              caseId: "",
+              description: "",
+              priority: "medium",
+            },
+            {
+              id: "d2",
+              title: "Late event",
+              date: "2025-01-01",
+              type: "hearing",
+              completed: false,
+              caseId: "",
+              description: "",
+              priority: "medium",
+            },
+          ],
+          selectedType: "all",
+          selectedUrgency: "all",
+          selectedCaseId: "all",
+          searchQuery: "",
+        },
+      });
+    }
+
+    function getDateInputValues() {
+      const from = screen.getByTestId("timeline-date-from") as HTMLInputElement;
+      const to = screen.getByTestId("timeline-date-to") as HTMLInputElement;
+      return { from: from.value, to: to.value };
+    }
+
+    function getTimelineContainer() {
+      // The zoomable container wraps the ruler; find via the cursor style
+      const ruler = screen.getByText("2024");
+      // Walk up to the grab-cursor container
+      let el = ruler.parentElement!;
+      while (el && !el.style?.cursor && !el.getAttribute("style")?.includes("grab")) {
+        // The container is the one with the ref - it's the parent of the ruler box
+        if (el.parentElement) {
+          el = el.parentElement;
+        } else break;
+      }
+      // Fallback: go to ruler's grandparent (ruler Box -> zoomable Box)
+      return ruler.parentElement!.parentElement!;
+    }
+
+    it("zooms in when scrolling up (negative deltaY)", () => {
+      renderTimeline(createZoomStore());
+      const before = getDateInputValues();
+
+      const container = getTimelineContainer();
+      Object.defineProperty(container, "getBoundingClientRect", {
+        value: () => ({ left: 0, width: 1000, top: 0, height: 200, right: 1000, bottom: 200 }),
+      });
+
+      // Scroll up (zoom in) at the center of the timeline
+      act(() => {
+        container.dispatchEvent(
+          new WheelEvent("wheel", { deltaY: -100, clientX: 500, bubbles: true }),
+        );
+      });
+
+      const after = getDateInputValues();
+      // Range should be narrower: start moved forward and/or end moved backward
+      expect(after.from > before.from || after.to < before.to).toBe(true);
+    });
+
+    it("zooms out when scrolling down (positive deltaY)", () => {
+      renderTimeline(createZoomStore());
+      const before = getDateInputValues();
+
+      const container = getTimelineContainer();
+      Object.defineProperty(container, "getBoundingClientRect", {
+        value: () => ({ left: 0, width: 1000, top: 0, height: 200, right: 1000, bottom: 200 }),
+      });
+
+      // Scroll down (zoom out)
+      act(() => {
+        container.dispatchEvent(
+          new WheelEvent("wheel", { deltaY: 100, clientX: 500, bubbles: true }),
+        );
+      });
+
+      const after = getDateInputValues();
+      // Range should be wider: start moved backward and/or end moved forward
+      expect(after.from < before.from || after.to > before.to).toBe(true);
+    });
+
+    it("zooms anchored to cursor position", () => {
+      renderTimeline(createZoomStore());
+
+      const container = getTimelineContainer();
+      Object.defineProperty(container, "getBoundingClientRect", {
+        value: () => ({ left: 0, width: 1000, top: 0, height: 200, right: 1000, bottom: 200 }),
+      });
+
+      // Zoom in at the left edge (clientX=0)
+      act(() => {
+        container.dispatchEvent(
+          new WheelEvent("wheel", { deltaY: -100, clientX: 0, bubbles: true }),
+        );
+      });
+      const afterLeft = getDateInputValues();
+
+      // Start should stay roughly the same when zooming at the left edge
+      // (the end should pull in more than the start moves)
+      expect(afterLeft.to < "2025-01-01").toBe(true);
+    });
+  });
+
+  describe("click-and-drag panning", () => {
+    function createPanStore() {
+      return createTestStore({
+        deadlineStore: {
+          deadlines: [
+            {
+              id: "d1",
+              title: "Start event",
+              date: "2024-01-01",
+              type: "filing",
+              completed: false,
+              caseId: "",
+              description: "",
+              priority: "medium",
+            },
+            {
+              id: "d2",
+              title: "End event",
+              date: "2025-01-01",
+              type: "hearing",
+              completed: false,
+              caseId: "",
+              description: "",
+              priority: "medium",
+            },
+          ],
+          selectedType: "all",
+          selectedUrgency: "all",
+          selectedCaseId: "all",
+          searchQuery: "",
+        },
+      });
+    }
+
+    function getDateInputValues() {
+      const from = screen.getByTestId("timeline-date-from") as HTMLInputElement;
+      const to = screen.getByTestId("timeline-date-to") as HTMLInputElement;
+      return { from: from.value, to: to.value };
+    }
+
+    function getTimelineContainer() {
+      const ruler = screen.getByText("2024");
+      return ruler.parentElement!.parentElement!;
+    }
+
+    it("pans the date range when dragging left (shifts forward in time)", () => {
+      renderTimeline(createPanStore());
+      const before = getDateInputValues();
+
+      const container = getTimelineContainer();
+      Object.defineProperty(container, "getBoundingClientRect", {
+        value: () => ({ left: 0, width: 1000, top: 0, height: 200, right: 1000, bottom: 200 }),
+      });
+
+      // Drag left: mousedown at 500, then mousemove to 300 (200px left)
+      act(() => {
+        container.dispatchEvent(
+          new MouseEvent("mousedown", { clientX: 500, bubbles: true }),
+        );
+      });
+      act(() => {
+        document.dispatchEvent(
+          new MouseEvent("mousemove", { clientX: 300, bubbles: true }),
+        );
+      });
+      act(() => {
+        document.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+      });
+
+      const after = getDateInputValues();
+      // Dragging left shifts the range forward in time
+      expect(after.from > before.from).toBe(true);
+      expect(after.to > before.to).toBe(true);
+    });
+
+    it("pans the date range when dragging right (shifts backward in time)", () => {
+      renderTimeline(createPanStore());
+      const before = getDateInputValues();
+
+      const container = getTimelineContainer();
+      Object.defineProperty(container, "getBoundingClientRect", {
+        value: () => ({ left: 0, width: 1000, top: 0, height: 200, right: 1000, bottom: 200 }),
+      });
+
+      // Drag right: mousedown at 500, then mousemove to 700 (200px right)
+      act(() => {
+        container.dispatchEvent(
+          new MouseEvent("mousedown", { clientX: 500, bubbles: true }),
+        );
+      });
+      act(() => {
+        document.dispatchEvent(
+          new MouseEvent("mousemove", { clientX: 700, bubbles: true }),
+        );
+      });
+      act(() => {
+        document.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+      });
+
+      const after = getDateInputValues();
+      // Dragging right shifts the range backward in time
+      expect(after.from < before.from).toBe(true);
+      expect(after.to < before.to).toBe(true);
+    });
+
+    it("preserves range width when panning (only shifts, no zoom)", () => {
+      renderTimeline(createPanStore());
+      const before = getDateInputValues();
+      const rangeBefore =
+        new Date(before.to).getTime() - new Date(before.from).getTime();
+
+      const container = getTimelineContainer();
+      Object.defineProperty(container, "getBoundingClientRect", {
+        value: () => ({ left: 0, width: 1000, top: 0, height: 200, right: 1000, bottom: 200 }),
+      });
+
+      act(() => {
+        container.dispatchEvent(
+          new MouseEvent("mousedown", { clientX: 500, bubbles: true }),
+        );
+      });
+      act(() => {
+        document.dispatchEvent(
+          new MouseEvent("mousemove", { clientX: 300, bubbles: true }),
+        );
+      });
+      act(() => {
+        document.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+      });
+
+      const after = getDateInputValues();
+      const rangeAfter =
+        new Date(after.to).getTime() - new Date(after.from).getTime();
+
+      // The range width should be the same (panning doesn't zoom)
+      // Allow 1 day tolerance due to date rounding
+      const oneDayMs = 24 * 60 * 60 * 1000;
+      expect(Math.abs(rangeAfter - rangeBefore)).toBeLessThanOrEqual(oneDayMs);
+    });
+
+    it("stops panning on mouseup", () => {
+      renderTimeline(createPanStore());
+
+      const container = getTimelineContainer();
+      Object.defineProperty(container, "getBoundingClientRect", {
+        value: () => ({ left: 0, width: 1000, top: 0, height: 200, right: 1000, bottom: 200 }),
+      });
+
+      // Drag and release
+      act(() => {
+        container.dispatchEvent(
+          new MouseEvent("mousedown", { clientX: 500, bubbles: true }),
+        );
+      });
+      act(() => {
+        document.dispatchEvent(
+          new MouseEvent("mousemove", { clientX: 300, bubbles: true }),
+        );
+      });
+      act(() => {
+        document.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+      });
+
+      const afterRelease = getDateInputValues();
+
+      // Move mouse again after release — should NOT change anything
+      act(() => {
+        document.dispatchEvent(
+          new MouseEvent("mousemove", { clientX: 100, bubbles: true }),
+        );
+      });
+
+      const afterExtraMove = getDateInputValues();
+      expect(afterExtraMove.from).toBe(afterRelease.from);
+      expect(afterExtraMove.to).toBe(afterRelease.to);
+    });
   });
 
   it("marks high-priority deadlines as critical", () => {
