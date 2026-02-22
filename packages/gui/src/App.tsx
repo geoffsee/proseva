@@ -27,10 +27,12 @@ import NotFound from "./pages/NotFound";
 import { Toaster } from "./components/ui/toaster";
 import { StoreProvider } from "./store/StoreContext";
 import { PassphraseGate } from "./components/security/PassphraseGate";
+import { ServerEventsProvider } from "./hooks/useServerEvents";
 
 function App() {
   return (
     <PassphraseGate>
+      <ServerEventsProvider>
       <StoreProvider>
         <Toaster />
         <Routes>
@@ -62,6 +64,7 @@ function App() {
           </Route>
         </Routes>
       </StoreProvider>
+      </ServerEventsProvider>
     </PassphraseGate>
   );
 }

@@ -15,6 +15,7 @@ import { StatCard } from "../components/shared/StatCard";
 import FileUpload from "../components/FileUpload";
 import { api } from "../lib/api";
 import { useStore } from "../store/StoreContext";
+import { useServerEvent } from "../hooks/useServerEvents";
 
 interface DocumentEntry {
   id: string;
@@ -66,6 +67,8 @@ export default function DocumentManager() {
   useEffect(() => {
     fetchDocs();
   }, [fetchDocs]);
+
+  useServerEvent("documents-changed", fetchDocs);
 
   useEffect(() => {
     const loadStatus = async () => {
@@ -125,6 +128,11 @@ export default function DocumentManager() {
 
   const categories = useMemo(
     () => [...new Set(docs.map((d) => d.category))].sort(),
+    [docs],
+  );
+
+  const scannedDocs = useMemo(
+    () => docs.filter((d) => d.category === "scanned"),
     [docs],
   );
 
@@ -232,6 +240,140 @@ export default function DocumentManager() {
           store.noteStore.loadNotes();
         }}
       />
+
+      {scannedDocs.length > 0 && (
+        <Box borderWidth="1px" borderRadius="md" p="4">
+          <Heading size="md" mb="3">
+            Scanned Documents ({scannedDocs.length})
+          </Heading>
+          <Box overflowX="auto">
+            <Table.Root size="sm">
+              <Table.Header>
+                <Table.Row>
+                  <Table.ColumnHeader w="30px" />
+                  <Table.ColumnHeader>Title</Table.ColumnHeader>
+                  <Table.ColumnHeader>Pages</Table.ColumnHeader>
+                  <Table.ColumnHeader>Dates</Table.ColumnHeader>
+                  <Table.ColumnHeader>Size</Table.ColumnHeader>
+                  <Table.ColumnHeader>Case</Table.ColumnHeader>
+                  <Table.ColumnHeader w="80px" />
+                </Table.Row>
+              </Table.Header>
+              <Table.Body>
+                {scannedDocs.map((doc) => (
+                  <React.Fragment key={doc.id}>
+                    <Table.Row
+                      cursor="pointer"
+                      onClick={() => handleRowClick(doc)}
+                      _hover={{ bg: "bg.muted" }}
+                    >
+                      <Table.Cell>
+                        {expandedId === doc.id ? (
+                          <LuChevronDown />
+                        ) : (
+                          <LuChevronRight />
+                        )}
+                      </Table.Cell>
+                      <Table.Cell fontWeight="medium">
+                        {doc.title || doc.filename}
+                      </Table.Cell>
+                      <Table.Cell>{doc.pageCount}</Table.Cell>
+                      <Table.Cell>
+                        {doc.dates.length > 0
+                          ? doc.dates.slice(0, 3).join(", ")
+                          : "—"}
+                        {doc.dates.length > 3 && ` +${doc.dates.length - 3}`}
+                      </Table.Cell>
+                      <Table.Cell>{formatSize(doc.fileSize)}</Table.Cell>
+                      <Table.Cell>
+                        {doc.caseId ? (
+                          <a
+                            href={`/cases/${doc.caseId}`}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                              color: "var(--chakra-colors-blue-500)",
+                              textDecoration: "underline",
+                            }}
+                          >
+                            {doc.caseId}
+                          </a>
+                        ) : (
+                          "—"
+                        )}
+                      </Table.Cell>
+                      <Table.Cell>
+                        <HStack gap="1">
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            aria-label={`Download ${doc.title || doc.filename}`}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              try {
+                                const { blob, filename } =
+                                  await api.documents.download(doc.id);
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement("a");
+                                a.href = url;
+                                a.download = filename;
+                                a.click();
+                                URL.revokeObjectURL(url);
+                              } catch {
+                                setDeleteError("Download failed");
+                              }
+                            }}
+                          >
+                            <LuDownload />
+                          </Button>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            colorPalette="red"
+                            aria-label={`Delete ${doc.title || doc.filename}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(doc);
+                            }}
+                          >
+                            <LuTrash2 />
+                          </Button>
+                        </HStack>
+                      </Table.Cell>
+                    </Table.Row>
+                    {expandedId === doc.id && (
+                      <Table.Row>
+                        <Table.Cell colSpan={7}>
+                          <Box
+                            p="4"
+                            bg="bg.subtle"
+                            borderRadius="md"
+                            maxH="300px"
+                            overflowY="auto"
+                          >
+                            <Text fontSize="xs" color="fg.muted" mb="1">
+                              File: {doc.filename}
+                            </Text>
+                            {loadingText === doc.id ? (
+                              <Text fontSize="sm" color="fg.muted">
+                                Loading text…
+                              </Text>
+                            ) : (
+                              <Text fontSize="sm" whiteSpace="pre-wrap">
+                                {expandedText[doc.id] ||
+                                  "No extracted text available."}
+                              </Text>
+                            )}
+                          </Box>
+                        </Table.Cell>
+                      </Table.Row>
+                    )}
+                  </React.Fragment>
+                ))}
+              </Table.Body>
+            </Table.Root>
+          </Box>
+        </Box>
+      )}
 
       <HStack gap="4" flexWrap="wrap">
         <Input

@@ -1741,6 +1741,7 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
     }
 
     console.log(`[upload] Done. ${newEntries.length} document(s) ingested.`);
+    if (newEntries.length > 0) broadcast("documents-changed");
     return json201(newEntries);
   }))
 
@@ -2355,6 +2356,10 @@ initScanner({
           baseURL: getConfig("OPENAI_ENDPOINT"),
         });
         const { record } = await ingestPdfToBlob(buffer, filename, "scanned", openai);
+        const classified = await classifyDocument(record.extractedText, openai);
+        record.category = classified;
+        db.documents.set(record.id, record);
+        console.log(`[scanner] Auto-classified ${filename} as "${classified}"`);
         try {
           const { caseId } = await autoPopulateFromDocument({
             openai,
@@ -2369,6 +2374,7 @@ initScanner({
           console.error("[scanner] auto-populate failed:", err);
         }
         db.persist();
+        broadcast("documents-changed");
         console.log(`[scanner] Ingested ${filename} -> ${record.id}`);
       } catch (err) {
         console.error("[scanner] post-scan ingestion failed:", err);
@@ -2384,8 +2390,36 @@ if (import.meta.main) {
 }
 
 
-export const ittyServer = {
-  fetch: router.fetch,
-};
+// --- WebSocket broadcast ---
+import type { ServerWebSocket } from "bun";
 
-export default {...ittyServer, port}
+const wsClients = new Set<ServerWebSocket>();
+
+export function broadcast(event: string, data?: unknown) {
+  const msg = JSON.stringify({ event, data });
+  for (const ws of wsClients) {
+    ws.send(msg);
+  }
+}
+
+export default {
+  port,
+  fetch(req: Request, server: import("bun").Server) {
+    if (new URL(req.url).pathname === "/ws") {
+      if (server.upgrade(req)) return undefined;
+      return new Response("WebSocket upgrade failed", { status: 500 });
+    }
+    return router.fetch(req);
+  },
+  websocket: {
+    open(ws: ServerWebSocket) {
+      wsClients.add(ws);
+      console.log(`[ws] Client connected (${wsClients.size} total)`);
+    },
+    close(ws: ServerWebSocket) {
+      wsClients.delete(ws);
+      console.log(`[ws] Client disconnected (${wsClients.size} total)`);
+    },
+    message() {},
+  },
+};
