@@ -84,7 +84,7 @@ jobs:
       - name: Package
         run: |
           cd packages/electron
-          npx electron-builder --config src/electron-builder.yml --${{ matrix.platform }} --${{ matrix.arch }}
+          npx electron-builder --config electron-builder.yml --${{ matrix.platform }} --${{ matrix.arch }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # macOS code signing
