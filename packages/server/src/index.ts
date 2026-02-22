@@ -1681,6 +1681,8 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
     const category = (formData.get("category") as string) || "_new_filings";
     const files = formData.getAll("files") as File[];
 
+    console.log(`[upload] Received ${files.length} file(s), category=${category}`);
+
     if (files.length === 0) {
       return json(400, { error: "No files provided" });
     }
@@ -1693,7 +1695,11 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
     const newEntries: Array<Omit<import("./db").DocumentRecord, "extractedText">> = [];
 
     for (const file of files) {
-      if (!file.name.toLowerCase().endsWith(".pdf")) continue;
+      if (!file.name.toLowerCase().endsWith(".pdf")) {
+        console.log(`[upload] Skipping non-PDF: ${file.name}`);
+        continue;
+      }
+      console.log(`[upload] Processing: ${file.name} (${(file.size / 1024).toFixed(0)}KB)`);
       const buffer = Buffer.from(await file.arrayBuffer());
       const { record } = await ingestPdfToBlob(
         buffer,
@@ -1703,7 +1709,8 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
       );
 
       try {
-        const { caseId } = await autoPopulateFromDocument({
+        console.log(`[upload] Running auto-populate for: ${file.name}`);
+        const { caseId, log } = await autoPopulateFromDocument({
           openai,
           entry: record,
           text: record.extractedText,
@@ -1712,8 +1719,9 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
           record.caseId = caseId;
           db.documents.set(record.id, record);
         }
+        console.log(`[upload] Auto-populate complete for ${file.name}: caseId=${caseId || "none"}, actions:\n  ${log.join("\n  ")}`);
       } catch (err) {
-        console.error("Structured auto-ingest failed", err);
+        console.error("[upload] Auto-populate failed:", err);
       }
 
       const { extractedText, ...rest } = record;
@@ -1724,6 +1732,7 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
       db.persist();
     }
 
+    console.log(`[upload] Done. ${newEntries.length} document(s) ingested.`);
     return json201(newEntries);
   }))
 

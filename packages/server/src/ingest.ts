@@ -52,12 +52,14 @@ export function cleanTitle(filename: string): string {
 async function extractTextLocal(
   buffer: Buffer,
 ): Promise<{ text: string; pageCount: number }> {
+  console.log("[ingest] Attempting local OCR extraction");
   const tmpDir = await mkdtemp(join(tmpdir(), "ocr-"));
   const tmpFile = join(tmpDir, "input.pdf");
   try {
     await writeFile(tmpFile, buffer);
     const result = await ocrPdf(tmpFile);
     const text = result.pages.map((p) => p.text).join("\n\n");
+    console.log(`[ingest] Local OCR complete: ${result.pages.length} pages, ${text.length} chars`);
     return { text, pageCount: result.pages.length };
   } finally {
     await rm(tmpDir, { recursive: true, force: true }).catch(() => {});
@@ -68,9 +70,11 @@ async function extractTextVlm(
   buffer: Buffer,
   openai: OpenAI,
 ): Promise<{ text: string; pageCount: number }> {
+  const model = getConfig("VLM_MODEL") || "gpt-4.1";
+  console.log(`[ingest] VLM extraction using model=${model}, buffer=${(buffer.byteLength / 1024).toFixed(0)}KB`);
   const base64 = buffer.toString("base64");
   const response = await openai.chat.completions.create({
-    model: getConfig("VLM_MODEL") || "gpt-4.1",
+    model,
     messages: [
       {
         role: "user",
@@ -96,6 +100,7 @@ async function extractTextVlm(
   const pageCount = pageCountMatch ? parseInt(pageCountMatch[1], 10) : 1;
   const text = raw.replace(/PAGE_COUNT:\d+\s*$/, "").trim();
 
+  console.log(`[ingest] VLM extraction complete: ${pageCount} pages, ${text.length} chars`);
   return { text, pageCount };
 }
 
@@ -104,6 +109,7 @@ export async function extractTextFromPdf(
   openai?: OpenAI | null,
 ): Promise<{ text: string; pageCount: number }> {
   const ocrMode = getConfig("OCR_MODE"); // "local", "vlm", or unset (auto)
+  console.log(`[ingest] extractTextFromPdf: mode=${ocrMode || "auto"}, size=${(buffer.byteLength / 1024).toFixed(0)}KB`);
 
   if (ocrMode === "vlm") {
     if (!openai) throw new Error("OCR_MODE=vlm requires OpenAI client");
@@ -117,7 +123,8 @@ export async function extractTextFromPdf(
   // Auto: try local OCR first, fall back to VLM if available
   try {
     return await extractTextLocal(buffer);
-  } catch {
+  } catch (err) {
+    console.log(`[ingest] Local OCR failed, falling back to VLM: ${err instanceof Error ? err.message : err}`);
     if (!openai) throw new Error("Local OCR failed and no OpenAI client configured");
     return extractTextVlm(buffer, openai);
   }
@@ -173,12 +180,14 @@ export async function ingestPdfToBlob(
   category: string,
   openai?: OpenAI | null,
 ): Promise<{ record: DocumentRecord }> {
+  console.log(`[ingest] Starting blob ingest: ${filename} (${(buffer.byteLength / 1024).toFixed(0)}KB), category=${category}`);
   const { text, pageCount } = await extractTextFromPdf(buffer, openai);
 
   const bytes = new Uint8Array(buffer);
   const id = crypto.randomUUID();
   const hash = BlobStore.computeHash(bytes);
 
+  console.log(`[ingest] Storing blob id=${id}, hash=${hash.slice(0, 12)}...`);
   await getBlobStore().store(id, bytes);
 
   db.fileMetadata.set(id, {
@@ -207,5 +216,6 @@ export async function ingestPdfToBlob(
 
   db.documents.set(id, record);
 
+  console.log(`[ingest] Document record created: id=${id}, title="${record.title}", pages=${pageCount}, dates=${record.dates.length}`);
   return { record };
 }

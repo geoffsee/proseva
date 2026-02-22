@@ -538,15 +538,18 @@ async function processChunk(
   state: { selectedCaseId?: string },
   log: string[],
 ): Promise<void> {
+  const model = getConfig("VLM_MODEL") || "gpt-4.1";
   for (let i = 0; i < 16; i++) {
+    console.log(`[ingestion-agent] Tool-call iteration ${i + 1}/16, model=${model}`);
     const completion = await openai.chat.completions.create({
-      model: getConfig("VLM_MODEL") || "gpt-4.1",
+      model,
       messages,
       tools: ingestionTools,
     });
 
     const choice = completion.choices[0];
     if (choice.message.tool_calls?.length) {
+      console.log(`[ingestion-agent] Model returned ${choice.message.tool_calls.length} tool call(s)`);
       messages.push(choice.message);
       for (const toolCall of choice.message.tool_calls) {
         if (toolCall.type !== "function") continue;
@@ -560,6 +563,7 @@ async function processChunk(
           const result = executeTool(toolCall.function.name, args, state);
           if (result.selectedCaseId)
             state.selectedCaseId = result.selectedCaseId;
+          console.log(`[ingestion-agent]   ${toolCall.function.name}: ${result.message}`);
           log.push(`${toolCall.function.name}: ${result.message}`);
           messages.push({
             role: "tool",
@@ -569,6 +573,7 @@ async function processChunk(
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err);
           const errorMsg = `Tool ${toolCall.function.name} failed: ${message}`;
+          console.error(`[ingestion-agent]   ${errorMsg}`);
           log.push(errorMsg);
           messages.push({
             role: "tool",
@@ -581,6 +586,7 @@ async function processChunk(
     }
 
     // Model is done with this chunk
+    console.log("[ingestion-agent] Model finished (no more tool calls)");
     if (choice.message.content) log.push(choice.message.content);
     break;
   }
@@ -593,6 +599,8 @@ export async function autoPopulateFromDocument(
   const state: { selectedCaseId?: string } = {};
   const log: string[] = [];
   const chunks = chunkText(text);
+
+  console.log(`[ingestion-agent] Auto-populate started: file="${entry.filename}", text=${text.length} chars, chunks=${chunks.length}`);
 
   const systemMessage: OpenAI.ChatCompletionMessageParam = {
     role: "system",
@@ -632,5 +640,6 @@ export async function autoPopulateFromDocument(
     await processChunk(openai, messages, state, log);
   }
 
+  console.log(`[ingestion-agent] Auto-populate finished: caseId=${state.selectedCaseId || "none"}, actions=${log.length}`);
   return { caseId: state.selectedCaseId, log };
 }
