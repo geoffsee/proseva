@@ -778,7 +778,7 @@ const Config = observer(() => {
             { label: "Large Model", value: largeModel, setter: setLargeModel, placeholder: "gpt-4o" },
             { label: "Small Model", value: smallModel, setter: setSmallModel, placeholder: "gpt-4o-mini" },
             { label: "Reasoning Model", value: reasoningModel, setter: setReasoningModel, placeholder: "o1-mini" },
-            { label: "Visual Model", value: vlmModel, setter: setVlmModel, placeholder: "gpt-4o-mini" },
+            { label: "Visual Model", value: vlmModel, setter: setVlmModel, placeholder: "gpt-4.1" },
             { label: "Embeddings Model", value: embeddingsModel, setter: setEmbeddingsModel, placeholder: "text-embedding-3-small" },
           ].map(({ label, value, setter, placeholder }) => (
             <Box key={label}>

@@ -1,8 +1,14 @@
 {
   "name": "proseva",
-  "private": true,
-  "workspaces": ["packages/*"],
   "version": "0.0.0-prerelease",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "eslint": "^9.39.1",
+    "pdf-lib": "^1.17.1",
+    "typescript": "~5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "private": true,
   "scripts": {
     "build": "bun --filter=@proseva/* run --parallel build",
     "dev": "bun --filter=@proseva/server --filter=@proseva/gui run --parallel dev",
@@ -18,10 +24,5 @@
     "sdk": "bun --filter=@proseva/sdk run",
     "dist:electron": "bun run build && bun --filter=@proseva/electron run dist:local"
   },
-  "devDependencies": {
-    "@types/bun": "latest",
-    "eslint": "^9.39.1",
-    "typescript": "~5.9.3",
-    "vitest": "^4.0.18"
-  }
+  "workspaces": ["packages/*"]
 }

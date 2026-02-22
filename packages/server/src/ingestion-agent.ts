@@ -12,6 +12,7 @@ import {
   type Party,
 } from "./db";
 import { getConfig } from "./config";
+import { encode } from "gpt-tokenizer";
 
 type AutoPopulateParams = {
   openai: OpenAI;
@@ -24,7 +25,7 @@ type ToolExecutionResult = {
   selectedCaseId?: string;
 };
 
-const MAX_TEXT_CHARS = 6000;
+const MAX_CHUNK_TOKENS = 12000;
 
 const ingestionTools: OpenAI.ChatCompletionTool[] = [
   {
@@ -264,10 +265,19 @@ const ingestionTools: OpenAI.ChatCompletionTool[] = [
   },
 ];
 
-export function truncateText(text: string): string {
-  return text.length > MAX_TEXT_CHARS
-    ? `${text.slice(0, MAX_TEXT_CHARS)}\n...[truncated]`
-    : text;
+export function chunkText(text: string): string[] {
+  const tokenCount = encode(text).length;
+  if (tokenCount <= MAX_CHUNK_TOKENS) return [text];
+
+  // Estimate chars-per-token ratio, then split by character boundaries
+  const charsPerChunk = Math.floor(
+    (MAX_CHUNK_TOKENS / tokenCount) * text.length,
+  );
+  const chunks: string[] = [];
+  for (let i = 0; i < text.length; i += charsPerChunk) {
+    chunks.push(text.slice(i, i + charsPerChunk));
+  }
+  return chunks;
 }
 
 function nowIso(): string {
@@ -522,38 +532,15 @@ export function executeTool(
   }
 }
 
-export async function autoPopulateFromDocument(
-  params: AutoPopulateParams,
-): Promise<{ caseId?: string; log: string[] }> {
-  const { openai, entry, text } = params;
-  const state: { selectedCaseId?: string } = {};
-  const log: string[] = [];
-
-  const messages: OpenAI.ChatCompletionMessageParam[] = [
-    {
-      role: "system",
-      content:
-        "You are an ingestion orchestrator. Decide what this document represents (filing, order, hearing notice, correspondence, evidence, etc). " +
-        "Call the provided tools to create structured records. Prefer linking to an existing case if a case number or party names match. " +
-        "Be conservative: only create records when information is explicit. Extract dates directly from the document. Keep notes brief.",
-    },
-    {
-      role: "user",
-      content: [
-        {
-          type: "text",
-          text:
-            `File: ${entry.filename}\nCategory: ${entry.category}\nDetected dates: ${entry.dates.join(", ") || "none"}\n` +
-            `Existing data snapshot:\n${JSON.stringify(snapshotExistingData(), null, 2)}\n\n` +
-            `Document text (truncated):\n${truncateText(text)}`,
-        },
-      ],
-    },
-  ];
-
-  for (let i = 0; i < 8; i++) {
+async function processChunk(
+  openai: OpenAI,
+  messages: OpenAI.ChatCompletionMessageParam[],
+  state: { selectedCaseId?: string },
+  log: string[],
+): Promise<void> {
+  for (let i = 0; i < 16; i++) {
     const completion = await openai.chat.completions.create({
-      model: getConfig("VLM_MODEL") || "gpt-4o-mini",
+      model: getConfig("VLM_MODEL") || "gpt-4.1",
       messages,
       tools: ingestionTools,
     });
@@ -593,9 +580,56 @@ export async function autoPopulateFromDocument(
       continue;
     }
 
-    // Model is done
+    // Model is done with this chunk
     if (choice.message.content) log.push(choice.message.content);
     break;
+  }
+}
+
+export async function autoPopulateFromDocument(
+  params: AutoPopulateParams,
+): Promise<{ caseId?: string; log: string[] }> {
+  const { openai, entry, text } = params;
+  const state: { selectedCaseId?: string } = {};
+  const log: string[] = [];
+  const chunks = chunkText(text);
+
+  const systemMessage: OpenAI.ChatCompletionMessageParam = {
+    role: "system",
+    content:
+      "You are an ingestion orchestrator. Decide what this document represents (filing, order, hearing notice, correspondence, evidence, etc). " +
+      "Call the provided tools to create structured records. Prefer linking to an existing case if a case number or party names match. " +
+      "Be conservative: only create records when information is explicit. Extract dates directly from the document. Keep notes brief." +
+      (chunks.length > 1
+        ? ` The document has been split into ${chunks.length} chunks. You will receive them one at a time. Do not create duplicate records across chunks.`
+        : ""),
+  };
+
+  const metadata =
+    `File: ${entry.filename}\nCategory: ${entry.category}\nDetected dates: ${entry.dates.join(", ") || "none"}\n` +
+    `Existing data snapshot:\n${JSON.stringify(snapshotExistingData(), null, 2)}`;
+
+  for (let chunkIdx = 0; chunkIdx < chunks.length; chunkIdx++) {
+    const chunkLabel =
+      chunks.length > 1
+        ? `[Chunk ${chunkIdx + 1}/${chunks.length}]\n`
+        : "";
+
+    const messages: OpenAI.ChatCompletionMessageParam[] = [
+      systemMessage,
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: `${metadata}\n\n${chunkLabel}Document text:\n${chunks[chunkIdx]}`,
+          },
+        ],
+      },
+    ];
+
+    log.push(`--- Processing chunk ${chunkIdx + 1}/${chunks.length} ---`);
+    await processChunk(openai, messages, state, log);
   }
 
   return { caseId: state.selectedCaseId, log };

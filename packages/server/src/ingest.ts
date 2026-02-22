@@ -70,7 +70,7 @@ async function extractTextVlm(
 ): Promise<{ text: string; pageCount: number }> {
   const base64 = buffer.toString("base64");
   const response = await openai.chat.completions.create({
-    model: getConfig("VLM_MODEL") || "gpt-4o-mini",
+    model: getConfig("VLM_MODEL") || "gpt-4.1",
     messages: [
       {
         role: "user",

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, mock } from "bun:test";
 import {
   executeTool,
-  truncateText,
+  chunkText,
   snapshotExistingData,
   autoPopulateFromDocument,
 } from "./ingestion-agent";
@@ -35,21 +35,21 @@ function seedCase(
   return c;
 }
 
-describe("truncateText", () => {
-  it("returns short text unchanged", () => {
-    expect(truncateText("hello")).toBe("hello");
+describe("chunkText", () => {
+  it("returns short text as single chunk", () => {
+    expect(chunkText("hello")).toEqual(["hello"]);
   });
 
-  it("truncates text exceeding 6000 chars", () => {
-    const long = "a".repeat(7000);
-    const result = truncateText(long);
-    expect(result).toContain("...[truncated]");
-    expect(result.length).toBeLessThan(long.length);
+  it("splits large text into multiple chunks", () => {
+    const long = "word ".repeat(20000);
+    const chunks = chunkText(long);
+    expect(chunks.length).toBeGreaterThan(1);
+    expect(chunks.join("")).toBe(long);
   });
 
-  it("returns exactly 6000 chars unchanged", () => {
-    const exact = "b".repeat(6000);
-    expect(truncateText(exact)).toBe(exact);
+  it("returns single chunk for text at limit", () => {
+    const short = "a ".repeat(100);
+    expect(chunkText(short)).toEqual([short]);
   });
 });
 
