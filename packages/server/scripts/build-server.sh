@@ -8,12 +8,6 @@ DIST_SERVER_DIR="$REPO_ROOT/dist-server"
 NODE_MODULES_DIR="$REPO_ROOT/node_modules"
 
 EXTERNAL_FLAGS=(
-  "--external" "@duckdb/node-bindings"
-  "--external" "@duckdb/node-bindings-linux-x64"
-  "--external" "@duckdb/node-bindings-linux-arm64"
-  "--external" "@duckdb/node-bindings-darwin-x64"
-  "--external" "@duckdb/node-bindings-darwin-arm64"
-  "--external" "@duckdb/node-bindings-win32-x64"
   "--external" "mupdf"
 )
 
@@ -85,14 +79,14 @@ copy_runtime_assets() {
   cp "$NODE_MODULES_DIR/wasm-similarity/wasm_similarity_bg.wasm" "$DIST_SERVER_DIR/"
   cp "$NODE_MODULES_DIR/wasm-pqc-subtle/wasm_pqc_subtle_bg.wasm" "$DIST_SERVER_DIR/"
 
-  mkdir -p "$DIST_SERVER_DIR/node_modules"
-  rm -rf "$DIST_SERVER_DIR/node_modules/@duckdb"
-  cp -R "$NODE_MODULES_DIR/@duckdb" "$DIST_SERVER_DIR/node_modules/"
+  # Use "_modules" instead of "node_modules" so electron-builder does not
+  # strip the directory from extraResources.
+  mkdir -p "$DIST_SERVER_DIR/_modules"
 
   # mupdf WASM cannot be embedded in the compiled binary; copy the
   # package so it can be required at runtime.
-  rm -rf "$DIST_SERVER_DIR/node_modules/mupdf"
-  cp -R "$NODE_MODULES_DIR/mupdf" "$DIST_SERVER_DIR/node_modules/"
+  rm -rf "$DIST_SERVER_DIR/_modules/mupdf"
+  cp -R "$NODE_MODULES_DIR/mupdf" "$DIST_SERVER_DIR/_modules/"
 }
 
 main() {

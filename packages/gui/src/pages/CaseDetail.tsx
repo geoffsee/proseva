@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Button,
@@ -30,6 +30,10 @@ const CaseDetail = observer(function CaseDetail() {
   const caseData = caseStore.cases.find((c) => c.id === id);
 
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  useEffect(() => {
+    console.log("confirmDelete state changed:", confirmDelete);
+  }, [confirmDelete]);
 
   if (!caseData) {
     return (
@@ -77,7 +81,10 @@ const CaseDetail = observer(function CaseDetail() {
           <DetailsTab
             caseData={caseData as unknown as import("../types").Case}
             onUpdateCase={(id, updates) => caseStore.updateCase(id, updates)}
-            onDeleteClick={() => setConfirmDelete(true)}
+            onDeleteClick={() => {
+              console.log("onDeleteClick called, setting confirmDelete to true");
+              setConfirmDelete(true);
+            }}
           />
         </Tabs.Content>
 
@@ -104,8 +111,12 @@ const CaseDetail = observer(function CaseDetail() {
 
       <ConfirmDialog
         open={confirmDelete}
-        onClose={() => setConfirmDelete(false)}
+        onClose={() => {
+          console.log("ConfirmDialog onClose called");
+          setConfirmDelete(false);
+        }}
         onConfirm={() => {
+          console.log("ConfirmDialog onConfirm called, deleting case");
           caseStore.deleteCase(caseData.id);
           navigate("/cases");
         }}

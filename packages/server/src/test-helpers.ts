@@ -48,9 +48,9 @@ export function setupTestServer() {
 
   beforeAll(async () => {
     await freshDb();
-    // Use a temp BlobStore to avoid DuckDB file locks with the dev server
+    // Use a temp BlobStore to avoid file locks with the dev server
     tempDir = mkdtempSync(join(tmpdir(), "proseva-test-blobs-"));
-    setBlobStore(new BlobStore(join(tempDir, "files.duckdb")));
+    setBlobStore(new BlobStore(join(tempDir, "files.sqlite")));
     testToken = await generateTestToken();
     server = createServer(async (req, res) => {
       const url = `http://localhost${req.url}`;

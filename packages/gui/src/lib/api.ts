@@ -73,7 +73,13 @@ export async function clearAuthToken(): Promise<void> {
   }
 }
 
-export const API_BASE = "/api";
+const electronAPI = (window as any).electronAPI as
+  | { serverUrl?: string }
+  | undefined;
+
+export const API_BASE = electronAPI?.serverUrl
+  ? `${electronAPI.serverUrl}/api`
+  : "/api";
 
 export const client = createProsevaClient({ baseUrl: API_BASE, getAuthToken });
 
@@ -94,9 +100,14 @@ async function getAuthHeaders(additional?: HeadersInit): Promise<HeadersInit> {
 
 // Authentication expiration callback
 let onAuthExpired: (() => void) | null = null;
+let onDbLocked: (() => void) | null = null;
 
 export function setAuthExpiredCallback(callback: () => void): void {
   onAuthExpired = callback;
+}
+
+export function setDbLockedCallback(callback: () => void): void {
+  onDbLocked = callback;
 }
 
 async function unwrap<T>(
@@ -112,6 +123,13 @@ async function unwrap<T>(
         onAuthExpired();
       }
       throw new Error("Authentication required. Please log in again.");
+    }
+
+    if (response.status === 423) {
+      if (onDbLocked) {
+        onDbLocked();
+      }
+      throw new Error("Database is locked. Provide a valid recovery key to continue.");
     }
 
     if (response.status === 404) return null;

@@ -15,7 +15,8 @@
     "gui": "bun --filter=@proseva/gui run",
     "electron": "bun --filter=@proseva/electron run",
     "cli": "bun --filter=@proseva/cli run",
-    "sdk": "bun --filter=@proseva/sdk run"
+    "sdk": "bun --filter=@proseva/sdk run",
+    "dist:electron": "bun run build && bun --filter=@proseva/electron run dist:local"
   },
   "devDependencies": {
     "@types/bun": "latest",

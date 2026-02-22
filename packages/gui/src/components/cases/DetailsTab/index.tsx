@@ -55,7 +55,10 @@ export function DetailsTab({
           colorPalette="red"
           variant="outline"
           size="sm"
-          onClick={onDeleteClick}
+          onClick={() => {
+            console.log("Delete Case button clicked");
+            onDeleteClick();
+          }}
         >
           <LuTrash2 /> Delete Case
         </Button>

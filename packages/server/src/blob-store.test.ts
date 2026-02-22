@@ -28,7 +28,7 @@ const createProvider = (
 describe("BlobStore", () => {
   it("stores and retrieves binary data", async () => {
     const dir = createTempDir();
-    const store = new BlobStore(join(dir, "files.duckdb"));
+    const store = new BlobStore(join(dir, "files.sqlite"));
     const data = new Uint8Array([1, 2, 3, 4, 5]);
     await store.store("blob-1", data);
     const retrieved = await store.retrieve("blob-1");
@@ -37,13 +37,13 @@ describe("BlobStore", () => {
 
   it("returns null for missing blobs", async () => {
     const dir = createTempDir();
-    const store = new BlobStore(join(dir, "files.duckdb"));
+    const store = new BlobStore(join(dir, "files.sqlite"));
     expect(await store.retrieve("nonexistent")).toBeNull();
   });
 
   it("deletes blobs", async () => {
     const dir = createTempDir();
-    const store = new BlobStore(join(dir, "files.duckdb"));
+    const store = new BlobStore(join(dir, "files.sqlite"));
     await store.store("blob-1", new Uint8Array([1]));
     expect(await store.delete("blob-1")).toBe(true);
     expect(await store.retrieve("blob-1")).toBeNull();
@@ -51,13 +51,13 @@ describe("BlobStore", () => {
 
   it("delete returns false for missing blobs", async () => {
     const dir = createTempDir();
-    const store = new BlobStore(join(dir, "files.duckdb"));
+    const store = new BlobStore(join(dir, "files.sqlite"));
     expect(await store.delete("nonexistent")).toBe(false);
   });
 
   it("has() checks existence", async () => {
     const dir = createTempDir();
-    const store = new BlobStore(join(dir, "files.duckdb"));
+    const store = new BlobStore(join(dir, "files.sqlite"));
     expect(await store.has("blob-1")).toBe(false);
     await store.store("blob-1", new Uint8Array([1]));
     expect(await store.has("blob-1")).toBe(true);
@@ -65,21 +65,21 @@ describe("BlobStore", () => {
 
   it(
     "handles large blobs (1MB)",
-    { timeout: 15000 },
     async () => {
-    const dir = createTempDir();
-    const store = new BlobStore(join(dir, "files.duckdb"));
-    const large = new Uint8Array(1024 * 1024);
-    for (let i = 0; i < large.length; i++) large[i] = i % 256;
-    await store.store("large", large);
-    const retrieved = await store.retrieve("large");
-    expect(retrieved).toEqual(large);
+      const dir = createTempDir();
+      const store = new BlobStore(join(dir, "files.sqlite"));
+      const large = new Uint8Array(1024 * 1024);
+      for (let i = 0; i < large.length; i++) large[i] = i % 256;
+      await store.store("large", large);
+      const retrieved = await store.retrieve("large");
+      expect(retrieved).toEqual(large);
     },
+    15000,
   );
 
   it("overwrites existing blobs", async () => {
     const dir = createTempDir();
-    const store = new BlobStore(join(dir, "files.duckdb"));
+    const store = new BlobStore(join(dir, "files.sqlite"));
     await store.store("blob-1", new Uint8Array([1, 2, 3]));
     await store.store("blob-1", new Uint8Array([4, 5, 6]));
     const retrieved = await store.retrieve("blob-1");
@@ -90,13 +90,13 @@ describe("BlobStore", () => {
     const dir = createTempDir();
     const key = "abc123abc123abc123abc123abc12312";
     const store = new BlobStore(
-      join(dir, "files.duckdb"),
+      join(dir, "files.sqlite"),
       createProvider(key),
     );
     await store.store("enc-1", new Uint8Array([10, 20, 30]));
 
     const store2 = new BlobStore(
-      join(dir, "files.duckdb"),
+      join(dir, "files.sqlite"),
       createProvider(key),
     );
     expect(await store2.retrieve("enc-1")).toEqual(

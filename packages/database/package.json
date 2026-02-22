@@ -1,0 +1,18 @@
+{
+  "name": "@proseva/database",
+  "module": "index.ts",
+  "version": "0.0.0-prerelease",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "exports": {
+    ".": {
+      "import": "./index.ts",
+      "types": "./index.ts"
+    }
+  }
+}

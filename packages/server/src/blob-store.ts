@@ -2,7 +2,11 @@ import { dirname, resolve } from "node:path";
 import { mkdirSync, existsSync, renameSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { DuckDBInstance, type DuckDBConnection } from "@duckdb/node-api";
+import {
+  SqliteDatabase,
+  type DatabaseInstance,
+  type DatabaseConnection,
+} from "@proseva/database";
 import {
   getDatabaseEncryptionKeyProvider,
   type DatabaseEncryptionKeyProvider,
@@ -15,11 +19,14 @@ const moduleDir =
   dirname(fileURLToPath(import.meta.url));
 
 type BlobSession = {
-  instance: DuckDBInstance;
-  connection: DuckDBConnection;
+  instance: DatabaseInstance;
+  connection: DatabaseConnection;
   key: string | undefined;
 };
 
+/**
+ * BlobStore stores binary data as BLOBs in a SQLite table.
+ */
 export class BlobStore {
   private dbPath: string;
   private keyProvider: DatabaseEncryptionKeyProvider;
@@ -31,8 +38,8 @@ export class BlobStore {
     keyProvider?: DatabaseEncryptionKeyProvider,
   ) {
     const defaultDbPath = process.env.PROSEVA_DATA_DIR
-      ? resolve(process.env.PROSEVA_DATA_DIR, "files.duckdb")
-      : resolve(moduleDir, "..", "data", "files.duckdb");
+      ? resolve(process.env.PROSEVA_DATA_DIR, "files.sqlite")
+      : resolve(process.cwd(), ".proseva-data", "files.sqlite");
     this.dbPath = dbPath ?? defaultDbPath;
     this.keyProvider = keyProvider ?? getDatabaseEncryptionKeyProvider();
     const dir = resolve(this.dbPath, "..");
@@ -68,34 +75,12 @@ export class BlobStore {
     return null;
   }
 
-  private static escapeSqlLiteral(value: string): string {
-    return value.replaceAll("'", "''");
-  }
-
-  private async attachDatabase(
-    connection: DuckDBConnection,
-    filePath: string,
-    encryptionKey: string | undefined,
-  ): Promise<void> {
-    const escapedPath = BlobStore.escapeSqlLiteral(filePath);
-    if (encryptionKey) {
-      const escapedKey = BlobStore.escapeSqlLiteral(encryptionKey);
-      await connection.run(
-        `ATTACH '${escapedPath}' AS filestore (ENCRYPTION_KEY '${escapedKey}')`,
-      );
-    } else {
-      await connection.run(`ATTACH '${escapedPath}' AS filestore`);
-    }
-    await connection.run("USE filestore");
-  }
-
   private async openSession(
     encryptionKey: string | undefined,
   ): Promise<BlobSession> {
-    const instance = await DuckDBInstance.create(":memory:");
+    const instance = await SqliteDatabase.create(this.dbPath);
     const connection = await instance.connect();
     try {
-      await this.attachDatabase(connection, this.dbPath, encryptionKey);
       await connection.run(`
         CREATE TABLE IF NOT EXISTS blobs (
           id VARCHAR PRIMARY KEY,
@@ -104,16 +89,16 @@ export class BlobStore {
       `);
       return { instance, connection, key: encryptionKey };
     } catch (error) {
-      try { connection.closeSync(); } catch {}
-      try { instance.closeSync(); } catch {}
+      try { await connection.close(); } catch {}
+      try { await instance.close(); } catch {}
       throw error;
     }
   }
 
   private async closeSession(): Promise<void> {
     if (!this.session) return;
-    try { this.session.connection.closeSync(); } catch {}
-    try { this.session.instance.closeSync(); } catch {}
+    try { await this.session.connection.close(); } catch {}
+    try { await this.session.instance.close(); } catch {}
     this.session = null;
   }
 
@@ -147,7 +132,7 @@ export class BlobStore {
     return null;
   }
 
-  private async getConnection(): Promise<DuckDBConnection> {
+  private async getConnection(): Promise<DatabaseConnection> {
     const encryptionKey = this.keyProvider.getEncryptionKey();
     if (this.session && this.session.key === encryptionKey) {
       return this.session.connection;
@@ -190,7 +175,7 @@ export class BlobStore {
     stmt.bindVarchar(1, id);
     stmt.bindBlob(2, data);
     await stmt.run();
-    stmt.destroySync();
+    await stmt.close();
   }
 
   async retrieve(id: string): Promise<Uint8Array | null> {
@@ -200,7 +185,7 @@ export class BlobStore {
     );
     stmt.bindVarchar(1, id);
     const reader = await stmt.runAndReadAll();
-    stmt.destroySync();
+    await stmt.close();
 
     if (reader.currentRowCount === 0) return null;
 
@@ -215,7 +200,7 @@ export class BlobStore {
     );
     stmt.bindVarchar(1, id);
     const result = await stmt.run();
-    stmt.destroySync();
+    await stmt.close();
     return result.rowsChanged > 0;
   }
 
@@ -226,20 +211,18 @@ export class BlobStore {
     );
     stmt.bindVarchar(1, id);
     const reader = await stmt.runAndReadAll();
-    stmt.destroySync();
+    await stmt.close();
     return reader.currentRowCount > 0;
   }
 
-  private async migratePlainToEncrypted(encryptionKey: string): Promise<void> {
+  private async migratePlainToEncrypted(_encryptionKey: string): Promise<void> {
     if (!existsSync(this.dbPath)) return;
 
-    const instance = await DuckDBInstance.create(":memory:");
+    const instance = await SqliteDatabase.create(this.dbPath);
     const connection = await instance.connect();
     try {
-      await this.attachDatabase(connection, this.dbPath, undefined);
-
       const existsReader = await connection.runAndReadAll(
-        "SELECT COUNT(*) AS count FROM information_schema.tables WHERE table_name = 'blobs'",
+        "SELECT count(*) as count FROM sqlite_master WHERE type='table' AND name='blobs'",
       );
       const existsRows = existsReader.getRowObjectsJS() as Array<{ count: number | bigint }>;
       if (Number(existsRows[0]?.count ?? 0) === 0) return;
@@ -251,15 +234,9 @@ export class BlobStore {
       }>;
 
       const tempEncPath = `${this.dbPath}.enc.tmp.${Date.now()}`;
-      const encInstance = await DuckDBInstance.create(":memory:");
+      const encInstance = await SqliteDatabase.create(tempEncPath);
       const encConn = await encInstance.connect();
       try {
-        const escapedPath = BlobStore.escapeSqlLiteral(tempEncPath);
-        const escapedKey = BlobStore.escapeSqlLiteral(encryptionKey);
-        await encConn.run(
-          `ATTACH '${escapedPath}' AS filestore (ENCRYPTION_KEY '${escapedKey}')`,
-        );
-        await encConn.run("USE filestore");
         await encConn.run(`
           CREATE TABLE IF NOT EXISTS blobs (
             id VARCHAR PRIMARY KEY,
@@ -275,19 +252,19 @@ export class BlobStore {
           stmt.bindVarchar(1, row.id);
           stmt.bindBlob(2, data);
           await stmt.run();
-          stmt.destroySync();
+          await stmt.close();
         }
       } finally {
-        try { encConn.closeSync(); } catch {}
-        try { encInstance.closeSync(); } catch {}
+        try { await encConn.close(); } catch {}
+        try { await encInstance.close(); } catch {}
       }
 
       const backupPath = `${this.dbPath}.unencrypted.bak.${Date.now()}`;
       renameSync(this.dbPath, backupPath);
       renameSync(tempEncPath, this.dbPath);
     } finally {
-      try { connection.closeSync(); } catch {}
-      try { instance.closeSync(); } catch {}
+      try { await connection.close(); } catch {}
+      try { await instance.close(); } catch {}
     }
   }
 

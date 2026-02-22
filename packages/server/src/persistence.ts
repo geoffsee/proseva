@@ -4,7 +4,11 @@ import {
   existsSync,
   renameSync,
 } from "node:fs";
-import { DuckDBInstance, type DuckDBConnection } from "@duckdb/node-api";
+import {
+  SqliteDatabase,
+  type DatabaseInstance,
+  type DatabaseConnection,
+} from "@proseva/database";
 import {
   getDatabaseEncryptionKeyProvider,
   type DatabaseEncryptionKeyProvider,
@@ -40,26 +44,25 @@ export class InMemoryAdapter implements PersistenceAdapter {
   }
 }
 
-type DuckDbSession = {
-  instance: DuckDBInstance;
-  connection: DuckDBConnection;
+type SqliteSession = {
+  instance: DatabaseInstance;
+  connection: DatabaseConnection;
   key: string | undefined;
 };
 
 /**
- * DuckDB adapter stores all collections as key-value rows in a DuckDB table.
- * Uses native DuckDB file encryption via ATTACH ... (ENCRYPTION_KEY ...).
+ * Sqlite adapter stores all collections as key-value rows in a SQLite table.
  */
-export class DuckDbAdapter implements PersistenceAdapter {
+export class SqliteAdapter implements PersistenceAdapter {
   private dbPath: string;
   private keyProvider: DatabaseEncryptionKeyProvider;
-  private session: DuckDbSession | null = null;
+  private session: SqliteSession | null = null;
   private writeQueue: Promise<void> = Promise.resolve();
 
   constructor(
     dbPath = process.env.PROSEVA_DATA_DIR
-      ? resolve(process.env.PROSEVA_DATA_DIR, "db.duckdb")
-      : resolve(import.meta.dir, "..", "data", "db.duckdb"),
+      ? resolve(process.env.PROSEVA_DATA_DIR, "db.sqlite")
+      : resolve(process.cwd(), ".proseva-data", "db.sqlite"),
     keyProvider: DatabaseEncryptionKeyProvider = getDatabaseEncryptionKeyProvider(),
   ) {
     this.dbPath = dbPath;
@@ -68,36 +71,15 @@ export class DuckDbAdapter implements PersistenceAdapter {
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
   }
 
-  private static escapeSqlLiteral(value: string): string {
-    return value.replaceAll("'", "''");
-  }
-
-  private async attachDatabase(
-    connection: DuckDBConnection,
-    filePath: string,
-    encryptionKey: string | undefined,
-  ): Promise<void> {
-    const escapedPath = DuckDbAdapter.escapeSqlLiteral(filePath);
-    if (encryptionKey) {
-      const escapedKey = DuckDbAdapter.escapeSqlLiteral(encryptionKey);
-      await connection.run(
-        `ATTACH '${escapedPath}' AS proseva (ENCRYPTION_KEY '${escapedKey}')`,
-      );
-    } else {
-      await connection.run(`ATTACH '${escapedPath}' AS proseva`);
-    }
-    await connection.run("USE proseva");
-  }
-
   private async closeSession(): Promise<void> {
     if (!this.session) return;
     try {
-      this.session.connection.closeSync();
+      await this.session.connection.close();
     } catch {
       // Ignore close errors during adapter shutdown/reload.
     }
     try {
-      this.session.instance.closeSync();
+      await this.session.instance.close();
     } catch {
       // Ignore close errors during adapter shutdown/reload.
     }
@@ -136,11 +118,10 @@ export class DuckDbAdapter implements PersistenceAdapter {
 
   private async openSession(
     encryptionKey: string | undefined,
-  ): Promise<DuckDbSession> {
-    const instance = await DuckDBInstance.create(":memory:");
+  ): Promise<SqliteSession> {
+    const instance = await SqliteDatabase.create(this.dbPath);
     const connection = await instance.connect();
     try {
-      await this.attachDatabase(connection, this.dbPath, encryptionKey);
       await connection.run(`
         CREATE TABLE IF NOT EXISTS kv (
           key VARCHAR PRIMARY KEY,
@@ -150,10 +131,10 @@ export class DuckDbAdapter implements PersistenceAdapter {
       return { instance, connection, key: encryptionKey };
     } catch (error) {
       try {
-        connection.closeSync();
+        await connection.close();
       } catch {}
       try {
-        instance.closeSync();
+        await instance.close();
       } catch {}
       throw error;
     }
@@ -161,14 +142,13 @@ export class DuckDbAdapter implements PersistenceAdapter {
 
   private async readSnapshotFromDatabase(
     dbPath: string,
-    encryptionKey: string | undefined,
+    _encryptionKey: string | undefined,
   ): Promise<Record<string, Record<string, unknown>>> {
-    const instance = await DuckDBInstance.create(":memory:");
+    const instance = await SqliteDatabase.create(dbPath);
     const connection = await instance.connect();
     try {
-      await this.attachDatabase(connection, dbPath, encryptionKey);
       const existsReader = await connection.runAndReadAll(
-        "SELECT COUNT(*) AS count FROM information_schema.tables WHERE table_name = 'kv'",
+        "SELECT count(*) as count FROM sqlite_master WHERE type='table' AND name='kv'",
       );
       const existsRows = existsReader.getRowObjectsJS() as Array<{
         count: number | bigint;
@@ -191,23 +171,22 @@ export class DuckDbAdapter implements PersistenceAdapter {
       return snapshot;
     } finally {
       try {
-        connection.closeSync();
+        await connection.close();
       } catch {}
       try {
-        instance.closeSync();
+        await instance.close();
       } catch {}
     }
   }
 
   private async writeSnapshotToDatabase(
     dbPath: string,
-    encryptionKey: string | undefined,
+    _encryptionKey: string | undefined,
     data: Record<string, Record<string, unknown>>,
   ): Promise<void> {
-    const instance = await DuckDBInstance.create(":memory:");
+    const instance = await SqliteDatabase.create(dbPath);
     const connection = await instance.connect();
     try {
-      await this.attachDatabase(connection, dbPath, encryptionKey);
       await connection.run(`
         CREATE TABLE IF NOT EXISTS kv (
           key VARCHAR PRIMARY KEY,
@@ -232,15 +211,15 @@ export class DuckDbAdapter implements PersistenceAdapter {
       }
     } finally {
       try {
-        connection.closeSync();
+        await connection.close();
       } catch {}
       try {
-        instance.closeSync();
+        await instance.close();
       } catch {}
     }
   }
 
-  private async migratePlainDuckDbToEncrypted(encryptionKey: string): Promise<void> {
+  private async migratePlainToEncrypted(encryptionKey: string): Promise<void> {
     if (!existsSync(this.dbPath)) return;
     const snapshot = await this.readSnapshotFromDatabase(this.dbPath, undefined);
     const tempEncryptedPath = `${this.dbPath}.enc.tmp.${Date.now()}`;
@@ -250,7 +229,7 @@ export class DuckDbAdapter implements PersistenceAdapter {
     renameSync(tempEncryptedPath, this.dbPath);
   }
 
-  private async getConnection(): Promise<DuckDBConnection> {
+  private async getConnection(): Promise<DatabaseConnection> {
     const encryptionKey = this.keyProvider.getEncryptionKey();
     if (this.session && this.session.key === encryptionKey) {
       return this.session.connection;
@@ -267,7 +246,7 @@ export class DuckDbAdapter implements PersistenceAdapter {
         message.includes("A key is explicitly specified") &&
         message.includes("is not encrypted")
       ) {
-        await this.migratePlainDuckDbToEncrypted(encryptionKey);
+        await this.migratePlainToEncrypted(encryptionKey);
         this.session = await this.openSession(encryptionKey);
         return this.session.connection;
       }

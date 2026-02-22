@@ -18,15 +18,11 @@ extraResources:
     to: dist/
     filter:
       - "**/*"
-  - from: ../server/data/
-    to: server/data/
-    filter:
-      - "**/*"
 
 afterSign: src/notarize.cjs
 
 mac:
-  icon: icon.icns
+  icon: src/icon.icns
   category: public.app-category.productivity
   target:
     - dmg
@@ -36,7 +32,7 @@ mac:
   hardenedRuntime: true
 
 win:
-  icon: icon.ico
+  icon: src/icon.ico
   target:
     - target: nsis
       arch:
@@ -48,7 +44,7 @@ nsis:
   allowToChangeInstallationDirectory: true
 
 linux:
-  icon: icon-512.png
+  icon: src/icon-512.png
   target:
     - target: AppImage
       arch:

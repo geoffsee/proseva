@@ -1,6 +1,6 @@
 import {
   type PersistenceAdapter,
-  DuckDbAdapter,
+  SqliteAdapter,
   InMemoryAdapter,
   StorageEncryptionError,
 } from "./persistence";
@@ -655,7 +655,7 @@ export class Database {
 
 function createDefaultAdapter(): PersistenceAdapter {
   try {
-    return new DuckDbAdapter();
+    return new SqliteAdapter();
   } catch {
     return new InMemoryAdapter();
   }

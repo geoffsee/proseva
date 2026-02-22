@@ -111,7 +111,7 @@ describe("Database", () => {
     });
   });
 
-  describe("native DuckDB migration behavior", () => {
+  describe("native SQLite migration behavior", () => {
     it("persists plain snapshot payloads (no app-layer envelope)", async () => {
       database.cases.set("1", { id: "1", name: "Plain" } as Case);
       await database.flush();

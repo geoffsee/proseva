@@ -4,8 +4,8 @@
   "private": true,
   "main": "dist/main.js",
   "scripts": {
-    "dev": "tsc && electron .",
-    "build": "tsc",
+    "dev": "cd ../gui && bun run build && cd ../electron && tsc && bun build src/preload.ts --target=node --format=cjs --external=electron --outfile=dist/preload.js && electron .",
+    "build": "tsc && bun build src/preload.ts --target=node --format=cjs --external=electron --outfile=dist/preload.js",
     "typecheck": "tsc --noEmit",
     "test": "echo 'No tests yet'",
     "dist": "bun run build && electron-builder",

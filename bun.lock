@@ -38,6 +38,16 @@
         "typescript": "^5",
       },
     },
+    "packages/database": {
+      "name": "@proseva/database",
+      "version": "0.0.0-prerelease",
+      "devDependencies": {
+        "@types/bun": "latest",
+      },
+      "peerDependencies": {
+        "typescript": "^5",
+      },
+    },
     "packages/datasets": {
       "name": "@proseva/datasets",
       "version": "0.0.0-prerelease",
@@ -91,8 +101,8 @@
       "version": "0.0.0-prerelease",
       "dependencies": {
         "@chakra-ui/react": "^3.31.0",
-        "@duckdb/node-api": "^1.4.4-r.1",
         "@emotion/react": "^11.14.0",
+        "@proseva/database": "workspace:*",
         "@proseva/sdk": "workspace:*",
         "@types/uuid": "^11.0.0",
         "croner": "^10.0.1",
@@ -201,8 +211,8 @@
       "name": "@proseva/server",
       "version": "0.0.0-prerelease",
       "dependencies": {
-        "@duckdb/node-api": "^1.4.4-r.1",
         "@proseva/correspondence": "workspace:*",
+        "@proseva/database": "workspace:*",
         "@proseva/sdk": "workspace:*",
         "croner": "^10.0.1",
         "date-fns": "^4.1.0",
@@ -308,20 +318,6 @@
     "@csstools/css-tokenizer": ["@csstools/css-tokenizer@4.0.0", "", {}, "sha512-QxULHAm7cNu72w97JUNCBFODFaXpbDg+dP8b/oWFAZ2MTRppA3U00Y2L1HqaS4J6yBqxwa/Y3nMBaxVKbB/NsA=="],
 
     "@develar/schema-utils": ["@develar/schema-utils@2.6.5", "", { "dependencies": { "ajv": "^6.12.0", "ajv-keywords": "^3.4.1" } }, "sha512-0cp4PsWQ/9avqTVMCtZ+GirikIA36ikvjtHweU4/j8yLtgObI0+JUPhYFScgwlteveGB1rt3Cm8UhN04XayDig=="],
-
-    "@duckdb/node-api": ["@duckdb/node-api@1.4.4-r.1", "", { "dependencies": { "@duckdb/node-bindings": "1.4.4-r.1" } }, "sha512-oqaH9DXTJNwyLkd2FgJwmSnWVqjB5irbESeTeNVMBnM03iRaNY545BhfBDumu1TnOV2koIdG1mNsmjgq/ZTIkA=="],
-
-    "@duckdb/node-bindings": ["@duckdb/node-bindings@1.4.4-r.1", "", { "optionalDependencies": { "@duckdb/node-bindings-darwin-arm64": "1.4.4-r.1", "@duckdb/node-bindings-darwin-x64": "1.4.4-r.1", "@duckdb/node-bindings-linux-arm64": "1.4.4-r.1", "@duckdb/node-bindings-linux-x64": "1.4.4-r.1", "@duckdb/node-bindings-win32-x64": "1.4.4-r.1" } }, "sha512-NFm0AMrK3kiVLQhgnGUEjX5c8Elm93dYePZ9BUCvvd0AVVTKEBeRhBp9afziuzP3Sl5+7XQ1TyaBLsZJKKBDBQ=="],
-
-    "@duckdb/node-bindings-darwin-arm64": ["@duckdb/node-bindings-darwin-arm64@1.4.4-r.1", "", { "os": "darwin", "cpu": "arm64" }, "sha512-/NtbkCgCAOJDxw41XvSGV/mxQAlsx+2xUvhIVUj6fxoOfTG4jTttRhuphwE3EXNoWzJOjZxCZ5LwhC/qb6ZwLg=="],
-
-    "@duckdb/node-bindings-darwin-x64": ["@duckdb/node-bindings-darwin-x64@1.4.4-r.1", "", { "os": "darwin", "cpu": "x64" }, "sha512-lzFRDrZwc1EoV513vmKufasiAQ2WlhEb0O6guRBarbvOKKVhRb8tQ5H7LPVTrIewjTI3XDgHrnK+vfh9L+xQcA=="],
-
-    "@duckdb/node-bindings-linux-arm64": ["@duckdb/node-bindings-linux-arm64@1.4.4-r.1", "", { "os": "linux", "cpu": "arm64" }, "sha512-wq92/EcTiOTRW1RSDOwjeLyMMXWwNVNwU21TQdfu3sgS86+Ih3raaK68leDgY5cWgf72We3J2W7HYz8GwxcMYw=="],
-
-    "@duckdb/node-bindings-linux-x64": ["@duckdb/node-bindings-linux-x64@1.4.4-r.1", "", { "os": "linux", "cpu": "x64" }, "sha512-fjYNc+t4/T7mhzZ57oJoIQaWvbYVvxhidcNNansQFiWnd6/JMLCULd4qnt8XI3Tt2BrZsraH690KSBIS3QPt0w=="],
-
-    "@duckdb/node-bindings-win32-x64": ["@duckdb/node-bindings-win32-x64@1.4.4-r.1", "", { "os": "win32", "cpu": "x64" }, "sha512-+J+MUYGvYWfX0balWToDIy3CBYg7hHI0KQUQ39+SniinXlMF8+puRW6ebyQ+AXrcrKkwuj4wzJuEBD0AdhHGtw=="],
 
     "@electron/asar": ["@electron/asar@3.4.1", "", { "dependencies": { "commander": "^5.0.0", "glob": "^7.1.6", "minimatch": "^3.0.4" }, "bin": { "asar": "bin/asar.js" } }, "sha512-i4/rNPRS84t0vSRa2HorerGRXWyF4vThfHesw0dmcWHp+cspK743UanA0suA5Q5y8kzY2y6YKrvbIUn69BCAiA=="],
 
@@ -596,6 +592,8 @@
     "@proseva/cli": ["@proseva/cli@workspace:packages/cli"],
 
     "@proseva/correspondence": ["@proseva/correspondence@workspace:packages/correspondence"],
+
+    "@proseva/database": ["@proseva/database@workspace:packages/database"],
 
     "@proseva/datasets": ["@proseva/datasets@workspace:packages/datasets"],
 

@@ -28,7 +28,7 @@ const __dir =
 const DB_ENCRYPTION_V3_PAYLOAD_KEY = "__proseva_encrypted_v3";
 const DEFAULT_KEYPAIR_STORE_DIR = process.env.PROSEVA_DATA_DIR
   ? join(process.env.PROSEVA_DATA_DIR, "ml-kem-keys")
-  : join(__dir, "../data/ml-kem-keys");
+  : join(process.cwd(), ".proseva-data", "ml-kem-keys");
 
 // Initialize ML-KEM WASM module
 let wasmInitialized = false;
@@ -149,7 +149,7 @@ async function getKeypairStore(): Promise<KVNamespace> {
  * Load or generate ML-KEM-1024 keypair.
  *
  * On first call, attempts to load the keypair from an idb-repo KV store
- * persisted in server/data/ml-kem-keys/. If none exists, generates a new
+ * persisted in .proseva-data/ml-kem-keys/. If none exists, generates a new
  * keypair and saves it to the store automatically.
  */
 async function getOrGenerateKeyPair(): Promise<MlKemKeyPair> {
@@ -183,7 +183,7 @@ async function getOrGenerateKeyPair(): Promise<MlKemKeyPair> {
       "ML-KEM keypair store exists but cannot be decrypted. " +
         "This likely means the passphrase has changed. " +
         "Refusing to overwrite existing keypair to prevent data loss. " +
-        "If you need to reset encryption, manually delete server/data/ml-kem-keys/",
+        "If you need to reset encryption, manually delete .proseva-data/ml-kem-keys/",
     );
   }
 

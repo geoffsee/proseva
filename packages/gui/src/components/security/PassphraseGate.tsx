@@ -17,6 +17,7 @@ import {
   getAuthToken,
   clearAuthToken,
   setAuthExpiredCallback,
+  setDbLockedCallback,
 } from "../../lib/api";
 import {
   initAuthStore,
@@ -140,6 +141,12 @@ export function PassphraseGate({
         setAuthExpiredCallback(() => {
           void clearAuthToken();
           setError("Your session has expired. Please log in again.");
+          setPassphrase("");
+          setState("enter-passphrase");
+        });
+
+        setDbLockedCallback(() => {
+          setError("Database is locked. Provide a valid recovery key to continue.");
           setPassphrase("");
           setState("enter-passphrase");
         });

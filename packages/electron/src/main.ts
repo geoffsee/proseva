@@ -77,12 +77,12 @@ function startServer(): ChildProcess {
   }
 
   // Production: run compiled server binary.
-  // External packages (mupdf, @duckdb) live in dist-server/node_modules but the
+  // External packages (mupdf) live in dist-server/_modules but the
   // Bun compiled binary resolves imports from its virtual FS path (/$bunfs/root/).
   // NODE_PATH tells the runtime where to find those packages on disk.
   const distServerDir = getResourcePath("dist-server");
   const serverBin = path.join(distServerDir, "proseva-server");
-  env.NODE_PATH = path.join(distServerDir, "node_modules");
+  env.NODE_PATH = path.join(distServerDir, "_modules");
   console.log("[electron] Starting compiled server:", serverBin);
   return spawn(serverBin, [], {
     env,
@@ -122,7 +122,8 @@ function createWindow(): void {
   });
 
   if (isDev) {
-    mainWindow.loadURL(DEV_URL);
+    const guiDist = path.join(PROJECT_ROOT, "packages", "gui", "dist", "index.html");
+    mainWindow.loadFile(guiDist);
   } else {
     mainWindow.loadFile(path.join(process.resourcesPath, "dist", "index.html"));
   }

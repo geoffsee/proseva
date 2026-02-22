@@ -18,8 +18,8 @@
   },
   "dependencies": {
     "@chakra-ui/react": "^3.31.0",
-    "@duckdb/node-api": "^1.4.4-r.1",
     "@emotion/react": "^11.14.0",
+    "@proseva/database": "workspace:*",
     "@proseva/sdk": "workspace:*",
     "@types/uuid": "^11.0.0",
     "croner": "^10.0.1",

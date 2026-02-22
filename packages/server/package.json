@@ -13,8 +13,8 @@
   },
   "dependencies": {
     "@proseva/correspondence": "workspace:*",
+    "@proseva/database": "workspace:*",
     "@proseva/sdk": "workspace:*",
-    "@duckdb/node-api": "^1.4.4-r.1",
     "croner": "^10.0.1",
     "date-fns": "^4.1.0",
     "firebase-admin": "^13.6.1",

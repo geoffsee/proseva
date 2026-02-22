@@ -54,7 +54,6 @@ pids/
 
 # Database
 .proseva-data/
-server/data/backups/
 *.sqlite
 *.sqlite3
 
@@ -74,11 +73,10 @@ server/data/backups/
 .LSOverride
 ._*
 /dist-electron/
-/server/data
 /dist-server/proseva-server
 /.output.txt
 *.traineddata
 apple-ocr
 **/eng.traineddata
 *.bak
-/packages/server/data/
+/packages/electron/release/
