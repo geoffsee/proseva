@@ -1,7 +1,6 @@
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
 import { mkdirSync, existsSync, renameSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { fileURLToPath } from "node:url";
 import {
   SqliteDatabase,
   type DatabaseInstance,

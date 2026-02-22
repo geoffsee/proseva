@@ -2404,9 +2404,9 @@ export function broadcast(event: string, data?: unknown) {
 
 export default {
   port,
-  fetch(req: Request, server: import("bun").Server) {
+  fetch(req: Request, server: import("bun").Server<unknown>) {
     if (new URL(req.url).pathname === "/ws") {
-      if (server.upgrade(req)) return undefined;
+      if (server.upgrade(req, { data: undefined })) return undefined;
       return new Response("WebSocket upgrade failed", { status: 500 });
     }
     return router.fetch(req);

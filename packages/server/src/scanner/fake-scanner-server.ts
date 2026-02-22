@@ -238,7 +238,7 @@ const server = Bun.serve({
       // Clean up job after delivery
       jobs.delete(jobId);
 
-      return new Response(pdf, {
+      return new Response(pdf as BlobPart, {
         headers: { "content-type": "application/pdf" },
       });
     }
