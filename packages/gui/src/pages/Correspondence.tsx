@@ -16,6 +16,7 @@ import {
   type Case,
   type Correspondence as CorrespondenceRecord,
   type CorrespondenceEmailImportResult,
+  type EmailServiceStatus,
 } from "../lib/api";
 import { EmptyState } from "../components/shared/EmptyState";
 import { StatCard } from "../components/shared/StatCard";
@@ -48,7 +49,12 @@ export default function Correspondence() {
   const [downloadingAttachmentId, setDownloadingAttachmentId] = useState<
     string | null
   >(null);
+  const [emailStatus, setEmailStatus] = useState<EmailServiceStatus | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    void api.email.status().then(setEmailStatus).catch(() => {});
+  }, []);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -176,6 +182,12 @@ export default function Correspondence() {
         <StatCard label="Total" value={items.length.toString()} />
         <StatCard label="Incoming" value={incomingCount.toString()} />
         <StatCard label="Outgoing" value={outgoingCount.toString()} />
+        {emailStatus?.configured && (
+          <Badge colorPalette="blue" variant="subtle" px={3} py={1}>
+            <LuMail style={{ display: "inline", marginRight: 4 }} />
+            {emailStatus.emailAddress}
+          </Badge>
+        )}
       </HStack>
 
       <Box borderWidth="1px" borderRadius="lg" p="5">

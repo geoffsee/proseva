@@ -151,6 +151,11 @@ export function getConfig(key: string): string | undefined {
     ) {
       return configCache.documentScanner.endpoints;
     }
+
+    // Email service keys
+    if (key === "EMAIL_WORKER_URL" && configCache.email?.workerUrl) {
+      return configCache.email.workerUrl;
+    }
   }
 
   // Fallback to environment variable
@@ -257,5 +262,15 @@ export function documentScannerConfig() {
   return {
     enabled: getConfig("SCANNER_ENABLED") === "true",
     endpoints: getConfig("SCANNER_ENDPOINTS") ?? "",
+  };
+}
+
+/**
+ * Get email service configuration.
+ */
+export function emailServiceConfig() {
+  return {
+    workerUrl:
+      getConfig("EMAIL_WORKER_URL") || "https://email.proseva.app",
   };
 }

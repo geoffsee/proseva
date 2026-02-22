@@ -23,12 +23,13 @@ import {
   FiMessageSquare,
   FiPrinter,
   FiAperture,
+  FiMail,
 } from "react-icons/fi";
 import { useStore } from "../store/StoreContext";
 import { toaster } from "../components/ui/toaster";
 import { MaskedInput } from "../components/config/MaskedInput";
 import { ConfigSection } from "../components/config/ConfigSection";
-import { api, type DbSecurityStatus } from "../lib/api";
+import { api, type DbSecurityStatus, type EmailServiceStatus } from "../lib/api";
 
 const RECOVERY_KEY_STORAGE_KEY = "proseva.dbRecoveryKey";
 
@@ -101,6 +102,13 @@ const Config = observer(() => {
   const [scannerEnabled, setScannerEnabled] = useState(false);
   const [scannerEndpoints, setScannerEndpoints] = useState("");
 
+  const [emailStatus, setEmailStatus] = useState<EmailServiceStatus | null>(null);
+  const [emailRegistrationSecret, setEmailRegistrationSecret] = useState("");
+  const [isEmailRegistering, setIsEmailRegistering] = useState(false);
+  const [isEmailPolling, setIsEmailPolling] = useState(false);
+  const [isEmailTesting, setIsEmailTesting] = useState(false);
+  const [isEmailRotating, setIsEmailRotating] = useState(false);
+
   const [hasChanges, setHasChanges] = useState(false);
   const [dbSecurityStatus, setDbSecurityStatus] =
     useState<DbSecurityStatus | null>(null);
@@ -130,6 +138,15 @@ const Config = observer(() => {
     }
   };
 
+  const loadEmailStatus = () => {
+    void api.email
+      .status()
+      .then((status) => setEmailStatus(status))
+      .catch((error) => {
+        console.error("Failed to load email status:", error);
+      });
+  };
+
   useEffect(() => {
     configStore.loadConfig();
     void api.security
@@ -138,6 +155,7 @@ const Config = observer(() => {
       .catch((error) => {
         console.error("Failed to load DB security status:", error);
       });
+    loadEmailStatus();
   }, [configStore]);
 
   useEffect(() => {
@@ -377,6 +395,104 @@ const Config = observer(() => {
         description: result.error,
         type: "error",
       });
+    }
+  };
+
+  const handleEmailRegister = async () => {
+    if (!emailRegistrationSecret.trim()) {
+      toaster.create({
+        title: "Registration secret required",
+        type: "error",
+      });
+      return;
+    }
+    setIsEmailRegistering(true);
+    try {
+      const result = await api.email.register(emailRegistrationSecret.trim());
+      toaster.create({
+        title: `Email activated: ${result.emailAddress}`,
+        type: "success",
+      });
+      setEmailRegistrationSecret("");
+      loadEmailStatus();
+      configStore.loadConfig();
+    } catch (error) {
+      toaster.create({
+        title: "Email registration failed",
+        description: String(error),
+        type: "error",
+      });
+    } finally {
+      setIsEmailRegistering(false);
+    }
+  };
+
+  const handleEmailPoll = async () => {
+    setIsEmailPolling(true);
+    try {
+      const result = await api.email.poll();
+      toaster.create({
+        title: result.imported > 0
+          ? `Imported ${result.imported} email(s)`
+          : "No new emails",
+        type: result.imported > 0 ? "success" : "info",
+      });
+      loadEmailStatus();
+    } catch (error) {
+      toaster.create({
+        title: "Poll failed",
+        description: String(error),
+        type: "error",
+      });
+    } finally {
+      setIsEmailPolling(false);
+    }
+  };
+
+  const handleEmailTest = async () => {
+    setIsEmailTesting(true);
+    try {
+      const result = await api.email.test();
+      if (result.success) {
+        toaster.create({
+          title: `Connected (${result.pendingEmails ?? 0} pending)`,
+          type: "success",
+        });
+      } else {
+        toaster.create({
+          title: "Connection failed",
+          description: result.error,
+          type: "error",
+        });
+      }
+    } catch (error) {
+      toaster.create({
+        title: "Test failed",
+        description: String(error),
+        type: "error",
+      });
+    } finally {
+      setIsEmailTesting(false);
+    }
+  };
+
+  const handleEmailRotateKey = async () => {
+    if (!confirm("Rotate encryption key? Any pending emails will be downloaded first.")) {
+      return;
+    }
+    setIsEmailRotating(true);
+    try {
+      await api.email.rotateKey();
+      toaster.create({ title: "Encryption key rotated", type: "success" });
+      loadEmailStatus();
+    } catch (error) {
+      toaster.create({
+        title: "Key rotation failed",
+        description: String(error),
+        type: "error",
+      });
+    } finally {
+      setIsEmailRotating(false);
     }
   };
 
@@ -1204,6 +1320,103 @@ const Config = observer(() => {
           >
             Test Scanner Connection
           </Button>
+        </ConfigSection>
+
+        {/* Email Service Section */}
+        <ConfigSection
+          title="Email Service"
+          icon={<FiMail />}
+          status={emailStatus?.configured ? "database" : "environment"}
+        >
+          <Text fontSize="sm" color="gray.600" mb={1}>
+            Receive inbound email at a unique @proseva.app address.
+            Emails are encrypted in transit and at rest until your instance
+            downloads them.
+          </Text>
+          {emailStatus?.configured ? (
+            <>
+              <Box>
+                <Text fontSize="sm" mb={1} fontWeight="medium">
+                  Email Address
+                </Text>
+                <Text fontSize="md" fontFamily="mono" color="blue.600">
+                  {emailStatus.emailAddress}
+                </Text>
+              </Box>
+              <Box>
+                <Text fontSize="sm" mb={1} fontWeight="medium">
+                  Status
+                </Text>
+                <HStack gap={4} flexWrap="wrap">
+                  <Text fontSize="sm">
+                    Polling: {emailStatus.pollingEnabled ? "On" : "Off"} ({emailStatus.pollingIntervalSeconds}s)
+                  </Text>
+                  {emailStatus.lastPollAt && (
+                    <Text fontSize="sm" color="gray.500">
+                      Last poll: {new Date(emailStatus.lastPollAt).toLocaleString()}
+                      {emailStatus.lastPollCount > 0 && ` (${emailStatus.lastPollCount} imported)`}
+                    </Text>
+                  )}
+                  {emailStatus.lastPollError && (
+                    <Text fontSize="sm" color="red.500">
+                      Error: {emailStatus.lastPollError}
+                    </Text>
+                  )}
+                </HStack>
+              </Box>
+              <HStack gap={2} flexWrap="wrap">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleEmailPoll}
+                  loading={isEmailPolling}
+                >
+                  Poll Now
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleEmailTest}
+                  loading={isEmailTesting}
+                >
+                  Test Connection
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleEmailRotateKey}
+                  loading={isEmailRotating}
+                >
+                  Rotate Key
+                </Button>
+              </HStack>
+            </>
+          ) : (
+            <>
+              <Box>
+                <Text fontSize="sm" mb={1} fontWeight="medium">
+                  Registration Secret
+                </Text>
+                <Input
+                  type="password"
+                  value={emailRegistrationSecret}
+                  onChange={(e) => setEmailRegistrationSecret(e.target.value)}
+                  placeholder="Enter the registration secret"
+                />
+                <Text fontSize="xs" color="gray.500" mt={1}>
+                  The shared secret configured on the email relay worker
+                </Text>
+              </Box>
+              <Button
+                size="sm"
+                colorScheme="blue"
+                onClick={handleEmailRegister}
+                loading={isEmailRegistering}
+              >
+                Activate Email Address
+              </Button>
+            </>
+          )}
         </ConfigSection>
 
         {/* Auto-Ingest Section */}

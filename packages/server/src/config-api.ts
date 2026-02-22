@@ -17,6 +17,7 @@ import {
 import { restartScheduler } from "./scheduler";
 import { testOpenAIConnection } from "./reports";
 import { asIttyRoute, json, openapiFormat } from "./openapi";
+import { restartEmailPoller } from "./email-service";
 
 /**
  * Build a minimal valid PDF containing a test message.
@@ -313,6 +314,14 @@ router.get(
         ? "database"
         : "environment",
     },
+    email: {
+      instanceId: config?.email?.instanceId,
+      emailAddress: config?.email?.emailAddress,
+      apiKey: maskSensitiveValue(config?.email?.apiKey),
+      pollingEnabled: config?.email?.pollingEnabled ?? false,
+      pollingIntervalSeconds: config?.email?.pollingIntervalSeconds ?? 60,
+      workerUrl: config?.email?.workerUrl || process.env.EMAIL_WORKER_URL || "https://email.proseva.app",
+    },
   };
 
   return response;
@@ -384,6 +393,12 @@ router.patch(
         ...updates.documentScanner,
       };
     }
+    if (updates.email) {
+      config.email = {
+        ...config.email,
+        ...stripMaskedValues(updates.email),
+      };
+    }
 
     // Save to database
     db.serverConfig.set("singleton", config);
@@ -450,6 +465,9 @@ router.delete(
     } else if (group === "documentScanner" && config.documentScanner) {
       const documentScanner = config.documentScanner as Record<string, unknown>;
       delete documentScanner[key];
+    } else if (group === "email" && config.email) {
+      const email = config.email as Record<string, unknown>;
+      delete email[key];
     }
 
     config.updatedAt = new Date().toISOString();
@@ -697,6 +715,8 @@ router.post(
       } else if (service === "scanner") {
         const { restartScanner } = await import("./scanner");
         restartScanner();
+      } else if (service === "email") {
+        restartEmailPoller();
       } else {
         return json(400, { success: false, error: `Unknown service: ${service}` });
       }

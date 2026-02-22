@@ -270,6 +270,17 @@ export type ServerConfig = {
     endpoints?: string;
     outputDirectory?: string;
   };
+
+  email?: {
+    instanceId?: string;
+    emailAddress?: string;
+    apiKey?: string;
+    publicKeyJwk?: string;
+    privateKeyJwk?: string;
+    workerUrl?: string;
+    pollingEnabled?: boolean;
+    pollingIntervalSeconds?: number;
+  };
 };
 
 export type Beneficiary = {

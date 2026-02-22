@@ -1161,6 +1161,70 @@ export const ingestApi = {
     unwrap(client.POST("/ingest/scan", { body: { directory } })),
 };
 
+export interface EmailServiceStatus {
+  configured: boolean;
+  instanceId: string | null;
+  emailAddress: string | null;
+  pollingEnabled: boolean;
+  pollingIntervalSeconds: number;
+  lastPollAt: string | null;
+  lastPollCount: number;
+  lastPollError: string | null;
+}
+
+export const emailApi = {
+  status: async (): Promise<EmailServiceStatus> => {
+    const res = await fetch(`${API_BASE}/email/status`, {
+      headers: await getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    return res.json();
+  },
+  register: async (
+    registrationSecret: string,
+  ): Promise<{ emailAddress: string }> => {
+    const res = await fetch(`${API_BASE}/email/register`, {
+      method: "POST",
+      headers: await getAuthHeaders(),
+      body: JSON.stringify({ registrationSecret }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(
+        (body as { error?: string }).error || `Registration failed: ${res.status}`,
+      );
+    }
+    return res.json();
+  },
+  poll: async (): Promise<{ success: boolean; imported: number }> => {
+    const res = await fetch(`${API_BASE}/email/poll`, {
+      method: "POST",
+      headers: await getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error(`Poll failed: ${res.status}`);
+    return res.json();
+  },
+  test: async (): Promise<{
+    success: boolean;
+    error?: string;
+    pendingEmails?: number;
+  }> => {
+    const res = await fetch(`${API_BASE}/email/test`, {
+      method: "POST",
+      headers: await getAuthHeaders(),
+    });
+    return res.json();
+  },
+  rotateKey: async (): Promise<{ success: boolean }> => {
+    const res = await fetch(`${API_BASE}/email/rotate-key`, {
+      method: "POST",
+      headers: await getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error(`Key rotation failed: ${res.status}`);
+    return res.json();
+  },
+};
+
 export const api = {
   cases: casesApi,
   contacts: contactsApi,
@@ -1185,4 +1249,5 @@ export const api = {
   chat: chatApi,
   documents: documentsApi,
   ingest: ingestApi,
+  email: emailApi,
 };

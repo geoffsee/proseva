@@ -42,6 +42,17 @@ import {
 } from "./scheduler";
 import { initScanner, stopScanner } from "./scanner";
 import {
+  initEmailPoller,
+  stopEmailPoller,
+  pollForEmails,
+  getEmailServiceStatus,
+  registerEmailAddress,
+  testEmailConnection,
+  rotateEmailKey,
+  restartEmailPoller,
+} from "./email-service";
+import { importSingleEml } from "./correspondence-import";
+import {
   registerDeviceToken,
   getDeviceTokens,
   removeDeviceToken,
@@ -333,7 +344,6 @@ async function importCorrespondenceEmails(formData: FormData) {
     return json(400, { error: "No email files provided" });
   }
 
-  const blobStore = getBlobStore();
   const created: Correspondence[] = [];
   const errors: { fileName: string; error: string }[] = [];
 
@@ -347,93 +357,10 @@ async function importCorrespondenceEmails(formData: FormData) {
       continue;
     }
 
-    const storedAttachmentIds: string[] = [];
-
     try {
-      const parsed = parseEml(await file.arrayBuffer());
-      const now = new Date().toISOString();
-      const correspondenceId = crypto.randomUUID();
-      const attachments: CorrespondenceAttachment[] = [];
-
-      for (const parsedAttachment of parsed.attachments) {
-        const bytes = new Uint8Array(parsedAttachment.content);
-        if (bytes.byteLength === 0) continue;
-
-        const attachmentId = crypto.randomUUID();
-        const filename = parsedAttachment.filename?.trim()
-          ? parsedAttachment.filename.trim()
-          : `attachment-${attachmentId}`;
-        const contentType = parsedAttachment.contentType?.trim()
-          ? parsedAttachment.contentType.trim()
-          : "application/octet-stream";
-        const createdAt = new Date().toISOString();
-        const hash = BlobStore.computeHash(bytes);
-
-        await blobStore.store(attachmentId, bytes);
-        storedAttachmentIds.push(attachmentId);
-
-        db.fileMetadata.set(attachmentId, {
-          id: attachmentId,
-          filename,
-          mimeType: contentType,
-          size: bytes.byteLength,
-          hash,
-          createdAt,
-          sourceType: "correspondence-attachment",
-          sourceRef: correspondenceId,
-        });
-
-        attachments.push({
-          id: attachmentId,
-          filename,
-          contentType,
-          size: bytes.byteLength,
-          hash,
-          createdAt,
-        });
-      }
-
-      const summaryText = (parsed.text || "").trim();
-      const attachmentsText = attachments.length
-        ? `Attachments: ${attachments.map((a) => a.filename).join(", ")}`
-        : "";
-      const notes = [
-        parsed.cc ? `CC: ${parsed.cc}` : "",
-        parsed.bcc ? `BCC: ${parsed.bcc}` : "",
-        parsed.replyTo ? `Reply-To: ${parsed.replyTo}` : "",
-        parsed.messageId ? `Message-ID: ${parsed.messageId}` : "",
-        attachmentsText,
-      ]
-        .filter(Boolean)
-        .join("\n");
-
-      const c: Correspondence = {
-        id: correspondenceId,
-        caseId,
-        date: normalizeIsoDateOrNow(parsed.date, now),
-        direction: parsed.direction,
-        channel: "email",
-        subject: parsed.subject || name,
-        sender: parsed.from,
-        recipient: parsed.to,
-        summary: summaryText.slice(0, 4000),
-        notes,
-        attachments,
-        createdAt: now,
-        updatedAt: now,
-      };
-
-      db.correspondences.set(c.id, c);
+      const c = await importSingleEml(await file.arrayBuffer(), caseId);
       created.push(c);
     } catch (error) {
-      for (const attachmentId of storedAttachmentIds) {
-        try {
-          await blobStore.delete(attachmentId);
-        } catch {
-          // Best effort rollback for partially imported emails.
-        }
-        db.fileMetadata.delete(attachmentId);
-      }
       errors.push({
         fileName: name,
         error:
@@ -587,10 +514,12 @@ async function maybeAutoIngestFromEnv(): Promise<void> {
 process.on("beforeExit", () => void db.flush());
 process.on("SIGINT", () => {
   stopScanner();
+  stopEmailPoller();
   void db.flush().then(() => process.exit(0));
 });
 process.on("SIGTERM", () => {
   stopScanner();
+  stopEmailPoller();
   void db.flush().then(() => process.exit(0));
 });
 
@@ -2025,6 +1954,65 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
     }),
   );
 
+// --- Email Service ---
+router
+  .get(
+    "/email/status",
+    asIttyRoute("get", "/email/status", () => getEmailServiceStatus()),
+  )
+  .post(
+    "/email/poll",
+    asIttyRoute("post", "/email/poll", async () => {
+      const count = await pollForEmails();
+      if (count > 0) db.persist();
+      return { success: true, imported: count };
+    }),
+  )
+  .post(
+    "/email/register",
+    asIttyRoute("post", "/email/register", async (req) => {
+      const body = await req.json();
+      const registrationSecret =
+        typeof body?.registrationSecret === "string"
+          ? body.registrationSecret
+          : "";
+      if (!registrationSecret) {
+        return json(400, { error: "registrationSecret is required" });
+      }
+      try {
+        const result = await registerEmailAddress(registrationSecret);
+        db.persist();
+        return result;
+      } catch (error) {
+        return json(500, {
+          error:
+            error instanceof Error ? error.message : "Registration failed",
+        });
+      }
+    }),
+  )
+  .post(
+    "/email/test",
+    asIttyRoute("post", "/email/test", async () => {
+      return testEmailConnection();
+    }),
+  )
+  .post(
+    "/email/rotate-key",
+    asIttyRoute("post", "/email/rotate-key", async () => {
+      try {
+        await rotateEmailKey();
+        db.persist();
+        return { success: true };
+      } catch (error) {
+        return json(500, {
+          error:
+            error instanceof Error ? error.message : "Key rotation failed",
+        });
+      }
+    }),
+  );
+
 // --- Fax Jobs ---
 router
   .get(
@@ -2344,6 +2332,9 @@ router.all("/research/*", researchRouter.fetch);
 
 // Initialize the scheduler on server startup
 initScheduler();
+
+// Initialize the email poller on server startup
+initEmailPoller();
 
 // Initialize the document scanner service on server startup.
 // Scanned documents are ingested directly into SQLite — no intermediate files.

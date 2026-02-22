@@ -80,5 +80,5 @@ apple-ocr
 **/eng.traineddata
 *.bak
 /packages/electron/release/
-/tools/fake-scanner/inbox/
-/tools/fake-scanner/.last-doc-type
+/tools/scanner-server/inbox/
+/tools/scanner-server/.last-doc-type
