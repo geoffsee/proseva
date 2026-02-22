@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import {
   Box,
   Heading,
@@ -296,6 +296,91 @@ const Timeline = observer(function Timeline() {
     setEndDateFilter("");
   };
 
+  // Scroll-to-zoom on the timeline area
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const rangeRef = useRef({ rangeStart, rangeEnd });
+  rangeRef.current = { rangeStart, rangeEnd };
+
+  const dragRef = useRef<{ startX: number; startMs: number; endMs: number } | null>(null);
+
+  useEffect(() => {
+    const container = timelineRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+
+      const rect = container.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const ratio = Math.max(0, Math.min(1, mouseX / rect.width));
+
+      const { rangeStart: rs, rangeEnd: re } = rangeRef.current;
+      const startMs = rs.getTime();
+      const endMs = re.getTime();
+      const currentTotalMs = endMs - startMs;
+      if (currentTotalMs <= 0) return;
+
+      const zoomFactor = e.deltaY > 0 ? 1.15 : 1 / 1.15;
+      const newTotalMs = currentTotalMs * zoomFactor;
+
+      const MIN_RANGE_MS = 24 * 60 * 60 * 1000; // 1 day
+      const MAX_RANGE_MS = 20 * 365.25 * 24 * 60 * 60 * 1000; // 20 years
+      if (newTotalMs < MIN_RANGE_MS || newTotalMs > MAX_RANGE_MS) return;
+
+      const cursorMs = startMs + ratio * currentTotalMs;
+      const newStartMs = cursorMs - ratio * newTotalMs;
+      const newEndMs = cursorMs + (1 - ratio) * newTotalMs;
+
+      setStartDateFilter(toDateStr(new Date(newStartMs)));
+      setEndDateFilter(toDateStr(new Date(newEndMs)));
+    };
+
+    const handleMouseDown = (e: MouseEvent) => {
+      // Ignore clicks on interactive child elements (expanded detail cards, etc.)
+      if ((e.target as HTMLElement).closest("a, button, input")) return;
+      e.preventDefault();
+      const { rangeStart: rs, rangeEnd: re } = rangeRef.current;
+      dragRef.current = {
+        startX: e.clientX,
+        startMs: rs.getTime(),
+        endMs: re.getTime(),
+      };
+      container.style.cursor = "grabbing";
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const drag = dragRef.current;
+      if (!drag) return;
+      e.preventDefault();
+
+      const rect = container.getBoundingClientRect();
+      const pxDelta = e.clientX - drag.startX;
+      const totalMs = drag.endMs - drag.startMs;
+      const msDelta = (pxDelta / rect.width) * totalMs;
+
+      setStartDateFilter(toDateStr(new Date(drag.startMs - msDelta)));
+      setEndDateFilter(toDateStr(new Date(drag.endMs - msDelta)));
+    };
+
+    const handleMouseUp = () => {
+      if (dragRef.current) {
+        dragRef.current = null;
+        container.style.cursor = "";
+      }
+    };
+
+    container.addEventListener("wheel", handleWheel, { passive: false });
+    container.addEventListener("mousedown", handleMouseDown);
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      container.removeEventListener("wheel", handleWheel);
+      container.removeEventListener("mousedown", handleMouseDown);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, []);
+
   const sources: EventSource[] = [
     "deadline",
     "filing",
@@ -380,6 +465,8 @@ const Timeline = observer(function Timeline() {
         </Text>
       </HStack>
 
+      {/* Zoomable timeline area */}
+      <Box ref={timelineRef} cursor="grab" userSelect="none">
       {/* Ruler */}
       <Box
         pos="relative"
@@ -521,6 +608,7 @@ const Timeline = observer(function Timeline() {
           );
         })}
       </VStack>
+      </Box>
 
       {/* Legend */}
       <HStack gap="4" pt="4" borderTopWidth="1px" flexWrap="wrap">
