@@ -31,6 +31,7 @@ import { sendFax, getFaxProvider } from "./fax";
 import {
   ingestPdfToBlob,
   deriveCategory,
+  classifyDocument,
 } from "./ingest";
 import { autoPopulateFromDocument } from "./ingestion-agent";
 import { executeSearch, type EntityType } from "./search";
@@ -1708,6 +1709,13 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
         openai,
       );
 
+      if (category === "_auto") {
+        const classified = await classifyDocument(record.extractedText, openai);
+        record.category = classified;
+        db.documents.set(record.id, record);
+        console.log(`[upload] Auto-classified ${file.name} as "${classified}"`);
+      }
+
       try {
         console.log(`[upload] Running auto-populate for: ${file.name}`);
         const { caseId, log } = await autoPopulateFromDocument({
@@ -2337,13 +2345,35 @@ router.all("/research/*", researchRouter.fetch);
 initScheduler();
 
 // Initialize the document scanner service on server startup.
-// When a scan completes, re-run the auto-ingest pipeline so the new
-// PDF is immediately OCR'd and indexed rather than sitting on disk.
+// Scanned documents are ingested directly into SQLite — no intermediate files.
 initScanner({
-  onComplete: () => {
-    void maybeAutoIngestFromEnv().catch((err) =>
-      console.error("[scanner] post-scan auto-ingest failed:", err),
-    );
+  onComplete: (buffer, filename) => {
+    void (async () => {
+      try {
+        const openai = new OpenAI({
+          apiKey: getConfig("OPENAI_API_KEY"),
+          baseURL: getConfig("OPENAI_ENDPOINT"),
+        });
+        const { record } = await ingestPdfToBlob(buffer, filename, "scanned", openai);
+        try {
+          const { caseId } = await autoPopulateFromDocument({
+            openai,
+            entry: record,
+            text: record.extractedText,
+          });
+          if (caseId) {
+            record.caseId = caseId;
+            db.documents.set(record.id, record);
+          }
+        } catch (err) {
+          console.error("[scanner] auto-populate failed:", err);
+        }
+        db.persist();
+        console.log(`[scanner] Ingested ${filename} -> ${record.id}`);
+      } catch (err) {
+        console.error("[scanner] post-scan ingestion failed:", err);
+      }
+    })();
   },
 });
 

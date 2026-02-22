@@ -38,7 +38,7 @@ export default function FileUpload({
     const set = new Set([...DEFAULT_CATEGORIES, ...categories]);
     return [...set].sort((a, b) => a.localeCompare(b));
   }, [categories]);
-  const [category, setCategory] = useState("_new_filings");
+  const [category, setCategory] = useState("_auto");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [dragOver, setDragOver] = useState(false);
@@ -184,6 +184,7 @@ export default function FileUpload({
               onChange={(e) => setCategory(e.target.value)}
               data-testid="category-select"
             >
+              <option value="_auto">Auto (AI Classify)</option>
               <option value="_new_filings">New Filings (Unsorted)</option>
               {allCategories.map((c) => (
                 <option key={c} value={c}>

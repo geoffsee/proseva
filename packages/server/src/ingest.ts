@@ -3,10 +3,26 @@ import { writeFile, mkdir, stat, mkdtemp, rm } from "fs/promises";
 import { createHash } from "crypto";
 import { tmpdir } from "os";
 import OpenAI from "openai";
+import { encode, decode } from "gpt-tokenizer";
 import { getConfig } from "./config";
 import { ocrPdf } from "../../ocr/src/ocr";
 import { db, type DocumentRecord } from "./db";
 import { BlobStore, getBlobStore } from "./blob-store";
+
+const DOCUMENT_CATEGORIES = [
+  "Motions",
+  "Orders",
+  "Pleadings",
+  "Discovery",
+  "Correspondence",
+  "Financial Records",
+  "Evidence",
+  "Agreements",
+  "Court Documents",
+  "Medical Records",
+  "Personal Documents",
+  "Other",
+] as const;
 
 export interface DocumentEntry {
   id: string;
@@ -218,4 +234,58 @@ export async function ingestPdfToBlob(
 
   console.log(`[ingest] Document record created: id=${id}, title="${record.title}", pages=${pageCount}, dates=${record.dates.length}`);
   return { record };
+}
+
+export async function classifyDocument(
+  text: string,
+  openai: OpenAI,
+): Promise<string> {
+  try {
+    const tokens = encode(text).slice(0, 1000);
+    const truncated = decode(tokens);
+    const model = getConfig("TEXT_MODEL_SMALL") || "gpt-4o-mini";
+
+    console.log(`[classify] Classifying document (${tokens.length} tokens) with model=${model}`);
+
+    const response = await openai.chat.completions.create({
+      model,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a legal document classifier. Given the text of a document, classify it into the most appropriate category.",
+        },
+        {
+          role: "user",
+          content: truncated,
+        },
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "classification",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              category: {
+                type: "string",
+                enum: DOCUMENT_CATEGORIES as unknown as string[],
+              },
+            },
+            required: ["category"],
+            additionalProperties: false,
+          },
+        },
+      },
+    });
+
+    const content = response.choices[0].message.content ?? "{}";
+    const { category } = JSON.parse(content) as { category: string };
+    console.log(`[classify] Result: "${category}"`);
+    return category;
+  } catch (err) {
+    console.warn("[classify] Classification failed, defaulting to _new_filings:", err);
+    return "_new_filings";
+  }
 }

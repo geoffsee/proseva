@@ -22,7 +22,11 @@
     "electron": "bun --filter=@proseva/electron run",
     "cli": "bun --filter=@proseva/cli run",
     "sdk": "bun --filter=@proseva/sdk run",
-    "dist:electron": "bun run build && bun --filter=@proseva/electron run dist:local"
+    "dist:electron": "bun run build && bun --filter=@proseva/electron run dist:local",
+    "fake:scan": "./tools/fake-scanner/generate-doc.ts"
   },
-  "workspaces": ["packages/*"]
+  "workspaces": ["packages/*"],
+  "dependencies": {
+    "marked": "^17.0.3"
+  }
 }

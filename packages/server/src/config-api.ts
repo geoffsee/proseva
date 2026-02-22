@@ -176,7 +176,6 @@ router.get(
     documentScanner: {
       enabled: process.env.SCANNER_ENABLED === "true",
       endpoints: process.env.SCANNER_ENDPOINTS,
-      outputDirectory: process.env.SCANNER_OUTPUT_DIR,
     },
   };
 
@@ -306,17 +305,11 @@ router.get(
       endpoints:
         config?.documentScanner?.endpoints ||
         envConfig.documentScanner.endpoints,
-      outputDirectory:
-        config?.documentScanner?.outputDirectory ||
-        envConfig.documentScanner.outputDirectory,
       enabledSource:
         config?.documentScanner?.enabled !== undefined
           ? "database"
           : "environment",
       endpointsSource: config?.documentScanner?.endpoints
-        ? "database"
-        : "environment",
-      outputDirectorySource: config?.documentScanner?.outputDirectory
         ? "database"
         : "environment",
     },

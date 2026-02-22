@@ -100,7 +100,6 @@ const Config = observer(() => {
 
   const [scannerEnabled, setScannerEnabled] = useState(false);
   const [scannerEndpoints, setScannerEndpoints] = useState("");
-  const [scannerOutputDir, setScannerOutputDir] = useState("");
 
   const [hasChanges, setHasChanges] = useState(false);
   const [dbSecurityStatus, setDbSecurityStatus] =
@@ -189,9 +188,6 @@ const Config = observer(() => {
       setScannerEndpoints(
         configStore.config.documentScanner?.endpoints || "",
       );
-      setScannerOutputDir(
-        configStore.config.documentScanner?.outputDirectory || "",
-      );
     }
   }, [configStore.config]);
 
@@ -245,7 +241,6 @@ const Config = observer(() => {
         documentScanner: {
           enabled: scannerEnabled,
           endpoints: scannerEndpoints || undefined,
-          outputDirectory: scannerOutputDir || undefined,
         },
       });
 
@@ -503,8 +498,7 @@ const Config = observer(() => {
 
   const documentScannerStatus =
     configStore.config?.documentScanner?.enabledSource === "database" ||
-    configStore.config?.documentScanner?.endpointsSource === "database" ||
-    configStore.config?.documentScanner?.outputDirectorySource === "database"
+    configStore.config?.documentScanner?.endpointsSource === "database"
       ? "database"
       : "environment";
 
@@ -1200,22 +1194,6 @@ const Config = observer(() => {
             />
             <Text fontSize="xs" color="gray.500" mt={1}>
               Comma-separated eSCL endpoint URLs for the scanner
-            </Text>
-          </Box>
-          <Box>
-            <Text fontSize="sm" mb={1} fontWeight="medium">
-              Output Directory (optional)
-            </Text>
-            <Input
-              value={scannerOutputDir}
-              onChange={(e) => {
-                setScannerOutputDir(e.target.value);
-                setHasChanges(true);
-              }}
-              placeholder="Defaults to Auto-Ingest directory"
-            />
-            <Text fontSize="xs" color="gray.500" mt={1}>
-              Leave blank to save scanned documents to the Auto-Ingest directory
             </Text>
           </Box>
           <Button

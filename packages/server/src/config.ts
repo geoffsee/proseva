@@ -151,16 +151,19 @@ export function getConfig(key: string): string | undefined {
     ) {
       return configCache.documentScanner.endpoints;
     }
-    if (
-      key === "SCANNER_OUTPUT_DIR" &&
-      configCache.documentScanner?.outputDirectory
-    ) {
-      return configCache.documentScanner.outputDirectory;
-    }
   }
 
   // Fallback to environment variable
-  return process.env[key];
+  if (process.env[key] !== undefined) {
+    return process.env[key];
+  }
+
+  // Built-in defaults (fake scanner for development)
+  const defaults: Record<string, string> = {
+    SCANNER_ENABLED: "true",
+    SCANNER_ENDPOINTS: "http://localhost:8085",
+  };
+  return defaults[key];
 }
 
 /**
@@ -254,7 +257,5 @@ export function documentScannerConfig() {
   return {
     enabled: getConfig("SCANNER_ENABLED") === "true",
     endpoints: getConfig("SCANNER_ENDPOINTS") ?? "",
-    outputDirectory:
-      getConfig("SCANNER_OUTPUT_DIR") || getConfig("AUTO_INGEST_DIR") || "",
   };
 }

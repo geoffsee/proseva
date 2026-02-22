@@ -679,10 +679,8 @@ export interface ServerConfig {
   documentScanner?: {
     enabled?: boolean;
     endpoints?: string;
-    outputDirectory?: string;
     enabledSource?: "database" | "environment";
     endpointsSource?: "database" | "environment";
-    outputDirectorySource?: "database" | "environment";
   };
 }
 

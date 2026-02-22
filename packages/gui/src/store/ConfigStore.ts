@@ -128,14 +128,10 @@ const FaxGatewayConfigModel = types.model("FaxGatewayConfig", {
 const DocumentScannerConfigModel = types.model("DocumentScannerConfig", {
   enabled: types.maybeNull(types.boolean),
   endpoints: types.maybeNull(types.string),
-  outputDirectory: types.maybeNull(types.string),
   enabledSource: types.maybeNull(
     types.enumeration(["database", "environment"]),
   ),
   endpointsSource: types.maybeNull(
-    types.enumeration(["database", "environment"]),
-  ),
-  outputDirectorySource: types.maybeNull(
     types.enumeration(["database", "environment"]),
   ),
 });
