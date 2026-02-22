@@ -68,7 +68,7 @@ export function cleanTitle(filename: string): string {
 async function extractTextLocal(
   buffer: Buffer,
 ): Promise<{ text: string; pageCount: number }> {
-  console.log("[ingest] Attempting local OCR extraction");
+  console.warn("[ingest] Attempting local OCR extraction");
   const tmpDir = await mkdtemp(join(tmpdir(), "ocr-"));
   const tmpFile = join(tmpDir, "input.pdf");
   try {
@@ -140,7 +140,7 @@ export async function extractTextFromPdf(
   try {
     return await extractTextLocal(buffer);
   } catch (err) {
-    console.log(`[ingest] Local OCR failed, falling back to VLM: ${err instanceof Error ? err.message : err}`);
+    console.warn(`[ingest] Local OCR failed, falling back to VLM ERROR: ${err instanceof Error ? err.message : err}`);
     if (!openai) throw new Error("Local OCR failed and no OpenAI client configured");
     return extractTextVlm(buffer, openai);
   }
