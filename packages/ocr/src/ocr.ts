@@ -30,12 +30,14 @@ type Engine = "apple" | "tesseract" | "docling";
 
 // ── Apple Vision backend ───────────────────────────────
 const SCRIPT_DIR = path.dirname(new URL(import.meta.url).pathname);
-const SWIFT_SRC = path.join(SCRIPT_DIR, "apple-ocr.swift");
-const SWIFT_BIN = path.join(SCRIPT_DIR, "apple-ocr");
+const SWIFT_SRC = path.join(SCRIPT_DIR, "apple/apple-ocr.swift");
+const SWIFT_BIN = path.join(SCRIPT_DIR, "apple/apple-ocr");
 
 async function ensureAppleBinary(): Promise<boolean> {
   if (fs.existsSync(SWIFT_BIN)) return true;
-  if (process.platform !== "darwin" || !fs.existsSync(SWIFT_SRC)) return false;
+  if (process.platform !== "darwin" || !fs.existsSync(SWIFT_SRC)) {
+    return false;
+  }
 
   console.error("Compiling apple-ocr...");
   const proc = Bun.spawn(
@@ -187,6 +189,8 @@ async function ocrTesseract(filePath: string): Promise<OcrResult> {
 
 // ── Engine selection ───────────────────────────────────
 async function detectEngine(): Promise<Engine> {
+  console.warn("[ingest] Detecting OCR engine: auto-detecting...");
+  console.warn(`[ingest] Using engine for platform: ${process.platform}`)
   if (process.platform === "darwin") {
     const ok = await ensureAppleBinary();
     if (ok) return "apple";
@@ -200,6 +204,8 @@ export async function ocrPdf(
   opts?: { engine?: Engine }
 ): Promise<OcrResult> {
   const engine = opts?.engine ?? (await detectEngine());
+
+  console.warn(`OCR engine: ${engine}`);
 
   switch (engine) {
     case "apple":

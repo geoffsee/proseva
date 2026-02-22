@@ -53,6 +53,9 @@ export default defineConfig({
     },
     watch: {
       ignored: [
+        "**/.proseva-data/**",
+        "**/*.sqlite",
+        "**/*.sqlite-*",
         "**/packages/server/**",
         "**/packages/electron/**",
         "**/packages/database/**",
@@ -74,6 +77,21 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    {
+      name: "watch-logger",
+      apply: "serve",
+      configureServer(server) {
+        server.watcher.on("change", (file) => {
+          console.log(`[watch] change: ${file}`);
+        });
+        server.watcher.on("add", (file) => {
+          console.log(`[watch] add: ${file}`);
+        });
+        server.watcher.on("unlink", (file) => {
+          console.log(`[watch] unlink: ${file}`);
+        });
+      },
+    },
     {
       name: "serve-wasm-pqc-subtle-dev",
       apply: "serve",
