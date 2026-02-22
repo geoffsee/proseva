@@ -28,6 +28,8 @@ const vaLegalConfig = {
         address: "123 Main Street, Newport News, VA 23601",
         phone: "(757) 555-0123",
         email: "geoff@law.bar",
+        defendantAddress: "456 Oak Avenue",
+        defendantCityStateZip: "Newport News, VA 23602",
         date: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
     },
 
@@ -318,9 +320,9 @@ async function generateVirginiaLegalPDF(
         // Recipient address block (indented)
         certPage.drawText(info.defendant, { x: 200, y: cy, size: 12, font });
         cy -= SLS;
-        certPage.drawText("[Address]", { x: 200, y: cy, size: 12, font });
+        certPage.drawText(info.defendantAddress || "[Address]", { x: 200, y: cy, size: 12, font });
         cy -= SLS;
-        certPage.drawText("[City, State ZIP]", { x: 200, y: cy, size: 12, font });
+        certPage.drawText(info.defendantCityStateZip || "[City, State ZIP]", { x: 200, y: cy, size: 12, font });
         cy -= SLS * 3;
 
         // Signature line (right-aligned)
