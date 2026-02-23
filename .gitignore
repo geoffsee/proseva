@@ -87,3 +87,4 @@ apple-ocr
 /packages/datasets/data/**/*.csv
 /tools/ckan-discover/target/
 /packages/tools/scanner-server/inbox/processed/*.*
+/packages/datasets/data/
