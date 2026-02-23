@@ -8,7 +8,7 @@ import { Cron } from "croner";
 import { db } from "./db";
 import { loadConfigFromDatabase, invalidateConfigCache } from "./config";
 import { generateEcdhKeyPair, decryptEmail } from "./email-crypto";
-import { importSingleEml } from "./correspondence-import";
+import { importSingleEml, ingestEmailAttachments } from "./correspondence-import";
 
 const DEFAULT_WORKER_URL = "https://email.proseva.app";
 const DEFAULT_POLL_INTERVAL = 60; // seconds
@@ -203,10 +203,20 @@ export async function pollForEmails(): Promise<number> {
         continue;
       }
 
-      // Import as correspondence
+      // Import as correspondence, then ingest PDF attachments
       try {
-        await importSingleEml(rawEml, "");
+        const correspondence = await importSingleEml(rawEml, "");
         imported++;
+
+        // Run PDF attachments through the document ingest pipeline
+        try {
+          await ingestEmailAttachments(correspondence);
+        } catch (ingestErr) {
+          console.error(
+            `[email] Attachment ingest failed for email ${emailMeta.emailId}:`,
+            ingestErr,
+          );
+        }
       } catch (err) {
         console.error(
           `[email] Import failed for email ${emailMeta.emailId}:`,

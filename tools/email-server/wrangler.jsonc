@@ -3,6 +3,8 @@
 	"name": "proseva-email-server",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-02-19",
+	"workers_dev": false,
+	"preview_urls": false,
 	"observability": {
 		"enabled": true
 	},
@@ -15,7 +17,7 @@
 		{
 			"binding": "DB",
 			"database_name": "proseva-email",
-			"database_id": "0c530854-ca34-44f4-ae57-e5ccc6dbf8ba"
+			"database_id": "<d1-database>"
 		}
 	],
 

@@ -14,6 +14,9 @@ vi.mock("../lib/api", () => ({
     config: {
       getOpenAIModels: vi.fn(),
     },
+    email: {
+      status: vi.fn().mockResolvedValue({ configured: false }),
+    },
   },
 }));
 

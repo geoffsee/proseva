@@ -3,6 +3,7 @@
  * and the automated email poller.
  */
 
+import OpenAI from "openai";
 import { parseEml } from "@proseva/correspondence";
 import {
   db,
@@ -10,6 +11,9 @@ import {
   type CorrespondenceAttachment,
 } from "./db";
 import { BlobStore, getBlobStore } from "./blob-store";
+import { getConfig } from "./config";
+import { ingestPdfToBlob } from "./ingest";
+import { autoPopulateFromDocument } from "./ingestion-agent";
 
 function normalizeIsoDateOrNow(
   raw: string | undefined | null,
@@ -118,5 +122,78 @@ export async function importSingleEml(
       db.fileMetadata.delete(attachmentId);
     }
     throw error;
+  }
+}
+
+/**
+ * Run PDF attachments from a Correspondence record through the document
+ * ingest pipeline (OCR, classification, auto-populate). Updates the
+ * correspondence caseId if the ingestion agent identifies or creates a case.
+ *
+ * Requires OpenAI to be configured. Silently skips if not available.
+ */
+export async function ingestEmailAttachments(
+  correspondence: Correspondence,
+): Promise<void> {
+  const apiKey = getConfig("OPENAI_API_KEY");
+  if (!apiKey) {
+    console.log("[email-ingest] OpenAI not configured, skipping attachment ingest");
+    return;
+  }
+
+  const pdfAttachments = (correspondence.attachments ?? []).filter((a) =>
+    a.filename.toLowerCase().endsWith(".pdf") ||
+    a.contentType === "application/pdf",
+  );
+
+  if (pdfAttachments.length === 0) return;
+
+  const openai = new OpenAI({
+    apiKey,
+    baseURL: getConfig("OPENAI_ENDPOINT"),
+  });
+  const blobStore = getBlobStore();
+
+  for (const attachment of pdfAttachments) {
+    try {
+      const bytes = await blobStore.retrieve(attachment.id);
+      if (!bytes) {
+        console.error(`[email-ingest] Attachment blob not found: ${attachment.id}`);
+        continue;
+      }
+
+      console.log(`[email-ingest] Ingesting PDF attachment: ${attachment.filename}`);
+      const buffer = Buffer.from(bytes);
+      const { record } = await ingestPdfToBlob(
+        buffer,
+        attachment.filename,
+        "Correspondence",
+        openai,
+      );
+
+      try {
+        const { caseId } = await autoPopulateFromDocument({
+          openai,
+          entry: record,
+          text: record.extractedText,
+        });
+
+        if (caseId) {
+          record.caseId = caseId;
+          db.documents.set(record.id, record);
+
+          // Link the correspondence to the discovered case if not already linked
+          if (!correspondence.caseId) {
+            correspondence.caseId = caseId;
+            correspondence.updatedAt = new Date().toISOString();
+            db.correspondences.set(correspondence.id, correspondence);
+          }
+        }
+      } catch (err) {
+        console.error(`[email-ingest] Auto-populate failed for ${attachment.filename}:`, err);
+      }
+    } catch (err) {
+      console.error(`[email-ingest] Ingest failed for ${attachment.filename}:`, err);
+    }
   }
 }

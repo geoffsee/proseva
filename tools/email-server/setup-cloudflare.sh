@@ -15,7 +15,7 @@
 
 set -euo pipefail
 
-source .env.secrets
+source .env.secret
 
 DOMAIN="proseva.app"
 WORKER_NAME="proseva-email-server"
