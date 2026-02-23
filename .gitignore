@@ -82,3 +82,7 @@ apple-ocr
 /packages/electron/release/
 /tools/scanner-server/inbox/
 /tools/scanner-server/.last-doc-type
+/packages/tools/scanner-server/.last-doc-type
+/packages/datasets/data/**/*.pdf
+/packages/datasets/data/**/*.csv
+/packages/tools/scanner-server/inbox/processed/*.*

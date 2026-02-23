@@ -6,25 +6,30 @@ on:
   workflow_dispatch:
 
 jobs:
-  update-courts:
+  update-datasets:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      - uses: oven-sh/setup-bun@v2
 
-      - run: pip install pymupdf
+      - run: bun install
+        working-directory: packages/datasets
 
-      - name: Build courts database
-        run: python packages/datasets/scripts/build_courts_database.py /tmp/va-dist-courts.pdf packages/datasets/courts/va-courts.json
+      - name: Update courts dataset
+        run: bun packages/datasets/src/refresh-scripts/update-courts-dataset.ts
+
+      - name: Update JDR manual dataset
+        run: bun packages/datasets/src/refresh-scripts/update-jdrman-dataset.ts
+
+      - name: Update VCC dataset
+        run: bun packages/datasets/src/refresh-scripts/update-vcc-dataset.ts
 
       - name: Commit if changed
         run: |
-          git diff --quiet packages/datasets/courts/va-courts.json && exit 0
+          git diff --quiet packages/datasets/data/ && exit 0
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add packages/datasets/courts/va-courts.json
-          git commit -m "Update Virginia courts directory"
+          git add packages/datasets/data/
+          git commit -m "Update datasets"
           git push

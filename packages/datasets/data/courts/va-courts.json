@@ -14,7 +14,10 @@
     "zip": "23301",
     "hours": "8:30AM - 4:30PM",
     "homepage": "https://www.vacourts.gov/courts/gd/accomack/home",
-    "judges": ["Patrick A. Robbins, Chief Judge", "James M Haynes Jr."]
+    "judges": [
+      "Patrick A. Robbins, Chief Judge",
+      "James M Haynes Jr."
+    ]
   },
   {
     "name": "Accomack JDR",
@@ -31,7 +34,9 @@
     "zip": "23301",
     "hours": "8:30AM - 4:30PM",
     "homepage": "https://www.vacourts.gov/courts/jdr/accomack/home",
-    "judges": ["Cela J. Burge, Chief Judge, Presiding Judge"]
+    "judges": [
+      "Cela J. Burge, Chief Judge, Presiding Judge"
+    ]
   },
   {
     "name": "Albemarle GD",
@@ -102,7 +107,10 @@
     "zip": "22320",
     "hours": "8:00AM - 4:00PM",
     "homepage": "https://www.vacourts.gov/courts/gd/alexandria/home",
-    "judges": ["Donald M. Haddock Jr., Chief Judge", "Sonya L. Sacks"]
+    "judges": [
+      "Donald M. Haddock Jr., Chief Judge",
+      "Sonya L. Sacks"
+    ]
   },
   {
     "name": "Alexandria JDR",
@@ -511,7 +519,11 @@
     "zip": "24201",
     "hours": "8:15AM - 4:15PM",
     "homepage": "https://www.vacourts.gov/courts/gd/bristol/home",
-    "judges": ["Travis B. Lee, Chief Judge", "Robert L. Hobbs", "Suzan E Moore"]
+    "judges": [
+      "Travis B. Lee, Chief Judge",
+      "Robert L. Hobbs",
+      "Suzan E Moore"
+    ]
   },
   {
     "name": "Bristol JDR",
@@ -528,7 +540,10 @@
     "zip": "24201",
     "hours": "8:00AM - 4:00PM",
     "homepage": "https://www.vacourts.gov/courts/jdr/bristol/home",
-    "judges": ["Joseph B. Lyle, Chief Judge", "Richard S. Buddington Jr."]
+    "judges": [
+      "Joseph B. Lyle, Chief Judge",
+      "Richard S. Buddington Jr."
+    ]
   },
   {
     "name": "Brunswick GD & JDR",
@@ -2179,7 +2194,10 @@
     "zip": "24112",
     "hours": "8:30AM - 4:30PM",
     "homepage": "https://www.vacourts.gov/courts/gd/henry/home",
-    "judges": ["Joan Ziglar, Chief Judge", "Stephanie B. Vipperman"]
+    "judges": [
+      "Joan Ziglar, Chief Judge",
+      "Stephanie B. Vipperman"
+    ]
   },
   {
     "name": "Henry JDR",
@@ -2196,7 +2214,10 @@
     "zip": "24112",
     "hours": "8:30AM - 4:30PM",
     "homepage": "https://www.vacourts.gov/courts/jdr/henry/home",
-    "judges": ["Kimberly R. Belongia, Chief Judge", "Christina L Slate"]
+    "judges": [
+      "Kimberly R. Belongia, Chief Judge",
+      "Christina L Slate"
+    ]
   },
   {
     "name": "Highland GD & JDR",
@@ -2287,7 +2308,10 @@
     "zip": "23397",
     "hours": "8:00AM - 4:00PM",
     "homepage": "https://www.vacourts.gov/courts/jdr/isle_of_wight/home",
-    "judges": ["James E. Wiser, Chief Judge, Presiding Judge", "Stan D. Clark"]
+    "judges": [
+      "James E. Wiser, Chief Judge, Presiding Judge",
+      "Stan D. Clark"
+    ]
   },
   {
     "name": "King and Queen GD",
@@ -2442,7 +2466,10 @@
     "zip": "24263",
     "hours": "8:00AM - 4:00PM",
     "homepage": "https://www.vacourts.gov/courts/gd/lee/home",
-    "judges": ["Shawn L Hines, Chief Judge", "Andrew L. Johnson"]
+    "judges": [
+      "Shawn L Hines, Chief Judge",
+      "Andrew L. Johnson"
+    ]
   },
   {
     "name": "Lee JDR",
@@ -2715,7 +2742,10 @@
     "zip": "24114",
     "hours": "8:30AM - 4:30PM",
     "homepage": "https://www.vacourts.gov/courts/gd/martinsville/home",
-    "judges": ["Joan Ziglar, Chief Judge", "Stephanie B. Vipperman"]
+    "judges": [
+      "Joan Ziglar, Chief Judge",
+      "Stephanie B. Vipperman"
+    ]
   },
   {
     "name": "Martinsville JDR",
@@ -3092,7 +3122,10 @@
     "zip": "23347",
     "hours": "8:30AM - 4:30PM",
     "homepage": "https://www.vacourts.gov/courts/gd/northampton/home",
-    "judges": ["Patrick A. Robbins, Chief Judge", "James M Haynes Jr."]
+    "judges": [
+      "Patrick A. Robbins, Chief Judge",
+      "James M Haynes Jr."
+    ]
   },
   {
     "name": "Northampton JDR",
@@ -3109,7 +3142,9 @@
     "zip": "23347",
     "hours": "8:00AM - 4:30PM",
     "homepage": "https://www.vacourts.gov/courts/jdr/northampton/home",
-    "judges": ["Cela J. Burge, Chief Judge"]
+    "judges": [
+      "Cela J. Burge, Chief Judge"
+    ]
   },
   {
     "name": "Northumberland GD",
@@ -3999,7 +4034,11 @@
     "zip": "24354",
     "hours": "8:30AM - 4:30PM",
     "homepage": "https://www.vacourts.gov/courts/gd/smyth/home",
-    "judges": ["Travis B. Lee, Chief Judge", "Robert L. Hobbs", "Suzan E Moore"]
+    "judges": [
+      "Travis B. Lee, Chief Judge",
+      "Robert L. Hobbs",
+      "Suzan E Moore"
+    ]
   },
   {
     "name": "Smyth JDR",
@@ -4016,7 +4055,10 @@
     "zip": "24354",
     "hours": "8:00AM - 4:00PM",
     "homepage": "https://www.vacourts.gov/courts/jdr/smyth/home",
-    "judges": ["Joseph B. Lyle, Chief Judge", "Richard S. Buddington Jr."]
+    "judges": [
+      "Joseph B. Lyle, Chief Judge",
+      "Richard S. Buddington Jr."
+    ]
   },
   {
     "name": "Southampton GD & JDR",
@@ -4222,7 +4264,10 @@
     "zip": "23434",
     "hours": "8:00AM - 4:00PM",
     "homepage": "https://www.vacourts.gov/courts/jdr/suffolk/home",
-    "judges": ["James E. Wiser, Chief Judge", "Stan D. Clark"]
+    "judges": [
+      "James E. Wiser, Chief Judge",
+      "Stan D. Clark"
+    ]
   },
   {
     "name": "Surry GD & JDR",
@@ -4291,7 +4336,9 @@
     "zip": "24651",
     "hours": "8:30AM - 4:30PM",
     "homepage": "https://www.vacourts.gov/courts/gd/tazewell/home",
-    "judges": ["George Robert Brittain, Chief Judge"]
+    "judges": [
+      "George Robert Brittain, Chief Judge"
+    ]
   },
   {
     "name": "Tazewell JDR",
@@ -4678,7 +4725,10 @@
     "zip": "24293",
     "hours": "8:00AM - 4:00PM",
     "homepage": "https://www.vacourts.gov/courts/gd/Wise~Norton/home",
-    "judges": ["Shawn L Hines, Chief Judge", "Andrew L. Johnson"]
+    "judges": [
+      "Shawn L Hines, Chief Judge",
+      "Andrew L. Johnson"
+    ]
   },
   {
     "name": "Wythe GD",

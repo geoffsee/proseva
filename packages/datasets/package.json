@@ -6,12 +6,16 @@
   "private": true,
   "scripts": {
     "build": "echo 'No build needed'",
-    "test": "echo 'No tests yet'"
+    "test": "echo 'No tests yet'",
+    "refresh": "bun src/refresh.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "mupdf": "^1.27.0"
   }
 }
