@@ -7,7 +7,20 @@
   "scripts": {
     "build": "echo 'No build needed'",
     "test": "echo 'No tests yet'",
-    "refresh": "bun src/refresh.ts"
+    "refresh:all": "echo 'ONLY FOR USE IN CI WORKFLOWS' && bun src/refresh.ts",
+    "refresh:annual_reports": "bun run src/refresh-scripts/update-annual-reports-dataset.ts",
+    "refresh:appellate_caseload": "bun run src/refresh-scripts/update-appellate-caseload-dataset.ts",
+    "refresh:benchbook": "bun run src/refresh-scripts/update-benchbook-dataset.ts",
+    "refresh:cac_manual": "bun run src/refresh-scripts/update-cac-manual-dataset.ts",
+    "refresh:case_law_authorities": "bun run src/refresh-scripts/update-case-law-authorities-dataset.ts",
+    "refresh:caseload_stats": "bun run src/refresh-scripts/update-caseload-stats-dataset.ts",
+    "refresh:constitutional_law": "bun run src/refresh-scripts/update-constitutional-law-dataset.ts",
+    "refresh:courts": "bun run src/refresh-scripts/update-courts-dataset.ts",
+    "refresh:gdman": "bun run src/refresh-scripts/update-gdman-dataset.ts",
+    "refresh:jdrman": "bun run src/refresh-scripts/update-jdrman-dataset.ts",
+    "refresh:other": "bun run src/refresh-scripts/update-other-dataset.ts",
+    "refresh:vcc": "bun run src/refresh-scripts/update-vcc-dataset.ts",
+    "refresh:virginia_code": "bun run src/refresh-scripts/update-virginia-code-dataset.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"

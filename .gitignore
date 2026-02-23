@@ -85,4 +85,5 @@ apple-ocr
 /packages/tools/scanner-server/.last-doc-type
 /packages/datasets/data/**/*.pdf
 /packages/datasets/data/**/*.csv
+/tools/ckan-discover/target/
 /packages/tools/scanner-server/inbox/processed/*.*

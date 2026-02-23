@@ -8,7 +8,7 @@ const currentYear = new Date().getFullYear();
 console.log("Checking for most recent State of the Judiciary report...");
 
 let found: number | null = null;
-for (const year of [currentYear, currentYear - 1]) {
+for (const year of [currentYear, currentYear - 1, currentYear - 2, currentYear - 3]) {
   const res = await fetch(
     `${BASE_URL}/${year}/state_of_the_judiciary_report.pdf`,
     { method: "HEAD" }
@@ -21,7 +21,7 @@ for (const year of [currentYear, currentYear - 1]) {
 
 if (!found) {
   console.error(
-    `Error: Could not find a report for ${currentYear} or ${currentYear - 1}.`
+    `Error: Could not find a report for years ${currentYear} through ${currentYear - 3}.`
   );
   process.exit(1);
 }
