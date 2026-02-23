@@ -15,7 +15,7 @@ interface ConfigSectionProps {
   title: string;
   icon: ReactNode;
   children: ReactNode;
-  status?: "database" | "environment";
+  status?: "database" | "environment" | { label: string; color: string };
   testConnection?: () => Promise<void>;
   clearOverrides?: () => Promise<void>;
   isTesting?: boolean;
@@ -40,11 +40,15 @@ export function ConfigSection({
             {icon}
             <Heading size="md">{title}</Heading>
             {status && (
-              <Badge colorPalette={status === "database" ? "green" : "gray"}>
-                {status === "database"
-                  ? "Database Config"
-                  : "Environment Variable"}
-              </Badge>
+              typeof status === "object" ? (
+                <Badge colorPalette={status.color}>{status.label}</Badge>
+              ) : (
+                <Badge colorPalette={status === "database" ? "green" : "gray"}>
+                  {status === "database"
+                    ? "Database Config"
+                    : "Environment Variable"}
+                </Badge>
+              )
             )}
           </HStack>
           <HStack>

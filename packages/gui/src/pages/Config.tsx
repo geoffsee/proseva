@@ -1326,18 +1326,20 @@ const Config = observer(() => {
         <ConfigSection
           title="Email Service"
           icon={<FiMail />}
-          status={emailStatus?.configured ? "database" : "environment"}
+          status={emailStatus?.configured
+            ? { label: "Active", color: "green" }
+            : { label: "Not Configured", color: "gray" }}
         >
-          <Text fontSize="sm" color="gray.600" mb={1}>
-            Receive inbound email at a unique @proseva.app address.
-            Emails are encrypted in transit and at rest until your instance
-            downloads them.
-          </Text>
           {emailStatus?.configured ? (
             <>
+              <Text fontSize="sm" color="gray.600" mb={1}>
+                Inbound email is active. Emails sent to your address are
+                end-to-end encrypted and automatically imported into
+                Correspondence.
+              </Text>
               <Box>
                 <Text fontSize="sm" mb={1} fontWeight="medium">
-                  Email Address
+                  Your Email Address
                 </Text>
                 <Text fontSize="md" fontFamily="mono" color="blue.600">
                   {emailStatus.emailAddress}
@@ -1393,18 +1395,23 @@ const Config = observer(() => {
             </>
           ) : (
             <>
+              <Text fontSize="sm" color="gray.600" mb={1}>
+                Activate a unique @proseva.app email address for this instance.
+                Emails sent to your address are end-to-end encrypted and
+                automatically imported into Correspondence.
+              </Text>
               <Box>
                 <Text fontSize="sm" mb={1} fontWeight="medium">
-                  Registration Secret
+                  Activation Code
                 </Text>
                 <Input
                   type="password"
                   value={emailRegistrationSecret}
                   onChange={(e) => setEmailRegistrationSecret(e.target.value)}
-                  placeholder="Enter the registration secret"
+                  placeholder="Enter activation code"
                 />
                 <Text fontSize="xs" color="gray.500" mt={1}>
-                  The shared secret configured on the email relay worker
+                  Provided by your ProSeVA administrator
                 </Text>
               </Box>
               <Button
