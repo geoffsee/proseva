@@ -15,10 +15,12 @@
 
 set -euo pipefail
 
+source .env.secrets
+
 DOMAIN="proseva.app"
 WORKER_NAME="proseva-email-server"
 CUSTOM_DOMAIN="email.proseva.app"
-ACCOUNT_ID="a65e14a1aa4908ebbb4b6a5c0a0dc31e"
+ACCOUNT_ID="${CLOUDFLARE_ACCOUNT_ID}"
 
 API="https://api.cloudflare.com/client/v4"
 
@@ -62,7 +64,7 @@ echo "=== ProSeVA Email Worker - Cloudflare Setup ==="
 echo ""
 
 # --- Step 1: Look up Zone ID ---
-echo "[1/5] Looking up zone ID for ${DOMAIN}..."
+echo "[1/6] Looking up zone ID for ${DOMAIN}..."
 ZONE_RESPONSE=$(cf_api GET "/zones?name=${DOMAIN}")
 ZONE_ID=$(echo "$ZONE_RESPONSE" | jq -r '.result[0].id')
 
@@ -72,14 +74,31 @@ if [ -z "$ZONE_ID" ] || [ "$ZONE_ID" = "null" ]; then
 fi
 echo "       Zone ID: ${ZONE_ID}"
 
-# --- Step 2: Enable Email Routing ---
-echo "[2/5] Enabling Email Routing on ${DOMAIN}..."
+# --- Step 2: Add MX records for Cloudflare Email Routing ---
+echo "[2/6] Adding MX records for ${DOMAIN}..."
+for record in "route1.mx.cloudflare.net:12" "route2.mx.cloudflare.net:98" "route3.mx.cloudflare.net:29"; do
+  MX_HOST="${record%%:*}"
+  MX_PRIO="${record##*:}"
+  # Check if record already exists
+  EXISTING=$(curl -s -X GET "${API}/zones/${ZONE_ID}/dns_records?type=MX&content=${MX_HOST}" \
+    -H "$AUTH" -H "Content-Type: application/json" | jq -r '.result | length')
+  if [ "$EXISTING" = "0" ]; then
+    cf_api POST "/zones/${ZONE_ID}/dns_records" \
+      -d "{\"type\":\"MX\",\"name\":\"${DOMAIN}\",\"content\":\"${MX_HOST}\",\"priority\":${MX_PRIO},\"proxied\":false}" > /dev/null
+    echo "       Added MX ${MX_PRIO} ${MX_HOST}"
+  else
+    echo "       MX ${MX_HOST} already exists (skipping)"
+  fi
+done
+
+# --- Step 3: Enable Email Routing ---
+echo "[3/6] Enabling Email Routing on ${DOMAIN}..."
 ENABLE_RESPONSE=$(cf_api POST "/zones/${ZONE_ID}/email/routing/enable" -d '{}') && \
   echo "       Email Routing enabled." || \
   echo "       Email Routing may already be enabled (continuing)."
 
-# --- Step 3: Configure catch-all rule to forward to worker ---
-echo "[3/5] Setting catch-all rule → worker '${WORKER_NAME}'..."
+# --- Step 4: Configure catch-all rule to forward to worker ---
+echo "[4/6] Setting catch-all rule → worker '${WORKER_NAME}'..."
 CATCHALL_RESPONSE=$(cf_api PUT "/zones/${ZONE_ID}/email/routing/rules/catch_all" \
   -d "{
     \"actions\": [{\"type\": \"worker\", \"value\": [\"${WORKER_NAME}\"]}],
@@ -88,8 +107,8 @@ CATCHALL_RESPONSE=$(cf_api PUT "/zones/${ZONE_ID}/email/routing/rules/catch_all"
   }")
 echo "       Catch-all rule configured."
 
-# --- Step 4: Set up custom domain for the worker ---
-echo "[4/5] Attaching custom domain ${CUSTOM_DOMAIN} to worker..."
+# --- Step 5: Set up custom domain for the worker ---
+echo "[5/6] Attaching custom domain ${CUSTOM_DOMAIN} to worker..."
 DOMAIN_RESPONSE=$(cf_api PUT "/accounts/${ACCOUNT_ID}/workers/domains" \
   -d "{
     \"hostname\": \"${CUSTOM_DOMAIN}\",
@@ -99,8 +118,8 @@ DOMAIN_RESPONSE=$(cf_api PUT "/accounts/${ACCOUNT_ID}/workers/domains" \
   }")
 echo "       Custom domain attached."
 
-# --- Step 5: Verify ---
-echo "[5/5] Verifying setup..."
+# --- Step 6: Verify ---
+echo "[6/6] Verifying setup..."
 echo ""
 
 # Check email routing status
