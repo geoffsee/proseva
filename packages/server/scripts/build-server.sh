@@ -73,6 +73,20 @@ run_bundler() {
     --outdir="$DIST_SERVER_DIR"
 }
 
+build_explorer() {
+  local platform="$1"
+  local compile_target
+  compile_target="$(get_bun_compile_target "$platform")"
+  local explorer_entry="$REPO_ROOT/packages/embeddings/explorer/server.ts"
+
+  echo "Building explorer binary..."
+  bun build \
+    --compile \
+    --target "$compile_target" \
+    "$explorer_entry" \
+    --outfile "$DIST_SERVER_DIR/proseva-explorer"
+}
+
 copy_runtime_assets() {
   cp "$NODE_MODULES_DIR/wasm-similarity/wasm_similarity_bg.wasm" "$DIST_SERVER_DIR/"
   cp "$NODE_MODULES_DIR/wasm-pqc-subtle/wasm_pqc_subtle_bg.wasm" "$DIST_SERVER_DIR/"
@@ -91,6 +105,7 @@ main() {
   validate_platform "$platform"
   install_server_deps
   run_bundler "$platform"
+  build_explorer "$platform"
   copy_runtime_assets
 }
 

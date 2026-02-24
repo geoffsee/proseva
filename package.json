@@ -3,8 +3,22 @@
   "version": "0.0.0-prerelease",
   "private": true,
   "workspaces": [
-    "packages/*",
-    "packages/**/*"
+    "packages/cli",
+    "packages/correspondence",
+    "packages/database",
+    "packages/datasets",
+    "packages/docs",
+    "packages/electron",
+    "packages/experimental",
+    "packages/gui",
+    "packages/integration",
+    "packages/ocr",
+    "packages/openapi",
+    "packages/sdk",
+    "packages/server",
+    "packages/tools/email-server",
+    "packages/tools/scanner-server",
+    "packages/tsconfig"
   ],
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",

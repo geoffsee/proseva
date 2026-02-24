@@ -3,6 +3,7 @@ import { spawn, type ChildProcess } from "child_process";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import { SERVER_PORT, SERVER_URL, EXPLORER_PORT, EXPLORER_URL, toServerUrl } from "./url-routing";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,8 +12,6 @@ const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, "..", "..", "..");
 
 const isDev = !app.isPackaged;
-const SERVER_PORT = 3001;
-const SERVER_URL = `http://localhost:${SERVER_PORT}`;
 const DEV_URL = "http://localhost:5173";
 // Default to proxying requests to the spawned server process.
 // In-process mode is for debugging only and can conflict with startup/runtime state.
@@ -20,6 +19,7 @@ const USE_INPROC_SERVER = process.env.ELECTRON_INPROC_SERVER === "1";
 
 let mainWindow: BrowserWindow | null = null;
 let serverProcess: ChildProcess | null = null;
+let explorerProcess: ChildProcess | null = null;
 
 // --- Single instance lock ---
 const gotLock = app.requestSingleInstanceLock();
@@ -106,6 +106,69 @@ async function waitForServer(maxRetries = 30, delayMs = 500): Promise<boolean> {
   return false;
 }
 
+// --- Explorer management ---
+function getExplorerDbPaths(): { embeddings: string; virginia: string } {
+  if (isDev) {
+    return {
+      embeddings: path.join(PROJECT_ROOT, "packages", "datasets", "data", "embeddings.sqlite.db"),
+      virginia: path.join(PROJECT_ROOT, "packages", "datasets", "data", "virginia.db"),
+    };
+  }
+  return {
+    embeddings: path.join(process.resourcesPath, "explorer-data", "embeddings.sqlite.db"),
+    virginia: path.join(process.resourcesPath, "explorer-data", "virginia.db"),
+  };
+}
+
+function startExplorer(): ChildProcess | null {
+  const dbPaths = getExplorerDbPaths();
+  if (!fs.existsSync(dbPaths.embeddings)) {
+    console.warn("[explorer] Embeddings DB not found, skipping explorer:", dbPaths.embeddings);
+    return null;
+  }
+
+  const args = [
+    "--embeddings", dbPaths.embeddings,
+    "--port", String(EXPLORER_PORT),
+  ];
+  if (fs.existsSync(dbPaths.virginia)) {
+    args.push("--virginia", dbPaths.virginia);
+  }
+
+  if (isDev) {
+    console.log("[electron] Starting dev explorer with bun...");
+    const explorerEntry = path.join(PROJECT_ROOT, "packages", "embeddings", "explorer", "server.ts");
+    return spawn("bun", ["run", explorerEntry, ...args], {
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+  }
+
+  const explorerBin = path.join(getResourcePath("dist-server"), "proseva-explorer");
+  console.log("[electron] Starting compiled explorer:", explorerBin);
+  return spawn(explorerBin, args, {
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+}
+
+async function waitForExplorer(maxRetries = 20, delayMs = 500): Promise<boolean> {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      await fetch(`${EXPLORER_URL}/graphql`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: "{ __typename }" }),
+      });
+      console.log("[electron] Explorer is ready");
+      return true;
+    } catch {
+      // Explorer not ready yet
+    }
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+  console.warn("[electron] Explorer failed to start after retries");
+  return false;
+}
+
 // --- Window creation ---
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -160,12 +223,6 @@ type BridgeResponse = {
   text: string;
   json?: unknown;
 };
-
-function toServerUrl(input: string): string {
-  if (input.startsWith("http://") || input.startsWith("https://")) return input;
-  if (!input.startsWith("/")) return `${SERVER_URL}/${input}`;
-  return `${SERVER_URL}${input}`;
-}
 
 async function handleRequest(req: BridgeRequest | Request): Promise<Response> {
   // Note: do not statically import server code here. Electron's `tsc -p electron/tsconfig.json`
@@ -263,8 +320,26 @@ app.whenReady().then(async () => {
     console.log(`[server] Process exited with code ${code}`);
   });
 
-  const ready = await waitForServer();
-  if (!ready) {
+  // Start explorer (non-fatal if it fails)
+  explorerProcess = startExplorer();
+  if (explorerProcess) {
+    explorerProcess.stdout?.on("data", (data: Buffer) => {
+      console.log(`[explorer] ${data.toString().trim()}`);
+    });
+    explorerProcess.stderr?.on("data", (data: Buffer) => {
+      console.error(`[explorer] ${data.toString().trim()}`);
+    });
+    explorerProcess.on("exit", (code) => {
+      console.log(`[explorer] Process exited with code ${code}`);
+    });
+  }
+
+  // Wait for server (required) and explorer (optional) in parallel
+  const serverReadyPromise = waitForServer();
+  const explorerReadyPromise = explorerProcess ? waitForExplorer() : Promise.resolve(false);
+  const [serverReady, explorerReady] = await Promise.all([serverReadyPromise, explorerReadyPromise]);
+
+  if (!serverReady) {
     console.error("[electron] Could not start server, quitting.");
     const detail = serverErrors.length
       ? serverErrors.join("\n").slice(-1500)
@@ -275,6 +350,10 @@ app.whenReady().then(async () => {
     );
     app.quit();
     return;
+  }
+
+  if (!explorerReady) {
+    console.warn("[electron] Explorer is not available — continuing without it.");
   }
 
   createWindow();
@@ -296,10 +375,18 @@ app.on("before-quit", () => {
   if (serverProcess && !serverProcess.killed) {
     console.log("[electron] Shutting down server...");
     serverProcess.kill("SIGTERM");
-    // Give it a moment then force kill
     setTimeout(() => {
       if (serverProcess && !serverProcess.killed) {
         serverProcess.kill("SIGKILL");
+      }
+    }, 3000);
+  }
+  if (explorerProcess && !explorerProcess.killed) {
+    console.log("[electron] Shutting down explorer...");
+    explorerProcess.kill("SIGTERM");
+    setTimeout(() => {
+      if (explorerProcess && !explorerProcess.killed) {
+        explorerProcess.kill("SIGKILL");
       }
     }, 3000);
   }
