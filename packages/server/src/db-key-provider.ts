@@ -23,9 +23,7 @@ let runtimeEncryptionKey = normalizeEncryptionKey(
   process.env[DB_ENCRYPTION_KEY_ENV_VAR],
 );
 
-class RuntimeDatabaseEncryptionKeyProvider
-  implements DatabaseEncryptionKeyProvider
-{
+class RuntimeDatabaseEncryptionKeyProvider implements DatabaseEncryptionKeyProvider {
   getEncryptionKey(): string | undefined {
     return runtimeEncryptionKey;
   }

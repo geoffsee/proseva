@@ -8,7 +8,10 @@ import { Cron } from "croner";
 import { db } from "./db";
 import { loadConfigFromDatabase, invalidateConfigCache } from "./config";
 import { generateEcdhKeyPair, decryptEmail } from "./email-crypto";
-import { importSingleEml, ingestEmailAttachments } from "./correspondence-import";
+import {
+  importSingleEml,
+  ingestEmailAttachments,
+} from "./correspondence-import";
 
 const DEFAULT_WORKER_URL = "https://email.proseva.app";
 const DEFAULT_POLL_INTERVAL = 60; // seconds
@@ -25,7 +28,9 @@ function getEmailConfig() {
 
 function getWorkerUrl(): string {
   const config = getEmailConfig();
-  return config?.workerUrl || process.env.EMAIL_WORKER_URL || DEFAULT_WORKER_URL;
+  return (
+    config?.workerUrl || process.env.EMAIL_WORKER_URL || DEFAULT_WORKER_URL
+  );
 }
 
 export interface EmailServiceStatus {
@@ -46,7 +51,8 @@ export function getEmailServiceStatus(): EmailServiceStatus {
     instanceId: config?.instanceId ?? null,
     emailAddress: config?.emailAddress ?? null,
     pollingEnabled: config?.pollingEnabled ?? false,
-    pollingIntervalSeconds: config?.pollingIntervalSeconds ?? DEFAULT_POLL_INTERVAL,
+    pollingIntervalSeconds:
+      config?.pollingIntervalSeconds ?? DEFAULT_POLL_INTERVAL,
     lastPollAt,
     lastPollCount,
     lastPollError,
@@ -58,7 +64,9 @@ export function getEmailServiceStatus(): EmailServiceStatus {
  * Generates an ECDH keypair and sends the public key to the worker.
  * Returns the assigned email address.
  */
-export async function registerEmailAddress(registrationSecret: string): Promise<{
+export async function registerEmailAddress(
+  registrationSecret: string,
+): Promise<{
   emailAddress: string;
 }> {
   const { publicKeyJwk, privateKeyJwk } = await generateEcdhKeyPair();

@@ -147,7 +147,9 @@ describe("PassphraseGate", () => {
       screen.getByPlaceholderText("Enter recovery key"),
       "RECOVERY-KEY",
     );
-    await user.click(screen.getByRole("button", { name: "Apply Recovery Key" }));
+    await user.click(
+      screen.getByRole("button", { name: "Apply Recovery Key" }),
+    );
 
     await waitFor(() => {
       expect(securityApi.applyRecoveryKey).toHaveBeenCalledWith("RECOVERY-KEY");
@@ -156,7 +158,10 @@ describe("PassphraseGate", () => {
       expect(screen.queryByText("Use Recovery Key")).not.toBeInTheDocument();
     });
 
-    await user.type(screen.getByPlaceholderText("Enter your passphrase"), "pass-1234");
+    await user.type(
+      screen.getByPlaceholderText("Enter your passphrase"),
+      "pass-1234",
+    );
     await user.click(screen.getByRole("button", { name: "Unlock" }));
 
     await waitFor(() => {
@@ -187,10 +192,17 @@ describe("PassphraseGate", () => {
     );
 
     await screen.findByText("Use Recovery Key");
-    await user.type(screen.getByPlaceholderText("Enter recovery key"), "bad-key");
-    await user.click(screen.getByRole("button", { name: "Apply Recovery Key" }));
+    await user.type(
+      screen.getByPlaceholderText("Enter recovery key"),
+      "bad-key",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Apply Recovery Key" }),
+    );
 
-    expect(await screen.findByText("Invalid recovery key.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Invalid recovery key."),
+    ).toBeInTheDocument();
   });
 
   it("creates passphrase and initializes stores on first run", async () => {
@@ -215,11 +227,16 @@ describe("PassphraseGate", () => {
       screen.getByPlaceholderText("Enter passphrase (min 8 characters)"),
       "new-passphrase",
     );
-    await user.type(screen.getByPlaceholderText("Re-enter passphrase"), "new-passphrase");
+    await user.type(
+      screen.getByPlaceholderText("Re-enter passphrase"),
+      "new-passphrase",
+    );
     await user.click(screen.getByRole("button", { name: "Create & Encrypt" }));
 
     await waitFor(() => {
-      expect(securityApi.setupPassphrase).toHaveBeenCalledWith("new-passphrase");
+      expect(securityApi.setupPassphrase).toHaveBeenCalledWith(
+        "new-passphrase",
+      );
       expect(authApi.login).toHaveBeenCalledWith("new-passphrase");
       expect(generateAndStoreMLKEMKeys).toHaveBeenCalled();
     });
@@ -247,7 +264,10 @@ describe("PassphraseGate", () => {
     );
 
     await screen.findByText("Enter Passphrase");
-    await user.type(screen.getByPlaceholderText("Enter your passphrase"), "wrong");
+    await user.type(
+      screen.getByPlaceholderText("Enter your passphrase"),
+      "wrong",
+    );
     await user.click(screen.getByRole("button", { name: "Unlock" }));
 
     expect(await screen.findByText("Invalid passphrase.")).toBeInTheDocument();

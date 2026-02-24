@@ -19,16 +19,17 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
-  },
-  {
-    files: [
-      "**/*.test.{ts,tsx}",
-      "**/*.spec.{ts,tsx}",
-      "**/test-helpers.ts",
-      "e2e/**/*.{ts,tsx}",
-    ],
     rules: {
       "@typescript-eslint/no-explicit-any": "warn",
+      "no-empty": ["error", { allowEmptyCatch: true }],
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_|^e|^err$",
+        },
+      ],
     },
   },
 ]);

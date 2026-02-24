@@ -8,10 +8,7 @@ import {
 } from "./transport.js";
 
 export type { paths, components, operations } from "./types.js";
-export type {
-  ProsevaTransport,
-  ProsevaTransportOptions,
-} from "./transport.js";
+export type { ProsevaTransport, ProsevaTransportOptions } from "./transport.js";
 export type { ElectronBridge } from "./transport.js";
 export { createElectronIpcFetch, createProsevaTransport } from "./transport.js";
 

@@ -5,11 +5,7 @@
 
 import OpenAI from "openai";
 import { parseEml } from "@proseva/correspondence";
-import {
-  db,
-  type Correspondence,
-  type CorrespondenceAttachment,
-} from "./db";
+import { db, type Correspondence, type CorrespondenceAttachment } from "./db";
 import { BlobStore, getBlobStore } from "./blob-store";
 import { getConfig } from "./config";
 import { ingestPdfToBlob } from "./ingest";
@@ -137,13 +133,16 @@ export async function ingestEmailAttachments(
 ): Promise<void> {
   const apiKey = getConfig("OPENAI_API_KEY");
   if (!apiKey) {
-    console.log("[email-ingest] OpenAI not configured, skipping attachment ingest");
+    console.log(
+      "[email-ingest] OpenAI not configured, skipping attachment ingest",
+    );
     return;
   }
 
-  const pdfAttachments = (correspondence.attachments ?? []).filter((a) =>
-    a.filename.toLowerCase().endsWith(".pdf") ||
-    a.contentType === "application/pdf",
+  const pdfAttachments = (correspondence.attachments ?? []).filter(
+    (a) =>
+      a.filename.toLowerCase().endsWith(".pdf") ||
+      a.contentType === "application/pdf",
   );
 
   if (pdfAttachments.length === 0) return;
@@ -158,11 +157,15 @@ export async function ingestEmailAttachments(
     try {
       const bytes = await blobStore.retrieve(attachment.id);
       if (!bytes) {
-        console.error(`[email-ingest] Attachment blob not found: ${attachment.id}`);
+        console.error(
+          `[email-ingest] Attachment blob not found: ${attachment.id}`,
+        );
         continue;
       }
 
-      console.log(`[email-ingest] Ingesting PDF attachment: ${attachment.filename}`);
+      console.log(
+        `[email-ingest] Ingesting PDF attachment: ${attachment.filename}`,
+      );
       const buffer = Buffer.from(bytes);
       const { record } = await ingestPdfToBlob(
         buffer,
@@ -190,10 +193,16 @@ export async function ingestEmailAttachments(
           }
         }
       } catch (err) {
-        console.error(`[email-ingest] Auto-populate failed for ${attachment.filename}:`, err);
+        console.error(
+          `[email-ingest] Auto-populate failed for ${attachment.filename}:`,
+          err,
+        );
       }
     } catch (err) {
-      console.error(`[email-ingest] Ingest failed for ${attachment.filename}:`, err);
+      console.error(
+        `[email-ingest] Ingest failed for ${attachment.filename}:`,
+        err,
+      );
     }
   }
 }

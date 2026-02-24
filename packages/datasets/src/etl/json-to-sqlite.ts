@@ -175,7 +175,9 @@ if (await courtsJsonFile.exists()) {
 }
 
 // 2. Constitution
-const constitutionJsonFile = Bun.file(join(DATA_DIR, "constitutional_law/Constitution.json"));
+const constitutionJsonFile = Bun.file(
+  join(DATA_DIR, "constitutional_law/Constitution.json"),
+);
 if (await constitutionJsonFile.exists()) {
   console.log("Importing Constitution...");
   const constitution = await constitutionJsonFile.json();
@@ -197,7 +199,9 @@ if (await constitutionJsonFile.exists()) {
 
 // 3. Virginia Code & Popular Names
 const virginiaCodeDir = join(DATA_DIR, "virginia_code");
-const codeFiles = Array.from(new Glob("CoVTitle_*.json").scanSync(virginiaCodeDir));
+const codeFiles = Array.from(
+  new Glob("CoVTitle_*.json").scanSync(virginiaCodeDir),
+);
 for (const filename of codeFiles) {
   console.log(`Importing ${filename}...`);
   const codeData = await Bun.file(join(virginiaCodeDir, filename)).json();
@@ -270,13 +274,15 @@ const datasetsToScan = [
   "gdman",
   "jdrman",
   "other",
-  "vcc"
+  "vcc",
 ];
 
 for (const dataset of datasetsToScan) {
   const dir = join(DATA_DIR, dataset);
-  const jsonFiles = Array.from(new Glob("**/*.json").scanSync({ cwd: dir, absolute: true }));
-  
+  const jsonFiles = Array.from(
+    new Glob("**/*.json").scanSync({ cwd: dir, absolute: true }),
+  );
+
   for (const jsonPath of jsonFiles) {
     const filename = basename(jsonPath);
     console.log(`Importing Document: ${dataset}/${filename}...`);
@@ -284,9 +290,9 @@ for (const dataset of datasetsToScan) {
     let content = "";
     if (typeof data === "object" && data !== null) {
       if ("text" in data) {
-          content = data.text;
+        content = data.text;
       } else {
-          content = JSON.stringify(data);
+        content = JSON.stringify(data);
       }
     } else {
       content = String(data);

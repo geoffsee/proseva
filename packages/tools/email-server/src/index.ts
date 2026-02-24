@@ -15,13 +15,6 @@ import {
 } from './db';
 import { storeEncryptedEmail, getEncryptedEmail, deleteEmail, deleteEmails } from './storage';
 
-function json(data: unknown, status = 200): Response {
-	return new Response(JSON.stringify(data), {
-		status,
-		headers: { 'Content-Type': 'application/json' },
-	});
-}
-
 function corsHeaders(): Record<string, string> {
 	return {
 		'Access-Control-Allow-Origin': '*',
@@ -105,7 +98,7 @@ export default {
 		return corsJson({ error: 'Not found' }, 404);
 	},
 
-	async email(message: ForwardableEmailMessage, env: Env, ctx: ExecutionContext): Promise<void> {
+	async email(message: ForwardableEmailMessage, env: Env, _ctx: ExecutionContext): Promise<void> {
 		const recipientAddress = message.to.toLowerCase().trim();
 
 		const instance = await getInstanceByEmail(env, recipientAddress);
@@ -131,7 +124,7 @@ export default {
 		await insertEmail(env, emailId, instance.instance_id, r2Key, ephemeralPublicKeyJwk, iv, ciphertext.byteLength, ttlDays);
 	},
 
-	async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+	async scheduled(event: ScheduledEvent, env: Env, _ctx: ExecutionContext): Promise<void> {
 		// Delete expired emails from R2 and D1
 		const expiredR2Keys = await deleteExpiredEmails(env);
 		await deleteEmails(env, expiredR2Keys);

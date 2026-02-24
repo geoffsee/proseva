@@ -129,7 +129,9 @@ async function unwrap<T>(
       if (onDbLocked) {
         onDbLocked();
       }
-      throw new Error("Database is locked. Provide a valid recovery key to continue.");
+      throw new Error(
+        "Database is locked. Provide a valid recovery key to continue.",
+      );
     }
 
     if (response.status === 404) return null;
@@ -389,9 +391,7 @@ export const correspondenceApi = {
     if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
     return res.json();
   },
-  create: async (
-    data: Partial<Correspondence>,
-  ): Promise<Correspondence> => {
+  create: async (data: Partial<Correspondence>): Promise<Correspondence> => {
     const res = await fetch(`${API_BASE}/correspondences`, {
       method: "POST",
       headers: await getAuthHeaders(),
@@ -457,7 +457,7 @@ export const correspondenceApi = {
     const contentType =
       res.headers.get("content-type") || "application/octet-stream";
     const disposition = res.headers.get("content-disposition") || "";
-    const filenameMatch = disposition.match(/filename=\"?([^\";]+)\"?/i);
+    const filenameMatch = disposition.match(/filename="?([^";]+)"?/i);
     const filename = filenameMatch?.[1] || "attachment.bin";
 
     return { blob, filename, contentType };
@@ -791,9 +791,12 @@ export const configApi = {
       params.set("endpoint", endpoint.trim());
     }
     const qs = params.toString();
-    const res = await fetch(`${API_BASE}/config/openai-models${qs ? `?${qs}` : ""}`, {
-      headers: await getAuthHeaders(),
-    });
+    const res = await fetch(
+      `${API_BASE}/config/openai-models${qs ? `?${qs}` : ""}`,
+      {
+        headers: await getAuthHeaders(),
+      },
+    );
     return res.json();
   },
 };
@@ -956,11 +959,14 @@ export const estatePlansApi = {
     planId: string,
     data: Record<string, unknown>,
   ): Promise<unknown> => {
-    const res = await fetch(`${API_BASE}/estate-plans/${planId}/beneficiaries`, {
-      method: "POST",
-      headers: await getAuthHeaders(),
-      body: JSON.stringify(data),
-    });
+    const res = await fetch(
+      `${API_BASE}/estate-plans/${planId}/beneficiaries`,
+      {
+        method: "POST",
+        headers: await getAuthHeaders(),
+        body: JSON.stringify(data),
+      },
+    );
     return res.json();
   },
   removeBeneficiary: async (planId: string, id: string): Promise<void> => {
@@ -1002,11 +1008,14 @@ export const estatePlansApi = {
     docId: string,
     updates: Record<string, unknown>,
   ): Promise<unknown> => {
-    const res = await fetch(`${API_BASE}/estate-plans/${planId}/documents/${docId}`, {
-      method: "PATCH",
-      headers: await getAuthHeaders(),
-      body: JSON.stringify(updates),
-    });
+    const res = await fetch(
+      `${API_BASE}/estate-plans/${planId}/documents/${docId}`,
+      {
+        method: "PATCH",
+        headers: await getAuthHeaders(),
+        body: JSON.stringify(updates),
+      },
+    );
     return res.json();
   },
   removeDocument: async (planId: string, id: string): Promise<void> => {
@@ -1142,7 +1151,9 @@ export const documentsApi = {
     const token = await getAuthToken();
     const headers: Record<string, string> = {};
     if (token) headers.Authorization = `Bearer ${token}`;
-    const res = await fetch(`${API_BASE}/documents/${id}/download`, { headers });
+    const res = await fetch(`${API_BASE}/documents/${id}/download`, {
+      headers,
+    });
     if (!res.ok) throw new Error(`Download failed: ${res.status}`);
     const blob = await res.blob();
     const disposition = res.headers.get("content-disposition") || "";
@@ -1191,7 +1202,8 @@ export const emailApi = {
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       throw new Error(
-        (body as { error?: string }).error || `Registration failed: ${res.status}`,
+        (body as { error?: string }).error ||
+          `Registration failed: ${res.status}`,
       );
     }
     return res.json();
@@ -1236,7 +1248,8 @@ async function graphqlQuery<T = unknown>(
     headers: await getAuthHeaders(),
     body: JSON.stringify({ query, variables }),
   });
-  if (!res.ok) throw new Error(`GraphQL error: ${res.status} ${res.statusText}`);
+  if (!res.ok)
+    throw new Error(`GraphQL error: ${res.status} ${res.statusText}`);
   const json = await res.json();
   if (json.errors?.length) throw new Error(json.errors[0].message);
   return json.data as T;
@@ -1247,7 +1260,10 @@ async function graphqlQuery<T = unknown>(
 export type CourtInfo = {
   name: string;
   locality: string;
-  type: "General District" | "Juvenile & Domestic Relations" | "Combined District";
+  type:
+    | "General District"
+    | "Juvenile & Domestic Relations"
+    | "Combined District";
   district: string;
   clerk: string | null;
   phone: string | null;

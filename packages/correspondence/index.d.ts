@@ -22,4 +22,3 @@ export type ParsedEmail = {
 
 export function parseEml(input: ArrayBuffer | Uint8Array): ParsedEmail;
 export function parseEmlFile(file: Blob): Promise<ParsedEmail>;
-

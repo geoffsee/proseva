@@ -26,7 +26,8 @@ export const ChatStore = types
           .filter((m) => m.role === "user" || m.role === "assistant")
           .map((m) => ({ role: m.role, content: m.text }));
 
-        const data: { reply: string } = yield apiModule.api.chat.chat(apiMessages);
+        const data: { reply: string } =
+          yield apiModule.api.chat.chat(apiMessages);
         replyText = data.reply;
       } catch {
         replyText =

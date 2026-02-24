@@ -146,7 +146,9 @@ export function PassphraseGate({
         });
 
         setDbLockedCallback(() => {
-          setError("Database is locked. Provide a valid recovery key to continue.");
+          setError(
+            "Database is locked. Provide a valid recovery key to continue.",
+          );
           setPassphrase("");
           setState("enter-passphrase");
         });
@@ -407,11 +409,17 @@ export function PassphraseGate({
             </Button>
 
             {securityStatus?.locked && (
-              <Box borderWidth="1px" borderColor="border.muted" borderRadius="md" p={4}>
+              <Box
+                borderWidth="1px"
+                borderColor="border.muted"
+                borderRadius="md"
+                p={4}
+              >
                 <VStack align="stretch" gap={3}>
                   <Heading size="sm">Use Recovery Key</Heading>
                   <Text fontSize="sm" color="fg.muted">
-                    This database is locked. Enter your recovery key to unlock it.
+                    This database is locked. Enter your recovery key to unlock
+                    it.
                   </Text>
 
                   {recoveryError && (

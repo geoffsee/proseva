@@ -64,21 +64,22 @@ function getGlobalFetch(): typeof fetch {
     );
   }
   // Always call the latest `globalThis.fetch` (important when Electron patches window.fetch at runtime).
-  return ((input, init) => (globalThis as any).fetch(input as any, init as any)) as typeof fetch;
+  return ((input, init) =>
+    (globalThis as any).fetch(input as any, init as any)) as typeof fetch;
 }
 
-function getElectronAPI(
-  explicit?: ElectronBridge,
-): ElectronBridge | undefined {
+function getElectronAPI(explicit?: ElectronBridge): ElectronBridge | undefined {
   if (explicit) return explicit;
   return (globalThis as any)?.electronAPI as ElectronBridge | undefined;
 }
 
-export function createElectronIpcFetch(options: {
-  channel?: string;
-  electronAPI?: ElectronBridge;
-  fallbackFetch?: typeof fetch;
-} = {}): typeof fetch {
+export function createElectronIpcFetch(
+  options: {
+    channel?: string;
+    electronAPI?: ElectronBridge;
+    fallbackFetch?: typeof fetch;
+  } = {},
+): typeof fetch {
   const channel = options.channel ?? "ipcMain-bridge-http";
   const fallbackFetch = options.fallbackFetch ?? getGlobalFetch();
 

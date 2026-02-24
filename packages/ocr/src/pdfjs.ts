@@ -77,7 +77,7 @@ function binarizeCanvas(ctx: any, width: number, height: number): void {
 
 export async function renderPdfPagesToPng(
   filePath: string,
-  opts?: { dpi?: number; binarize?: boolean }
+  opts?: { dpi?: number; binarize?: boolean },
 ): Promise<Uint8Array[]> {
   const dpi = opts?.dpi ?? 300;
   const scale = dpi / 72;
@@ -100,7 +100,10 @@ export async function renderPdfPagesToPng(
   for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
     const page = await pdf.getPage(pageNum);
     const viewport = page.getViewport({ scale });
-    const canvas = createCanvas(Math.ceil(viewport.width), Math.ceil(viewport.height));
+    const canvas = createCanvas(
+      Math.ceil(viewport.width),
+      Math.ceil(viewport.height),
+    );
     const ctx = canvas.getContext("2d");
 
     await page.render({ canvasContext: ctx, viewport }).promise;
@@ -116,7 +119,7 @@ export async function renderPdfPagesToPng(
 }
 
 export async function binarizeImageToPng(
-  imageBytes: Uint8Array
+  imageBytes: Uint8Array,
 ): Promise<Uint8Array> {
   const { createCanvas, loadImage } = await canvasMod();
   const img = await loadImage(imageBytes);
@@ -127,4 +130,3 @@ export async function binarizeImageToPng(
   const buf: Buffer = canvas.toBuffer("image/png");
   return new Uint8Array(buf);
 }
-

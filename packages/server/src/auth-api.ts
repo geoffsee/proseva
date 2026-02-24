@@ -112,7 +112,10 @@ router.post(
         | undefined;
 
       if (!entry?.hash) {
-        return json(404, { success: false, error: "No passphrase configured." });
+        return json(404, {
+          success: false,
+          error: "No passphrase configured.",
+        });
       }
 
       // Verify passphrase

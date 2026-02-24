@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useEffect, useRef, useCallback, useMemo } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 
 type Listener = () => void;
 
@@ -6,7 +13,9 @@ interface ServerEventsContextValue {
   subscribe: (event: string, listener: Listener) => () => void;
 }
 
-const ServerEventsContext = createContext<ServerEventsContextValue | null>(null);
+const ServerEventsContext = createContext<ServerEventsContextValue | null>(
+  null,
+);
 
 function getWsUrl(): string {
   const electronAPI = (window as Record<string, unknown>).electronAPI as
@@ -20,7 +29,11 @@ function getWsUrl(): string {
   return `${proto}://${window.location.host}/ws`;
 }
 
-export function ServerEventsProvider({ children }: { children: React.ReactNode }) {
+export function ServerEventsProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const listenersRef = useRef(new Map<string, Set<Listener>>());
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -38,7 +51,9 @@ export function ServerEventsProvider({ children }: { children: React.ReactNode }
           const { event } = JSON.parse(e.data) as { event: string };
           const set = listenersRef.current.get(event);
           if (set) set.forEach((fn) => fn());
-        } catch { /* ignore malformed */ }
+        } catch {
+          /* ignore malformed */
+        }
       };
 
       ws.onclose = () => {
@@ -75,12 +90,13 @@ export function ServerEventsProvider({ children }: { children: React.ReactNode }
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useServerEvent(event: string, listener: Listener) {
   const ctx = useContext(ServerEventsContext);
   const listenerRef = useRef(listener);
-  listenerRef.current = listener;
 
   useEffect(() => {
+    listenerRef.current = listener;
     if (!ctx) return;
     return ctx.subscribe(event, () => listenerRef.current());
   }, [ctx, event]);

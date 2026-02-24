@@ -114,9 +114,7 @@ const FaxGatewayConfigModel = types.model("FaxGatewayConfig", {
   url: types.maybeNull(types.string),
   username: types.maybeNull(types.string),
   password: types.maybeNull(types.string),
-  urlSource: types.maybeNull(
-    types.enumeration(["database", "environment"]),
-  ),
+  urlSource: types.maybeNull(types.enumeration(["database", "environment"])),
   usernameSource: types.maybeNull(
     types.enumeration(["database", "environment"]),
   ),

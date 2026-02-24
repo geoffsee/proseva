@@ -300,8 +300,7 @@ describe("explorer-tools", () => {
 
     it("uses configured EXPLORER_URL", async () => {
       mockFetch.mockResolvedValue({
-        json: () =>
-          Promise.resolve({ data: { stats: {} } }),
+        json: () => Promise.resolve({ data: { stats: {} } }),
       });
 
       await executeExplorerTool("get_stats", {});
@@ -332,7 +331,9 @@ describe("explorer-tools", () => {
         json: () => Promise.resolve({ data: largeData }),
       });
 
-      const summarized = JSON.stringify({ node: { id: 42, summary: "Section about X", edges: [] } });
+      const summarized = JSON.stringify({
+        node: { id: 42, summary: "Section about X", edges: [] },
+      });
       mockCreate.mockResolvedValue({
         choices: [{ message: { content: summarized } }],
       });

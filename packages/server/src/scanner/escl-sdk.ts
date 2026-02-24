@@ -3,9 +3,7 @@ import { writeFile } from "node:fs/promises";
 const SCAN_NS = "http://schemas.hp.com/imaging/escl/2011/05/03";
 const PWG_NS = "http://www.pwg.org/schemas/2010/12/sm";
 
-const DEFAULT_ENDPOINTS = [
-  "http://scanner.local:8080",
-] as const;
+const DEFAULT_ENDPOINTS = ["http://scanner.local:8080"] as const;
 
 const RETRYABLE_DOCUMENT_STATUSES = new Set([404, 409, 423, 425, 503]);
 
@@ -85,7 +83,15 @@ export class ScannerHttpError extends Error {
   readonly path: string;
   readonly responseBody: string;
 
-  constructor(message: string, args: { status: number; endpoint: string; path: string; responseBody: string }) {
+  constructor(
+    message: string,
+    args: {
+      status: number;
+      endpoint: string;
+      path: string;
+      responseBody: string;
+    },
+  ) {
     super(message);
     this.name = "ScannerHttpError";
     this.status = args.status;
@@ -103,8 +109,14 @@ export class BrotherAds3300wSdk {
   private preferredEndpoint: string;
 
   constructor(options: BrotherAds3300wOptions = {}) {
-    const configuredEndpoints = options.endpoints?.map(normalizeEndpoint).filter((endpoint) => endpoint.length > 0) ?? [];
-    this.endpoints = configuredEndpoints.length > 0 ? unique(configuredEndpoints) : [...DEFAULT_ENDPOINTS];
+    const configuredEndpoints =
+      options.endpoints
+        ?.map(normalizeEndpoint)
+        .filter((endpoint) => endpoint.length > 0) ?? [];
+    this.endpoints =
+      configuredEndpoints.length > 0
+        ? unique(configuredEndpoints)
+        : [...DEFAULT_ENDPOINTS];
     const firstEndpoint = this.endpoints[0];
     if (!firstEndpoint) {
       throw new Error("At least one scanner endpoint is required.");
@@ -121,7 +133,9 @@ export class BrotherAds3300wSdk {
   }
 
   async getCapabilitiesXml(): Promise<string> {
-    const { endpoint, response } = await this.request("/eSCL/ScannerCapabilities");
+    const { endpoint, response } = await this.request(
+      "/eSCL/ScannerCapabilities",
+    );
     if (!response.ok) {
       throw await toHttpError(response, endpoint, "/eSCL/ScannerCapabilities");
     }
@@ -129,7 +143,9 @@ export class BrotherAds3300wSdk {
   }
 
   async getCapabilities(): Promise<ScannerCapabilities> {
-    const { endpoint, response } = await this.request("/eSCL/ScannerCapabilities");
+    const { endpoint, response } = await this.request(
+      "/eSCL/ScannerCapabilities",
+    );
     if (!response.ok) {
       throw await toHttpError(response, endpoint, "/eSCL/ScannerCapabilities");
     }
@@ -171,7 +187,10 @@ export class BrotherAds3300wSdk {
     return {
       endpoint,
       rawXml: xml,
-      scannerState: firstTagValue(xml, "ScannerState") ?? firstTagValue(xml, "ScanState") ?? firstTagValue(xml, "State"),
+      scannerState:
+        firstTagValue(xml, "ScannerState") ??
+        firstTagValue(xml, "ScanState") ??
+        firstTagValue(xml, "State"),
       adfState: firstTagValue(xml, "AdfState"),
       jobState: firstTagValue(xml, "JobState"),
     };
@@ -187,17 +206,25 @@ export class BrotherAds3300wSdk {
 
     const lines: string[] = [];
     lines.push('<?xml version="1.0" encoding="UTF-8"?>');
-    lines.push(`<scan:ScanSettings xmlns:scan="${SCAN_NS}" xmlns:pwg="${PWG_NS}">`);
+    lines.push(
+      `<scan:ScanSettings xmlns:scan="${SCAN_NS}" xmlns:pwg="${PWG_NS}">`,
+    );
     lines.push("  <pwg:Version>2.63</pwg:Version>");
     lines.push(`  <scan:Intent>${escapeXml(intent)}</scan:Intent>`);
-    lines.push(`  <scan:InputSource>${escapeXml(inputSource)}</scan:InputSource>`);
+    lines.push(
+      `  <scan:InputSource>${escapeXml(inputSource)}</scan:InputSource>`,
+    );
     lines.push(`  <scan:ColorMode>${escapeXml(colorMode)}</scan:ColorMode>`);
     lines.push(`  <scan:XResolution>${xResolution}</scan:XResolution>`);
     lines.push(`  <scan:YResolution>${yResolution}</scan:YResolution>`);
-    lines.push(`  <pwg:DocumentFormat>${escapeXml(documentFormat)}</pwg:DocumentFormat>`);
+    lines.push(
+      `  <pwg:DocumentFormat>${escapeXml(documentFormat)}</pwg:DocumentFormat>`,
+    );
 
     if (typeof settings.duplex === "boolean") {
-      lines.push(`  <scan:Duplex>${settings.duplex ? "true" : "false"}</scan:Duplex>`);
+      lines.push(
+        `  <scan:Duplex>${settings.duplex ? "true" : "false"}</scan:Duplex>`,
+      );
     }
     if (typeof settings.brightness === "number") {
       lines.push(`  <scan:Brightness>${settings.brightness}</scan:Brightness>`);
@@ -213,7 +240,9 @@ export class BrotherAds3300wSdk {
       const yOffset = settings.scanRegion.yOffset ?? 0;
       lines.push("  <pwg:ScanRegions>");
       lines.push("    <pwg:ScanRegion>");
-      lines.push(`      <pwg:Height>${settings.scanRegion.height}</pwg:Height>`);
+      lines.push(
+        `      <pwg:Height>${settings.scanRegion.height}</pwg:Height>`,
+      );
       lines.push(`      <pwg:Width>${settings.scanRegion.width}</pwg:Width>`);
       lines.push(`      <pwg:XOffset>${xOffset}</pwg:XOffset>`);
       lines.push(`      <pwg:YOffset>${yOffset}</pwg:YOffset>`);
@@ -253,9 +282,13 @@ export class BrotherAds3300wSdk {
     return { id, location, endpoint, requestXml };
   }
 
-  async getNextDocument(job: string | ScanJob, allowNotReady = false): Promise<ScannedDocument | null> {
+  async getNextDocument(
+    job: string | ScanJob,
+    allowNotReady = false,
+  ): Promise<ScannedDocument | null> {
     const nextDocumentPath = toNextDocumentPath(job);
-    const { endpoint, response } = await this.requestFromPathOrUrl(nextDocumentPath);
+    const { endpoint, response } =
+      await this.requestFromPathOrUrl(nextDocumentPath);
 
     if (allowNotReady && RETRYABLE_DOCUMENT_STATUSES.has(response.status)) {
       return null;
@@ -265,7 +298,8 @@ export class BrotherAds3300wSdk {
     }
 
     const data = await response.arrayBuffer();
-    const contentType = response.headers.get("content-type") ?? "application/octet-stream";
+    const contentType =
+      response.headers.get("content-type") ?? "application/octet-stream";
     return {
       data,
       contentType,
@@ -274,7 +308,10 @@ export class BrotherAds3300wSdk {
     };
   }
 
-  async waitForNextDocument(job: string | ScanJob, options: ScanOnceOptions = {}): Promise<ScannedDocument> {
+  async waitForNextDocument(
+    job: string | ScanJob,
+    options: ScanOnceOptions = {},
+  ): Promise<ScannedDocument> {
     const timeoutMs = options.timeoutMs ?? 60_000;
     const pollIntervalMs = options.pollIntervalMs ?? 750;
 
@@ -287,10 +324,15 @@ export class BrotherAds3300wSdk {
       await sleep(pollIntervalMs);
     }
 
-    throw new Error(`Timed out waiting for scanned document after ${timeoutMs}ms.`);
+    throw new Error(
+      `Timed out waiting for scanned document after ${timeoutMs}ms.`,
+    );
   }
 
-  async scanOnce(settings: ScanSettings = {}, options: ScanOnceOptions = {}): Promise<{ job: ScanJob; document: ScannedDocument }> {
+  async scanOnce(
+    settings: ScanSettings = {},
+    options: ScanOnceOptions = {},
+  ): Promise<{ job: ScanJob; document: ScannedDocument }> {
     const job = await this.createScanJob(settings);
     const document = await this.waitForNextDocument(job, options);
     return { job, document };
@@ -298,7 +340,9 @@ export class BrotherAds3300wSdk {
 
   async deleteScanJob(job: string | ScanJob): Promise<void> {
     const jobPath = toJobPath(job);
-    const { endpoint, response } = await this.requestFromPathOrUrl(jobPath, { method: "DELETE" });
+    const { endpoint, response } = await this.requestFromPathOrUrl(jobPath, {
+      method: "DELETE",
+    });
 
     if ([200, 202, 204, 404, 405].includes(response.status)) {
       return;
@@ -306,7 +350,10 @@ export class BrotherAds3300wSdk {
     throw await toHttpError(response, endpoint, jobPath);
   }
 
-  private async request(path: string, init: RequestInit = {}): Promise<{ endpoint: string; response: Response }> {
+  private async request(
+    path: string,
+    init: RequestInit = {},
+  ): Promise<{ endpoint: string; response: Response }> {
     const normalizedPath = path.startsWith("/") ? path : `/${path}`;
     const endpointOrder = this.endpointOrder();
     const errors: unknown[] = [];
@@ -314,15 +361,25 @@ export class BrotherAds3300wSdk {
     for (const endpoint of endpointOrder) {
       const url = `${endpoint}${normalizedPath}`;
       try {
-        const response = await fetchWithTimeout(this.fetchImpl, url, this.withDefaultHeaders(init), this.timeoutMs);
+        const response = await fetchWithTimeout(
+          this.fetchImpl,
+          url,
+          this.withDefaultHeaders(init),
+          this.timeoutMs,
+        );
         this.preferredEndpoint = endpoint;
         return { endpoint, response };
       } catch (error) {
-        errors.push(new Error(`${endpoint}${normalizedPath}: ${stringifyError(error)}`));
+        errors.push(
+          new Error(`${endpoint}${normalizedPath}: ${stringifyError(error)}`),
+        );
       }
     }
 
-    throw new AggregateError(errors, `Could not reach scanner on any endpoint: ${this.endpoints.join(", ")}`);
+    throw new AggregateError(
+      errors,
+      `Could not reach scanner on any endpoint: ${this.endpoints.join(", ")}`,
+    );
   }
 
   private async requestFromPathOrUrl(
@@ -331,7 +388,12 @@ export class BrotherAds3300wSdk {
   ): Promise<{ endpoint: string; response: Response }> {
     if (isAbsoluteUrl(pathOrUrl)) {
       const endpoint = new URL(pathOrUrl).origin;
-      const response = await fetchWithTimeout(this.fetchImpl, pathOrUrl, this.withDefaultHeaders(init), this.timeoutMs);
+      const response = await fetchWithTimeout(
+        this.fetchImpl,
+        pathOrUrl,
+        this.withDefaultHeaders(init),
+        this.timeoutMs,
+      );
       return { endpoint, response };
     }
 
@@ -350,12 +412,20 @@ export class BrotherAds3300wSdk {
   }
 
   private endpointOrder(): string[] {
-    const ordered = [this.preferredEndpoint, ...this.endpoints.filter((endpoint) => endpoint !== this.preferredEndpoint)];
+    const ordered = [
+      this.preferredEndpoint,
+      ...this.endpoints.filter(
+        (endpoint) => endpoint !== this.preferredEndpoint,
+      ),
+    ];
     return unique(ordered);
   }
 }
 
-export async function saveScannedDocument(filePath: string, document: ScannedDocument): Promise<void> {
+export async function saveScannedDocument(
+  filePath: string,
+  document: ScannedDocument,
+): Promise<void> {
   await writeFile(filePath, new Uint8Array(document.data));
 }
 
@@ -386,7 +456,10 @@ function escapeXml(value: string): string {
 }
 
 function tagValues(xml: string, localName: string): string[] {
-  const pattern = new RegExp(`<(?:[A-Za-z0-9_-]+:)?${escapeRegExp(localName)}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:[A-Za-z0-9_-]+:)?${escapeRegExp(localName)}>`, "g");
+  const pattern = new RegExp(
+    `<(?:[A-Za-z0-9_-]+:)?${escapeRegExp(localName)}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:[A-Za-z0-9_-]+:)?${escapeRegExp(localName)}>`,
+    "g",
+  );
   const values: string[] = [];
   let match = pattern.exec(xml);
   while (match) {
@@ -420,7 +493,10 @@ function isAbsoluteUrl(value: string): boolean {
   return /^https?:\/\//i.test(value);
 }
 
-function resolveAgainstEndpoint(endpoint: string, locationHeader: string): string {
+function resolveAgainstEndpoint(
+  endpoint: string,
+  locationHeader: string,
+): string {
   if (isAbsoluteUrl(locationHeader)) {
     return locationHeader;
   }
@@ -462,7 +538,11 @@ function extractJobId(location: string): string {
   return parts[parts.length - 1] ?? "";
 }
 
-async function toHttpError(response: Response, endpoint: string, path: string): Promise<ScannerHttpError> {
+async function toHttpError(
+  response: Response,
+  endpoint: string,
+  path: string,
+): Promise<ScannerHttpError> {
   const body = await safeReadText(response);
   const compactBody = body.replace(/\s+/g, " ").trim().slice(0, 300);
   const message = `Scanner request failed (${response.status}) for ${endpoint}${path}${compactBody ? `: ${compactBody}` : ""}`;

@@ -52,7 +52,10 @@ describe("useVirginiaCourts", () => {
     // Use a delayed mock to ensure we can observe loading state
     let resolvePromise: (v: typeof mockCourts) => void;
     mockList.mockImplementationOnce(
-      () => new Promise((r) => { resolvePromise = r; }),
+      () =>
+        new Promise((r) => {
+          resolvePromise = r;
+        }),
     );
 
     const { useVirginiaCourts } = await import("./useVirginiaCourts");

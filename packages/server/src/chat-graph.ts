@@ -1,5 +1,13 @@
 import { createKnowledgeGraph } from "mst-graph";
-import type { Case, Contact, Deadline, DocumentRecord, Evidence, Filing, Note } from "./db";
+import type {
+  Case,
+  Contact,
+  Deadline,
+  DocumentRecord,
+  Evidence,
+  Filing,
+  Note,
+} from "./db";
 
 type GraphEntity =
   | "Workspace"

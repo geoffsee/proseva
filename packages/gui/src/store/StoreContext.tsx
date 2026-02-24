@@ -49,7 +49,10 @@ export function StoreProvider({
       })
       .catch((err) => {
         if (cancelled) return;
-        console.error("[store] Hydration failed; continuing with defaults.", err);
+        console.error(
+          "[store] Hydration failed; continuing with defaults.",
+          err,
+        );
         setIsReady(true);
       });
     return () => {

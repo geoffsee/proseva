@@ -266,10 +266,7 @@ export async function kvLoad<T>(key: string, fallback: T): Promise<T> {
     const result = await kvGetJson<T>(store, key);
     return result ?? fallback;
   } catch (err) {
-    console.warn(
-      `[kv] Failed to load key "${key}" (using fallback).`,
-      err,
-    );
+    console.warn(`[kv] Failed to load key "${key}" (using fallback).`, err);
     return fallback;
   }
 }

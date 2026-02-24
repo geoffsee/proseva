@@ -10,7 +10,10 @@ import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { initSync } from "wasm-similarity/wasm_similarity_core.js";
 
-export { cosine_similarity, cosine_similarity_dataspace } from "wasm-similarity/wasm_similarity_core.js";
+export {
+  cosine_similarity,
+  cosine_similarity_dataspace,
+} from "wasm-similarity/wasm_similarity_core.js";
 
 let initialized = false;
 
@@ -24,9 +27,7 @@ export function ensureWasmSimilarityInit(): void {
 
   // 2. require.resolve from node_modules (development)
   try {
-    candidates.push(
-      require.resolve("wasm-similarity/wasm_similarity_bg.wasm"),
-    );
+    candidates.push(require.resolve("wasm-similarity/wasm_similarity_bg.wasm"));
   } catch {
     // not available
   }

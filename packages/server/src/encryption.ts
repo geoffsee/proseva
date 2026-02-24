@@ -44,9 +44,7 @@ function ensureWasmInit(): void {
 
   // 2. require.resolve from node_modules (development)
   try {
-    candidates.push(
-      require.resolve("wasm-pqc-subtle/wasm_pqc_subtle_bg.wasm"),
-    );
+    candidates.push(require.resolve("wasm-pqc-subtle/wasm_pqc_subtle_bg.wasm"));
   } catch {
     // not available
   }

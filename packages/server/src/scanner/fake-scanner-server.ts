@@ -13,14 +13,25 @@
  * Point ProSeVA scanner config to http://localhost:8085
  */
 
-const PORT = Number(process.argv.includes("--port") ? process.argv[process.argv.indexOf("--port") + 1] : 8085);
+const PORT = Number(
+  process.argv.includes("--port")
+    ? process.argv[process.argv.indexOf("--port") + 1]
+    : 8085,
+);
 
 // ─── State ───────────────────────────────────────────────────────────
 
 let adfState: "ScannerAdfLoaded" | "ScannerAdfEmpty" = "ScannerAdfEmpty";
 let scannerState: "Idle" | "Processing" = "Idle";
 let nextJobId = 1;
-const jobs = new Map<string, { id: string; state: "Processing" | "Completed" | "Canceled"; documentReady: boolean }>();
+const jobs = new Map<
+  string,
+  {
+    id: string;
+    state: "Processing" | "Completed" | "Canceled";
+    documentReady: boolean;
+  }
+>();
 
 // ─── Minimal PDF ─────────────────────────────────────────────────────
 
@@ -190,7 +201,11 @@ const server = Bun.serve({
     // POST /eSCL/ScanJobs
     if (method === "POST" && path === "/eSCL/ScanJobs") {
       const jobId = String(nextJobId++);
-      const job = { id: jobId, state: "Processing" as const, documentReady: false };
+      const job = {
+        id: jobId,
+        state: "Processing" as const,
+        documentReady: false,
+      };
       jobs.set(jobId, job);
 
       scannerState = "Processing";
@@ -265,7 +280,9 @@ const server = Bun.serve({
 // ─── Interactive Controls ────────────────────────────────────────────
 
 function printState() {
-  console.log(`\n  State: scanner=${scannerState} adf=${adfState} jobs=${jobs.size}\n`);
+  console.log(
+    `\n  State: scanner=${scannerState} adf=${adfState} jobs=${jobs.size}\n`,
+  );
 }
 
 function printHelp() {
@@ -300,7 +317,9 @@ process.stdin.on("data", (key: string) => {
   if (key === "p") {
     if (adfState === "ScannerAdfEmpty") {
       adfState = "ScannerAdfLoaded";
-      console.log("\n  >>> Paper LOADED into ADF (will trigger scan on next poll)");
+      console.log(
+        "\n  >>> Paper LOADED into ADF (will trigger scan on next poll)",
+      );
     } else {
       adfState = "ScannerAdfEmpty";
       console.log("\n  >>> Paper REMOVED from ADF");

@@ -3,7 +3,13 @@ import { spawn, type ChildProcess } from "child_process";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import { SERVER_PORT, SERVER_URL, EXPLORER_PORT, EXPLORER_URL, toServerUrl } from "./url-routing";
+import {
+  SERVER_PORT,
+  SERVER_URL,
+  EXPLORER_PORT,
+  EXPLORER_URL,
+  toServerUrl,
+} from "./url-routing";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,7 +18,6 @@ const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, "..", "..", "..");
 
 const isDev = !app.isPackaged;
-const DEV_URL = "http://localhost:5173";
 // Default to proxying requests to the spawned server process.
 // In-process mode is for debugging only and can conflict with startup/runtime state.
 const USE_INPROC_SERVER = process.env.ELECTRON_INPROC_SERVER === "1";
@@ -55,7 +60,6 @@ function initDataDir(): void {
   if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
   }
-
 }
 
 // --- Server management ---
@@ -70,7 +74,13 @@ function startServer(): ChildProcess {
 
   if (isDev) {
     console.log("[electron] Starting dev server with bun...");
-    const serverEntry = path.join(PROJECT_ROOT, "packages", "server", "src", "index.ts");
+    const serverEntry = path.join(
+      PROJECT_ROOT,
+      "packages",
+      "server",
+      "src",
+      "index.ts",
+    );
     return spawn("bun", ["run", serverEntry], {
       env,
       stdio: ["ignore", "pipe", "pipe"],
@@ -111,12 +121,28 @@ async function waitForServer(maxRetries = 30, delayMs = 500): Promise<boolean> {
 function getExplorerDbPaths(): { embeddings: string; virginia: string } {
   if (isDev) {
     return {
-      embeddings: path.join(PROJECT_ROOT, "packages", "datasets", "data", "embeddings.sqlite.db"),
-      virginia: path.join(PROJECT_ROOT, "packages", "datasets", "data", "virginia.db"),
+      embeddings: path.join(
+        PROJECT_ROOT,
+        "packages",
+        "datasets",
+        "data",
+        "embeddings.sqlite.db",
+      ),
+      virginia: path.join(
+        PROJECT_ROOT,
+        "packages",
+        "datasets",
+        "data",
+        "virginia.db",
+      ),
     };
   }
   return {
-    embeddings: path.join(process.resourcesPath, "explorer-data", "embeddings.sqlite.db"),
+    embeddings: path.join(
+      process.resourcesPath,
+      "explorer-data",
+      "embeddings.sqlite.db",
+    ),
     virginia: path.join(process.resourcesPath, "explorer-data", "virginia.db"),
   };
 }
@@ -124,13 +150,18 @@ function getExplorerDbPaths(): { embeddings: string; virginia: string } {
 function startExplorer(): ChildProcess | null {
   const dbPaths = getExplorerDbPaths();
   if (!fs.existsSync(dbPaths.embeddings)) {
-    console.warn("[explorer] Embeddings DB not found, skipping explorer:", dbPaths.embeddings);
+    console.warn(
+      "[explorer] Embeddings DB not found, skipping explorer:",
+      dbPaths.embeddings,
+    );
     return null;
   }
 
   const args = [
-    "--embeddings", dbPaths.embeddings,
-    "--port", String(EXPLORER_PORT),
+    "--embeddings",
+    dbPaths.embeddings,
+    "--port",
+    String(EXPLORER_PORT),
   ];
   if (fs.existsSync(dbPaths.virginia)) {
     args.push("--virginia", dbPaths.virginia);
@@ -138,20 +169,32 @@ function startExplorer(): ChildProcess | null {
 
   if (isDev) {
     console.log("[electron] Starting dev explorer with bun...");
-    const explorerEntry = path.join(PROJECT_ROOT, "packages", "embeddings", "explorer", "server.ts");
+    const explorerEntry = path.join(
+      PROJECT_ROOT,
+      "packages",
+      "embeddings",
+      "explorer",
+      "server.ts",
+    );
     return spawn("bun", ["run", explorerEntry, ...args], {
       stdio: ["ignore", "pipe", "pipe"],
     });
   }
 
-  const explorerBin = path.join(getResourcePath("dist-server"), "proseva-explorer");
+  const explorerBin = path.join(
+    getResourcePath("dist-server"),
+    "proseva-explorer",
+  );
   console.log("[electron] Starting compiled explorer:", explorerBin);
   return spawn(explorerBin, args, {
     stdio: ["ignore", "pipe", "pipe"],
   });
 }
 
-async function waitForExplorer(maxRetries = 20, delayMs = 500): Promise<boolean> {
+async function waitForExplorer(
+  maxRetries = 20,
+  delayMs = 500,
+): Promise<boolean> {
   for (let i = 0; i < maxRetries; i++) {
     try {
       await fetch(`${EXPLORER_URL}/graphql`, {
@@ -186,7 +229,13 @@ function createWindow(): void {
   });
 
   if (isDev) {
-    const guiDist = path.join(PROJECT_ROOT, "packages", "gui", "dist", "index.html");
+    const guiDist = path.join(
+      PROJECT_ROOT,
+      "packages",
+      "gui",
+      "dist",
+      "index.html",
+    );
     mainWindow.loadFile(guiDist);
   } else {
     mainWindow.loadFile(path.join(process.resourcesPath, "dist", "index.html"));
@@ -236,7 +285,8 @@ async function handleRequest(req: BridgeRequest | Request): Promise<Response> {
     request = new Request(toServerUrl(u.pathname + u.search), {
       method: r.method,
       headers: r.headers,
-      body: r.method === "GET" || r.method === "HEAD" ? undefined : (r as any).body,
+      body:
+        r.method === "GET" || r.method === "HEAD" ? undefined : (r as any).body,
     });
   } else {
     const r = req as BridgeRequest;
@@ -337,8 +387,13 @@ app.whenReady().then(async () => {
 
   // Wait for server (required) and explorer (optional) in parallel
   const serverReadyPromise = waitForServer();
-  const explorerReadyPromise = explorerProcess ? waitForExplorer() : Promise.resolve(false);
-  const [serverReady, explorerReady] = await Promise.all([serverReadyPromise, explorerReadyPromise]);
+  const explorerReadyPromise = explorerProcess
+    ? waitForExplorer()
+    : Promise.resolve(false);
+  const [serverReady, explorerReady] = await Promise.all([
+    serverReadyPromise,
+    explorerReadyPromise,
+  ]);
 
   if (!serverReady) {
     console.error("[electron] Could not start server, quitting.");
@@ -354,7 +409,9 @@ app.whenReady().then(async () => {
   }
 
   if (!explorerReady) {
-    console.warn("[electron] Explorer is not available — continuing without it.");
+    console.warn(
+      "[electron] Explorer is not available — continuing without it.",
+    );
   }
 
   createWindow();

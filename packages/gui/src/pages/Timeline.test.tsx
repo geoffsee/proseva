@@ -390,7 +390,11 @@ describe("Timeline", () => {
       const ruler = screen.getByText("2024");
       // Walk up to the grab-cursor container
       let el = ruler.parentElement!;
-      while (el && !el.style?.cursor && !el.getAttribute("style")?.includes("grab")) {
+      while (
+        el &&
+        !el.style?.cursor &&
+        !el.getAttribute("style")?.includes("grab")
+      ) {
         // The container is the one with the ref - it's the parent of the ruler box
         if (el.parentElement) {
           el = el.parentElement;
@@ -406,13 +410,24 @@ describe("Timeline", () => {
 
       const container = getTimelineContainer();
       Object.defineProperty(container, "getBoundingClientRect", {
-        value: () => ({ left: 0, width: 1000, top: 0, height: 200, right: 1000, bottom: 200 }),
+        value: () => ({
+          left: 0,
+          width: 1000,
+          top: 0,
+          height: 200,
+          right: 1000,
+          bottom: 200,
+        }),
       });
 
       // Scroll up (zoom in) at the center of the timeline
       act(() => {
         container.dispatchEvent(
-          new WheelEvent("wheel", { deltaY: -100, clientX: 500, bubbles: true }),
+          new WheelEvent("wheel", {
+            deltaY: -100,
+            clientX: 500,
+            bubbles: true,
+          }),
         );
       });
 
@@ -427,7 +442,14 @@ describe("Timeline", () => {
 
       const container = getTimelineContainer();
       Object.defineProperty(container, "getBoundingClientRect", {
-        value: () => ({ left: 0, width: 1000, top: 0, height: 200, right: 1000, bottom: 200 }),
+        value: () => ({
+          left: 0,
+          width: 1000,
+          top: 0,
+          height: 200,
+          right: 1000,
+          bottom: 200,
+        }),
       });
 
       // Scroll down (zoom out)
@@ -447,7 +469,14 @@ describe("Timeline", () => {
 
       const container = getTimelineContainer();
       Object.defineProperty(container, "getBoundingClientRect", {
-        value: () => ({ left: 0, width: 1000, top: 0, height: 200, right: 1000, bottom: 200 }),
+        value: () => ({
+          left: 0,
+          width: 1000,
+          top: 0,
+          height: 200,
+          right: 1000,
+          bottom: 200,
+        }),
       });
 
       // Zoom in at the left edge (clientX=0)
@@ -515,7 +544,14 @@ describe("Timeline", () => {
 
       const container = getTimelineContainer();
       Object.defineProperty(container, "getBoundingClientRect", {
-        value: () => ({ left: 0, width: 1000, top: 0, height: 200, right: 1000, bottom: 200 }),
+        value: () => ({
+          left: 0,
+          width: 1000,
+          top: 0,
+          height: 200,
+          right: 1000,
+          bottom: 200,
+        }),
       });
 
       // Drag left: mousedown at 500, then mousemove to 300 (200px left)
@@ -545,7 +581,14 @@ describe("Timeline", () => {
 
       const container = getTimelineContainer();
       Object.defineProperty(container, "getBoundingClientRect", {
-        value: () => ({ left: 0, width: 1000, top: 0, height: 200, right: 1000, bottom: 200 }),
+        value: () => ({
+          left: 0,
+          width: 1000,
+          top: 0,
+          height: 200,
+          right: 1000,
+          bottom: 200,
+        }),
       });
 
       // Drag right: mousedown at 500, then mousemove to 700 (200px right)
@@ -577,7 +620,14 @@ describe("Timeline", () => {
 
       const container = getTimelineContainer();
       Object.defineProperty(container, "getBoundingClientRect", {
-        value: () => ({ left: 0, width: 1000, top: 0, height: 200, right: 1000, bottom: 200 }),
+        value: () => ({
+          left: 0,
+          width: 1000,
+          top: 0,
+          height: 200,
+          right: 1000,
+          bottom: 200,
+        }),
       });
 
       act(() => {
@@ -609,7 +659,14 @@ describe("Timeline", () => {
 
       const container = getTimelineContainer();
       Object.defineProperty(container, "getBoundingClientRect", {
-        value: () => ({ left: 0, width: 1000, top: 0, height: 200, right: 1000, bottom: 200 }),
+        value: () => ({
+          left: 0,
+          width: 1000,
+          top: 0,
+          height: 200,
+          right: 1000,
+          bottom: 200,
+        }),
       });
 
       // Drag and release

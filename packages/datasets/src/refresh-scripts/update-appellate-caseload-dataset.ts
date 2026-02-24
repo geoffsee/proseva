@@ -3,10 +3,7 @@
 import { configureFetchForDataset, getDatasetResources, HEADERS } from "../lib";
 import { pdfToJson } from "../etl/pdf-json";
 
-const DIR = new URL(
-  "../../data/appellate_caseload/",
-  import.meta.url
-).pathname;
+const DIR = new URL("../../data/appellate_caseload/", import.meta.url).pathname;
 
 const currentYear = new Date().getFullYear();
 
@@ -31,7 +28,7 @@ for (const year of [currentYear, currentYear - 1]) {
       } catch {
         return false;
       }
-    })
+    }),
   );
 
   const present = resources.filter((_, i) => ok[i]);
@@ -43,17 +40,20 @@ for (const year of [currentYear, currentYear - 1]) {
 }
 
 if (!foundYear || !foundResources.length) {
-  console.log(
-    `  no report found for ${currentYear} or ${currentYear - 1}`
-  );
+  console.log(`  no report found for ${currentYear} or ${currentYear - 1}`);
   console.log("Done.");
   process.exit(0);
 }
 
 for (const { url, localName } of foundResources) {
-  const courtDir =
-    localName.startsWith("scv_") ? "scv" : localName.startsWith("cav_") ? "cav" : "";
-  const outpath = courtDir ? `${DIR}/${courtDir}/${localName}` : `${DIR}/${localName}`;
+  const courtDir = localName.startsWith("scv_")
+    ? "scv"
+    : localName.startsWith("cav_")
+      ? "cav"
+      : "";
+  const outpath = courtDir
+    ? `${DIR}/${courtDir}/${localName}`
+    : `${DIR}/${localName}`;
 
   process.stdout.write(`  ${outpath.replace(`${DIR}/`, "").padEnd(40)} `);
   try {

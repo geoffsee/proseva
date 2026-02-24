@@ -538,9 +538,7 @@ function createResearchRouter() {
    */
   // Search court opinions using CourtListener API
   // Rate limited: 20 requests per 15 minutes per IP
-  router.get(
-    "/research/opinions/search",
-    async (request: Request) => {
+  router.get("/research/opinions/search", async (request: Request) => {
     const requestId =
       request.headers.get("X-Request-Id") || crypto.randomUUID();
     const url = new URL(request.url);
@@ -721,8 +719,7 @@ function createResearchRouter() {
         { "X-Request-Id": requestId },
       );
     }
-    }
-  );
+  });
 
   /**
    * Retrieve full details of a specific court opinion.
@@ -2369,9 +2366,7 @@ function createResearchRouter() {
     const pathParts = url.pathname.split("/");
     const caseId = pathParts[pathParts.length - 1];
 
-    console.log(
-      `[ResearchRouter ${requestId}] GET /research/cases/${caseId}`,
-    );
+    console.log(`[ResearchRouter ${requestId}] GET /research/cases/${caseId}`);
 
     try {
       const userEmail = LOCAL_USER;
@@ -2445,9 +2440,7 @@ function createResearchRouter() {
     const pathParts = url.pathname.split("/");
     const caseId = pathParts[pathParts.length - 1];
 
-    console.log(
-      `[ResearchRouter ${requestId}] PUT /research/cases/${caseId}`,
-    );
+    console.log(`[ResearchRouter ${requestId}] PUT /research/cases/${caseId}`);
 
     try {
       const userEmail = LOCAL_USER;
@@ -2687,81 +2680,41 @@ function createResearchRouter() {
    * }
    */
   // Save a search to a case
-  router.post(
-    "/research/cases/:caseId/searches",
-    async (request: Request) => {
-      const requestId =
-        request.headers.get("X-Request-Id") || crypto.randomUUID();
-      const url = new URL(request.url);
-      const pathParts = url.pathname.split("/");
-      const caseId = pathParts[pathParts.length - 2];
+  router.post("/research/cases/:caseId/searches", async (request: Request) => {
+    const requestId =
+      request.headers.get("X-Request-Id") || crypto.randomUUID();
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split("/");
+    const caseId = pathParts[pathParts.length - 2];
 
-      console.log(
-        `[ResearchRouter ${requestId}] POST /research/cases/${caseId}/searches`,
-      );
+    console.log(
+      `[ResearchRouter ${requestId}] POST /research/cases/${caseId}/searches`,
+    );
 
-      try {
-        const userEmail = LOCAL_USER;
+    try {
+      const userEmail = LOCAL_USER;
 
-        const persistence = createPersistenceManager();
-        const existingCase = await persistence.paralegal.getCase(caseId);
+      const persistence = createPersistenceManager();
+      const existingCase = await persistence.paralegal.getCase(caseId);
 
-        if (!existingCase || existingCase.userEmail !== userEmail) {
-          return new Response(JSON.stringify({ error: "Case not found" }), {
-            status: 404,
-            headers: {
-              "Content-Type": "application/json",
-              "X-Request-Id": requestId,
-            },
-          });
-        }
-
-        const body = await request.json().catch(() => ({}));
-        const validated = SavedSearchSchema.safeParse(body);
-
-        if (!validated.success) {
-          return new Response(
-            JSON.stringify({ error: "Invalid search request body" }),
-            {
-              status: 400,
-              headers: {
-                "Content-Type": "application/json",
-                "X-Request-Id": requestId,
-              },
-            },
-          );
-        }
-
-        const savedSearch = {
-          id: generateUniqueId("search"),
-          name: validated.data.name,
-          query: validated.data.query || "",
-          searchType: validated.data.searchType || "opinions",
-          filters: validated.data.filters || {},
-          resultCount: validated.data.resultCount || 0,
-          createdAt: Date.now(),
-        };
-
-        await persistence.paralegal.addSavedSearch(caseId, savedSearch);
-
-        return new Response(JSON.stringify({ search: savedSearch }), {
-          status: 201,
+      if (!existingCase || existingCase.userEmail !== userEmail) {
+        return new Response(JSON.stringify({ error: "Case not found" }), {
+          status: 404,
           headers: {
             "Content-Type": "application/json",
             "X-Request-Id": requestId,
           },
         });
-      } catch (err) {
-        console.error(
-          `[ResearchRouter ${requestId}] ERROR:`,
-          (err as Error)?.message,
-        );
+      }
+
+      const body = await request.json().catch(() => ({}));
+      const validated = SavedSearchSchema.safeParse(body);
+
+      if (!validated.success) {
         return new Response(
-          JSON.stringify({
-            error: sanitizeError(err, "Failed to save search"),
-          }),
+          JSON.stringify({ error: "Invalid search request body" }),
           {
-            status: 500,
+            status: 400,
             headers: {
               "Content-Type": "application/json",
               "X-Request-Id": requestId,
@@ -2769,8 +2722,45 @@ function createResearchRouter() {
           },
         );
       }
-    },
-  );
+
+      const savedSearch = {
+        id: generateUniqueId("search"),
+        name: validated.data.name,
+        query: validated.data.query || "",
+        searchType: validated.data.searchType || "opinions",
+        filters: validated.data.filters || {},
+        resultCount: validated.data.resultCount || 0,
+        createdAt: Date.now(),
+      };
+
+      await persistence.paralegal.addSavedSearch(caseId, savedSearch);
+
+      return new Response(JSON.stringify({ search: savedSearch }), {
+        status: 201,
+        headers: {
+          "Content-Type": "application/json",
+          "X-Request-Id": requestId,
+        },
+      });
+    } catch (err) {
+      console.error(
+        `[ResearchRouter ${requestId}] ERROR:`,
+        (err as Error)?.message,
+      );
+      return new Response(
+        JSON.stringify({
+          error: sanitizeError(err, "Failed to save search"),
+        }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+            "X-Request-Id": requestId,
+          },
+        },
+      );
+    }
+  });
 
   // ========================================================================
   // AI SUMMARY ENDPOINTS
@@ -2814,73 +2804,74 @@ function createResearchRouter() {
    * }
    */
   // Generate AI summary for content
-  router.post(
-    "/research/cases/:caseId/summarize",
-    async (request: Request) => {
-      const requestId =
-        request.headers.get("X-Request-Id") || crypto.randomUUID();
-      const url = new URL(request.url);
-      const pathParts = url.pathname.split("/");
-      const caseId = pathParts[pathParts.length - 2];
+  router.post("/research/cases/:caseId/summarize", async (request: Request) => {
+    const requestId =
+      request.headers.get("X-Request-Id") || crypto.randomUUID();
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split("/");
+    const caseId = pathParts[pathParts.length - 2];
 
-      console.log(
-        `[ResearchRouter ${requestId}] POST /research/cases/${caseId}/summarize`,
-      );
+    console.log(
+      `[ResearchRouter ${requestId}] POST /research/cases/${caseId}/summarize`,
+    );
 
-      try {
-        const userEmail = LOCAL_USER;
+    try {
+      const userEmail = LOCAL_USER;
 
-        if (!getConfig("OPENAI_API_KEY")) {
-          return new Response(
-            JSON.stringify({ error: "AI service not configured" }),
-            {
-              status: 503,
-              headers: {
-                "Content-Type": "application/json",
-                "X-Request-Id": requestId,
-              },
-            },
-          );
-        }
-
-        const persistence = createPersistenceManager();
-        const existingCase = await persistence.paralegal.getCase(caseId);
-
-        if (!existingCase || existingCase.userEmail !== userEmail) {
-          return new Response(JSON.stringify({ error: "Case not found" }), {
-            status: 404,
+      if (!getConfig("OPENAI_API_KEY")) {
+        return new Response(
+          JSON.stringify({ error: "AI service not configured" }),
+          {
+            status: 503,
             headers: {
               "Content-Type": "application/json",
               "X-Request-Id": requestId,
             },
-          });
-        }
+          },
+        );
+      }
 
-        const body = await request.json().catch(() => ({}));
-        const validated = SummarizeDocumentSchema.safeParse(body);
+      const persistence = createPersistenceManager();
+      const existingCase = await persistence.paralegal.getCase(caseId);
 
-        if (!validated.success) {
-          return new Response(
-            JSON.stringify({ error: "Invalid summarize request body" }),
-            {
-              status: 400,
-              headers: {
-                "Content-Type": "application/json",
-                "X-Request-Id": requestId,
-              },
+      if (!existingCase || existingCase.userEmail !== userEmail) {
+        return new Response(JSON.stringify({ error: "Case not found" }), {
+          status: 404,
+          headers: {
+            "Content-Type": "application/json",
+            "X-Request-Id": requestId,
+          },
+        });
+      }
+
+      const body = await request.json().catch(() => ({}));
+      const validated = SummarizeDocumentSchema.safeParse(body);
+
+      if (!validated.success) {
+        return new Response(
+          JSON.stringify({ error: "Invalid summarize request body" }),
+          {
+            status: 400,
+            headers: {
+              "Content-Type": "application/json",
+              "X-Request-Id": requestId,
             },
-          );
-        }
+          },
+        );
+      }
 
-        // Generate summary using OpenAI
-        const openai = new OpenAI({ apiKey: getConfig("OPENAI_API_KEY"), baseURL: getConfig("OPENAI_ENDPOINT") });
-        const message = await openai.chat.completions.create({
-          model: getConfig("TEXT_MODEL_SMALL") || "gpt-4o-mini",
-          max_tokens: 1024,
-          messages: [
-            {
-              role: "user",
-              content: `You are a legal research assistant. Analyze the following ${validated.data.sourceType} and provide:
+      // Generate summary using OpenAI
+      const openai = new OpenAI({
+        apiKey: getConfig("OPENAI_API_KEY"),
+        baseURL: getConfig("OPENAI_ENDPOINT"),
+      });
+      const message = await openai.chat.completions.create({
+        model: getConfig("TEXT_MODEL_SMALL") || "gpt-4o-mini",
+        max_tokens: 1024,
+        messages: [
+          {
+            role: "user",
+            content: `You are a legal research assistant. Analyze the following ${validated.data.sourceType} and provide:
 1. A concise summary (2-3 paragraphs)
 2. Key points (bullet list, max 5)
 3. Legal issues identified (bullet list, max 5)
@@ -2896,72 +2887,70 @@ Respond in JSON format:
   "keyPoints": ["...", "..."],
   "legalIssues": ["...", "..."]
 }`,
-            },
-          ],
-        });
+          },
+        ],
+      });
 
-        let summaryData;
-        try {
-          const responseText = message.choices[0]?.message?.content || "";
-          // Try to extract JSON from the response
-          const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-          summaryData = jsonMatch
-            ? JSON.parse(jsonMatch[0])
-            : {
-                summary: responseText,
-                keyPoints: [],
-                legalIssues: [],
-              };
-        } catch {
-          summaryData = {
-            summary:
-              message.choices[0]?.message?.content ||
-              "Summary generation failed",
-            keyPoints: [],
-            legalIssues: [],
-          };
-        }
-
-        const aiSummary = {
-          id: generateUniqueId("summary"),
-          sourceType: body.sourceType,
-          sourceId: body.sourceId,
-          sourceTitle: body.title,
-          summary: summaryData.summary,
-          keyPoints: summaryData.keyPoints || [],
-          legalIssues: summaryData.legalIssues || [],
-          createdAt: Date.now(),
+      let summaryData;
+      try {
+        const responseText = message.choices[0]?.message?.content || "";
+        // Try to extract JSON from the response
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        summaryData = jsonMatch
+          ? JSON.parse(jsonMatch[0])
+          : {
+              summary: responseText,
+              keyPoints: [],
+              legalIssues: [],
+            };
+      } catch {
+        summaryData = {
+          summary:
+            message.choices[0]?.message?.content || "Summary generation failed",
+          keyPoints: [],
+          legalIssues: [],
         };
+      }
 
-        await persistence.paralegal.addSummary(caseId, aiSummary);
+      const aiSummary = {
+        id: generateUniqueId("summary"),
+        sourceType: body.sourceType,
+        sourceId: body.sourceId,
+        sourceTitle: body.title,
+        summary: summaryData.summary,
+        keyPoints: summaryData.keyPoints || [],
+        legalIssues: summaryData.legalIssues || [],
+        createdAt: Date.now(),
+      };
 
-        return new Response(JSON.stringify({ summary: aiSummary }), {
-          status: 201,
+      await persistence.paralegal.addSummary(caseId, aiSummary);
+
+      return new Response(JSON.stringify({ summary: aiSummary }), {
+        status: 201,
+        headers: {
+          "Content-Type": "application/json",
+          "X-Request-Id": requestId,
+        },
+      });
+    } catch (err) {
+      console.error(
+        `[ResearchRouter ${requestId}] ERROR:`,
+        (err as Error)?.message,
+      );
+      return new Response(
+        JSON.stringify({
+          error: sanitizeError(err, "Failed to generate summary"),
+        }),
+        {
+          status: 500,
           headers: {
             "Content-Type": "application/json",
             "X-Request-Id": requestId,
           },
-        });
-      } catch (err) {
-        console.error(
-          `[ResearchRouter ${requestId}] ERROR:`,
-          (err as Error)?.message,
-        );
-        return new Response(
-          JSON.stringify({
-            error: sanitizeError(err, "Failed to generate summary"),
-          }),
-          {
-            status: 500,
-            headers: {
-              "Content-Type": "application/json",
-              "X-Request-Id": requestId,
-            },
-          },
-        );
-      }
-    },
-  );
+        },
+      );
+    }
+  });
 
   // ========================================================================
   // DOCUMENT ENDPOINTS
@@ -3203,11 +3192,12 @@ Respond in JSON format:
           });
         }
 
-        const documents = (existingCase.documents as Array<{
-          id: string;
-          attachmentId: string;
-          fileName?: string;
-        }>) ?? [];
+        const documents =
+          (existingCase.documents as Array<{
+            id: string;
+            attachmentId: string;
+            fileName?: string;
+          }>) ?? [];
         const document = documents.find((d) => d.id === docId);
         if (!document) {
           return new Response(JSON.stringify({ error: "Document not found" }), {
@@ -3266,7 +3256,10 @@ Respond in JSON format:
         }
 
         // Analyze with OpenAI
-        const openai = new OpenAI({ apiKey: getConfig("OPENAI_API_KEY"), baseURL: getConfig("OPENAI_ENDPOINT") });
+        const openai = new OpenAI({
+          apiKey: getConfig("OPENAI_API_KEY"),
+          baseURL: getConfig("OPENAI_ENDPOINT"),
+        });
         const prompt = validated.data.query
           ? `Analyze this legal document and answer: ${validated.data.query}\n\nDocument:\n${textContent.substring(0, 8000)}`
           : `Analyze this legal document and provide a summary with key findings:\n\n${textContent.substring(0, 8000)}`;
@@ -4370,7 +4363,10 @@ Respond in JSON format:
           );
         }
 
-        const openai = new OpenAI({ apiKey: getConfig("OPENAI_API_KEY"), baseURL: getConfig("OPENAI_ENDPOINT") });
+        const openai = new OpenAI({
+          apiKey: getConfig("OPENAI_API_KEY"),
+          baseURL: getConfig("OPENAI_ENDPOINT"),
+        });
 
         // Generate document
         console.log(

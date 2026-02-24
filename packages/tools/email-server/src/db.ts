@@ -8,10 +8,14 @@ export async function getInstanceById(env: Env, instanceId: string): Promise<Ins
 	return env.DB.prepare('SELECT * FROM instances WHERE instance_id = ?').bind(instanceId).first<Instance>();
 }
 
-export async function createInstance(env: Env, instanceId: string, emailAddress: string, publicKeyJwk: string, apiKeyHash: string): Promise<void> {
-	await env.DB.prepare(
-		'INSERT INTO instances (instance_id, email_address, public_key_jwk, api_key_hash) VALUES (?, ?, ?, ?)',
-	)
+export async function createInstance(
+	env: Env,
+	instanceId: string,
+	emailAddress: string,
+	publicKeyJwk: string,
+	apiKeyHash: string,
+): Promise<void> {
+	await env.DB.prepare('INSERT INTO instances (instance_id, email_address, public_key_jwk, api_key_hash) VALUES (?, ?, ?, ?)')
 		.bind(instanceId, emailAddress, publicKeyJwk, apiKeyHash)
 		.run();
 }
@@ -53,12 +57,14 @@ export async function getEmail(env: Env, emailId: string, instanceId: string): P
 }
 
 export async function markEmailPickedUp(env: Env, emailId: string): Promise<void> {
-	await env.DB.prepare("UPDATE emails SET picked_up = 1 WHERE email_id = ?").bind(emailId).run();
+	await env.DB.prepare('UPDATE emails SET picked_up = 1 WHERE email_id = ?').bind(emailId).run();
 }
 
 export async function deleteExpiredEmails(env: Env): Promise<string[]> {
-	const expired = await env.DB.prepare("SELECT email_id, r2_key FROM emails WHERE expires_at < datetime('now') AND picked_up = 0")
-		.all<{ email_id: string; r2_key: string }>();
+	const expired = await env.DB.prepare("SELECT email_id, r2_key FROM emails WHERE expires_at < datetime('now') AND picked_up = 0").all<{
+		email_id: string;
+		r2_key: string;
+	}>();
 
 	const r2Keys: string[] = [];
 	for (const row of expired.results) {

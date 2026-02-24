@@ -53,7 +53,9 @@ describe("explorerQuery", () => {
       });
 
       const { explorerQuery } = await import("./explorer-api");
-      await explorerQuery("query ($id: Int!) { node(id: $id) { id } }", { id: 1 });
+      await explorerQuery("query ($id: Int!) { node(id: $id) { id } }", {
+        id: 1,
+      });
 
       const body = JSON.parse(mockFetch.mock.calls[0][1].body);
       expect(body.variables).toEqual({ id: 1 });
@@ -116,7 +118,7 @@ describe("explorerQuery", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          errors: [{ message: "Cannot query field \"bogus\"" }],
+          errors: [{ message: 'Cannot query field "bogus"' }],
         }),
       });
 

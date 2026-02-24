@@ -139,193 +139,207 @@ function stripMaskedValues<T extends Record<string, unknown>>(
 router.get(
   "/config",
   asIttyRoute("get", "/config", () => {
-  const config = loadConfigFromDatabase();
-  const envConfig = {
-    firebase: {
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    },
-    twilio: {
-      accountSid: process.env.TWILIO_ACCOUNT_SID,
-      authToken: process.env.TWILIO_AUTH_TOKEN,
-      phoneNumber: process.env.TWILIO_PHONE_NUMBER,
-    },
-    scheduler: {
-      timezone: process.env.EVALUATION_TIMEZONE || "America/New_York",
-      enabled: process.env.EVALUATION_ENABLED !== "false",
-    },
-    ai: {
-      openaiApiKey: process.env.OPENAI_API_KEY,
-      openaiEndpoint: process.env.OPENAI_ENDPOINT,
-    },
-    autoIngest: {
-      directory: process.env.AUTO_INGEST_DIR,
-    },
-    legalResearch: {
-      courtListenerApiToken: process.env.COURTLISTENER_API_TOKEN,
-      legiscanApiKey: process.env.LEGISCAN_API_KEY,
-      govInfoApiKey: process.env.GOVINFO_API_KEY,
-      serpapiBase: process.env.SERPAPI_BASE,
-      serpapiApiKey: process.env.SERPAPI_API_KEY,
-    },
-    faxGateway: {
-      url: process.env.FAX_GATEWAY_URL,
-      username: process.env.FAX_GATEWAY_USERNAME,
-      password: process.env.FAX_GATEWAY_PASSWORD,
-    },
-    documentScanner: {
-      enabled: process.env.SCANNER_ENABLED === "true",
-      endpoints: process.env.SCANNER_ENDPOINTS,
-    },
-  };
+    const config = loadConfigFromDatabase();
+    const envConfig = {
+      firebase: {
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      },
+      twilio: {
+        accountSid: process.env.TWILIO_ACCOUNT_SID,
+        authToken: process.env.TWILIO_AUTH_TOKEN,
+        phoneNumber: process.env.TWILIO_PHONE_NUMBER,
+      },
+      scheduler: {
+        timezone: process.env.EVALUATION_TIMEZONE || "America/New_York",
+        enabled: process.env.EVALUATION_ENABLED !== "false",
+      },
+      ai: {
+        openaiApiKey: process.env.OPENAI_API_KEY,
+        openaiEndpoint: process.env.OPENAI_ENDPOINT,
+      },
+      autoIngest: {
+        directory: process.env.AUTO_INGEST_DIR,
+      },
+      legalResearch: {
+        courtListenerApiToken: process.env.COURTLISTENER_API_TOKEN,
+        legiscanApiKey: process.env.LEGISCAN_API_KEY,
+        govInfoApiKey: process.env.GOVINFO_API_KEY,
+        serpapiBase: process.env.SERPAPI_BASE,
+        serpapiApiKey: process.env.SERPAPI_API_KEY,
+      },
+      faxGateway: {
+        url: process.env.FAX_GATEWAY_URL,
+        username: process.env.FAX_GATEWAY_USERNAME,
+        password: process.env.FAX_GATEWAY_PASSWORD,
+      },
+      documentScanner: {
+        enabled: process.env.SCANNER_ENABLED === "true",
+        endpoints: process.env.SCANNER_ENDPOINTS,
+      },
+    };
 
-  // Merge config with environment fallbacks and mask sensitive fields
-  const response = {
-    firebase: {
-      projectId: config?.firebase?.projectId || envConfig.firebase.projectId,
-      privateKey: maskSensitiveValue(
-        config?.firebase?.privateKey || envConfig.firebase.privateKey,
-      ),
-      clientEmail:
-        config?.firebase?.clientEmail || envConfig.firebase.clientEmail,
-      // Indicate source
-      projectIdSource: config?.firebase?.projectId ? "database" : "environment",
-      privateKeySource: config?.firebase?.privateKey
-        ? "database"
-        : "environment",
-      clientEmailSource: config?.firebase?.clientEmail
-        ? "database"
-        : "environment",
-    },
-    twilio: {
-      accountSid: maskSensitiveValue(
-        config?.twilio?.accountSid || envConfig.twilio.accountSid,
-      ),
-      authToken: maskSensitiveValue(
-        config?.twilio?.authToken || envConfig.twilio.authToken,
-      ),
-      phoneNumber: config?.twilio?.phoneNumber || envConfig.twilio.phoneNumber,
-      accountSidSource: config?.twilio?.accountSid ? "database" : "environment",
-      authTokenSource: config?.twilio?.authToken ? "database" : "environment",
-      phoneNumberSource: config?.twilio?.phoneNumber
-        ? "database"
-        : "environment",
-    },
-    scheduler: {
-      timezone: config?.scheduler?.timezone || envConfig.scheduler.timezone,
-      enabled: config?.scheduler?.enabled ?? envConfig.scheduler.enabled,
-      timezoneSource: config?.scheduler?.timezone ? "database" : "environment",
-      enabledSource:
-        config?.scheduler?.enabled !== undefined ? "database" : "environment",
-    },
-    ai: {
-      openaiApiKey: maskSensitiveValue(
-        config?.ai?.openaiApiKey || envConfig.ai.openaiApiKey,
-      ),
-      openaiEndpoint: config?.ai?.openaiEndpoint || envConfig.ai.openaiEndpoint,
-      openaiApiKeySource: config?.ai?.openaiApiKey ? "database" : "environment",
-      openaiEndpointSource: config?.ai?.openaiEndpoint
-        ? "database"
-        : "environment",
-    },
-    autoIngest: {
-      directory:
-        config?.autoIngest?.directory || envConfig.autoIngest.directory,
-      directorySource: config?.autoIngest?.directory
-        ? "database"
-        : "environment",
-    },
-    legalResearch: {
-      courtListenerApiToken: maskSensitiveValue(
-        config?.legalResearch?.courtListenerApiToken ||
-          envConfig.legalResearch.courtListenerApiToken,
-      ),
-      legiscanApiKey: maskSensitiveValue(
-        config?.legalResearch?.legiscanApiKey ||
-          envConfig.legalResearch.legiscanApiKey,
-      ),
-      govInfoApiKey: maskSensitiveValue(
-        config?.legalResearch?.govInfoApiKey ||
-          envConfig.legalResearch.govInfoApiKey,
-      ),
-      serpapiBase:
-        config?.legalResearch?.serpapiBase ||
-        envConfig.legalResearch.serpapiBase,
-      serpapiApiKey: maskSensitiveValue(
-        config?.legalResearch?.serpapiApiKey ||
-          envConfig.legalResearch.serpapiApiKey,
-      ),
-      courtListenerApiTokenSource: config?.legalResearch?.courtListenerApiToken
-        ? "database"
-        : "environment",
-      legiscanApiKeySource: config?.legalResearch?.legiscanApiKey
-        ? "database"
-        : "environment",
-      govInfoApiKeySource: config?.legalResearch?.govInfoApiKey
-        ? "database"
-        : "environment",
-      serpapiBaseSource: config?.legalResearch?.serpapiBase
-        ? "database"
-        : "environment",
-      serpapiApiKeySource: config?.legalResearch?.serpapiApiKey
-        ? "database"
-        : "environment",
-    },
-    prompts: {
-      chatSystemPrompt: config?.prompts?.chatSystemPrompt,
-      caseSummaryPrompt: config?.prompts?.caseSummaryPrompt,
-      evaluatorPrompt: config?.prompts?.evaluatorPrompt,
-      chatSystemPromptSource: config?.prompts?.chatSystemPrompt
-        ? "database"
-        : "default",
-      caseSummaryPromptSource: config?.prompts?.caseSummaryPrompt
-        ? "database"
-        : "default",
-      evaluatorPromptSource: config?.prompts?.evaluatorPrompt
-        ? "database"
-        : "default",
-    },
-    faxGateway: {
-      url: config?.faxGateway?.url || envConfig.faxGateway.url,
-      username: config?.faxGateway?.username || envConfig.faxGateway.username,
-      password: maskSensitiveValue(
-        config?.faxGateway?.password || envConfig.faxGateway.password,
-      ),
-      urlSource: config?.faxGateway?.url ? "database" : "environment",
-      usernameSource: config?.faxGateway?.username
-        ? "database"
-        : "environment",
-      passwordSource: config?.faxGateway?.password
-        ? "database"
-        : "environment",
-    },
-    documentScanner: {
-      enabled:
-        config?.documentScanner?.enabled ?? envConfig.documentScanner.enabled,
-      endpoints:
-        config?.documentScanner?.endpoints ||
-        envConfig.documentScanner.endpoints,
-      enabledSource:
-        config?.documentScanner?.enabled !== undefined
+    // Merge config with environment fallbacks and mask sensitive fields
+    const response = {
+      firebase: {
+        projectId: config?.firebase?.projectId || envConfig.firebase.projectId,
+        privateKey: maskSensitiveValue(
+          config?.firebase?.privateKey || envConfig.firebase.privateKey,
+        ),
+        clientEmail:
+          config?.firebase?.clientEmail || envConfig.firebase.clientEmail,
+        // Indicate source
+        projectIdSource: config?.firebase?.projectId
           ? "database"
           : "environment",
-      endpointsSource: config?.documentScanner?.endpoints
-        ? "database"
-        : "environment",
-    },
-    email: {
-      instanceId: config?.email?.instanceId,
-      emailAddress: config?.email?.emailAddress,
-      apiKey: maskSensitiveValue(config?.email?.apiKey),
-      pollingEnabled: config?.email?.pollingEnabled ?? false,
-      pollingIntervalSeconds: config?.email?.pollingIntervalSeconds ?? 60,
-      workerUrl: config?.email?.workerUrl || process.env.EMAIL_WORKER_URL || "https://email.proseva.app",
-    },
-  };
+        privateKeySource: config?.firebase?.privateKey
+          ? "database"
+          : "environment",
+        clientEmailSource: config?.firebase?.clientEmail
+          ? "database"
+          : "environment",
+      },
+      twilio: {
+        accountSid: maskSensitiveValue(
+          config?.twilio?.accountSid || envConfig.twilio.accountSid,
+        ),
+        authToken: maskSensitiveValue(
+          config?.twilio?.authToken || envConfig.twilio.authToken,
+        ),
+        phoneNumber:
+          config?.twilio?.phoneNumber || envConfig.twilio.phoneNumber,
+        accountSidSource: config?.twilio?.accountSid
+          ? "database"
+          : "environment",
+        authTokenSource: config?.twilio?.authToken ? "database" : "environment",
+        phoneNumberSource: config?.twilio?.phoneNumber
+          ? "database"
+          : "environment",
+      },
+      scheduler: {
+        timezone: config?.scheduler?.timezone || envConfig.scheduler.timezone,
+        enabled: config?.scheduler?.enabled ?? envConfig.scheduler.enabled,
+        timezoneSource: config?.scheduler?.timezone
+          ? "database"
+          : "environment",
+        enabledSource:
+          config?.scheduler?.enabled !== undefined ? "database" : "environment",
+      },
+      ai: {
+        openaiApiKey: maskSensitiveValue(
+          config?.ai?.openaiApiKey || envConfig.ai.openaiApiKey,
+        ),
+        openaiEndpoint:
+          config?.ai?.openaiEndpoint || envConfig.ai.openaiEndpoint,
+        openaiApiKeySource: config?.ai?.openaiApiKey
+          ? "database"
+          : "environment",
+        openaiEndpointSource: config?.ai?.openaiEndpoint
+          ? "database"
+          : "environment",
+      },
+      autoIngest: {
+        directory:
+          config?.autoIngest?.directory || envConfig.autoIngest.directory,
+        directorySource: config?.autoIngest?.directory
+          ? "database"
+          : "environment",
+      },
+      legalResearch: {
+        courtListenerApiToken: maskSensitiveValue(
+          config?.legalResearch?.courtListenerApiToken ||
+            envConfig.legalResearch.courtListenerApiToken,
+        ),
+        legiscanApiKey: maskSensitiveValue(
+          config?.legalResearch?.legiscanApiKey ||
+            envConfig.legalResearch.legiscanApiKey,
+        ),
+        govInfoApiKey: maskSensitiveValue(
+          config?.legalResearch?.govInfoApiKey ||
+            envConfig.legalResearch.govInfoApiKey,
+        ),
+        serpapiBase:
+          config?.legalResearch?.serpapiBase ||
+          envConfig.legalResearch.serpapiBase,
+        serpapiApiKey: maskSensitiveValue(
+          config?.legalResearch?.serpapiApiKey ||
+            envConfig.legalResearch.serpapiApiKey,
+        ),
+        courtListenerApiTokenSource: config?.legalResearch
+          ?.courtListenerApiToken
+          ? "database"
+          : "environment",
+        legiscanApiKeySource: config?.legalResearch?.legiscanApiKey
+          ? "database"
+          : "environment",
+        govInfoApiKeySource: config?.legalResearch?.govInfoApiKey
+          ? "database"
+          : "environment",
+        serpapiBaseSource: config?.legalResearch?.serpapiBase
+          ? "database"
+          : "environment",
+        serpapiApiKeySource: config?.legalResearch?.serpapiApiKey
+          ? "database"
+          : "environment",
+      },
+      prompts: {
+        chatSystemPrompt: config?.prompts?.chatSystemPrompt,
+        caseSummaryPrompt: config?.prompts?.caseSummaryPrompt,
+        evaluatorPrompt: config?.prompts?.evaluatorPrompt,
+        chatSystemPromptSource: config?.prompts?.chatSystemPrompt
+          ? "database"
+          : "default",
+        caseSummaryPromptSource: config?.prompts?.caseSummaryPrompt
+          ? "database"
+          : "default",
+        evaluatorPromptSource: config?.prompts?.evaluatorPrompt
+          ? "database"
+          : "default",
+      },
+      faxGateway: {
+        url: config?.faxGateway?.url || envConfig.faxGateway.url,
+        username: config?.faxGateway?.username || envConfig.faxGateway.username,
+        password: maskSensitiveValue(
+          config?.faxGateway?.password || envConfig.faxGateway.password,
+        ),
+        urlSource: config?.faxGateway?.url ? "database" : "environment",
+        usernameSource: config?.faxGateway?.username
+          ? "database"
+          : "environment",
+        passwordSource: config?.faxGateway?.password
+          ? "database"
+          : "environment",
+      },
+      documentScanner: {
+        enabled:
+          config?.documentScanner?.enabled ?? envConfig.documentScanner.enabled,
+        endpoints:
+          config?.documentScanner?.endpoints ||
+          envConfig.documentScanner.endpoints,
+        enabledSource:
+          config?.documentScanner?.enabled !== undefined
+            ? "database"
+            : "environment",
+        endpointsSource: config?.documentScanner?.endpoints
+          ? "database"
+          : "environment",
+      },
+      email: {
+        instanceId: config?.email?.instanceId,
+        emailAddress: config?.email?.emailAddress,
+        apiKey: maskSensitiveValue(config?.email?.apiKey),
+        pollingEnabled: config?.email?.pollingEnabled ?? false,
+        pollingIntervalSeconds: config?.email?.pollingIntervalSeconds ?? 60,
+        workerUrl:
+          config?.email?.workerUrl ||
+          process.env.EMAIL_WORKER_URL ||
+          "https://email.proseva.app",
+      },
+    };
 
-  return response;
-}),
+    return response;
+  }),
 );
 
 /**
@@ -337,75 +351,75 @@ router.patch(
     try {
       const updates = await req.json();
 
-    // Get existing config or create new one
-    let config = db.serverConfig.get("singleton");
-    if (!config) {
-      config = {
-        id: "singleton",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-    } else {
-      config = { ...config, updatedAt: new Date().toISOString() };
-    }
+      // Get existing config or create new one
+      let config = db.serverConfig.get("singleton");
+      if (!config) {
+        config = {
+          id: "singleton",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      } else {
+        config = { ...config, updatedAt: new Date().toISOString() };
+      }
 
-    // Merge updates (strip masked placeholder values so they don't
-    // overwrite real secrets stored in the database)
-    if (updates.firebase) {
-      config.firebase = {
-        ...config.firebase,
-        ...stripMaskedValues(updates.firebase),
-      };
-    }
-    if (updates.twilio) {
-      config.twilio = {
-        ...config.twilio,
-        ...stripMaskedValues(updates.twilio),
-      };
-    }
-    if (updates.scheduler) {
-      config.scheduler = { ...config.scheduler, ...updates.scheduler };
-    }
-    if (updates.ai) {
-      config.ai = { ...config.ai, ...stripMaskedValues(updates.ai) };
-    }
-    if (updates.autoIngest) {
-      config.autoIngest = { ...config.autoIngest, ...updates.autoIngest };
-    }
-    if (updates.legalResearch) {
-      config.legalResearch = {
-        ...config.legalResearch,
-        ...stripMaskedValues(updates.legalResearch),
-      };
-    }
-    if (updates.prompts) {
-      config.prompts = { ...config.prompts, ...updates.prompts };
-    }
-    if (updates.faxGateway) {
-      config.faxGateway = {
-        ...config.faxGateway,
-        ...stripMaskedValues(updates.faxGateway),
-      };
-    }
-    if (updates.documentScanner) {
-      config.documentScanner = {
-        ...config.documentScanner,
-        ...updates.documentScanner,
-      };
-    }
-    if (updates.email) {
-      config.email = {
-        ...config.email,
-        ...stripMaskedValues(updates.email),
-      };
-    }
+      // Merge updates (strip masked placeholder values so they don't
+      // overwrite real secrets stored in the database)
+      if (updates.firebase) {
+        config.firebase = {
+          ...config.firebase,
+          ...stripMaskedValues(updates.firebase),
+        };
+      }
+      if (updates.twilio) {
+        config.twilio = {
+          ...config.twilio,
+          ...stripMaskedValues(updates.twilio),
+        };
+      }
+      if (updates.scheduler) {
+        config.scheduler = { ...config.scheduler, ...updates.scheduler };
+      }
+      if (updates.ai) {
+        config.ai = { ...config.ai, ...stripMaskedValues(updates.ai) };
+      }
+      if (updates.autoIngest) {
+        config.autoIngest = { ...config.autoIngest, ...updates.autoIngest };
+      }
+      if (updates.legalResearch) {
+        config.legalResearch = {
+          ...config.legalResearch,
+          ...stripMaskedValues(updates.legalResearch),
+        };
+      }
+      if (updates.prompts) {
+        config.prompts = { ...config.prompts, ...updates.prompts };
+      }
+      if (updates.faxGateway) {
+        config.faxGateway = {
+          ...config.faxGateway,
+          ...stripMaskedValues(updates.faxGateway),
+        };
+      }
+      if (updates.documentScanner) {
+        config.documentScanner = {
+          ...config.documentScanner,
+          ...updates.documentScanner,
+        };
+      }
+      if (updates.email) {
+        config.email = {
+          ...config.email,
+          ...stripMaskedValues(updates.email),
+        };
+      }
 
-    // Save to database
-    db.serverConfig.set("singleton", config);
-    db.persist();
+      // Save to database
+      db.serverConfig.set("singleton", config);
+      db.persist();
 
-    // Invalidate cache
-    invalidateConfigCache();
+      // Invalidate cache
+      invalidateConfigCache();
 
       return { success: true, config };
     } catch (error) {
@@ -718,7 +732,10 @@ router.post(
       } else if (service === "email") {
         restartEmailPoller();
       } else {
-        return json(400, { success: false, error: `Unknown service: ${service}` });
+        return json(400, {
+          success: false,
+          error: `Unknown service: ${service}`,
+        });
       }
 
       return { success: true };

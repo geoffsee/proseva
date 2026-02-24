@@ -88,7 +88,10 @@ async function performScan(reason: string): Promise<void> {
       try {
         onScanComplete(buffer, filename);
       } catch (cbError) {
-        console.error(`[scanner:${id}] onScanComplete callback failed:`, cbError);
+        console.error(
+          `[scanner:${id}] onScanComplete callback failed:`,
+          cbError,
+        );
       }
     }
   } catch (error) {

@@ -1,101 +1,140 @@
 // lib.ts
 
 import type { PathLike } from "bun";
-import { utils } from '../../experimental/index.ts';
-
+import { utils } from "../../experimental/index.ts";
 
 export const USER_AGENT = utils.getUserAgent({ server: true });
 
 export const COMMON_HEADERS = {
   "User-Agent": USER_AGENT,
-  "Accept": "*/*",
+  Accept: "*/*",
 } as const;
 
 // Back-compat: refresh scripts import `HEADERS`.
 export const HEADERS = COMMON_HEADERS;
 
-export const usesRelativeDirectory = (path: PathLike)=> new URL(path.toString(), import.meta.url).pathname;
+export const usesRelativeDirectory = (path: PathLike) =>
+  new URL(path.toString(), import.meta.url).pathname;
 
 export type DatasetKey =
-    | "annual_reports"
-    | "appellate_caseload"
-    | "benchbook"
-    | "cac_manual"
-    | "case_law_authorities"
-    | "caseload_stats"
-    | "constitutional_law"
-    | "courts"
-    | "gdman"
-    | "jdrman"
-    | "other"
-    | "vcc"
-    | "virginia_code";
-
+  | "annual_reports"
+  | "appellate_caseload"
+  | "benchbook"
+  | "cac_manual"
+  | "case_law_authorities"
+  | "caseload_stats"
+  | "constitutional_law"
+  | "courts"
+  | "gdman"
+  | "jdrman"
+  | "other"
+  | "vcc"
+  | "virginia_code";
 
 export const DATASET_CONFIG: Record<
-    DatasetKey,
-    {
-      host: string;
-      basePath: string;
-      description: string;
-      resources?:
-          | Array<{ remotePath: string; localName: string }> // For static file lists
-          | ((year?: number) => Array<{ url: string; localName: string; isHtml?: boolean }>) // For dynamic (e.g., year-based)
-          | { pdfUrl: string; parser?: (pdfPath: string) => Promise<unknown> }; // For parsed datasets like courts
-      tlsRejectUnauthorized?: boolean; // For sites with cert issues (e.g., lis.virginia.gov)
-    }
+  DatasetKey,
+  {
+    host: string;
+    basePath: string;
+    description: string;
+    resources?:
+      | Array<{ remotePath: string; localName: string }> // For static file lists
+      | ((
+          year?: number,
+        ) => Array<{ url: string; localName: string; isHtml?: boolean }>) // For dynamic (e.g., year-based)
+      | { pdfUrl: string; parser?: (pdfPath: string) => Promise<unknown> }; // For parsed datasets like courts
+    tlsRejectUnauthorized?: boolean; // For sites with cert issues (e.g., lis.virginia.gov)
+  }
 > = {
   annual_reports: {
     host: "www.vacourts.gov",
     basePath: "/static/courts/sjr/reports",
-    description: "State of the Judiciary Annual Reports. Includes historical PDFs and recent HTML versions.",
+    description:
+      "State of the Judiciary Annual Reports. Includes historical PDFs and recent HTML versions.",
     resources: (year = new Date().getFullYear()) => [
-      { url: `https://ar.vacourts.gov/${year}annualreport.html`, localName: `state_of_the_judiciary_report_${year}.html`, isHtml: true },
-      { url: `https://www.vacourts.gov/static/courts/sjr/reports/${year}/state_of_the_judiciary_report.pdf`, localName: `state_of_the_judiciary_report_${year}.pdf`, isHtml: false },
-      { url: `https://www.vacourts.gov/static/courts/sjr/reports/${year}_sjr.pdf`, localName: `state_of_the_judiciary_report_${year}.pdf`, isHtml: false },
+      {
+        url: `https://ar.vacourts.gov/${year}annualreport.html`,
+        localName: `state_of_the_judiciary_report_${year}.html`,
+        isHtml: true,
+      },
+      {
+        url: `https://www.vacourts.gov/static/courts/sjr/reports/${year}/state_of_the_judiciary_report.pdf`,
+        localName: `state_of_the_judiciary_report_${year}.pdf`,
+        isHtml: false,
+      },
+      {
+        url: `https://www.vacourts.gov/static/courts/sjr/reports/${year}_sjr.pdf`,
+        localName: `state_of_the_judiciary_report_${year}.pdf`,
+        isHtml: false,
+      },
     ],
   },
   appellate_caseload: {
     host: "www.vacourts.gov",
     basePath: "/courtadmin/aoc/djs/programs/cpss/csi/stats",
-    description: "Caseload statistics for the Supreme Court of Virginia (SCV) and Court of Appeals of Virginia (CAV).",
+    description:
+      "Caseload statistics for the Supreme Court of Virginia (SCV) and Court of Appeals of Virginia (CAV).",
     resources: (year = new Date().getFullYear()) => [
-      { url: `/scv/scv_caseload_rpt_${year}.pdf`, localName: `scv_caseload_rpt_${year}.pdf` },
-      { url: `/cav/cav_caseload_rpt_${year}.pdf`, localName: `cav_caseload_rpt_${year}.pdf` },
+      {
+        url: `/scv/scv_caseload_rpt_${year}.pdf`,
+        localName: `scv_caseload_rpt_${year}.pdf`,
+      },
+      {
+        url: `/cav/cav_caseload_rpt_${year}.pdf`,
+        localName: `cav_caseload_rpt_${year}.pdf`,
+      },
     ],
   },
   benchbook: {
     host: "www.vacourts.gov",
     basePath: "/static/courts/gd/resources/manuals",
-    description: "District Court Judges' Benchbook, a comprehensive reference for Virginia district court judges.",
-    resources: [{ remotePath: "/districtcourtbenchbook.pdf", localName: "districtcourtbenchbook.pdf" }],
+    description:
+      "District Court Judges' Benchbook, a comprehensive reference for Virginia district court judges.",
+    resources: [
+      {
+        remotePath: "/districtcourtbenchbook.pdf",
+        localName: "districtcourtbenchbook.pdf",
+      },
+    ],
   },
   cac_manual: {
     host: "www.vacourts.gov",
     basePath: "/courtadmin/aoc/judplan/capp",
-    description: "Commissioners of Accounts Compliance (CAC) Manual and indigency guidelines.",
+    description:
+      "Commissioners of Accounts Compliance (CAC) Manual and indigency guidelines.",
     resources: [
-      { remotePath: "/manuals/ctapptatty/cacmanual.pdf", localName: "cacmanual.pdf" },
+      {
+        remotePath: "/manuals/ctapptatty/cacmanual.pdf",
+        localName: "cacmanual.pdf",
+      },
       { remotePath: "/manuals/ctapptatty/toc.pdf", localName: "toc.pdf" },
-      { remotePath: "/indigency_guidelines.pdf", localName: "indigency_guidelines.pdf" },
+      {
+        remotePath: "/indigency_guidelines.pdf",
+        localName: "indigency_guidelines.pdf",
+      },
     ],
   },
   case_law_authorities: {
     host: "law.lis.virginia.gov",
     basePath: "",
-    description: "CSV data for Virginia authorities, charters, compacts, and uncodified acts.",
+    description:
+      "CSV data for Virginia authorities, charters, compacts, and uncodified acts.",
     tlsRejectUnauthorized: false,
     resources: [
       { remotePath: "/CSV/Authorities.csv", localName: "Authorities.csv" },
       { remotePath: "/CSV/Charters.csv", localName: "Charters.csv" },
       { remotePath: "/CSV/Compacts.csv", localName: "Compacts.csv" },
-      { remotePath: "/CSV/UnCodifiedActs.csv", localName: "UnCodifiedActs.csv" },
+      {
+        remotePath: "/CSV/UnCodifiedActs.csv",
+        localName: "UnCodifiedActs.csv",
+      },
     ],
   },
   caseload_stats: {
     host: "www.vacourts.gov",
     basePath: "/courtadmin/aoc/djs/programs/cpss/csi",
-    description: "General caseload statistics for Circuit, General District, and J&DR courts.",
+    description:
+      "General caseload statistics for Circuit, General District, and J&DR courts.",
     resources: [
       { remotePath: "/stats/cc_filings.pdf", localName: "cc_filings.pdf" },
       { remotePath: "/stats/cc_disps.pdf", localName: "cc_disps.pdf" },
@@ -111,7 +150,9 @@ export const DATASET_CONFIG: Record<
     basePath: "",
     description: "The Constitution of Virginia in CSV format.",
     tlsRejectUnauthorized: false,
-    resources: [{ remotePath: "/CSV/Constitution.csv", localName: "Constitution.csv" }],
+    resources: [
+      { remotePath: "/CSV/Constitution.csv", localName: "Constitution.csv" },
+    ],
   },
   courts: {
     host: "www.vacourts.gov",
@@ -130,7 +171,8 @@ export const DATASET_CONFIG: Record<
   jdrman: {
     host: "www.vacourts.gov",
     basePath: "/courts/jdr/resources/manuals/jdrman",
-    description: "Juvenile and Domestic Relations (J&DR) District Court Manual.",
+    description:
+      "Juvenile and Domestic Relations (J&DR) District Court Manual.",
     resources: [
       { remotePath: "/toc_jdr_manual.pdf", localName: "toc_jdr_manual.pdf" },
       { remotePath: "/chapter01.pdf", localName: "chapter01.pdf" },
@@ -156,19 +198,36 @@ export const DATASET_CONFIG: Record<
   other: {
     host: "www.vacourts.gov",
     basePath: "",
-    description: "Miscellaneous legal resources including Rules of Court, District Courts Directory, and Small Claims Court Procedures.",
+    description:
+      "Miscellaneous legal resources including Rules of Court, District Courts Directory, and Small Claims Court Procedures.",
     resources: [
-      { remotePath: "/courtadmin/aoc/djs/resources/ust/ust_table.pdf", localName: "ust_table.pdf" },
-      { remotePath: "/resources/small_claims_court_procedures.pdf", localName: "small_claims_court_procedures.pdf" },
-      { remotePath: "/courts/vacourtfacility/complete.pdf", localName: "courthouse_facility_guidelines.pdf" },
-      { remotePath: "/directories/dist.pdf", localName: "district_courts_directory.pdf" },
-      { remotePath: "/courts/scv/rulesofcourt.pdf", localName: "rulesofcourt.pdf" },
+      {
+        remotePath: "/courtadmin/aoc/djs/resources/ust/ust_table.pdf",
+        localName: "ust_table.pdf",
+      },
+      {
+        remotePath: "/resources/small_claims_court_procedures.pdf",
+        localName: "small_claims_court_procedures.pdf",
+      },
+      {
+        remotePath: "/courts/vacourtfacility/complete.pdf",
+        localName: "courthouse_facility_guidelines.pdf",
+      },
+      {
+        remotePath: "/directories/dist.pdf",
+        localName: "district_courts_directory.pdf",
+      },
+      {
+        remotePath: "/courts/scv/rulesofcourt.pdf",
+        localName: "rulesofcourt.pdf",
+      },
     ],
   },
   vcc: {
     host: "www.vcsc.virginia.gov",
     basePath: "/VCCs",
-    description: "Virginia Crime Code (VCC) Book, containing codes used for charging and sentencing.",
+    description:
+      "Virginia Crime Code (VCC) Book, containing codes used for charging and sentencing.",
     resources: (year = new Date().getFullYear()) => [
       { url: `/${year}/${year}VCCBook.pdf`, localName: `${year}VCCBook.pdf` },
     ],
@@ -180,15 +239,96 @@ export const DATASET_CONFIG: Record<
     tlsRejectUnauthorized: false,
     resources: [
       { remotePath: "/CSV/PopularNames.csv", localName: "PopularNames.csv" },
-      ...["1", "2.2", "3.2", "4.1", "5.1", "6.2", "8.01", "8.1A", "8.2", "8.2A", "8.3A", "8.4", "8.4A", "8.5A", "8.7", "8.8A", "8.9A", "8.10", "8.11", "8.12", "8.13", "9.1", "10.1", "11", "12.1", "13.1", "15.2", "16.1", "17.1", "18.2", "19.2", "20", "21", "22.1", "23.1", "24.2", "25.1", "27", "28.2", "29.1", "30", "32.1", "33.2", "34", "35.1", "36", "37.2", "38.2", "40.1", "41.1", "42.1", "43", "44", "45.2", "46.2", "47.1", "48", "49", "50", "51.1", "51.5", "52", "53.1", "54.1", "55.1", "56", "57", "58.1", "59.1", "60.2", "61.1", "62.1", "63.2", "64.2", "65.2", "66"].map(n => ({ remotePath: `/CSV/CoVTitle_${n}.csv`, localName: `CoVTitle_${n}.csv` })),
+      ...[
+        "1",
+        "2.2",
+        "3.2",
+        "4.1",
+        "5.1",
+        "6.2",
+        "8.01",
+        "8.1A",
+        "8.2",
+        "8.2A",
+        "8.3A",
+        "8.4",
+        "8.4A",
+        "8.5A",
+        "8.7",
+        "8.8A",
+        "8.9A",
+        "8.10",
+        "8.11",
+        "8.12",
+        "8.13",
+        "9.1",
+        "10.1",
+        "11",
+        "12.1",
+        "13.1",
+        "15.2",
+        "16.1",
+        "17.1",
+        "18.2",
+        "19.2",
+        "20",
+        "21",
+        "22.1",
+        "23.1",
+        "24.2",
+        "25.1",
+        "27",
+        "28.2",
+        "29.1",
+        "30",
+        "32.1",
+        "33.2",
+        "34",
+        "35.1",
+        "36",
+        "37.2",
+        "38.2",
+        "40.1",
+        "41.1",
+        "42.1",
+        "43",
+        "44",
+        "45.2",
+        "46.2",
+        "47.1",
+        "48",
+        "49",
+        "50",
+        "51.1",
+        "51.5",
+        "52",
+        "53.1",
+        "54.1",
+        "55.1",
+        "56",
+        "57",
+        "58.1",
+        "59.1",
+        "60.2",
+        "61.1",
+        "62.1",
+        "63.2",
+        "64.2",
+        "65.2",
+        "66",
+      ].map((n) => ({
+        remotePath: `/CSV/CoVTitle_${n}.csv`,
+        localName: `CoVTitle_${n}.csv`,
+      })),
     ],
   },
 } as const;
 
-
 export function getDatasetBaseUrl(
-    key: DatasetKey,
-    options: { protocol?: "http" | "https"; host?: string; basePath?: string } = { protocol: "https" }
+  key: DatasetKey,
+  options: { protocol?: "http" | "https"; host?: string; basePath?: string } = {
+    protocol: "https",
+  },
 ): string {
   const config = DATASET_CONFIG[key];
   if (!config) throw new Error(`Unknown dataset: ${key}`);
@@ -212,9 +352,11 @@ export function configureFetchForDataset(key: DatasetKey): void {
  * For dynamic datasets, pass currentYear.
  */
 export function getDatasetResources(
-    key: DatasetKey,
-    currentYear?: number
-): Array<{ url: string; localName: string; isHtml?: boolean }> | { pdfUrl: string; parser?: (pdfPath: string) => Promise<unknown> } {
+  key: DatasetKey,
+  currentYear?: number,
+):
+  | Array<{ url: string; localName: string; isHtml?: boolean }>
+  | { pdfUrl: string; parser?: (pdfPath: string) => Promise<unknown> } {
   const config = DATASET_CONFIG[key];
   if (!config.resources) return [];
   const joinUrl = (base: string, path: string): string =>
@@ -223,9 +365,10 @@ export function getDatasetResources(
     const baseUrl = getDatasetBaseUrl(key);
     const resources = config.resources(currentYear);
     return resources.map((r) => {
-      const url = r.url.startsWith("http://") || r.url.startsWith("https://")
-        ? r.url
-        : joinUrl(baseUrl, r.url);
+      const url =
+        r.url.startsWith("http://") || r.url.startsWith("https://")
+          ? r.url
+          : joinUrl(baseUrl, r.url);
       return { ...r, url };
     });
   } else if (Array.isArray(config.resources)) {
@@ -249,17 +392,33 @@ export function getDatasetResources(
  * Adapted from annual_reports and vcc logic.
  */
 export async function findMostRecentResource(
-    key: DatasetKey,
-    maxYearsToLookBack = 10,
-    method: "HEAD" | "GET" = "HEAD"
-): Promise<{ year: number; url: string; localName: string; isHtml?: boolean } | null> {
+  key: DatasetKey,
+  maxYearsToLookBack = 10,
+  method: "HEAD" | "GET" = "HEAD",
+): Promise<{
+  year: number;
+  url: string;
+  localName: string;
+  isHtml?: boolean;
+} | null> {
   configureFetchForDataset(key);
   const currentYear = new Date().getFullYear();
-  for (let year = currentYear; year >= currentYear - maxYearsToLookBack; year--) {
-    const candidates = getDatasetResources(key, year) as Array<{ url: string; localName: string; isHtml?: boolean }>;
+  for (
+    let year = currentYear;
+    year >= currentYear - maxYearsToLookBack;
+    year--
+  ) {
+    const candidates = getDatasetResources(key, year) as Array<{
+      url: string;
+      localName: string;
+      isHtml?: boolean;
+    }>;
     for (const candidate of candidates) {
       try {
-        const res = await safeFetch(candidate.url, { headers: COMMON_HEADERS, method });
+        const res = await safeFetch(candidate.url, {
+          headers: COMMON_HEADERS,
+          method,
+        });
         if (res.ok) {
           return { year, ...candidate };
         }
@@ -276,8 +435,13 @@ type RequestInfo = Request | string | URL;
 /**
  * Generic download function for a resource.
  */
-async function safeFetch(input: RequestInfo, init?: RequestInit): Promise<Response> {
-  const headersObj = init?.headers ? (init.headers as Record<string, string>) : {};
+async function safeFetch(
+  input: RequestInfo,
+  init?: RequestInit,
+): Promise<Response> {
+  const headersObj = init?.headers
+    ? (init.headers as Record<string, string>)
+    : {};
   const headers = new Headers(headersObj);
   if (!headers.has("User-Agent")) headers.set("User-Agent", USER_AGENT);
   if (!headers.has("Accept")) headers.set("Accept", "*/*");
@@ -287,7 +451,12 @@ async function safeFetch(input: RequestInfo, init?: RequestInit): Promise<Respon
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetch(input, { ...init, headers, signal: controller.signal, redirect: "follow" });
+    return await fetch(input, {
+      ...init,
+      headers,
+      signal: controller.signal,
+      redirect: "follow",
+    });
   } finally {
     clearTimeout(timeout);
   }
@@ -296,8 +465,8 @@ async function safeFetch(input: RequestInfo, init?: RequestInit): Promise<Respon
 export { safeFetch };
 
 export async function downloadResource(
-    url: string,
-    targetPath: string
+  url: string,
+  targetPath: string,
 ): Promise<void> {
   const res = await safeFetch(url, { headers: COMMON_HEADERS });
   if (!res.ok) {

@@ -29,7 +29,11 @@ import { useStore } from "../store/StoreContext";
 import { toaster } from "../components/ui/toaster";
 import { MaskedInput } from "../components/config/MaskedInput";
 import { ConfigSection } from "../components/config/ConfigSection";
-import { api, type DbSecurityStatus, type EmailServiceStatus } from "../lib/api";
+import {
+  api,
+  type DbSecurityStatus,
+  type EmailServiceStatus,
+} from "../lib/api";
 
 const RECOVERY_KEY_STORAGE_KEY = "proseva.dbRecoveryKey";
 
@@ -102,7 +106,9 @@ const Config = observer(() => {
   const [scannerEnabled, setScannerEnabled] = useState(false);
   const [scannerEndpoints, setScannerEndpoints] = useState("");
 
-  const [emailStatus, setEmailStatus] = useState<EmailServiceStatus | null>(null);
+  const [emailStatus, setEmailStatus] = useState<EmailServiceStatus | null>(
+    null,
+  );
   const [emailRegistrationSecret, setEmailRegistrationSecret] = useState("");
   const [isEmailRegistering, setIsEmailRegistering] = useState(false);
   const [isEmailPolling, setIsEmailPolling] = useState(false);
@@ -203,9 +209,7 @@ const Config = observer(() => {
       setFaxGatewayPassword(configStore.config.faxGateway?.password || "");
 
       setScannerEnabled(configStore.config.documentScanner?.enabled ?? false);
-      setScannerEndpoints(
-        configStore.config.documentScanner?.endpoints || "",
-      );
+      setScannerEndpoints(configStore.config.documentScanner?.endpoints || "");
     }
   }, [configStore.config]);
 
@@ -432,9 +436,10 @@ const Config = observer(() => {
     try {
       const result = await api.email.poll();
       toaster.create({
-        title: result.imported > 0
-          ? `Imported ${result.imported} email(s)`
-          : "No new emails",
+        title:
+          result.imported > 0
+            ? `Imported ${result.imported} email(s)`
+            : "No new emails",
         type: result.imported > 0 ? "success" : "info",
       });
       loadEmailStatus();
@@ -477,7 +482,11 @@ const Config = observer(() => {
   };
 
   const handleEmailRotateKey = async () => {
-    if (!confirm("Rotate encryption key? Any pending emails will be downloaded first.")) {
+    if (
+      !confirm(
+        "Rotate encryption key? Any pending emails will be downloaded first.",
+      )
+    ) {
       return;
     }
     setIsEmailRotating(true);
@@ -885,11 +894,36 @@ const Config = observer(() => {
             )}
           </Box>
           {[
-            { label: "Large Model", value: largeModel, setter: setLargeModel, placeholder: "gpt-4o" },
-            { label: "Small Model", value: smallModel, setter: setSmallModel, placeholder: "gpt-4o-mini" },
-            { label: "Reasoning Model", value: reasoningModel, setter: setReasoningModel, placeholder: "o1-mini" },
-            { label: "Visual Model", value: vlmModel, setter: setVlmModel, placeholder: "gpt-4.1" },
-            { label: "Embeddings Model", value: embeddingsModel, setter: setEmbeddingsModel, placeholder: "text-embedding-3-small" },
+            {
+              label: "Large Model",
+              value: largeModel,
+              setter: setLargeModel,
+              placeholder: "gpt-4o",
+            },
+            {
+              label: "Small Model",
+              value: smallModel,
+              setter: setSmallModel,
+              placeholder: "gpt-4o-mini",
+            },
+            {
+              label: "Reasoning Model",
+              value: reasoningModel,
+              setter: setReasoningModel,
+              placeholder: "o1-mini",
+            },
+            {
+              label: "Visual Model",
+              value: vlmModel,
+              setter: setVlmModel,
+              placeholder: "gpt-4.1",
+            },
+            {
+              label: "Embeddings Model",
+              value: embeddingsModel,
+              setter: setEmbeddingsModel,
+              placeholder: "text-embedding-3-small",
+            },
           ].map(({ label, value, setter, placeholder }) => (
             <Box key={label}>
               <Text fontSize="sm" mb={1} fontWeight="medium">
@@ -914,7 +948,9 @@ const Config = observer(() => {
                 >
                   <option value="">{placeholder} (default)</option>
                   {modelOptions.map((m) => (
-                    <option key={m} value={m}>{m}</option>
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
                   ))}
                 </select>
               ) : (
@@ -1326,9 +1362,11 @@ const Config = observer(() => {
         <ConfigSection
           title="Email Service"
           icon={<FiMail />}
-          status={emailStatus?.configured
-            ? { label: "Active", color: "green" }
-            : { label: "Not Configured", color: "gray" }}
+          status={
+            emailStatus?.configured
+              ? { label: "Active", color: "green" }
+              : { label: "Not Configured", color: "gray" }
+          }
         >
           {emailStatus?.configured ? (
             <>
@@ -1351,12 +1389,15 @@ const Config = observer(() => {
                 </Text>
                 <HStack gap={4} flexWrap="wrap">
                   <Text fontSize="sm">
-                    Polling: {emailStatus.pollingEnabled ? "On" : "Off"} ({emailStatus.pollingIntervalSeconds}s)
+                    Polling: {emailStatus.pollingEnabled ? "On" : "Off"} (
+                    {emailStatus.pollingIntervalSeconds}s)
                   </Text>
                   {emailStatus.lastPollAt && (
                     <Text fontSize="sm" color="gray.500">
-                      Last poll: {new Date(emailStatus.lastPollAt).toLocaleString()}
-                      {emailStatus.lastPollCount > 0 && ` (${emailStatus.lastPollCount} imported)`}
+                      Last poll:{" "}
+                      {new Date(emailStatus.lastPollAt).toLocaleString()}
+                      {emailStatus.lastPollCount > 0 &&
+                        ` (${emailStatus.lastPollCount} imported)`}
                     </Text>
                   )}
                   {emailStatus.lastPollError && (

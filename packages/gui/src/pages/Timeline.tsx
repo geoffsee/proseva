@@ -301,7 +301,11 @@ const Timeline = observer(function Timeline() {
   const rangeRef = useRef({ rangeStart, rangeEnd });
   rangeRef.current = { rangeStart, rangeEnd };
 
-  const dragRef = useRef<{ startX: number; startMs: number; endMs: number } | null>(null);
+  const dragRef = useRef<{
+    startX: number;
+    startMs: number;
+    endMs: number;
+  } | null>(null);
 
   useEffect(() => {
     const container = timelineRef.current;
@@ -467,147 +471,151 @@ const Timeline = observer(function Timeline() {
 
       {/* Zoomable timeline area */}
       <Box ref={timelineRef} cursor="grab" userSelect="none">
-      {/* Ruler */}
-      <Box
-        pos="relative"
-        h="8"
-        borderBottomWidth="1px"
-        borderColor="border.muted"
-      >
-        {rulerMarks.map((mark, i) => {
-          const isYear = mark.label.length === 4;
-          return (
-            <Text
-              key={i}
-              pos="absolute"
-              left={`${mark.pct}%`}
-              fontSize="xs"
-              color={isYear ? "fg.default" : "fg.muted"}
-              fontWeight={isYear ? "semibold" : "normal"}
-              top="0"
-            >
-              {mark.label}
-            </Text>
-          );
-        })}
-      </Box>
-
-      {/* Gantt rows */}
-      <VStack align="stretch" gap="1" minH="200px">
-        {visibleEvents.length === 0 && (
-          <Text color="fg.muted" textAlign="center" py="8">
-            {allEvents.length === 0
-              ? "No data yet. Add deadlines, filings, evidence, or other records to see them here."
-              : `No events in this range${sourceFilter !== null ? ` (${SOURCE_LABELS[sourceFilter]})` : ""}`}
-          </Text>
-        )}
-        {visibleEvents.map((evt) => {
-          const left = Math.max(0, Math.min(pctOffset(evt.date), 99));
-          const colors = SOURCE_COLORS[evt.source];
-          const isExpanded = expandedId === evt.id;
-          return (
-            <Box key={evt.id}>
-              <Box
-                pos="relative"
-                h="32px"
-                cursor="pointer"
-                onClick={() => setExpandedId(isExpanded ? null : evt.id)}
-                _hover={{ bg: "bg.muted" }}
-                borderRadius="sm"
+        {/* Ruler */}
+        <Box
+          pos="relative"
+          h="8"
+          borderBottomWidth="1px"
+          borderColor="border.muted"
+        >
+          {rulerMarks.map((mark, i) => {
+            const isYear = mark.label.length === 4;
+            return (
+              <Text
+                key={i}
+                pos="absolute"
+                left={`${mark.pct}%`}
+                fontSize="xs"
+                color={isYear ? "fg.default" : "fg.muted"}
+                fontWeight={isYear ? "semibold" : "normal"}
+                top="0"
               >
-                <Box
-                  pos="absolute"
-                  left={`${left}%`}
-                  top="0"
-                  bottom="0"
-                  w="2px"
-                  bg={colors.border}
-                  opacity={evt.isCritical ? 1 : 0.6}
-                />
-                <Box
-                  pos="absolute"
-                  left={`${left}%`}
-                  top="4px"
-                  h="24px"
-                  minW="8px"
-                  maxW={`${100 - left}%`}
-                  w="fit-content"
-                  bg={colors.bg}
-                  borderLeftWidth="3px"
-                  borderColor={colors.border}
-                  borderRadius="0 4px 4px 0"
-                  px="2"
-                  display="flex"
-                  alignItems="center"
-                  whiteSpace="nowrap"
-                >
-                  <Text
-                    fontSize="xs"
-                    fontWeight={evt.isCritical ? "bold" : "normal"}
-                    truncate
-                  >
-                    {evt.isCritical && "\u26A0 "}
-                    {evt.date.toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                    {" — "}
-                    {evt.title}
-                  </Text>
-                </Box>
-              </Box>
+                {mark.label}
+              </Text>
+            );
+          })}
+        </Box>
 
-              {isExpanded && (
+        {/* Gantt rows */}
+        <VStack align="stretch" gap="1" minH="200px">
+          {visibleEvents.length === 0 && (
+            <Text color="fg.muted" textAlign="center" py="8">
+              {allEvents.length === 0
+                ? "No data yet. Add deadlines, filings, evidence, or other records to see them here."
+                : `No events in this range${sourceFilter !== null ? ` (${SOURCE_LABELS[sourceFilter]})` : ""}`}
+            </Text>
+          )}
+          {visibleEvents.map((evt) => {
+            const left = Math.max(0, Math.min(pctOffset(evt.date), 99));
+            const colors = SOURCE_COLORS[evt.source];
+            const isExpanded = expandedId === evt.id;
+            return (
+              <Box key={evt.id}>
                 <Box
-                  ml={`${Math.min(left, 50)}%`}
-                  p="3"
-                  mb="2"
-                  borderWidth="1px"
-                  borderColor={colors.border}
-                  borderRadius="md"
-                  bg="bg.panel"
-                  maxW="500px"
+                  pos="relative"
+                  h="32px"
+                  cursor="pointer"
+                  onClick={() => setExpandedId(isExpanded ? null : evt.id)}
+                  _hover={{ bg: "bg.muted" }}
+                  borderRadius="sm"
                 >
-                  <Text fontWeight="bold" fontSize="sm" mb="1">
-                    {evt.title}
-                  </Text>
-                  <HStack gap="2" mb="2" flexWrap="wrap">
-                    <Badge size="sm" colorPalette={colors.palette}>
-                      {SOURCE_LABELS[evt.source]}
-                    </Badge>
-                    {evt.caseId && caseNameMap[evt.caseId] && (
-                      <Badge size="sm" variant="outline">
-                        {caseNameMap[evt.caseId]}
-                      </Badge>
-                    )}
-                    {evt.metadata?.type && (
-                      <Badge size="sm" variant="surface">
-                        {evt.metadata.type}
-                      </Badge>
-                    )}
-                    {evt.metadata?.amount && (
-                      <Badge size="sm" variant="surface">
-                        {evt.metadata.amount}
-                      </Badge>
-                    )}
-                    {evt.isCritical && (
-                      <Badge size="sm" colorPalette="orange">
-                        Critical
-                      </Badge>
-                    )}
-                  </HStack>
-                  {evt.details && (
-                    <Text fontSize="xs" color="fg.muted" whiteSpace="pre-line">
-                      {evt.details}
+                  <Box
+                    pos="absolute"
+                    left={`${left}%`}
+                    top="0"
+                    bottom="0"
+                    w="2px"
+                    bg={colors.border}
+                    opacity={evt.isCritical ? 1 : 0.6}
+                  />
+                  <Box
+                    pos="absolute"
+                    left={`${left}%`}
+                    top="4px"
+                    h="24px"
+                    minW="8px"
+                    maxW={`${100 - left}%`}
+                    w="fit-content"
+                    bg={colors.bg}
+                    borderLeftWidth="3px"
+                    borderColor={colors.border}
+                    borderRadius="0 4px 4px 0"
+                    px="2"
+                    display="flex"
+                    alignItems="center"
+                    whiteSpace="nowrap"
+                  >
+                    <Text
+                      fontSize="xs"
+                      fontWeight={evt.isCritical ? "bold" : "normal"}
+                      truncate
+                    >
+                      {evt.isCritical && "\u26A0 "}
+                      {evt.date.toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                      {" — "}
+                      {evt.title}
                     </Text>
-                  )}
+                  </Box>
                 </Box>
-              )}
-            </Box>
-          );
-        })}
-      </VStack>
+
+                {isExpanded && (
+                  <Box
+                    ml={`${Math.min(left, 50)}%`}
+                    p="3"
+                    mb="2"
+                    borderWidth="1px"
+                    borderColor={colors.border}
+                    borderRadius="md"
+                    bg="bg.panel"
+                    maxW="500px"
+                  >
+                    <Text fontWeight="bold" fontSize="sm" mb="1">
+                      {evt.title}
+                    </Text>
+                    <HStack gap="2" mb="2" flexWrap="wrap">
+                      <Badge size="sm" colorPalette={colors.palette}>
+                        {SOURCE_LABELS[evt.source]}
+                      </Badge>
+                      {evt.caseId && caseNameMap[evt.caseId] && (
+                        <Badge size="sm" variant="outline">
+                          {caseNameMap[evt.caseId]}
+                        </Badge>
+                      )}
+                      {evt.metadata?.type && (
+                        <Badge size="sm" variant="surface">
+                          {evt.metadata.type}
+                        </Badge>
+                      )}
+                      {evt.metadata?.amount && (
+                        <Badge size="sm" variant="surface">
+                          {evt.metadata.amount}
+                        </Badge>
+                      )}
+                      {evt.isCritical && (
+                        <Badge size="sm" colorPalette="orange">
+                          Critical
+                        </Badge>
+                      )}
+                    </HStack>
+                    {evt.details && (
+                      <Text
+                        fontSize="xs"
+                        color="fg.muted"
+                        whiteSpace="pre-line"
+                      >
+                        {evt.details}
+                      </Text>
+                    )}
+                  </Box>
+                )}
+              </Box>
+            );
+          })}
+        </VStack>
       </Box>
 
       {/* Legend */}

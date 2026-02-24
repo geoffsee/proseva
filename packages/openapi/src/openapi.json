@@ -1371,7 +1371,9 @@
             "description": "Evaluation triggered",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/EvaluationTriggerResult" }
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluationTriggerResult"
+                }
               }
             }
           },
@@ -1396,7 +1398,9 @@
             "description": "Scheduler status",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/SchedulerStatusResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerStatusResponse"
+                }
               }
             }
           }
@@ -1997,7 +2001,9 @@
             "description": "Opinion search results",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchOpinionSearchResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchOpinionSearchResponse"
+                }
               }
             }
           },
@@ -2005,7 +2011,9 @@
             "description": "Forbidden",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2013,7 +2021,9 @@
             "description": "Rate limited",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2021,7 +2031,9 @@
             "description": "Server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2029,7 +2041,9 @@
             "description": "Service unavailable",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           }
@@ -2054,7 +2068,9 @@
             "description": "Opinion detail",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchOpinionDetailResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchOpinionDetailResponse"
+                }
               }
             }
           },
@@ -2062,7 +2078,9 @@
             "description": "Invalid request",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2070,7 +2088,9 @@
             "description": "Forbidden",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2078,7 +2098,9 @@
             "description": "Not found",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2086,7 +2108,9 @@
             "description": "Rate limited",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2094,7 +2118,9 @@
             "description": "Server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2102,7 +2128,9 @@
             "description": "Service unavailable",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           }
@@ -2119,7 +2147,9 @@
             "description": "Docket search results",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchDocketSearchResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchDocketSearchResponse"
+                }
               }
             }
           },
@@ -2127,7 +2157,9 @@
             "description": "Forbidden",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2135,7 +2167,9 @@
             "description": "Rate limited",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2143,7 +2177,9 @@
             "description": "Server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2151,7 +2187,9 @@
             "description": "Service unavailable",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           }
@@ -2176,7 +2214,9 @@
             "description": "Docket detail",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchDocketDetailResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchDocketDetailResponse"
+                }
               }
             }
           },
@@ -2184,7 +2224,9 @@
             "description": "Invalid request",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2192,7 +2234,9 @@
             "description": "Forbidden",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2200,7 +2244,9 @@
             "description": "Not found",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2208,7 +2254,9 @@
             "description": "Rate limited",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2216,7 +2264,9 @@
             "description": "Server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2224,7 +2274,9 @@
             "description": "Service unavailable",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           }
@@ -2241,7 +2293,9 @@
             "description": "Courts list",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchCourtsResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchCourtsResponse"
+                }
               }
             }
           },
@@ -2249,7 +2303,9 @@
             "description": "Forbidden",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2257,7 +2313,9 @@
             "description": "Server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2265,7 +2323,9 @@
             "description": "Service unavailable",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           }
@@ -2282,7 +2342,9 @@
             "description": "Citation lookup results",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchCitationLookupResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchCitationLookupResponse"
+                }
               }
             }
           },
@@ -2290,7 +2352,9 @@
             "description": "Invalid request",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2298,7 +2362,9 @@
             "description": "Forbidden",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2306,7 +2372,9 @@
             "description": "Server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2314,7 +2382,9 @@
             "description": "Service unavailable",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           }
@@ -2331,7 +2401,9 @@
             "description": "Statute search results",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchStatuteSearchResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchStatuteSearchResponse"
+                }
               }
             }
           },
@@ -2339,7 +2411,9 @@
             "description": "Forbidden",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2347,7 +2421,9 @@
             "description": "Rate limited",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2355,7 +2431,9 @@
             "description": "Server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2363,7 +2441,9 @@
             "description": "Service unavailable",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           }
@@ -2380,7 +2460,9 @@
             "description": "Statute detail",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchStatuteDetailResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchStatuteDetailResponse"
+                }
               }
             }
           },
@@ -2388,7 +2470,9 @@
             "description": "Invalid request",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2396,7 +2480,9 @@
             "description": "Forbidden",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2404,7 +2490,9 @@
             "description": "Rate limited",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2412,7 +2500,9 @@
             "description": "Server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2420,7 +2510,9 @@
             "description": "Service unavailable",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           }
@@ -2437,7 +2529,9 @@
             "description": "Jurisdictions list",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchStatesResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchStatesResponse"
+                }
               }
             }
           }
@@ -2454,7 +2548,9 @@
             "description": "Cases list",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchCasesResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchCasesResponse"
+                }
               }
             }
           },
@@ -2462,7 +2558,9 @@
             "description": "Server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           }
@@ -2492,7 +2590,9 @@
             "description": "Created case",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchCaseResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchCaseResponse"
+                }
               }
             }
           },
@@ -2500,7 +2600,9 @@
             "description": "Invalid request",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2508,7 +2610,9 @@
             "description": "Server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           }
@@ -2533,7 +2637,9 @@
             "description": "Case detail",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchCaseResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchCaseResponse"
+                }
               }
             }
           },
@@ -2541,7 +2647,9 @@
             "description": "Not found",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2549,7 +2657,9 @@
             "description": "Server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           }
@@ -2578,7 +2688,9 @@
             "description": "Updated",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchSuccessResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchSuccessResponse"
+                }
               }
             }
           },
@@ -2586,7 +2698,9 @@
             "description": "Invalid request",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2594,7 +2708,9 @@
             "description": "Not found",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2602,7 +2718,9 @@
             "description": "Server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           }
@@ -2617,7 +2735,9 @@
             "description": "Deleted",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchSuccessResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchSuccessResponse"
+                }
               }
             }
           },
@@ -2625,7 +2745,9 @@
             "description": "Not found",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2633,7 +2755,9 @@
             "description": "Server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           }
@@ -2658,7 +2782,9 @@
             "description": "Activated",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchSuccessResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchSuccessResponse"
+                }
               }
             }
           },
@@ -2666,7 +2792,9 @@
             "description": "Not found",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2674,7 +2802,9 @@
             "description": "Server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           }
@@ -2715,7 +2845,9 @@
             "description": "Saved search",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchSavedSearchResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchSavedSearchResponse"
+                }
               }
             }
           },
@@ -2723,7 +2855,9 @@
             "description": "Invalid request",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2731,7 +2865,9 @@
             "description": "Not found",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2739,7 +2875,9 @@
             "description": "Server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           }
@@ -2781,7 +2919,9 @@
             "description": "Summary",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchSummaryResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchSummaryResponse"
+                }
               }
             }
           },
@@ -2789,7 +2929,9 @@
             "description": "Invalid request",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2797,7 +2939,9 @@
             "description": "Not found",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2805,7 +2949,9 @@
             "description": "Server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2813,7 +2959,9 @@
             "description": "Service unavailable",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           }
@@ -2852,7 +3000,9 @@
             "description": "Uploaded document metadata",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchDocumentUploadResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchDocumentUploadResponse"
+                }
               }
             }
           },
@@ -2860,7 +3010,9 @@
             "description": "Invalid request",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2868,7 +3020,9 @@
             "description": "Not found",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2876,7 +3030,9 @@
             "description": "Server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           }
@@ -2919,7 +3075,9 @@
             "description": "Analysis",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchDocumentAnalyzeResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchDocumentAnalyzeResponse"
+                }
               }
             }
           },
@@ -2927,7 +3085,9 @@
             "description": "Invalid request",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2935,7 +3095,9 @@
             "description": "Not found",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2943,7 +3105,9 @@
             "description": "Server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2951,7 +3115,9 @@
             "description": "Service unavailable",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           }
@@ -2968,7 +3134,9 @@
             "description": "Scholar search results",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchScholarSearchResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchScholarSearchResponse"
+                }
               }
             }
           },
@@ -2976,7 +3144,9 @@
             "description": "Rate limited",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -2984,7 +3154,9 @@
             "description": "Server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           }
@@ -3001,7 +3173,9 @@
             "description": "GovInfo search results",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchGovInfoSearchResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchGovInfoSearchResponse"
+                }
               }
             }
           },
@@ -3009,7 +3183,9 @@
             "description": "Unauthorized",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -3017,7 +3193,9 @@
             "description": "Rate limited",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -3025,7 +3203,9 @@
             "description": "Server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -3033,7 +3213,9 @@
             "description": "Service unavailable",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           }
@@ -3058,7 +3240,9 @@
             "description": "Package summary",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchGovInfoPackageResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchGovInfoPackageResponse"
+                }
               }
             }
           },
@@ -3066,7 +3250,9 @@
             "description": "Server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -3074,7 +3260,9 @@
             "description": "Service unavailable",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           }
@@ -3091,7 +3279,9 @@
             "description": "Collections list",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchGovInfoCollectionsResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchGovInfoCollectionsResponse"
+                }
               }
             }
           }
@@ -3108,7 +3298,9 @@
             "description": "PACER information",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchPacerInfoResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchPacerInfoResponse"
+                }
               }
             }
           }
@@ -3125,7 +3317,9 @@
             "description": "Lawyer search results",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchLawyerSearchResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchLawyerSearchResponse"
+                }
               }
             }
           },
@@ -3133,7 +3327,9 @@
             "description": "Invalid request",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -3141,7 +3337,9 @@
             "description": "Server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           }
@@ -3158,7 +3356,9 @@
             "description": "Specialties list",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchLawyerSpecialtiesResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchLawyerSpecialtiesResponse"
+                }
               }
             }
           }
@@ -3203,7 +3403,9 @@
             "description": "Generated document",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchGenerateDocumentResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchGenerateDocumentResponse"
+                }
               }
             }
           },
@@ -3211,7 +3413,9 @@
             "description": "Invalid request",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -3219,7 +3423,9 @@
             "description": "Not found",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -3227,7 +3433,9 @@
             "description": "Rate limited",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -3235,7 +3443,9 @@
             "description": "Server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           },
@@ -3243,7 +3453,9 @@
             "description": "Service unavailable",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchErrorResponse"
+                }
               }
             }
           }
@@ -3284,7 +3496,9 @@
             "description": "Agent response",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ResearchAgentChatResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchAgentChatResponse"
+                }
               }
             }
           },
@@ -3343,7 +3557,9 @@
             "description": "Update result",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ConfigUpdateResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigUpdateResponse"
+                }
               }
             }
           },
@@ -3351,7 +3567,9 @@
             "description": "Invalid update",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ConfigUpdateResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigUpdateResponse"
+                }
               }
             }
           }
@@ -3497,7 +3715,9 @@
             "description": "Model list",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/OpenAIModelsResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAIModelsResponse"
+                }
               }
             }
           },
@@ -3505,7 +3725,9 @@
             "description": "Missing configuration",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/OpenAIModelsResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAIModelsResponse"
+                }
               }
             }
           },
@@ -3513,7 +3735,9 @@
             "description": "Upstream error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/OpenAIModelsResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAIModelsResponse"
+                }
               }
             }
           }
@@ -3544,7 +3768,9 @@
             "description": "Test result",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/FaxGatewayTestResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/FaxGatewayTestResponse"
+                }
               }
             }
           },
@@ -3552,7 +3778,9 @@
             "description": "Invalid request",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/FaxGatewayTestResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/FaxGatewayTestResponse"
+                }
               }
             }
           }
@@ -3699,7 +3927,9 @@
             "description": "Security status",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/SecurityStatusResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/SecurityStatusResponse"
+                }
               }
             }
           }
@@ -3730,7 +3960,9 @@
             "description": "Setup result",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/SetupPassphraseResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/SetupPassphraseResponse"
+                }
               }
             }
           },
@@ -3738,7 +3970,9 @@
             "description": "Invalid passphrase",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/SetupPassphraseResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/SetupPassphraseResponse"
+                }
               }
             }
           },
@@ -3746,7 +3980,9 @@
             "description": "Setup failed",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/SetupPassphraseResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/SetupPassphraseResponse"
+                }
               }
             }
           }
@@ -3777,7 +4013,9 @@
             "description": "Verify result",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/VerifyPassphraseResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyPassphraseResponse"
+                }
               }
             }
           },
@@ -3785,7 +4023,9 @@
             "description": "Invalid request",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/VerifyPassphraseResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyPassphraseResponse"
+                }
               }
             }
           },
@@ -3793,7 +4033,9 @@
             "description": "Invalid passphrase",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/VerifyPassphraseResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyPassphraseResponse"
+                }
               }
             }
           },
@@ -3801,7 +4043,9 @@
             "description": "No passphrase configured",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/VerifyPassphraseResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyPassphraseResponse"
+                }
               }
             }
           },
@@ -3809,7 +4053,9 @@
             "description": "Verification failed",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/VerifyPassphraseResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyPassphraseResponse"
+                }
               }
             }
           }
@@ -4505,8 +4751,16 @@
           "active": { "type": "boolean" },
           "directory": { "type": "string" },
           "running": { "type": "boolean" },
-          "lastRunStarted": { "type": "string", "format": "date-time", "nullable": true },
-          "lastRunFinished": { "type": "string", "format": "date-time", "nullable": true },
+          "lastRunStarted": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastRunFinished": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
           "added": { "type": "integer" },
           "skipped": { "type": "integer" },
           "errors": { "type": "integer" }
@@ -4544,7 +4798,14 @@
       },
       "SearchResultItem": {
         "type": "object",
-        "required": ["id", "type", "score", "matchedFields", "highlights", "data"],
+        "required": [
+          "id",
+          "type",
+          "score",
+          "matchedFields",
+          "highlights",
+          "data"
+        ],
         "properties": {
           "id": { "type": "string" },
           "type": {
@@ -4733,8 +4994,16 @@
         "properties": {
           "enabled": { "type": "boolean" },
           "running": { "type": "boolean" },
-          "lastRunTime": { "type": "string", "format": "date-time", "nullable": true },
-          "nextRunTime": { "type": "string", "format": "date-time", "nullable": true },
+          "lastRunTime": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "nextRunTime": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
           "timezone": { "type": "string" },
           "cronExpression": { "type": "string" },
           "channels": {
@@ -5137,7 +5406,9 @@
         "properties": {
           "results": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/ResearchOpinionSearchResult" }
+            "items": {
+              "$ref": "#/components/schemas/ResearchOpinionSearchResult"
+            }
           },
           "total": { "type": "integer" },
           "next": { "type": "string", "nullable": true },
@@ -5190,7 +5461,9 @@
         "properties": {
           "results": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/ResearchDocketSearchResult" }
+            "items": {
+              "$ref": "#/components/schemas/ResearchDocketSearchResult"
+            }
           },
           "total": { "type": "integer" },
           "disclaimer": { "type": "string" },
@@ -5278,7 +5551,13 @@
       },
       "ResearchCourtsResponse": {
         "type": "object",
-        "required": ["federalAppellate", "federalDistrict", "stateCourts", "otherCourts", "total"],
+        "required": [
+          "federalAppellate",
+          "federalDistrict",
+          "stateCourts",
+          "otherCourts",
+          "total"
+        ],
         "properties": {
           "federalAppellate": {
             "type": "array",
@@ -5317,7 +5596,9 @@
         "properties": {
           "results": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/ResearchCitationLookupResult" }
+            "items": {
+              "$ref": "#/components/schemas/ResearchCitationLookupResult"
+            }
           },
           "searchedCitation": { "type": "string" },
           "disclaimer": { "type": "string" },
@@ -5347,7 +5628,9 @@
         "properties": {
           "results": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/ResearchStatuteSearchResult" }
+            "items": {
+              "$ref": "#/components/schemas/ResearchStatuteSearchResult"
+            }
           },
           "total": { "type": "integer" },
           "page": { "type": "integer" },
@@ -5415,7 +5698,14 @@
       },
       "ResearchCase": {
         "type": "object",
-        "required": ["id", "name", "description", "createdAt", "updatedAt", "isActive"],
+        "required": [
+          "id",
+          "name",
+          "description",
+          "createdAt",
+          "updatedAt",
+          "isActive"
+        ],
         "additionalProperties": true,
         "properties": {
           "id": { "type": "string" },
@@ -5542,7 +5832,9 @@
         "type": "object",
         "required": ["document"],
         "properties": {
-          "document": { "$ref": "#/components/schemas/ResearchDocumentMetadata" }
+          "document": {
+            "$ref": "#/components/schemas/ResearchDocumentMetadata"
+          }
         }
       },
       "ResearchDocumentAnalyzeResponse": {
@@ -5614,7 +5906,9 @@
         "properties": {
           "results": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/ResearchGovInfoSearchResult" }
+            "items": {
+              "$ref": "#/components/schemas/ResearchGovInfoSearchResult"
+            }
           },
           "total": { "type": "integer" },
           "nextOffset": { "type": "integer", "nullable": true },
@@ -5653,7 +5947,9 @@
         "type": "object",
         "required": ["package", "disclaimer"],
         "properties": {
-          "package": { "$ref": "#/components/schemas/ResearchGovInfoPackageSummary" },
+          "package": {
+            "$ref": "#/components/schemas/ResearchGovInfoPackageSummary"
+          },
           "disclaimer": { "type": "string" }
         }
       },
@@ -5672,7 +5968,9 @@
         "properties": {
           "collections": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/ResearchGovInfoCollection" }
+            "items": {
+              "$ref": "#/components/schemas/ResearchGovInfoCollection"
+            }
           },
           "source": { "type": "string" }
         }
@@ -5715,7 +6013,14 @@
       },
       "ResearchLawyerSearchResponse": {
         "type": "object",
-        "required": ["results", "total", "location", "specialty", "source", "disclaimer"],
+        "required": [
+          "results",
+          "total",
+          "location",
+          "specialty",
+          "source",
+          "disclaimer"
+        ],
         "properties": {
           "results": {
             "type": "array",

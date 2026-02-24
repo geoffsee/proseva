@@ -131,7 +131,8 @@ export async function executeExplorerTool(
   args: Record<string, unknown>,
 ): Promise<string> {
   const query = QUERIES[name];
-  if (!query) return JSON.stringify({ error: `Unknown explorer tool: ${name}` });
+  if (!query)
+    return JSON.stringify({ error: `Unknown explorer tool: ${name}` });
 
   const variables: Record<string, unknown> = {};
   if (name === "search_nodes") {

@@ -32,7 +32,7 @@ export async function authenticateInstance(request: Request, env: Env): Promise<
 	if (!instance) return null;
 
 	// Update last_seen_at (fire-and-forget)
-	env.DB.prepare('UPDATE instances SET last_seen_at = datetime(\'now\') WHERE instance_id = ?').bind(instanceId).run();
+	env.DB.prepare("UPDATE instances SET last_seen_at = datetime('now') WHERE instance_id = ?").bind(instanceId).run();
 
 	return instance;
 }

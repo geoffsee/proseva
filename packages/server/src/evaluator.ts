@@ -130,10 +130,9 @@ async function generateAiSummary(data: {
 
   try {
     const openai = new OpenAI({
-      apiKey: getConfig('OPENAI_API_KEY'),
-      baseURL: getConfig('OPENAI_ENDPOINT'),
+      apiKey: getConfig("OPENAI_API_KEY"),
+      baseURL: getConfig("OPENAI_ENDPOINT"),
     });
-
 
     const overdueText =
       data.overdue.length > 0

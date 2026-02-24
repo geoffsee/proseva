@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { setupTestServer, api } from "./test-helpers";
-import type {Correspondence} from "./db.ts";
+import type { Correspondence } from "./db.ts";
 
 const ctx = setupTestServer();
 
@@ -47,7 +47,7 @@ describe("Correspondence API", () => {
       ctx.baseUrl,
     );
     expect(res.status).toBe(200);
-    expect((await res.json() as any).subject).toBe("Get Test");
+    expect(((await res.json()) as any).subject).toBe("Get Test");
   });
 
   it("returns 404 for missing", async () => {
@@ -72,7 +72,7 @@ describe("Correspondence API", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect((body as Record<string, unknown>).subject).toBe("New Subject");
-    expect((body as Record<string, unknown> ).channel).toBe("mail");
+    expect((body as Record<string, unknown>).channel).toBe("mail");
   });
 
   it("returns 404 updating missing", async () => {
@@ -118,9 +118,11 @@ describe("Correspondence API", () => {
     expect(listRes.status).toBe(200);
     const list = await listRes.json();
     expect(Array.isArray(list)).toBe(true);
-    expect((list as Correspondence[]).some((item: { id: string }) => item.id === (created as Correspondence).id)).toBe(
-      true,
-    );
+    expect(
+      (list as Correspondence[]).some(
+        (item: { id: string }) => item.id === (created as Correspondence).id,
+      ),
+    ).toBe(true);
   });
 
   it("imports .eml files via parser", async () => {
@@ -131,16 +133,16 @@ describe("Correspondence API", () => {
       "Subject: Imported Email",
       "Message-ID: <imported-1@example.com>",
       "MIME-Version: 1.0",
-      "Content-Type: multipart/mixed; boundary=\"boundary123\"",
+      'Content-Type: multipart/mixed; boundary="boundary123"',
       "",
       "--boundary123",
-      "Content-Type: text/plain; charset=\"utf-8\"",
+      'Content-Type: text/plain; charset="utf-8"',
       "",
       "This is a test email import.",
       "--boundary123",
-      "Content-Type: application/pdf; name=\"test.pdf\"",
+      'Content-Type: application/pdf; name="test.pdf"',
       "Content-Transfer-Encoding: base64",
-      "Content-Disposition: attachment; filename=\"test.pdf\"",
+      'Content-Disposition: attachment; filename="test.pdf"',
       "",
       "SGVsbG8gYXR0YWNobWVudA==",
       "--boundary123--",
@@ -162,16 +164,40 @@ describe("Correspondence API", () => {
     const importBody = await importRes.json();
     expect((importBody as Record<string, unknown>).createdCount).toBe(1);
     expect((importBody as Record<string, unknown>).errorCount).toBe(0);
-    expect((importBody as Record<string, Record<string, unknown>[]>).created![0]!.channel).toBe("email");
-    expect((importBody as Record<string, Record<string, unknown>[]>).created![0]!.subject).toBe("Imported Email");
-    expect((importBody as Record<string, Record<string, unknown>[]>).created![0]!.sender).toContain("sender@example.com");
-    expect((importBody as Record<string, Record<string, unknown>[]>).created![0]!.recipient).toContain("recipient@example.com");
-    expect((importBody as Record<string, Record<string, unknown>[]>).created![0]!.caseId).toBe("case-abc");
-    expect((importBody as Record<string, Record<string, unknown>[]>).created![0]!.attachments).toHaveLength(1);
-    expect(((importBody as Record<string, Record<string, unknown>[]>).created![0]!.attachments as any[]).at(0).filename).toBe("test.pdf");
+    expect(
+      (importBody as Record<string, Record<string, unknown>[]>).created![0]!
+        .channel,
+    ).toBe("email");
+    expect(
+      (importBody as Record<string, Record<string, unknown>[]>).created![0]!
+        .subject,
+    ).toBe("Imported Email");
+    expect(
+      (importBody as Record<string, Record<string, unknown>[]>).created![0]!
+        .sender,
+    ).toContain("sender@example.com");
+    expect(
+      (importBody as Record<string, Record<string, unknown>[]>).created![0]!
+        .recipient,
+    ).toContain("recipient@example.com");
+    expect(
+      (importBody as Record<string, Record<string, unknown>[]>).created![0]!
+        .caseId,
+    ).toBe("case-abc");
+    expect(
+      (importBody as Record<string, Record<string, unknown>[]>).created![0]!
+        .attachments,
+    ).toHaveLength(1);
+    expect(
+      (
+        (importBody as Record<string, Record<string, unknown>[]>).created![0]!
+          .attachments as any[]
+      ).at(0).filename,
+    ).toBe("test.pdf");
 
     const correspondenceId = (importBody as any).created[0].id as string;
-    const attachmentId = (importBody as any).created[0].attachments[0].id as string;
+    const attachmentId = (importBody as any).created[0].attachments[0]
+      .id as string;
     const downloadRes = await api.get(
       `/api/correspondences/${correspondenceId}/attachments/${attachmentId}`,
       ctx.baseUrl,

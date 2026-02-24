@@ -13,7 +13,7 @@ const files = getDatasetResources("virginia_code") as Array<{
 }>;
 
 console.log(
-  `Fetching Code of Virginia resources (${files.length} files) into ${DIR}...`
+  `Fetching Code of Virginia resources (${files.length} files) into ${DIR}...`,
 );
 
 for (const { url, localName } of files) {

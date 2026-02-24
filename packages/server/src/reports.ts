@@ -195,7 +195,9 @@ async function generateAISummary(
 // Case Summary Report Generator
 export async function generateCaseSummary(
   config: ReportConfig,
-): Promise<GeneratedReport | { __openapi: true; status: 400 | 404; body: ErrorResponse }> {
+): Promise<
+  GeneratedReport | { __openapi: true; status: 400 | 404; body: ErrorResponse }
+> {
   if (!config.caseId) {
     return json(400, { error: "caseId is required" });
   }
@@ -276,7 +278,9 @@ export async function generateCaseSummary(
 // Evidence Analysis Report Generator
 export async function generateEvidenceAnalysis(
   config: ReportConfig,
-): Promise<GeneratedReport | { __openapi: true; status: 400 | 404; body: ErrorResponse }> {
+): Promise<
+  GeneratedReport | { __openapi: true; status: 400 | 404; body: ErrorResponse }
+> {
   if (!config.caseId) {
     return json(400, { error: "caseId is required" });
   }

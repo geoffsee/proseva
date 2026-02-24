@@ -10,7 +10,12 @@ import {
   Table,
   Badge,
 } from "@chakra-ui/react";
-import { LuChevronDown, LuChevronRight, LuDownload, LuTrash2 } from "react-icons/lu";
+import {
+  LuChevronDown,
+  LuChevronRight,
+  LuDownload,
+  LuTrash2,
+} from "react-icons/lu";
 import { StatCard } from "../components/shared/StatCard";
 import FileUpload from "../components/FileUpload";
 import { api } from "../lib/api";

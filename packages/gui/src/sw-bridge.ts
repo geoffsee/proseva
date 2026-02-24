@@ -18,7 +18,12 @@ window.fetch = async function (input: RequestInfo | URL, init?: RequestInit) {
   const url = new URL(req.url, location.origin);
 
   // Only intercept API and explorer calls when the Electron preload bridge is present.
-  if (!(url.pathname.startsWith("/api/") || url.pathname.startsWith("/explorer/")) || !electronAPI?.send) {
+  if (
+    !(
+      url.pathname.startsWith("/api/") || url.pathname.startsWith("/explorer/")
+    ) ||
+    !electronAPI?.send
+  ) {
     return originalFetch(input, init);
   }
 

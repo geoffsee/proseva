@@ -63,19 +63,15 @@ describe("BlobStore", () => {
     expect(await store.has("blob-1")).toBe(true);
   });
 
-  it(
-    "handles large blobs (1MB)",
-    async () => {
-      const dir = createTempDir();
-      const store = new BlobStore(join(dir, "files.sqlite"));
-      const large = new Uint8Array(1024 * 1024);
-      for (let i = 0; i < large.length; i++) large[i] = i % 256;
-      await store.store("large", large);
-      const retrieved = await store.retrieve("large");
-      expect(retrieved).toEqual(large);
-    },
-    15000,
-  );
+  it("handles large blobs (1MB)", async () => {
+    const dir = createTempDir();
+    const store = new BlobStore(join(dir, "files.sqlite"));
+    const large = new Uint8Array(1024 * 1024);
+    for (let i = 0; i < large.length; i++) large[i] = i % 256;
+    await store.store("large", large);
+    const retrieved = await store.retrieve("large");
+    expect(retrieved).toEqual(large);
+  }, 15000);
 
   it("overwrites existing blobs", async () => {
     const dir = createTempDir();
@@ -89,10 +85,7 @@ describe("BlobStore", () => {
   it("works with encryption", async () => {
     const dir = createTempDir();
     const key = "abc123abc123abc123abc123abc12312";
-    const store = new BlobStore(
-      join(dir, "files.sqlite"),
-      createProvider(key),
-    );
+    const store = new BlobStore(join(dir, "files.sqlite"), createProvider(key));
     await store.store("enc-1", new Uint8Array([10, 20, 30]));
 
     const store2 = new BlobStore(

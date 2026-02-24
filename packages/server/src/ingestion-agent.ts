@@ -540,7 +540,9 @@ async function processChunk(
 ): Promise<void> {
   const model = getConfig("VLM_MODEL") || "gpt-4.1";
   for (let i = 0; i < 16; i++) {
-    console.log(`[ingestion-agent] Tool-call iteration ${i + 1}/16, model=${model}`);
+    console.log(
+      `[ingestion-agent] Tool-call iteration ${i + 1}/16, model=${model}`,
+    );
     const completion = await openai.chat.completions.create({
       model,
       messages,
@@ -549,7 +551,9 @@ async function processChunk(
 
     const choice = completion.choices[0];
     if (choice.message.tool_calls?.length) {
-      console.log(`[ingestion-agent] Model returned ${choice.message.tool_calls.length} tool call(s)`);
+      console.log(
+        `[ingestion-agent] Model returned ${choice.message.tool_calls.length} tool call(s)`,
+      );
       messages.push(choice.message);
       for (const toolCall of choice.message.tool_calls) {
         if (toolCall.type !== "function") continue;
@@ -563,7 +567,9 @@ async function processChunk(
           const result = executeTool(toolCall.function.name, args, state);
           if (result.selectedCaseId)
             state.selectedCaseId = result.selectedCaseId;
-          console.log(`[ingestion-agent]   ${toolCall.function.name}: ${result.message}`);
+          console.log(
+            `[ingestion-agent]   ${toolCall.function.name}: ${result.message}`,
+          );
           log.push(`${toolCall.function.name}: ${result.message}`);
           messages.push({
             role: "tool",
@@ -600,7 +606,9 @@ export async function autoPopulateFromDocument(
   const log: string[] = [];
   const chunks = chunkText(text);
 
-  console.log(`[ingestion-agent] Auto-populate started: file="${entry.filename}", text=${text.length} chars, chunks=${chunks.length}`);
+  console.log(
+    `[ingestion-agent] Auto-populate started: file="${entry.filename}", text=${text.length} chars, chunks=${chunks.length}`,
+  );
 
   const systemMessage: OpenAI.ChatCompletionMessageParam = {
     role: "system",
@@ -619,9 +627,7 @@ export async function autoPopulateFromDocument(
 
   for (let chunkIdx = 0; chunkIdx < chunks.length; chunkIdx++) {
     const chunkLabel =
-      chunks.length > 1
-        ? `[Chunk ${chunkIdx + 1}/${chunks.length}]\n`
-        : "";
+      chunks.length > 1 ? `[Chunk ${chunkIdx + 1}/${chunks.length}]\n` : "";
 
     const messages: OpenAI.ChatCompletionMessageParam[] = [
       systemMessage,
@@ -640,6 +646,8 @@ export async function autoPopulateFromDocument(
     await processChunk(openai, messages, state, log);
   }
 
-  console.log(`[ingestion-agent] Auto-populate finished: caseId=${state.selectedCaseId || "none"}, actions=${log.length}`);
+  console.log(
+    `[ingestion-agent] Auto-populate finished: caseId=${state.selectedCaseId || "none"}, actions=${log.length}`,
+  );
   return { caseId: state.selectedCaseId, log };
 }

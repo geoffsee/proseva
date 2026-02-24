@@ -39,8 +39,8 @@ export function ConfigSection({
           <HStack align="center">
             {icon}
             <Heading size="md">{title}</Heading>
-            {status && (
-              typeof status === "object" ? (
+            {status &&
+              (typeof status === "object" ? (
                 <Badge colorPalette={status.color}>{status.label}</Badge>
               ) : (
                 <Badge colorPalette={status === "database" ? "green" : "gray"}>
@@ -48,8 +48,7 @@ export function ConfigSection({
                     ? "Database Config"
                     : "Environment Variable"}
                 </Badge>
-              )
-            )}
+              ))}
           </HStack>
           <HStack>
             {testConnection && (

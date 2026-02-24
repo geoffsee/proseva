@@ -3,10 +3,7 @@ import { beforeAll, afterAll, describe, expect, it, vi } from "vitest";
 import { mkdtempSync, rmSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import path from "path";
-import {
-  createProsevaClient,
-  type ProsevaClient,
-} from "../../sdk/src";
+import { createProsevaClient, type ProsevaClient } from "../../sdk/src";
 
 const PORT = 4010;
 const PASSPHRASE = "integration-passphrase";
@@ -108,7 +105,8 @@ async function startApi(): Promise<void> {
   (OpenAI as any).prototype.chat = { completions: { create: mockChatCreate } };
   (OpenAI as any).prototype.embeddings = { create: mockEmbeddingsCreate };
 
-  const { setKeypairForceMemory } = await import("../../server/src/encryption.ts");
+  const { setKeypairForceMemory } =
+    await import("../../server/src/encryption.ts");
   setKeypairForceMemory(true);
 
   const mod = await import("../../server/src");

@@ -129,7 +129,11 @@ function seedVirginiaDb(path: string) {
 
 type YogaInstance = ReturnType<typeof createApp>["yoga"];
 
-async function gql(yoga: YogaInstance, query: string, variables: Record<string, any> = {}) {
+async function gql(
+  yoga: YogaInstance,
+  query: string,
+  variables: Record<string, any> = {},
+) {
   const res = await yoga.fetch("http://localhost/graphql", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -210,7 +214,10 @@ describe("blobToF32", () => {
 
 describe("stats query", () => {
   it("returns correct counts", async () => {
-    const res = await gql(app.yoga, `{ stats { nodeCount edgeCount embeddingCount } }`);
+    const res = await gql(
+      app.yoga,
+      `{ stats { nodeCount edgeCount embeddingCount } }`,
+    );
     expect(res.errors).toBeUndefined();
     expect(res.data.stats.nodeCount).toBe(6);
     expect(res.data.stats.edgeCount).toBe(3);
@@ -242,14 +249,20 @@ describe("stats query", () => {
 
 describe("nodes query", () => {
   it("returns all nodes with default pagination", async () => {
-    const res = await gql(app.yoga, `{ nodes { total nodes { id source sourceId nodeType } } }`);
+    const res = await gql(
+      app.yoga,
+      `{ nodes { total nodes { id source sourceId nodeType } } }`,
+    );
     expect(res.errors).toBeUndefined();
     expect(res.data.nodes.total).toBe(6);
     expect(res.data.nodes.nodes.length).toBe(6);
   });
 
   it("filters by type", async () => {
-    const res = await gql(app.yoga, `{ nodes(type: "section") { total nodes { id nodeType } } }`);
+    const res = await gql(
+      app.yoga,
+      `{ nodes(type: "section") { total nodes { id nodeType } } }`,
+    );
     expect(res.errors).toBeUndefined();
     expect(res.data.nodes.total).toBe(2);
     for (const n of res.data.nodes.nodes) {
@@ -258,26 +271,38 @@ describe("nodes query", () => {
   });
 
   it("searches by source_id", async () => {
-    const res = await gql(app.yoga, `{ nodes(search: "1-200") { total nodes { id sourceId } } }`);
+    const res = await gql(
+      app.yoga,
+      `{ nodes(search: "1-200") { total nodes { id sourceId } } }`,
+    );
     expect(res.errors).toBeUndefined();
     expect(res.data.nodes.total).toBe(1);
     expect(res.data.nodes.nodes[0].sourceId).toBe("1-200");
   });
 
   it("searches by source name", async () => {
-    const res = await gql(app.yoga, `{ nodes(search: "courts") { total nodes { id source } } }`);
+    const res = await gql(
+      app.yoga,
+      `{ nodes(search: "courts") { total nodes { id source } } }`,
+    );
     expect(res.errors).toBeUndefined();
     expect(res.data.nodes.total).toBe(1);
     expect(res.data.nodes.nodes[0].source).toBe("courts");
   });
 
   it("respects limit and offset", async () => {
-    const res = await gql(app.yoga, `{ nodes(limit: 2, offset: 0) { total nodes { id } } }`);
+    const res = await gql(
+      app.yoga,
+      `{ nodes(limit: 2, offset: 0) { total nodes { id } } }`,
+    );
     expect(res.errors).toBeUndefined();
     expect(res.data.nodes.total).toBe(6);
     expect(res.data.nodes.nodes.length).toBe(2);
 
-    const page2 = await gql(app.yoga, `{ nodes(limit: 2, offset: 2) { nodes { id } } }`);
+    const page2 = await gql(
+      app.yoga,
+      `{ nodes(limit: 2, offset: 2) { nodes { id } } }`,
+    );
     expect(page2.data.nodes.nodes.length).toBe(2);
     // Pages shouldn't overlap
     const ids1 = res.data.nodes.nodes.map((n: any) => n.id);
@@ -295,7 +320,10 @@ describe("nodes query", () => {
   });
 
   it("returns empty for no-match search", async () => {
-    const res = await gql(app.yoga, `{ nodes(search: "nonexistent_xyz") { total nodes { id } } }`);
+    const res = await gql(
+      app.yoga,
+      `{ nodes(search: "nonexistent_xyz") { total nodes { id } } }`,
+    );
     expect(res.errors).toBeUndefined();
     expect(res.data.nodes.total).toBe(0);
     expect(res.data.nodes.nodes.length).toBe(0);
@@ -304,7 +332,10 @@ describe("nodes query", () => {
 
 describe("node query", () => {
   it("returns a node by id", async () => {
-    const res = await gql(app.yoga, `{ node(id: 1) { id source sourceId chunkIdx nodeType hasEmbedding } }`);
+    const res = await gql(
+      app.yoga,
+      `{ node(id: 1) { id source sourceId chunkIdx nodeType hasEmbedding } }`,
+    );
     expect(res.errors).toBeUndefined();
     const n = res.data.node;
     expect(n.id).toBe(1);
@@ -357,7 +388,10 @@ describe("node query", () => {
   });
 
   it("returns edges for a node", async () => {
-    const res = await gql(app.yoga, `{ node(id: 1) { edges { fromId toId relType weight } } }`);
+    const res = await gql(
+      app.yoga,
+      `{ node(id: 1) { edges { fromId toId relType weight } } }`,
+    );
     expect(res.errors).toBeUndefined();
     const edges = res.data.node.edges;
     expect(edges.length).toBeGreaterThan(0);
@@ -371,20 +405,29 @@ describe("node query", () => {
 
 describe("neighbors query", () => {
   it("returns edges for a node", async () => {
-    const res = await gql(app.yoga, `{ neighbors(id: 1) { fromId toId relType weight } }`);
+    const res = await gql(
+      app.yoga,
+      `{ neighbors(id: 1) { fromId toId relType weight } }`,
+    );
     expect(res.errors).toBeUndefined();
     expect(res.data.neighbors.length).toBe(2); // cites + contains
   });
 
   it("returns empty for isolated node", async () => {
     // Node 5 has no edges
-    const res = await gql(app.yoga, `{ neighbors(id: 5) { fromId toId relType } }`);
+    const res = await gql(
+      app.yoga,
+      `{ neighbors(id: 5) { fromId toId relType } }`,
+    );
     expect(res.errors).toBeUndefined();
     expect(res.data.neighbors.length).toBe(0);
   });
 
   it("returns empty for nonexistent node", async () => {
-    const res = await gql(app.yoga, `{ neighbors(id: 9999) { fromId toId relType } }`);
+    const res = await gql(
+      app.yoga,
+      `{ neighbors(id: 9999) { fromId toId relType } }`,
+    );
     expect(res.errors).toBeUndefined();
     expect(res.data.neighbors.length).toBe(0);
   });
@@ -392,15 +435,20 @@ describe("neighbors query", () => {
 
 describe("Edge resolvers", () => {
   it("resolves fromNode and toNode", async () => {
-    const res = await gql(app.yoga, `{
+    const res = await gql(
+      app.yoga,
+      `{
       neighbors(id: 1) {
         fromId toId relType
         fromNode { id source sourceId }
         toNode { id source sourceId }
       }
-    }`);
+    }`,
+    );
     expect(res.errors).toBeUndefined();
-    const citesEdge = res.data.neighbors.find((e: any) => e.relType === "cites");
+    const citesEdge = res.data.neighbors.find(
+      (e: any) => e.relType === "cites",
+    );
     expect(citesEdge.fromNode.id).toBe(1);
     expect(citesEdge.toNode.id).toBe(2);
     expect(citesEdge.toNode.sourceId).toBe("1-201");
@@ -409,7 +457,10 @@ describe("Edge resolvers", () => {
 
 describe("similar query", () => {
   it("returns nodes sorted by similarity", async () => {
-    const res = await gql(app.yoga, `{ similar(id: 1, limit: 10) { score node { id nodeType } } }`);
+    const res = await gql(
+      app.yoga,
+      `{ similar(id: 1, limit: 10) { score node { id nodeType } } }`,
+    );
     expect(res.errors).toBeUndefined();
     const results = res.data.similar;
     // Node 1 = [1,0,0,0]. Node 2 = [0.9,0.1,0,0] should be most similar
@@ -424,14 +475,20 @@ describe("similar query", () => {
   });
 
   it("respects limit parameter", async () => {
-    const res = await gql(app.yoga, `{ similar(id: 1, limit: 1) { score node { id } } }`);
+    const res = await gql(
+      app.yoga,
+      `{ similar(id: 1, limit: 1) { score node { id } } }`,
+    );
     expect(res.errors).toBeUndefined();
     expect(res.data.similar.length).toBe(1);
     expect(res.data.similar[0].node.id).toBe(2);
   });
 
   it("excludes the query node itself", async () => {
-    const res = await gql(app.yoga, `{ similar(id: 1, limit: 50) { node { id } } }`);
+    const res = await gql(
+      app.yoga,
+      `{ similar(id: 1, limit: 50) { node { id } } }`,
+    );
     expect(res.errors).toBeUndefined();
     const ids = res.data.similar.map((s: any) => s.node.id);
     expect(ids).not.toContain(1);
@@ -451,7 +508,10 @@ describe("similar query", () => {
 
   it("orthogonal vectors have ~0 similarity", async () => {
     // Node 1=[1,0,0,0], Node 3=[0,0,1,0] — orthogonal
-    const res = await gql(app.yoga, `{ similar(id: 1, limit: 10) { score node { id } } }`);
+    const res = await gql(
+      app.yoga,
+      `{ similar(id: 1, limit: 10) { score node { id } } }`,
+    );
     const node3 = res.data.similar.find((s: any) => s.node.id === 3);
     expect(node3).toBeDefined();
     expect(Math.abs(node3.score)).toBeLessThan(0.01);

@@ -25,7 +25,8 @@ vi.mock("./explorer-tools", async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>;
   return {
     ...actual,
-    executeExplorerTool: (...args: unknown[]) => mockExecuteExplorerTool(...args),
+    executeExplorerTool: (...args: unknown[]) =>
+      mockExecuteExplorerTool(...args),
   };
 });
 
@@ -92,9 +93,7 @@ describe("Chat API", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
@@ -158,9 +157,7 @@ describe("Chat API", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
@@ -217,9 +214,7 @@ describe("Chat API", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
@@ -258,9 +253,7 @@ describe("Chat API", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
@@ -299,9 +292,7 @@ describe("Chat API", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [{ finish_reason: "stop", message: { content: "No docs." } }],
@@ -341,9 +332,7 @@ describe("Chat API", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
@@ -385,9 +374,7 @@ describe("Chat API", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
@@ -438,9 +425,7 @@ describe("Chat API", () => {
 
     mockCreate
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
@@ -496,9 +481,7 @@ describe("Chat API", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [{ finish_reason: "stop", message: { content: "Done." } }],
@@ -518,9 +501,7 @@ describe("Chat API", () => {
   it("includes explorer tools in the tools array sent to OpenAI", async () => {
     mockCreate
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
@@ -547,7 +528,9 @@ describe("Chat API", () => {
 
   it("dispatches search_nodes explorer tool call and returns result", async () => {
     mockExecuteExplorerTool.mockResolvedValue(
-      JSON.stringify({ nodes: { total: 1, nodes: [{ id: 42, sourceId: "§2.2-3700" }] } }),
+      JSON.stringify({
+        nodes: { total: 1, nodes: [{ id: 42, sourceId: "§2.2-3700" }] },
+      }),
     );
 
     mockCreate
@@ -572,9 +555,7 @@ describe("Chat API", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
@@ -626,9 +607,7 @@ describe("Chat API", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
@@ -643,7 +622,9 @@ describe("Chat API", () => {
     );
     const body = await res.json();
     expect(body.reply).toBe("Here is the text.");
-    expect(mockExecuteExplorerTool).toHaveBeenCalledWith("get_node", { id: 42 });
+    expect(mockExecuteExplorerTool).toHaveBeenCalledWith("get_node", {
+      id: 42,
+    });
   });
 
   it("handles explorer tool failure gracefully", async () => {
@@ -671,15 +652,15 @@ describe("Chat API", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
           {
             finish_reason: "stop",
-            message: { content: "Explorer is unavailable, but I can still help." },
+            message: {
+              content: "Explorer is unavailable, but I can still help.",
+            },
           },
         ],
       });
@@ -697,14 +678,10 @@ describe("Chat API", () => {
   it("includes explorer tool note in system prompt", async () => {
     mockCreate
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: "OK." } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: "OK." } }],
       });
 
     await api.post(
@@ -724,14 +701,10 @@ describe("Chat API", () => {
   it("Phase 2 uses TEXT_MODEL_LARGE without tools parameter", async () => {
     mockCreate
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: "Hello!" } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: "Hello!" } }],
       });
 
     await api.post(
@@ -778,13 +751,14 @@ describe("Chat API", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
-          { finish_reason: "stop", message: { content: "Here are your cases." } },
+          {
+            finish_reason: "stop",
+            message: { content: "Here are your cases." },
+          },
         ],
       });
 
@@ -804,7 +778,9 @@ describe("Chat API", () => {
       (m) => m.role === "assistant" && m.content?.includes("[GetCases]:"),
     );
     expect(assistantContext).toBeDefined();
-    expect(assistantContext?.content).toContain("I retrieved the following data");
+    expect(assistantContext?.content).toContain(
+      "I retrieved the following data",
+    );
   });
 
   it("returns fallback after max iterations", async () => {
@@ -833,7 +809,9 @@ describe("Chat API", () => {
       choices: [
         {
           finish_reason: "stop",
-          message: { content: "Too many tool calls, but here is what I found." },
+          message: {
+            content: "Too many tool calls, but here is what I found.",
+          },
         },
       ],
     });

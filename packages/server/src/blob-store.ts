@@ -2,7 +2,6 @@ import { resolve } from "node:path";
 import { mkdirSync, existsSync, renameSync } from "node:fs";
 import { createHash } from "node:crypto";
 import {
-  SqliteDatabase,
   type DatabaseInstance,
   type DatabaseConnection,
 } from "@proseva/database";
@@ -27,10 +26,7 @@ export class BlobStore {
   private session: BlobSession | null = null;
   private writeQueue: Promise<void> = Promise.resolve();
 
-  constructor(
-    dbPath?: string,
-    keyProvider?: DatabaseEncryptionKeyProvider,
-  ) {
+  constructor(dbPath?: string, keyProvider?: DatabaseEncryptionKeyProvider) {
     const defaultDbPath = process.env.PROSEVA_DATA_DIR
       ? resolve(process.env.PROSEVA_DATA_DIR, "files.sqlite")
       : resolve(process.cwd(), ".proseva-data", "files.sqlite");
@@ -51,9 +47,7 @@ export class BlobStore {
     if (ArrayBuffer.isView(value)) {
       const view = value as ArrayBufferView;
       const bytes = new Uint8Array(view.byteLength);
-      bytes.set(
-        new Uint8Array(view.buffer, view.byteOffset, view.byteLength),
-      );
+      bytes.set(new Uint8Array(view.buffer, view.byteOffset, view.byteLength));
       return bytes;
     }
     if (
@@ -83,16 +77,24 @@ export class BlobStore {
       `);
       return { instance, connection, key: encryptionKey };
     } catch (error) {
-      try { await connection.close(); } catch {}
-      try { await instance.close(); } catch {}
+      try {
+        await connection.close();
+      } catch {}
+      try {
+        await instance.close();
+      } catch {}
       throw error;
     }
   }
 
   private async closeSession(): Promise<void> {
     if (!this.session) return;
-    try { await this.session.connection.close(); } catch {}
-    try { await this.session.instance.close(); } catch {}
+    try {
+      await this.session.connection.close();
+    } catch {}
+    try {
+      await this.session.instance.close();
+    } catch {}
     this.session = null;
   }
 
@@ -189,9 +191,7 @@ export class BlobStore {
 
   async delete(id: string): Promise<boolean> {
     const connection = await this.getConnection();
-    const stmt = await connection.prepare(
-      "DELETE FROM blobs WHERE id = $1",
-    );
+    const stmt = await connection.prepare("DELETE FROM blobs WHERE id = $1");
     stmt.bindVarchar(1, id);
     const result = await stmt.run();
     await stmt.close();
@@ -200,9 +200,7 @@ export class BlobStore {
 
   async has(id: string): Promise<boolean> {
     const connection = await this.getConnection();
-    const stmt = await connection.prepare(
-      "SELECT 1 FROM blobs WHERE id = $1",
-    );
+    const stmt = await connection.prepare("SELECT 1 FROM blobs WHERE id = $1");
     stmt.bindVarchar(1, id);
     const reader = await stmt.runAndReadAll();
     await stmt.close();
@@ -218,10 +216,14 @@ export class BlobStore {
       const existsReader = await connection.runAndReadAll(
         "SELECT count(*) as count FROM sqlite_master WHERE type='table' AND name='blobs'",
       );
-      const existsRows = existsReader.getRowObjectsJS() as Array<{ count: number | bigint }>;
+      const existsRows = existsReader.getRowObjectsJS() as Array<{
+        count: number | bigint;
+      }>;
       if (Number(existsRows[0]?.count ?? 0) === 0) return;
 
-      const reader = await connection.runAndReadAll("SELECT id, data FROM blobs");
+      const reader = await connection.runAndReadAll(
+        "SELECT id, data FROM blobs",
+      );
       const rows = reader.getRowObjectsJS() as Array<{
         id: string;
         data?: unknown;
@@ -249,16 +251,24 @@ export class BlobStore {
           await stmt.close();
         }
       } finally {
-        try { await encConn.close(); } catch {}
-        try { await encInstance.close(); } catch {}
+        try {
+          await encConn.close();
+        } catch {}
+        try {
+          await encInstance.close();
+        } catch {}
       }
 
       const backupPath = `${this.dbPath}.unencrypted.bak.${Date.now()}`;
       renameSync(this.dbPath, backupPath);
       renameSync(tempEncPath, this.dbPath);
     } finally {
-      try { await connection.close(); } catch {}
-      try { await instance.close(); } catch {}
+      try {
+        await connection.close();
+      } catch {}
+      try {
+        await instance.close();
+      } catch {}
     }
   }
 

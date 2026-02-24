@@ -238,32 +238,38 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    subgraph "Phase 1 — TEXT_MODEL_SMALL"
-        subgraph Turn 1
-            A1[SearchKnowledge<br/>query: FOIA] --> A2[Vector cosine search<br/>over embeddings DB]
-            B1[search_nodes<br/>search: FOIA<br/>type: section] --> B2[GraphQL → Explorer<br/>returns truncated nodes]
-        end
+subgraph phase1 ["Phase 1 — TEXT_MODEL_SMALL"]
+subgraph turn1 ["Turn 1"]
+A1[SearchKnowledge<br/>query: FOIA] --> A2[Vector cosine search<br/>over embeddings DB]
+B1[search_nodes<br/>search: FOIA<br/>type: section] --> B2[GraphQL → Explorer<br/>returns truncated nodes]
+end
 
-        subgraph Turn 2
-            C1[get_node<br/>id: 4521] --> C2[GraphQL → Explorer<br/>returns full sourceText<br/>+ edge list]
-        end
+subgraph turn2 ["Turn 2"]
+C1[get_node<br/>id: 4521] --> C2[GraphQL → Explorer<br/>returns full sourceText<br/>+ edge list]
+end
 
-        subgraph Turn 3
-            D1[get_neighbors<br/>id: 4521] --> D2[GraphQL → Explorer<br/>returns connected nodes<br/>cites/contains/amends]
-        end
+subgraph turn3 ["Turn 3"]
+D1[get_neighbors<br/>id: 4521] --> D2[GraphQL → Explorer<br/>returns connected nodes<br/>cites/contains/amends]
+end
 
-        subgraph Turn 4
-            E1[No tool calls] --> E2[Phase 1 loop breaks]
-        end
+subgraph turn4 ["Turn 4"]
+E1[No tool calls] --> E2[Phase 1 loop breaks]
+end
 
-        Turn 1 --> Turn 2 --> Turn 3 --> Turn 4
-    end
+turn1 --> turn2 --> turn3 --> turn4
+end
 
-    subgraph "Phase 2 — TEXT_MODEL_LARGE"
-        F1[System + history<br/>+ tool results summary] --> F2[Final answer returned<br/>clean context, no tool schemas]
-    end
+subgraph phase2 ["Phase 2 — TEXT_MODEL_LARGE"]
+F1[System + history<br/>+ tool results summary] --> F2[Final answer returned<br/>clean context, no tool schemas]
+end
 
-    Turn 4 --> F1
+turn4 --> F1
+
+%% ────── Styling (must be at the very bottom) ──────
+classDef phase fill:#f0f0f0,stroke:#333,stroke-width:2px,rx:10,ry:10
+classDef turn  fill:#e6f3ff,stroke:#1976d2,stroke-width:2px,rx:8,ry:8
+class phase1,phase2 phase
+class turn1,turn2,turn3,turn4 turn
 ```
 
 ---

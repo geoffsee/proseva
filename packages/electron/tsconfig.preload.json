@@ -4,7 +4,5 @@
     "module": "CommonJS",
     "moduleResolution": "node"
   },
-  "include": [
-    "src/preload.ts"
-  ]
+  "include": ["src/preload.ts"]
 }

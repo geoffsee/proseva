@@ -12,10 +12,7 @@ export interface DatabaseInstance {
 
 export interface DatabaseConnection {
   run(sql: string, params?: unknown[]): Promise<DatabaseResult>;
-  runAndReadAll(
-    sql: string,
-    params?: unknown[],
-  ): Promise<DatabaseReader>;
+  runAndReadAll(sql: string, params?: unknown[]): Promise<DatabaseReader>;
   prepare(sql: string): Promise<DatabasePreparedStatement>;
   close(): Promise<void>;
 }

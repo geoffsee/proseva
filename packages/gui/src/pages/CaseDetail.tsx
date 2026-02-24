@@ -82,7 +82,9 @@ const CaseDetail = observer(function CaseDetail() {
             caseData={caseData as unknown as import("../types").Case}
             onUpdateCase={(id, updates) => caseStore.updateCase(id, updates)}
             onDeleteClick={() => {
-              console.log("onDeleteClick called, setting confirmDelete to true");
+              console.log(
+                "onDeleteClick called, setting confirmDelete to true",
+              );
               setConfirmDelete(true);
             }}
           />

@@ -1,6 +1,10 @@
 import OpenAI from "openai";
 import { getConfig } from "./config";
-import { explorerTools, executeExplorerTool, isExplorerToolName } from "./explorer-tools";
+import {
+  explorerTools,
+  executeExplorerTool,
+  isExplorerToolName,
+} from "./explorer-tools";
 
 // --- Shared constants & helpers (same as research.ts) ---
 
@@ -755,7 +759,9 @@ async function executeTool(
         try {
           return JSON.parse(await executeExplorerTool(name, args));
         } catch {
-          return { error: `Explorer tool '${name}' failed — explorer may be unavailable` };
+          return {
+            error: `Explorer tool '${name}' failed — explorer may be unavailable`,
+          };
         }
       }
       return { error: `Unknown tool: ${name}` };
@@ -872,10 +878,8 @@ Guidelines:
   }
 
   // === Phase 2: Conversational response with TEXT_MODEL_LARGE ===
-  const conversationMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-    { role: "system", content: systemPrompt },
-    ...userMessages,
-  ];
+  const conversationMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] =
+    [{ role: "system", content: systemPrompt }, ...userMessages];
 
   if (toolResults.length > 0) {
     const contextSummary = toolResults
@@ -893,7 +897,9 @@ Guidelines:
   });
 
   return {
-    reply: finalCompletion.choices[0].message.content ?? "Sorry, I was unable to complete the request.",
+    reply:
+      finalCompletion.choices[0].message.content ??
+      "Sorry, I was unable to complete the request.",
     toolResults,
   };
 }

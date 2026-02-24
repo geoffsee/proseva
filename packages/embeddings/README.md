@@ -71,13 +71,13 @@ cargo run --release -- \
 
 ### Flags
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--input` | (required) | Path to `virginia.db` |
-| `--output` | sibling of input | Path to write `embeddings.sqlite.db` |
-| `--model` | `BAAI/bge-small-en-v1.5` | fastembed model name |
-| `--batch-size` | `256` | Texts per embedding batch |
-| `--skip-embeddings` | `false` | Only build graph, skip Pass 3 |
+| Flag                | Default                  | Description                          |
+| ------------------- | ------------------------ | ------------------------------------ |
+| `--input`           | (required)               | Path to `virginia.db`                |
+| `--output`          | sibling of input         | Path to write `embeddings.sqlite.db` |
+| `--model`           | `BAAI/bge-small-en-v1.5` | fastembed model name                 |
+| `--batch-size`      | `256`                    | Texts per embedding batch            |
+| `--skip-embeddings` | `false`                  | Only build graph, skip Pass 3        |
 
 ---
 
@@ -160,14 +160,14 @@ graph TD
 
 Each node type prepares its embeddable text differently:
 
-| Node type | Text formula |
-|-----------|-------------|
-| `section` | `strip_html(title) + " " + strip_html(body)` |
+| Node type              | Text formula                                                                                  |
+| ---------------------- | --------------------------------------------------------------------------------------------- |
+| `section`              | `strip_html(title) + " " + strip_html(body)`                                                  |
 | `constitution_section` | `strip_html(section_name) + " " + strip_html(section_title) + " " + strip_html(section_text)` |
-| `authority` | `strip_html(title) + " " + strip_html(body)` |
-| `court` | `name + locality + court_type + district + city` |
-| `popular_name` | `strip_html(name) + " " + strip_html(body)` |
-| `manual_chunk` | `strip_html(title) + " " + strip_html(content)` |
+| `authority`            | `strip_html(title) + " " + strip_html(body)`                                                  |
+| `court`                | `name + locality + court_type + district + city`                                              |
+| `popular_name`         | `strip_html(name) + " " + strip_html(body)`                                                   |
+| `manual_chunk`         | `strip_html(title) + " " + strip_html(content)`                                               |
 
 #### HTML Stripping
 
@@ -236,11 +236,11 @@ Extracted via regex from the cleaned text of sections, constitution sections, au
 
 Three regex patterns are applied:
 
-| Pattern | What it matches | Example |
-|---------|----------------|---------|
-| `href.*?/vacode/([^/'"]+)` | VA Code URLs in `<a>` tags | `href="/vacode/19.2-392"` |
-| `§\s*(\d+(?:\.\d+)*-\d+(?:\.\d+)*)` | Single section references | `§ 2.2-3700` |
-| `§§\s*([\d.,\s\-and]+)` | Plural section lists | `§§ 1-200, 2-300, and 3-400` |
+| Pattern                             | What it matches            | Example                      |
+| ----------------------------------- | -------------------------- | ---------------------------- |
+| `href.*?/vacode/([^/'"]+)`          | VA Code URLs in `<a>` tags | `href="/vacode/19.2-392"`    |
+| `§\s*(\d+(?:\.\d+)*-\d+(?:\.\d+)*)` | Single section references  | `§ 2.2-3700`                 |
+| `§§\s*([\d.,\s\-and]+)`             | Plural section lists       | `§§ 1-200, 2-300, and 3-400` |
 
 Each extracted section number is resolved against the node lookup map. Unresolvable references (no matching node) are dropped silently. Self-citations are excluded.
 
@@ -268,10 +268,11 @@ flowchart LR
 - **Model**: `BAAI/bge-small-en-v1.5` — 384 dimensions, ~130MB ONNX model downloaded on first run
 - **Batch size**: 256 texts per batch (configurable via `--batch-size`)
 - **Skips**: synthetic hierarchy nodes (no text to embed) and nodes with empty text
-- **Storage**: raw little-endian `f32` bytes — 384 floats * 4 bytes = **1,536 bytes** per vector
+- **Storage**: raw little-endian `f32` bytes — 384 floats \* 4 bytes = **1,536 bytes** per vector
 - **Progress**: `indicatif` progress bar with ETA
 
 Supported models (via `--model`):
+
 - `BAAI/bge-small-en-v1.5` (default, 384 dims)
 - `BAAI/bge-base-en-v1.5`
 - `BAAI/bge-large-en-v1.5`
@@ -316,35 +317,35 @@ erDiagram
 
 **`model_info`** — metadata about the embedding model used.
 
-| key | value (example) |
-|-----|-----------------|
+| key          | value (example)          |
+| ------------ | ------------------------ |
 | `model_name` | `BAAI/bge-small-en-v1.5` |
-| `dimensions` | `384` |
+| `dimensions` | `384`                    |
 
 **`nodes`** — one row per embeddable or structural unit.
 
-| Column | Description |
-|--------|-------------|
-| `id` | Auto-incrementing primary key |
-| `source` | Source table in virginia.db (`virginia_code`, `constitution`, etc.) |
-| `source_id` | Identifier within that table (section number, short_name, filename, etc.) |
-| `chunk_idx` | 0 for single nodes, 0..N for chunked content |
+| Column      | Description                                                                                                            |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `id`        | Auto-incrementing primary key                                                                                          |
+| `source`    | Source table in virginia.db (`virginia_code`, `constitution`, etc.)                                                    |
+| `source_id` | Identifier within that table (section number, short_name, filename, etc.)                                              |
+| `chunk_idx` | 0 for single nodes, 0..N for chunked content                                                                           |
 | `node_type` | `section`, `title`, `chapter`, `article`, `constitution_section`, `authority`, `court`, `popular_name`, `manual_chunk` |
 
 **`edges`** — directed relationships between nodes.
 
-| Column | Description |
-|--------|-------------|
-| `from_id` | Source node |
-| `to_id` | Target node |
-| `rel_type` | `contains`, `cites`, or `references` |
-| `weight` | Reserved for future use (currently NULL) |
+| Column     | Description                              |
+| ---------- | ---------------------------------------- |
+| `from_id`  | Source node                              |
+| `to_id`    | Target node                              |
+| `rel_type` | `contains`, `cites`, or `references`     |
+| `weight`   | Reserved for future use (currently NULL) |
 
 **`embeddings`** — one row per non-synthetic node.
 
-| Column | Description |
-|--------|-------------|
-| `node_id` | FK to nodes.id |
+| Column      | Description                                    |
+| ----------- | ---------------------------------------------- |
+| `node_id`   | FK to nodes.id                                 |
 | `embedding` | 1,536-byte BLOB (384 little-endian f32 values) |
 
 ### Indexes
@@ -367,17 +368,17 @@ Edges:  80,554 total
   - references:   2,290
 ```
 
-| Node type | Count |
-|-----------|-------|
-| `section` | 33,702 |
-| `popular_name` | 5,093 |
-| `manual_chunk` | 2,062 |
-| `chapter` | 1,561 |
-| `authority` | 1,557 |
-| `court` | 206 |
-| `constitution_section` | 131 |
-| `title` | 76 |
-| `article` | 14 |
+| Node type              | Count  |
+| ---------------------- | ------ |
+| `section`              | 33,702 |
+| `popular_name`         | 5,093  |
+| `manual_chunk`         | 2,062  |
+| `chapter`              | 1,561  |
+| `authority`            | 1,557  |
+| `court`                | 206    |
+| `constitution_section` | 131    |
+| `title`                | 76     |
+| `article`              | 14     |
 
 ---
 
@@ -410,13 +411,13 @@ sqlite3 ../datasets/data/embeddings.sqlite.db "SELECT length(embedding) FROM emb
 
 ## Dependencies
 
-| Crate | Version | Purpose |
-|-------|---------|---------|
-| `rusqlite` | 0.31 (bundled) | SQLite read/write |
-| `fastembed` | 4 | ONNX-based text embeddings |
-| `clap` | 4 (derive) | CLI argument parsing |
-| `scraper` | 0.20 | HTML parsing and text extraction |
-| `regex` | 1 | Citation pattern matching |
-| `indicatif` | 0.17 | Progress bars |
-| `anyhow` | 1 | Error handling |
-| `rayon` | 1 | Parallel iteration (available for future use) |
+| Crate       | Version        | Purpose                                       |
+| ----------- | -------------- | --------------------------------------------- |
+| `rusqlite`  | 0.31 (bundled) | SQLite read/write                             |
+| `fastembed` | 4              | ONNX-based text embeddings                    |
+| `clap`      | 4 (derive)     | CLI argument parsing                          |
+| `scraper`   | 0.20           | HTML parsing and text extraction              |
+| `regex`     | 1              | Citation pattern matching                     |
+| `indicatif` | 0.17           | Progress bars                                 |
+| `anyhow`    | 1              | Error handling                                |
+| `rayon`     | 1              | Parallel iteration (available for future use) |

@@ -21,7 +21,9 @@ async function main() {
   }
 
   if (files.length === 0) {
-    console.error("Usage: bun run transformers/index.ts [--split] [--binarize] <file ...>");
+    console.error(
+      "Usage: bun run transformers/index.ts [--split] [--binarize] <file ...>",
+    );
     process.exit(1);
   }
 
@@ -54,7 +56,10 @@ async function main() {
       continue;
     }
 
-    const pages = await renderPdfPagesToPng(file, { dpi: 300, binarize: doBinarize });
+    const pages = await renderPdfPagesToPng(file, {
+      dpi: 300,
+      binarize: doBinarize,
+    });
     console.log(`--- ${file} (${pages.length} pages) ---`);
 
     for (let p = 0; p < pages.length; p++) {
@@ -82,7 +87,7 @@ async function main() {
 
       const generated_texts = processor.batch_decode(
         generated_ids.slice(null, [inputs.input_ids.dims.at(-1), null]),
-        { skip_special_tokens: true }
+        { skip_special_tokens: true },
       );
 
       console.log("\n--- DocTags output ---");

@@ -1,4 +1,5 @@
-[//]: # (todo: update with relevant content after monorepo refactor is complete)
+[//]: # "todo: update with relevant content after monorepo refactor is complete"
+
 # Bearer Token Authentication
 
 This document describes the bearer token authentication system added to Pro-Se-VA.

@@ -22,8 +22,6 @@ export function useVirginiaCourts() {
 
   useEffect(() => {
     if (courtsCache) {
-      setCourts(courtsCache);
-      setLoading(false);
       return;
     }
     fetchCourts()

@@ -1,11 +1,6 @@
 import { resolve } from "node:path";
+import { mkdirSync, existsSync, renameSync } from "node:fs";
 import {
-  mkdirSync,
-  existsSync,
-  renameSync,
-} from "node:fs";
-import {
-  SqliteDatabase,
   type DatabaseInstance,
   type DatabaseConnection,
 } from "@proseva/database";
@@ -37,9 +32,7 @@ export class InMemoryAdapter implements PersistenceAdapter {
     return structuredClone(this.data);
   }
 
-  async save(
-    data: Record<string, Record<string, unknown>>,
-  ): Promise<void> {
+  async save(data: Record<string, Record<string, unknown>>): Promise<void> {
     this.data = structuredClone(data);
   }
 }
@@ -156,11 +149,17 @@ export class SqliteAdapter implements PersistenceAdapter {
       const count = Number(existsRows[0]?.count ?? 0);
       if (count === 0) return {};
 
-      const reader = await connection.runAndReadAll("SELECT key, value FROM kv");
-      const rows = reader.getRowObjectsJS() as Array<{ key: string; value: string }>;
+      const reader = await connection.runAndReadAll(
+        "SELECT key, value FROM kv",
+      );
+      const rows = reader.getRowObjectsJS() as Array<{
+        key: string;
+        value: string;
+      }>;
       const snapshot: Record<string, Record<string, unknown>> = {};
       for (const row of rows) {
-        if (typeof row.key !== "string" || typeof row.value !== "string") continue;
+        if (typeof row.key !== "string" || typeof row.value !== "string")
+          continue;
         try {
           const parsed = JSON.parse(row.value) as unknown;
           if (isRecord(parsed)) snapshot[row.key] = parsed;
@@ -221,10 +220,17 @@ export class SqliteAdapter implements PersistenceAdapter {
 
   private async migratePlainToEncrypted(encryptionKey: string): Promise<void> {
     if (!existsSync(this.dbPath)) return;
-    const snapshot = await this.readSnapshotFromDatabase(this.dbPath, undefined);
+    const snapshot = await this.readSnapshotFromDatabase(
+      this.dbPath,
+      undefined,
+    );
     const tempEncryptedPath = `${this.dbPath}.enc.tmp.${Date.now()}`;
     const backupPath = `${this.dbPath}.unencrypted.bak.${Date.now()}`;
-    await this.writeSnapshotToDatabase(tempEncryptedPath, encryptionKey, snapshot);
+    await this.writeSnapshotToDatabase(
+      tempEncryptedPath,
+      encryptionKey,
+      snapshot,
+    );
     renameSync(this.dbPath, backupPath);
     renameSync(tempEncryptedPath, this.dbPath);
   }
@@ -270,7 +276,8 @@ export class SqliteAdapter implements PersistenceAdapter {
     const snapshot: Record<string, Record<string, unknown>> = {};
 
     for (const row of rows) {
-      if (typeof row.key !== "string" || typeof row.value !== "string") continue;
+      if (typeof row.key !== "string" || typeof row.value !== "string")
+        continue;
       try {
         const parsed = JSON.parse(row.value) as unknown;
         if (isRecord(parsed)) snapshot[row.key] = parsed;
@@ -300,10 +307,10 @@ export class SqliteAdapter implements PersistenceAdapter {
     try {
       await connection.run("DELETE FROM kv");
       for (const [key, value] of Object.entries(data)) {
-        await connection.run("INSERT OR REPLACE INTO kv (key, value) VALUES (?, ?)", [
-          key,
-          JSON.stringify(value),
-        ]);
+        await connection.run(
+          "INSERT OR REPLACE INTO kv (key, value) VALUES (?, ?)",
+          [key, JSON.stringify(value)],
+        );
       }
       await connection.run("COMMIT");
     } catch (error) {
@@ -313,7 +320,6 @@ export class SqliteAdapter implements PersistenceAdapter {
       throw error;
     }
   }
-
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

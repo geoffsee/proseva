@@ -26,10 +26,24 @@ export const tools = [
       parameters: {
         type: "object",
         properties: {
-          type: { type: "string", description: "Filter by node type, e.g. 'section', 'court', 'title', 'constitution_section', 'authority'" },
-          search: { type: "string", description: "Search term to match against source and source_id fields" },
-          limit: { type: "number", description: "Max results to return (default 20, max 200)" },
-          offset: { type: "number", description: "Pagination offset (default 0)" },
+          type: {
+            type: "string",
+            description:
+              "Filter by node type, e.g. 'section', 'court', 'title', 'constitution_section', 'authority'",
+          },
+          search: {
+            type: "string",
+            description:
+              "Search term to match against source and source_id fields",
+          },
+          limit: {
+            type: "number",
+            description: "Max results to return (default 20, max 200)",
+          },
+          offset: {
+            type: "number",
+            description: "Pagination offset (default 0)",
+          },
         },
         required: [],
       },
@@ -59,7 +73,10 @@ export const tools = [
       parameters: {
         type: "object",
         properties: {
-          id: { type: "number", description: "The node ID to get neighbors for" },
+          id: {
+            type: "number",
+            description: "The node ID to get neighbors for",
+          },
         },
         required: ["id"],
       },
@@ -74,8 +91,15 @@ export const tools = [
       parameters: {
         type: "object",
         properties: {
-          id: { type: "number", description: "The node ID to find similar nodes for" },
-          limit: { type: "number", description: "Number of similar nodes to return (default 10, max 50)" },
+          id: {
+            type: "number",
+            description: "The node ID to find similar nodes for",
+          },
+          limit: {
+            type: "number",
+            description:
+              "Number of similar nodes to return (default 10, max 50)",
+          },
         },
         required: ["id"],
       },

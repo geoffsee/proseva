@@ -60,8 +60,12 @@ vi.mock("../lib/api", () => ({
       list: vi.fn().mockResolvedValue([]),
       delete: vi.fn().mockResolvedValue(null),
       upload: vi.fn().mockResolvedValue({}),
-      getText: vi.fn().mockResolvedValue("Extracted text content for this document."),
-      download: vi.fn().mockResolvedValue({ blob: new Blob(), filename: "file.pdf" }),
+      getText: vi
+        .fn()
+        .mockResolvedValue("Extracted text content for this document."),
+      download: vi
+        .fn()
+        .mockResolvedValue({ blob: new Blob(), filename: "file.pdf" }),
     },
     ingest: {
       status: vi.fn().mockResolvedValue({
@@ -233,7 +237,7 @@ async function mockApis(
   api.ingest.status.mockResolvedValue(ingestStatus as any);
 
   // Mock fetch for /texts/ static files
-  global.fetch = vi.fn().mockImplementation((url: string, opts?: any) => {
+  global.fetch = vi.fn().mockImplementation((url: string, _opts?: any) => {
     if (url.startsWith("/texts/")) {
       return Promise.resolve({
         ok: true,

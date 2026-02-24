@@ -3,10 +3,8 @@
 import { configureFetchForDataset, getDatasetResources, HEADERS } from "../lib";
 import { csvToJson } from "../etl/csv-json";
 
-const DIR = new URL(
-  "../../data/case_law_authorities/",
-  import.meta.url
-).pathname;
+const DIR = new URL("../../data/case_law_authorities/", import.meta.url)
+  .pathname;
 
 configureFetchForDataset("case_law_authorities");
 const files = getDatasetResources("case_law_authorities") as Array<{

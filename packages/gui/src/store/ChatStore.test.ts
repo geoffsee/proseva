@@ -36,9 +36,7 @@ describe("ChatStore", () => {
     const store = createStore();
     await store.sendMessage("hello");
 
-    expect(chatSpy).toHaveBeenCalledWith([
-      { role: "user", content: "hello" },
-    ]);
+    expect(chatSpy).toHaveBeenCalledWith([{ role: "user", content: "hello" }]);
   });
 
   it("adds Authorization header when auth token exists", async () => {
@@ -50,9 +48,7 @@ describe("ChatStore", () => {
     await store.sendMessage("hello");
 
     // The SDK handles auth headers internally via getAuthToken callback
-    expect(chatSpy).toHaveBeenCalledWith([
-      { role: "user", content: "hello" },
-    ]);
+    expect(chatSpy).toHaveBeenCalledWith([{ role: "user", content: "hello" }]);
   });
 
   it("handles API errors gracefully", async () => {

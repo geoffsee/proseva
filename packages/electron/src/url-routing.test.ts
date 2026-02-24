@@ -12,11 +12,15 @@ describe("toServerUrl", () => {
     });
 
     it("passes through full http URLs unchanged", () => {
-      expect(toServerUrl("http://example.com/api/foo")).toBe("http://example.com/api/foo");
+      expect(toServerUrl("http://example.com/api/foo")).toBe(
+        "http://example.com/api/foo",
+      );
     });
 
     it("passes through full https URLs unchanged", () => {
-      expect(toServerUrl("https://example.com/api/foo")).toBe("https://example.com/api/foo");
+      expect(toServerUrl("https://example.com/api/foo")).toBe(
+        "https://example.com/api/foo",
+      );
     });
   });
 
@@ -26,22 +30,28 @@ describe("toServerUrl", () => {
     });
 
     it("strips /explorer prefix from path", () => {
-      expect(toServerUrl("/explorer/some/nested/path")).toBe(`${EXPLORER_URL}/some/nested/path`);
+      expect(toServerUrl("/explorer/some/nested/path")).toBe(
+        `${EXPLORER_URL}/some/nested/path`,
+      );
     });
 
     it("routes full http explorer URLs to explorer", () => {
-      expect(toServerUrl("http://localhost:5173/explorer/graphql")).toBe(`${EXPLORER_URL}/graphql`);
+      expect(toServerUrl("http://localhost:5173/explorer/graphql")).toBe(
+        `${EXPLORER_URL}/graphql`,
+      );
     });
 
     it("preserves query string for explorer URLs", () => {
-      expect(toServerUrl("http://localhost:5173/explorer/graphql?debug=1")).toBe(
-        `${EXPLORER_URL}/graphql?debug=1`,
-      );
+      expect(
+        toServerUrl("http://localhost:5173/explorer/graphql?debug=1"),
+      ).toBe(`${EXPLORER_URL}/graphql?debug=1`);
     });
 
     it("does not match /explorersomething (requires trailing slash)", () => {
       // /explorersomething doesn't start with /explorer/ so it goes to server
-      expect(toServerUrl("/explorersomething")).toBe(`${SERVER_URL}/explorersomething`);
+      expect(toServerUrl("/explorersomething")).toBe(
+        `${SERVER_URL}/explorersomething`,
+      );
     });
   });
 

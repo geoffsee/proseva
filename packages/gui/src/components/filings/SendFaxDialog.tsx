@@ -41,9 +41,7 @@ export function SendFaxDialog({
 
   // Find matching court from the case's court field
   const matchedCourt = courtName
-    ? courts.find(
-        (c) => c.name.toLowerCase() === courtName.toLowerCase(),
-      )
+    ? courts.find((c) => c.name.toLowerCase() === courtName.toLowerCase())
     : undefined;
 
   const courtFax = matchedCourt?.fax ?? "";

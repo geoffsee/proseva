@@ -1,208 +1,470 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Embeddings Explorer</title>
-<style>
-  :root { --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3a; --text: #e1e4ed; --muted: #8b8fa3; --accent: #6c8cff; --accent2: #44d9e6; --green: #4ade80; --orange: #f59e0b; }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
-  .header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; }
-  .header h1 { font-size: 18px; font-weight: 600; }
-  .header .subtitle { color: var(--muted); font-size: 13px; }
-  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); padding: 0 24px; }
-  .tab { padding: 10px 20px; cursor: pointer; color: var(--muted); font-size: 14px; border-bottom: 2px solid transparent; transition: all 0.15s; }
-  .tab:hover { color: var(--text); }
-  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-  .content { padding: 24px; max-width: 1200px; }
-  .panel { display: none; }
-  .panel.active { display: block; }
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 16px; }
-  .card h3 { font-size: 15px; margin-bottom: 12px; color: var(--accent2); }
-  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
-  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
-  .stat .value { font-size: 28px; font-weight: 700; color: var(--accent); }
-  .stat .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { text-align: left; padding: 8px 12px; color: var(--muted); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
-  td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
-  tr:hover td { background: rgba(108, 140, 255, 0.05); }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
-  .badge-type { background: rgba(108, 140, 255, 0.15); color: var(--accent); }
-  .badge-rel { background: rgba(68, 217, 230, 0.15); color: var(--accent2); }
-  .badge-emb { background: rgba(74, 222, 128, 0.15); color: var(--green); }
-  .link { color: var(--accent); cursor: pointer; text-decoration: none; }
-  .link:hover { text-decoration: underline; }
-  .controls { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
-  input, select { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; color: var(--text); font-size: 13px; outline: none; }
-  input:focus, select:focus { border-color: var(--accent); }
-  button { background: var(--accent); color: #fff; border: none; border-radius: 6px; padding: 8px 16px; font-size: 13px; cursor: pointer; font-weight: 500; }
-  button:hover { opacity: 0.9; }
-  button.secondary { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
-  .pagination { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
-  .pagination span { color: var(--muted); font-size: 13px; }
-  .source-text { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-top: 8px; font-size: 13px; max-height: 300px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; color: var(--muted); }
-  .score-bar { display: inline-block; height: 6px; border-radius: 3px; background: var(--accent); vertical-align: middle; margin-right: 8px; }
-  .loading { color: var(--muted); font-style: italic; }
-  .empty { color: var(--muted); text-align: center; padding: 40px; }
-  .node-header { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; margin-bottom: 16px; }
-  .node-header h2 { font-size: 20px; }
-  .back-link { color: var(--muted); cursor: pointer; font-size: 13px; }
-  .back-link:hover { color: var(--text); }
-  .sim-input { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; }
-</style>
-</head>
-<body>
-
-<div class="header">
-  <h1>Embeddings Explorer</h1>
-  <span class="subtitle">Interactive graph + vector database browser</span>
-</div>
-
-<div class="tabs">
-  <div class="tab active" data-tab="stats">Stats</div>
-  <div class="tab" data-tab="browse">Browse</div>
-  <div class="tab" data-tab="detail">Node Detail</div>
-  <div class="tab" data-tab="similarity">Similarity</div>
-</div>
-
-<div class="content">
-  <!-- Stats Panel -->
-  <div class="panel active" id="panel-stats">
-    <div class="stat-grid" id="stats-grid"></div>
-    <div class="card">
-      <h3>Node Types</h3>
-      <table><thead><tr><th>Type</th><th>Count</th></tr></thead><tbody id="node-types-body"></tbody></table>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Embeddings Explorer</title>
+    <style>
+      :root {
+        --bg: #0f1117;
+        --surface: #1a1d27;
+        --border: #2a2d3a;
+        --text: #e1e4ed;
+        --muted: #8b8fa3;
+        --accent: #6c8cff;
+        --accent2: #44d9e6;
+        --green: #4ade80;
+        --orange: #f59e0b;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.5;
+      }
+      .header {
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .header h1 {
+        font-size: 18px;
+        font-weight: 600;
+      }
+      .header .subtitle {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .tabs {
+        display: flex;
+        gap: 0;
+        border-bottom: 1px solid var(--border);
+        padding: 0 24px;
+      }
+      .tab {
+        padding: 10px 20px;
+        cursor: pointer;
+        color: var(--muted);
+        font-size: 14px;
+        border-bottom: 2px solid transparent;
+        transition: all 0.15s;
+      }
+      .tab:hover {
+        color: var(--text);
+      }
+      .tab.active {
+        color: var(--accent);
+        border-bottom-color: var(--accent);
+      }
+      .content {
+        padding: 24px;
+        max-width: 1200px;
+      }
+      .panel {
+        display: none;
+      }
+      .panel.active {
+        display: block;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 16px;
+      }
+      .card h3 {
+        font-size: 15px;
+        margin-bottom: 12px;
+        color: var(--accent2);
+      }
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .stat {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px;
+      }
+      .stat .value {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--accent);
+      }
+      .stat .label {
+        font-size: 12px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      th {
+        text-align: left;
+        padding: 8px 12px;
+        color: var(--muted);
+        font-weight: 500;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid var(--border);
+      }
+      td {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border);
+      }
+      tr:hover td {
+        background: rgba(108, 140, 255, 0.05);
+      }
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 500;
+      }
+      .badge-type {
+        background: rgba(108, 140, 255, 0.15);
+        color: var(--accent);
+      }
+      .badge-rel {
+        background: rgba(68, 217, 230, 0.15);
+        color: var(--accent2);
+      }
+      .badge-emb {
+        background: rgba(74, 222, 128, 0.15);
+        color: var(--green);
+      }
+      .link {
+        color: var(--accent);
+        cursor: pointer;
+        text-decoration: none;
+      }
+      .link:hover {
+        text-decoration: underline;
+      }
+      .controls {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      input,
+      select {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 8px 12px;
+        color: var(--text);
+        font-size: 13px;
+        outline: none;
+      }
+      input:focus,
+      select:focus {
+        border-color: var(--accent);
+      }
+      button {
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        padding: 8px 16px;
+        font-size: 13px;
+        cursor: pointer;
+        font-weight: 500;
+      }
+      button:hover {
+        opacity: 0.9;
+      }
+      button.secondary {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        color: var(--text);
+      }
+      .pagination {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-top: 12px;
+      }
+      .pagination span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .source-text {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 12px;
+        margin-top: 8px;
+        font-size: 13px;
+        max-height: 300px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+        color: var(--muted);
+      }
+      .score-bar {
+        display: inline-block;
+        height: 6px;
+        border-radius: 3px;
+        background: var(--accent);
+        vertical-align: middle;
+        margin-right: 8px;
+      }
+      .loading {
+        color: var(--muted);
+        font-style: italic;
+      }
+      .empty {
+        color: var(--muted);
+        text-align: center;
+        padding: 40px;
+      }
+      .node-header {
+        display: flex;
+        gap: 12px;
+        align-items: baseline;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+      .node-header h2 {
+        font-size: 20px;
+      }
+      .back-link {
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 13px;
+      }
+      .back-link:hover {
+        color: var(--text);
+      }
+      .sim-input {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>Embeddings Explorer</h1>
+      <span class="subtitle">Interactive graph + vector database browser</span>
     </div>
-    <div class="card">
-      <h3>Edge Types</h3>
-      <table><thead><tr><th>Type</th><th>Count</th></tr></thead><tbody id="edge-types-body"></tbody></table>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="stats">Stats</div>
+      <div class="tab" data-tab="browse">Browse</div>
+      <div class="tab" data-tab="detail">Node Detail</div>
+      <div class="tab" data-tab="similarity">Similarity</div>
     </div>
-  </div>
 
-  <!-- Browse Panel -->
-  <div class="panel" id="panel-browse">
-    <div class="controls">
-      <select id="browse-type"><option value="">All types</option></select>
-      <input id="browse-search" type="text" placeholder="Search source / source_id..." style="width:250px">
-      <button onclick="loadBrowse()">Search</button>
+    <div class="content">
+      <!-- Stats Panel -->
+      <div class="panel active" id="panel-stats">
+        <div class="stat-grid" id="stats-grid"></div>
+        <div class="card">
+          <h3>Node Types</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Count</th>
+              </tr>
+            </thead>
+            <tbody id="node-types-body"></tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h3>Edge Types</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Count</th>
+              </tr>
+            </thead>
+            <tbody id="edge-types-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Browse Panel -->
+      <div class="panel" id="panel-browse">
+        <div class="controls">
+          <select id="browse-type">
+            <option value="">All types</option>
+          </select>
+          <input
+            id="browse-search"
+            type="text"
+            placeholder="Search source / source_id..."
+            style="width: 250px"
+          />
+          <button onclick="loadBrowse()">Search</button>
+        </div>
+        <div id="browse-results"></div>
+        <div class="pagination" id="browse-pagination"></div>
+      </div>
+
+      <!-- Node Detail Panel -->
+      <div class="panel" id="panel-detail">
+        <div id="detail-content">
+          <div class="empty">Select a node from Browse or enter an ID</div>
+        </div>
+      </div>
+
+      <!-- Similarity Panel -->
+      <div class="panel" id="panel-similarity">
+        <div class="sim-input">
+          <label>Node ID:</label>
+          <input
+            id="sim-id"
+            type="number"
+            placeholder="e.g. 42"
+            style="width: 120px"
+          />
+          <label>Top-K:</label>
+          <input id="sim-limit" type="number" value="10" style="width: 80px" />
+          <button onclick="loadSimilar()">Find Similar</button>
+        </div>
+        <div id="sim-results"></div>
+      </div>
     </div>
-    <div id="browse-results"></div>
-    <div class="pagination" id="browse-pagination"></div>
-  </div>
 
-  <!-- Node Detail Panel -->
-  <div class="panel" id="panel-detail">
-    <div id="detail-content"><div class="empty">Select a node from Browse or enter an ID</div></div>
-  </div>
+    <script>
+      const GQL = "/graphql";
 
-  <!-- Similarity Panel -->
-  <div class="panel" id="panel-similarity">
-    <div class="sim-input">
-      <label>Node ID:</label>
-      <input id="sim-id" type="number" placeholder="e.g. 42" style="width:120px">
-      <label>Top-K:</label>
-      <input id="sim-limit" type="number" value="10" style="width:80px">
-      <button onclick="loadSimilar()">Find Similar</button>
-    </div>
-    <div id="sim-results"></div>
-  </div>
-</div>
+      async function gql(query, variables = {}) {
+        const res = await fetch(GQL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query, variables }),
+        });
+        const json = await res.json();
+        if (json.errors)
+          throw new Error(json.errors.map((e) => e.message).join(", "));
+        return json.data;
+      }
 
-<script>
-const GQL = '/graphql';
+      // --- Tabs ---
+      let currentTab = "stats";
+      document.querySelectorAll(".tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          document
+            .querySelectorAll(".tab")
+            .forEach((t) => t.classList.remove("active"));
+          document
+            .querySelectorAll(".panel")
+            .forEach((p) => p.classList.remove("active"));
+          tab.classList.add("active");
+          const id = tab.dataset.tab;
+          document.getElementById("panel-" + id).classList.add("active");
+          currentTab = id;
+        });
+      });
 
-async function gql(query, variables = {}) {
-  const res = await fetch(GQL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query, variables }),
-  });
-  const json = await res.json();
-  if (json.errors) throw new Error(json.errors.map(e => e.message).join(', '));
-  return json.data;
-}
+      function switchTab(name) {
+        document.querySelectorAll(".tab").forEach((t) => {
+          t.classList.toggle("active", t.dataset.tab === name);
+        });
+        document.querySelectorAll(".panel").forEach((p) => {
+          p.classList.toggle("active", p.id === "panel-" + name);
+        });
+        currentTab = name;
+      }
 
-// --- Tabs ---
-let currentTab = 'stats';
-document.querySelectorAll('.tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    tab.classList.add('active');
-    const id = tab.dataset.tab;
-    document.getElementById('panel-' + id).classList.add('active');
-    currentTab = id;
-  });
-});
-
-function switchTab(name) {
-  document.querySelectorAll('.tab').forEach(t => {
-    t.classList.toggle('active', t.dataset.tab === name);
-  });
-  document.querySelectorAll('.panel').forEach(p => {
-    p.classList.toggle('active', p.id === 'panel-' + name);
-  });
-  currentTab = name;
-}
-
-// --- Stats ---
-async function loadStats() {
-  const data = await gql(`{
+      // --- Stats ---
+      async function loadStats() {
+        const data = await gql(`{
     stats {
       nodeCount edgeCount embeddingCount
       nodeTypes { type count }
       edgeTypes { type count }
     }
   }`);
-  const s = data.stats;
-  document.getElementById('stats-grid').innerHTML = `
+        const s = data.stats;
+        document.getElementById("stats-grid").innerHTML = `
     <div class="stat"><div class="value">${s.nodeCount.toLocaleString()}</div><div class="label">Nodes</div></div>
     <div class="stat"><div class="value">${s.edgeCount.toLocaleString()}</div><div class="label">Edges</div></div>
     <div class="stat"><div class="value">${s.embeddingCount.toLocaleString()}</div><div class="label">Embeddings</div></div>
     <div class="stat"><div class="value">${s.nodeTypes.length}</div><div class="label">Node Types</div></div>
     <div class="stat"><div class="value">${s.edgeTypes.length}</div><div class="label">Edge Types</div></div>
   `;
-  document.getElementById('node-types-body').innerHTML = s.nodeTypes.map(t =>
-    `<tr><td><span class="badge badge-type">${esc(t.type)}</span></td><td>${t.count.toLocaleString()}</td></tr>`
-  ).join('');
-  document.getElementById('edge-types-body').innerHTML = s.edgeTypes.map(t =>
-    `<tr><td><span class="badge badge-rel">${esc(t.type)}</span></td><td>${t.count.toLocaleString()}</td></tr>`
-  ).join('');
+        document.getElementById("node-types-body").innerHTML = s.nodeTypes
+          .map(
+            (t) =>
+              `<tr><td><span class="badge badge-type">${esc(t.type)}</span></td><td>${t.count.toLocaleString()}</td></tr>`,
+          )
+          .join("");
+        document.getElementById("edge-types-body").innerHTML = s.edgeTypes
+          .map(
+            (t) =>
+              `<tr><td><span class="badge badge-rel">${esc(t.type)}</span></td><td>${t.count.toLocaleString()}</td></tr>`,
+          )
+          .join("");
 
-  // Populate browse type filter
-  const sel = document.getElementById('browse-type');
-  sel.innerHTML = '<option value="">All types</option>' +
-    s.nodeTypes.map(t => `<option value="${esc(t.type)}">${esc(t.type)} (${t.count})</option>`).join('');
-}
+        // Populate browse type filter
+        const sel = document.getElementById("browse-type");
+        sel.innerHTML =
+          '<option value="">All types</option>' +
+          s.nodeTypes
+            .map(
+              (t) =>
+                `<option value="${esc(t.type)}">${esc(t.type)} (${t.count})</option>`,
+            )
+            .join("");
+      }
 
-// --- Browse ---
-let browseOffset = 0;
-const browseLimit = 50;
+      // --- Browse ---
+      let browseOffset = 0;
+      const browseLimit = 50;
 
-async function loadBrowse(offset = 0) {
-  browseOffset = offset;
-  const type = document.getElementById('browse-type').value || null;
-  const search = document.getElementById('browse-search').value || null;
-  const data = await gql(`query($type: String, $search: String, $limit: Int, $offset: Int) {
+      async function loadBrowse(offset = 0) {
+        browseOffset = offset;
+        const type = document.getElementById("browse-type").value || null;
+        const search = document.getElementById("browse-search").value || null;
+        const data = await gql(
+          `query($type: String, $search: String, $limit: Int, $offset: Int) {
     nodes(type: $type, search: $search, limit: $limit, offset: $offset) {
       total
       nodes { id source sourceId chunkIdx nodeType hasEmbedding }
     }
-  }`, { type, search, limit: browseLimit, offset });
+  }`,
+          { type, search, limit: browseLimit, offset },
+        );
 
-  const { nodes, total } = data.nodes;
-  if (!nodes.length) {
-    document.getElementById('browse-results').innerHTML = '<div class="empty">No nodes found</div>';
-    document.getElementById('browse-pagination').innerHTML = '';
-    return;
-  }
+        const { nodes, total } = data.nodes;
+        if (!nodes.length) {
+          document.getElementById("browse-results").innerHTML =
+            '<div class="empty">No nodes found</div>';
+          document.getElementById("browse-pagination").innerHTML = "";
+          return;
+        }
 
-  document.getElementById('browse-results').innerHTML = `
+        document.getElementById("browse-results").innerHTML = `
     <table>
       <thead><tr><th>ID</th><th>Source</th><th>Source ID</th><th>Chunk</th><th>Type</th><th>Embedding</th></tr></thead>
-      <tbody>${nodes.map(n => `
+      <tbody>${nodes
+        .map(
+          (n) => `
         <tr>
           <td><span class="link" onclick="showNode(${n.id})">${n.id}</span></td>
           <td>${esc(n.source)}</td>
@@ -211,43 +473,51 @@ async function loadBrowse(offset = 0) {
           <td><span class="badge badge-type">${esc(n.nodeType)}</span></td>
           <td>${n.hasEmbedding ? '<span class="badge badge-emb">yes</span>' : '<span style="color:var(--muted)">no</span>'}</td>
         </tr>
-      `).join('')}</tbody>
+      `,
+        )
+        .join("")}</tbody>
     </table>
   `;
 
-  const totalPages = Math.ceil(total / browseLimit);
-  const currentPage = Math.floor(offset / browseLimit);
-  document.getElementById('browse-pagination').innerHTML = `
-    <button class="secondary" ${currentPage === 0 ? 'disabled' : ''} onclick="loadBrowse(${(currentPage - 1) * browseLimit})">Prev</button>
+        const totalPages = Math.ceil(total / browseLimit);
+        const currentPage = Math.floor(offset / browseLimit);
+        document.getElementById("browse-pagination").innerHTML = `
+    <button class="secondary" ${currentPage === 0 ? "disabled" : ""} onclick="loadBrowse(${(currentPage - 1) * browseLimit})">Prev</button>
     <span>Page ${currentPage + 1} of ${totalPages} (${total.toLocaleString()} nodes)</span>
-    <button class="secondary" ${currentPage >= totalPages - 1 ? 'disabled' : ''} onclick="loadBrowse(${(currentPage + 1) * browseLimit})">Next</button>
+    <button class="secondary" ${currentPage >= totalPages - 1 ? "disabled" : ""} onclick="loadBrowse(${(currentPage + 1) * browseLimit})">Next</button>
   `;
-}
+      }
 
-// --- Node Detail ---
-async function showNode(id) {
-  switchTab('detail');
-  const el = document.getElementById('detail-content');
-  el.innerHTML = '<div class="loading">Loading...</div>';
+      // --- Node Detail ---
+      async function showNode(id) {
+        switchTab("detail");
+        const el = document.getElementById("detail-content");
+        el.innerHTML = '<div class="loading">Loading...</div>';
 
-  const data = await gql(`query($id: Int!) {
+        const data = await gql(
+          `query($id: Int!) {
     node(id: $id) {
       id source sourceId chunkIdx nodeType hasEmbedding sourceText
       edges { fromId toId relType weight }
     }
-  }`, { id });
+  }`,
+          { id },
+        );
 
-  const n = data.node;
-  if (!n) { el.innerHTML = '<div class="empty">Node not found</div>'; return; }
+        const n = data.node;
+        if (!n) {
+          el.innerHTML = '<div class="empty">Node not found</div>';
+          return;
+        }
 
-  const inEdges = n.edges.filter(e => e.toId === n.id);
-  const outEdges = n.edges.filter(e => e.fromId === n.id);
+        const inEdges = n.edges.filter((e) => e.toId === n.id);
+        const outEdges = n.edges.filter((e) => e.fromId === n.id);
 
-  el.innerHTML = `
+        el.innerHTML = `
     <div class="node-header">
       <h2>Node #${n.id}</h2>
       <span class="badge badge-type">${esc(n.nodeType)}</span>
-      ${n.hasEmbedding ? '<span class="badge badge-emb">has embedding</span>' : ''}
+      ${n.hasEmbedding ? '<span class="badge badge-emb">has embedding</span>' : ""}
     </div>
     <div class="card">
       <h3>Properties</h3>
@@ -257,52 +527,71 @@ async function showNode(id) {
         <tr><td style="color:var(--muted)">Chunk Index</td><td>${n.chunkIdx}</td></tr>
       </table>
     </div>
-    ${n.sourceText ? `<div class="card"><h3>Source Text</h3><div class="source-text">${esc(n.sourceText)}</div></div>` : ''}
-    ${n.hasEmbedding ? `<div style="margin-bottom:16px"><button onclick="findSimilarFromDetail(${n.id})">Find Similar Nodes</button></div>` : ''}
+    ${n.sourceText ? `<div class="card"><h3>Source Text</h3><div class="source-text">${esc(n.sourceText)}</div></div>` : ""}
+    ${n.hasEmbedding ? `<div style="margin-bottom:16px"><button onclick="findSimilarFromDetail(${n.id})">Find Similar Nodes</button></div>` : ""}
     <div class="card">
       <h3>Outgoing Edges (${outEdges.length})</h3>
-      ${outEdges.length ? `<table><thead><tr><th>Target</th><th>Relation</th><th>Weight</th></tr></thead><tbody>
-        ${outEdges.map(e => `<tr><td><span class="link" onclick="showNode(${e.toId})">#${e.toId}</span></td><td><span class="badge badge-rel">${esc(e.relType)}</span></td><td>${e.weight ?? '-'}</td></tr>`).join('')}
-      </tbody></table>` : '<div class="empty">None</div>'}
+      ${
+        outEdges.length
+          ? `<table><thead><tr><th>Target</th><th>Relation</th><th>Weight</th></tr></thead><tbody>
+        ${outEdges.map((e) => `<tr><td><span class="link" onclick="showNode(${e.toId})">#${e.toId}</span></td><td><span class="badge badge-rel">${esc(e.relType)}</span></td><td>${e.weight ?? "-"}</td></tr>`).join("")}
+      </tbody></table>`
+          : '<div class="empty">None</div>'
+      }
     </div>
     <div class="card">
       <h3>Incoming Edges (${inEdges.length})</h3>
-      ${inEdges.length ? `<table><thead><tr><th>Source</th><th>Relation</th><th>Weight</th></tr></thead><tbody>
-        ${inEdges.map(e => `<tr><td><span class="link" onclick="showNode(${e.fromId})">#${e.fromId}</span></td><td><span class="badge badge-rel">${esc(e.relType)}</span></td><td>${e.weight ?? '-'}</td></tr>`).join('')}
-      </tbody></table>` : '<div class="empty">None</div>'}
+      ${
+        inEdges.length
+          ? `<table><thead><tr><th>Source</th><th>Relation</th><th>Weight</th></tr></thead><tbody>
+        ${inEdges.map((e) => `<tr><td><span class="link" onclick="showNode(${e.fromId})">#${e.fromId}</span></td><td><span class="badge badge-rel">${esc(e.relType)}</span></td><td>${e.weight ?? "-"}</td></tr>`).join("")}
+      </tbody></table>`
+          : '<div class="empty">None</div>'
+      }
     </div>
   `;
-}
+      }
 
-function findSimilarFromDetail(id) {
-  document.getElementById('sim-id').value = id;
-  switchTab('similarity');
-  loadSimilar();
-}
+      function findSimilarFromDetail(id) {
+        document.getElementById("sim-id").value = id;
+        switchTab("similarity");
+        loadSimilar();
+      }
 
-// --- Similarity ---
-async function loadSimilar() {
-  const id = parseInt(document.getElementById('sim-id').value);
-  const limit = parseInt(document.getElementById('sim-limit').value) || 10;
-  if (!id) return;
+      // --- Similarity ---
+      async function loadSimilar() {
+        const id = parseInt(document.getElementById("sim-id").value);
+        const limit =
+          parseInt(document.getElementById("sim-limit").value) || 10;
+        if (!id) return;
 
-  const el = document.getElementById('sim-results');
-  el.innerHTML = '<div class="loading">Computing cosine similarity across all embeddings...</div>';
+        const el = document.getElementById("sim-results");
+        el.innerHTML =
+          '<div class="loading">Computing cosine similarity across all embeddings...</div>';
 
-  const data = await gql(`query($id: Int!, $limit: Int) {
+        const data = await gql(
+          `query($id: Int!, $limit: Int) {
     similar(id: $id, limit: $limit) {
       score
       node { id source sourceId chunkIdx nodeType hasEmbedding }
     }
-  }`, { id, limit });
+  }`,
+          { id, limit },
+        );
 
-  const results = data.similar;
-  if (!results.length) { el.innerHTML = '<div class="empty">No similar nodes found (does this node have an embedding?)</div>'; return; }
+        const results = data.similar;
+        if (!results.length) {
+          el.innerHTML =
+            '<div class="empty">No similar nodes found (does this node have an embedding?)</div>';
+          return;
+        }
 
-  el.innerHTML = `
+        el.innerHTML = `
     <table>
       <thead><tr><th>Score</th><th>ID</th><th>Source</th><th>Source ID</th><th>Type</th></tr></thead>
-      <tbody>${results.map(r => `
+      <tbody>${results
+        .map(
+          (r) => `
         <tr>
           <td><span class="score-bar" style="width:${Math.max(4, r.score * 100)}px"></span>${r.score.toFixed(4)}</td>
           <td><span class="link" onclick="showNode(${r.node.id})">${r.node.id}</span></td>
@@ -310,26 +599,29 @@ async function loadSimilar() {
           <td>${esc(r.node.sourceId)}</td>
           <td><span class="badge badge-type">${esc(r.node.nodeType)}</span></td>
         </tr>
-      `).join('')}</tbody>
+      `,
+        )
+        .join("")}</tbody>
     </table>
   `;
-}
+      }
 
-// --- Utilities ---
-function esc(s) {
-  if (s == null) return '';
-  const d = document.createElement('div');
-  d.textContent = String(s);
-  return d.innerHTML;
-}
+      // --- Utilities ---
+      function esc(s) {
+        if (s == null) return "";
+        const d = document.createElement("div");
+        d.textContent = String(s);
+        return d.innerHTML;
+      }
 
-// --- Init ---
-document.getElementById('browse-search').addEventListener('keydown', e => {
-  if (e.key === 'Enter') loadBrowse();
-});
+      // --- Init ---
+      document
+        .getElementById("browse-search")
+        .addEventListener("keydown", (e) => {
+          if (e.key === "Enter") loadBrowse();
+        });
 
-loadStats();
-</script>
-
-</body>
+      loadStats();
+    </script>
+  </body>
 </html>

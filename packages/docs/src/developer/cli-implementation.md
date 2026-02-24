@@ -1,4 +1,5 @@
-[//]: # (todo: update with relevant content after monorepo refactor is complete)
+[//]: # "todo: update with relevant content after monorepo refactor is complete"
+
 # CLI Implementation Summary
 
 ## Overview

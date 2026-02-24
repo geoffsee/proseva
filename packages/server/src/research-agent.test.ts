@@ -25,12 +25,12 @@ vi.mock("./explorer-tools", async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>;
   return {
     ...actual,
-    executeExplorerTool: (...args: unknown[]) => mockExecuteExplorerTool(...args),
+    executeExplorerTool: (...args: unknown[]) =>
+      mockExecuteExplorerTool(...args),
   };
 });
 
 import { handleResearchChat } from "./research-agent";
-import { getConfig } from "./config";
 
 // Mock the config to provide required values
 vi.mock("./config", async (importOriginal) => {
@@ -78,9 +78,7 @@ describe("Research Agent", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
@@ -136,9 +134,7 @@ describe("Research Agent", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
@@ -184,9 +180,7 @@ describe("Research Agent", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
@@ -233,9 +227,7 @@ describe("Research Agent", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
@@ -250,7 +242,10 @@ describe("Research Agent", () => {
       });
 
     const response = await handleResearchChat([
-      { role: "user", content: "Find class action dockets in the Fourth Circuit" },
+      {
+        role: "user",
+        content: "Find class action dockets in the Fourth Circuit",
+      },
     ]);
 
     expect(response.reply).toContain("Fourth Circuit");
@@ -280,9 +275,7 @@ describe("Research Agent", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
@@ -297,7 +290,10 @@ describe("Research Agent", () => {
       });
 
     const response = await handleResearchChat([
-      { role: "user", content: "Search government documents for bankruptcy law" },
+      {
+        role: "user",
+        content: "Search government documents for bankruptcy law",
+      },
     ]);
 
     expect(response.reply).toContain("bankruptcy");
@@ -327,9 +323,7 @@ describe("Research Agent", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
@@ -365,7 +359,8 @@ describe("Research Agent", () => {
                   type: "function",
                   function: {
                     name: "search_lawyers",
-                    arguments: '{"location":"New York","specialty":"corporate"}',
+                    arguments:
+                      '{"location":"New York","specialty":"corporate"}',
                   },
                 },
               ],
@@ -374,17 +369,14 @@ describe("Research Agent", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
           {
             finish_reason: "stop",
             message: {
-              content:
-                "I found several corporate law attorneys in New York...",
+              content: "I found several corporate law attorneys in New York...",
             },
           },
         ],
@@ -423,9 +415,7 @@ describe("Research Agent", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
@@ -476,9 +466,7 @@ describe("Research Agent", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
@@ -562,9 +550,7 @@ describe("Research Agent", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
@@ -608,9 +594,7 @@ describe("Research Agent", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
@@ -630,16 +614,14 @@ describe("Research Agent", () => {
         expect.objectContaining({
           toolName: "search_opinions",
         }),
-      ])
+      ]),
     );
   });
 
   it("includes explorer tools in the tools sent to OpenAI", async () => {
     mockCreate
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
@@ -647,9 +629,7 @@ describe("Research Agent", () => {
         ],
       });
 
-    await handleResearchChat([
-      { role: "user", content: "Virginia FOIA" },
-    ]);
+    await handleResearchChat([{ role: "user", content: "Virginia FOIA" }]);
 
     const firstCall = mockCreate.mock.calls[0]?.[0] as {
       tools?: Array<{ function: { name: string } }>;
@@ -689,9 +669,7 @@ describe("Research Agent", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
@@ -745,13 +723,14 @@ describe("Research Agent", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
-          { finish_reason: "stop", message: { content: "Here is the section." } },
+          {
+            finish_reason: "stop",
+            message: { content: "Here is the section." },
+          },
         ],
       });
 
@@ -760,7 +739,9 @@ describe("Research Agent", () => {
     ]);
 
     expect(response.reply).toBe("Here is the section.");
-    expect(mockExecuteExplorerTool).toHaveBeenCalledWith("get_node", { id: 10 });
+    expect(mockExecuteExplorerTool).toHaveBeenCalledWith("get_node", {
+      id: 10,
+    });
   });
 
   it("handles explorer tool failure gracefully and accumulates error", async () => {
@@ -788,9 +769,7 @@ describe("Research Agent", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
@@ -820,19 +799,13 @@ describe("Research Agent", () => {
   it("includes knowledge graph note in system prompt", async () => {
     mockCreate
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: "OK." } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: "OK." } }],
       });
 
-    await handleResearchChat([
-      { role: "user", content: "hi" },
-    ]);
+    await handleResearchChat([{ role: "user", content: "hi" }]);
 
     const firstCall = mockCreate.mock.calls[0]?.[0] as {
       messages?: Array<{ role: string; content?: string }>;
@@ -877,9 +850,7 @@ describe("Research Agent", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
@@ -904,19 +875,13 @@ describe("Research Agent", () => {
   it("Phase 2 uses TEXT_MODEL_LARGE without tools parameter", async () => {
     mockCreate
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: "Hello!" } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: "Hello!" } }],
       });
 
-    await handleResearchChat([
-      { role: "user", content: "hi" },
-    ]);
+    await handleResearchChat([{ role: "user", content: "hi" }]);
 
     expect(mockCreate).toHaveBeenCalledTimes(2);
 
@@ -960,19 +925,18 @@ describe("Research Agent", () => {
         ],
       })
       .mockResolvedValueOnce({
-        choices: [
-          { finish_reason: "stop", message: { content: null } },
-        ],
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [
-          { finish_reason: "stop", message: { content: "Here are the opinions." } },
+          {
+            finish_reason: "stop",
+            message: { content: "Here are the opinions." },
+          },
         ],
       });
 
-    await handleResearchChat([
-      { role: "user", content: "Search opinions" },
-    ]);
+    await handleResearchChat([{ role: "user", content: "Search opinions" }]);
 
     expect(mockCreate).toHaveBeenCalledTimes(3);
 
@@ -981,9 +945,12 @@ describe("Research Agent", () => {
       messages?: Array<{ role: string; content?: string }>;
     };
     const assistantContext = phase2Call.messages?.find(
-      (m) => m.role === "assistant" && m.content?.includes("[search_opinions]:"),
+      (m) =>
+        m.role === "assistant" && m.content?.includes("[search_opinions]:"),
     );
     expect(assistantContext).toBeDefined();
-    expect(assistantContext?.content).toContain("I retrieved the following data");
+    expect(assistantContext?.content).toContain(
+      "I retrieved the following data",
+    );
   });
 });

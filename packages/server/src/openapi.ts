@@ -5,12 +5,10 @@ export type ApiPaths = paths;
 
 export type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
 
-type OperationFor<
-  Path extends keyof ApiPaths,
-  Method extends HttpMethod,
-> = ApiPaths[Path] extends Record<string, unknown>
-  ? ApiPaths[Path][Method]
-  : never;
+type OperationFor<Path extends keyof ApiPaths, Method extends HttpMethod> =
+  ApiPaths[Path] extends Record<string, unknown>
+    ? ApiPaths[Path][Method]
+    : never;
 
 type StatusKeyToNumber<K> = K extends number
   ? K
@@ -72,7 +70,9 @@ export type ApiRouteHandler<
   Path extends keyof ApiPaths,
   Method extends HttpMethod,
   Req = IRequest,
-> = (request: Req) => ApiRouteResult<Path, Method> | Promise<ApiRouteResult<Path, Method>>;
+> = (
+  request: Req,
+) => ApiRouteResult<Path, Method> | Promise<ApiRouteResult<Path, Method>>;
 
 type IttyPathToOpenApiPath<Path extends string> =
   Path extends `${infer Head}:${infer Param}/${infer Tail}`
@@ -81,8 +81,8 @@ type IttyPathToOpenApiPath<Path extends string> =
       ? `${Head}{${Param}}`
       : Path;
 
-type OpenApiPathFromItty<Path extends string> =
-  IttyPathToOpenApiPath<Path> & keyof ApiPaths;
+type OpenApiPathFromItty<Path extends string> = IttyPathToOpenApiPath<Path> &
+  keyof ApiPaths;
 
 /**
  * Identity wrapper to type-check an itty-router handler against the OpenAPI
@@ -157,15 +157,19 @@ export function created<Body>(
   return json(201, body, headers);
 }
 
-export function noContent(
-  headers?: HeadersInit,
-): { __openapi: true; status: 204; headers?: HeadersInit } {
+export function noContent(headers?: HeadersInit): {
+  __openapi: true;
+  status: 204;
+  headers?: HeadersInit;
+} {
   return empty(204, headers);
 }
 
-export function notFound(
-  headers?: HeadersInit,
-): { __openapi: true; status: 404; headers?: HeadersInit } {
+export function notFound(headers?: HeadersInit): {
+  __openapi: true;
+  status: 404;
+  headers?: HeadersInit;
+} {
   return empty(404, headers);
 }
 

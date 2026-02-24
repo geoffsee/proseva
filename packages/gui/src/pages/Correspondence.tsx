@@ -49,11 +49,16 @@ export default function Correspondence() {
   const [downloadingAttachmentId, setDownloadingAttachmentId] = useState<
     string | null
   >(null);
-  const [emailStatus, setEmailStatus] = useState<EmailServiceStatus | null>(null);
+  const [emailStatus, setEmailStatus] = useState<EmailServiceStatus | null>(
+    null,
+  );
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    void api.email.status().then(setEmailStatus).catch(() => {});
+    void api.email
+      .status()
+      .then(setEmailStatus)
+      .catch(() => {});
   }, []);
 
   const loadData = useCallback(async () => {
@@ -72,7 +77,9 @@ export default function Correspondence() {
       setCases(caseList ?? []);
     } catch (error) {
       setLoadError(
-        error instanceof Error ? error.message : "Failed to load correspondence",
+        error instanceof Error
+          ? error.message
+          : "Failed to load correspondence",
       );
     } finally {
       setLoading(false);
@@ -150,7 +157,9 @@ export default function Correspondence() {
       window.setTimeout(() => URL.revokeObjectURL(href), 1000);
     } catch (error) {
       setDownloadError(
-        error instanceof Error ? error.message : "Failed to download attachment",
+        error instanceof Error
+          ? error.message
+          : "Failed to download attachment",
       );
     } finally {
       setDownloadingAttachmentId((current) =>
@@ -323,7 +332,9 @@ export default function Correspondence() {
                     <Text truncate>{item.recipient || "—"}</Text>
                   </Table.Cell>
                   <Table.Cell>
-                    {item.caseId ? caseNameById.get(item.caseId) || item.caseId : "—"}
+                    {item.caseId
+                      ? caseNameById.get(item.caseId) || item.caseId
+                      : "—"}
                   </Table.Cell>
                   <Table.Cell maxW="320px">
                     {(item.attachments ?? []).length === 0 ? (
@@ -344,7 +355,8 @@ export default function Correspondence() {
                             }
                             loading={downloadingAttachmentId === attachment.id}
                           >
-                            {attachment.filename} ({formatBytes(attachment.size)})
+                            {attachment.filename} (
+                            {formatBytes(attachment.size)})
                           </Button>
                         ))}
                       </VStack>

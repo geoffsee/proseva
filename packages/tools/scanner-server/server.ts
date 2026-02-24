@@ -17,7 +17,6 @@
 
 import { readdir, rename, mkdir, stat, readFile } from "node:fs/promises";
 import { join, extname } from "node:path";
-import { existsSync } from "node:fs";
 
 const PORT = Number(process.env.PORT ?? 8085);
 const WATCH_DIR = process.env.WATCH_DIR ?? "/watch";
@@ -54,11 +53,18 @@ const knownFiles = new Set<string>();
 function contentTypeFromExt(filePath: string): string {
   const ext = extname(filePath).toLowerCase();
   switch (ext) {
-    case ".pdf": return "application/pdf";
-    case ".jpg": case ".jpeg": return "image/jpeg";
-    case ".png": return "image/png";
-    case ".tiff": case ".tif": return "image/tiff";
-    default: return "application/pdf";
+    case ".pdf":
+      return "application/pdf";
+    case ".jpg":
+    case ".jpeg":
+      return "image/jpeg";
+    case ".png":
+      return "image/png";
+    case ".tiff":
+    case ".tif":
+      return "image/tiff";
+    default:
+      return "application/pdf";
   }
 }
 
@@ -94,10 +100,17 @@ async function scanWatchDir() {
       const data = new Uint8Array(await readFile(filePath));
       const contentType = contentTypeFromExt(filePath);
 
-      const queued: QueuedFile = { path: filePath, name: entry, data, contentType };
+      const queued: QueuedFile = {
+        path: filePath,
+        name: entry,
+        data,
+        contentType,
+      };
       fileQueue.push(queued);
 
-      console.log(`[watcher] Queued: ${entry} (${data.byteLength} bytes, ${contentType})`);
+      console.log(
+        `[watcher] Queued: ${entry} (${data.byteLength} bytes, ${contentType})`,
+      );
 
       // Signal paper loaded if not already scanning
       if (adfState === "ScannerAdfEmpty" && scannerState === "Idle") {
@@ -198,7 +211,7 @@ function log(method: string, path: string, status: number, extra?: string) {
   console.log(`[${ts}] ${method} ${path} → ${status}${extraStr}`);
 }
 
-const server = Bun.serve({
+Bun.serve({
   port: PORT,
   hostname: "0.0.0.0",
   fetch(req) {
@@ -226,7 +239,12 @@ const server = Bun.serve({
     if (method === "POST" && path === "/eSCL/ScanJobs") {
       const jobId = String(nextJobId++);
       const file = fileQueue.shift() ?? null;
-      const job: Job = { id: jobId, state: "Processing", documentReady: false, file };
+      const job: Job = {
+        id: jobId,
+        state: "Processing",
+        documentReady: false,
+        file,
+      };
       jobs.set(jobId, job);
 
       scannerState = "Processing";
@@ -246,7 +264,9 @@ const server = Bun.serve({
               await rename(j.file.path, dest);
               console.log(`[job:${jobId}] Moved ${j.file.name} → processed/`);
             } catch {
-              console.log(`[job:${jobId}] Could not move ${j.file.name} (may already be gone)`);
+              console.log(
+                `[job:${jobId}] Could not move ${j.file.name} (may already be gone)`,
+              );
             }
             knownFiles.delete(j.file.path);
           }
@@ -254,15 +274,24 @@ const server = Bun.serve({
           // If queue is empty, ADF goes back to empty
           if (fileQueue.length === 0) {
             adfState = "ScannerAdfEmpty";
-            console.log(`[job:${jobId}] Document ready (ADF → empty, queue empty)`);
+            console.log(
+              `[job:${jobId}] Document ready (ADF → empty, queue empty)`,
+            );
           } else {
-            console.log(`[job:${jobId}] Document ready (${fileQueue.length} more in queue)`);
+            console.log(
+              `[job:${jobId}] Document ready (${fileQueue.length} more in queue)`,
+            );
           }
         }
       }, DELAY_MS);
 
       const location = `/eSCL/ScanJobs/${jobId}`;
-      log(method, path, 201, `job=${jobId} file=${file?.name ?? "(generated)"}`);
+      log(
+        method,
+        path,
+        201,
+        `job=${jobId} file=${file?.name ?? "(generated)"}`,
+      );
       return new Response(null, {
         status: 201,
         headers: { location },

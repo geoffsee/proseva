@@ -28,9 +28,9 @@ export class InternetFaxProvider implements FaxProvider {
     if (this.config.username && this.config.password) {
       headers["Authorization"] =
         "Basic " +
-        Buffer.from(
-          `${this.config.username}:${this.config.password}`,
-        ).toString("base64");
+        Buffer.from(`${this.config.username}:${this.config.password}`).toString(
+          "base64",
+        );
     }
     return headers;
   }

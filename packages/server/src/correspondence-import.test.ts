@@ -137,7 +137,10 @@ describe("ingestEmailAttachments", () => {
       createdAt: new Date().toISOString(),
     };
     mockIngestPdfToBlob.mockResolvedValue({ record: fakeRecord });
-    mockAutoPopulate.mockResolvedValue({ caseId: "case-42", log: ["created case"] });
+    mockAutoPopulate.mockResolvedValue({
+      caseId: "case-42",
+      log: ["created case"],
+    });
 
     const corr = makeCorrespondence({
       attachments: [
@@ -265,7 +268,8 @@ describe("ingestEmailAttachments", () => {
         {
           id: "att-doc",
           filename: "notes.docx",
-          contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          contentType:
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
           size: 1024,
           hash: "doc",
           createdAt: new Date().toISOString(),
@@ -292,7 +296,8 @@ describe("ingestEmailAttachments", () => {
     });
 
     const pdfBytes = new Uint8Array([0x25, 0x50, 0x44, 0x46]);
-    const mockRetrieve = vi.fn()
+    const mockRetrieve = vi
+      .fn()
       .mockResolvedValueOnce(pdfBytes) // first PDF succeeds
       .mockResolvedValueOnce(pdfBytes); // second PDF succeeds
 

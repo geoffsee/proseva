@@ -21,6 +21,6 @@ export async function extractTextFromPdf(path: string): Promise<string> {
 }
 
 export async function pdfToJson(pdfPath: string): Promise<{ text: string }> {
-    const text = await extractTextFromPdf(pdfPath);
-    return { text };
+  const text = await extractTextFromPdf(pdfPath);
+  return { text };
 }

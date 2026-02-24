@@ -75,7 +75,9 @@ async function extractTextLocal(
     await writeFile(tmpFile, buffer);
     const result = await ocrPdf(tmpFile);
     const text = result.pages.map((p) => p.text).join("\n\n");
-    console.log(`[ingest] Local OCR complete: ${result.pages.length} pages, ${text.length} chars`);
+    console.log(
+      `[ingest] Local OCR complete: ${result.pages.length} pages, ${text.length} chars`,
+    );
     return { text, pageCount: result.pages.length };
   } finally {
     await rm(tmpDir, { recursive: true, force: true }).catch(() => {});
@@ -87,7 +89,9 @@ async function extractTextVlm(
   openai: OpenAI,
 ): Promise<{ text: string; pageCount: number }> {
   const model = getConfig("VLM_MODEL") || "gpt-4.1";
-  console.log(`[ingest] VLM extraction using model=${model}, buffer=${(buffer.byteLength / 1024).toFixed(0)}KB`);
+  console.log(
+    `[ingest] VLM extraction using model=${model}, buffer=${(buffer.byteLength / 1024).toFixed(0)}KB`,
+  );
   const base64 = buffer.toString("base64");
   const response = await openai.chat.completions.create({
     model,
@@ -116,7 +120,9 @@ async function extractTextVlm(
   const pageCount = pageCountMatch ? parseInt(pageCountMatch[1], 10) : 1;
   const text = raw.replace(/PAGE_COUNT:\d+\s*$/, "").trim();
 
-  console.log(`[ingest] VLM extraction complete: ${pageCount} pages, ${text.length} chars`);
+  console.log(
+    `[ingest] VLM extraction complete: ${pageCount} pages, ${text.length} chars`,
+  );
   return { text, pageCount };
 }
 
@@ -125,7 +131,9 @@ export async function extractTextFromPdf(
   openai?: OpenAI | null,
 ): Promise<{ text: string; pageCount: number }> {
   const ocrMode = getConfig("OCR_MODE"); // "local", "vlm", or unset (auto)
-  console.log(`[ingest] extractTextFromPdf: mode=${ocrMode || "auto"}, size=${(buffer.byteLength / 1024).toFixed(0)}KB`);
+  console.log(
+    `[ingest] extractTextFromPdf: mode=${ocrMode || "auto"}, size=${(buffer.byteLength / 1024).toFixed(0)}KB`,
+  );
 
   if (ocrMode === "vlm") {
     if (!openai) throw new Error("OCR_MODE=vlm requires OpenAI client");
@@ -140,8 +148,11 @@ export async function extractTextFromPdf(
   try {
     return await extractTextLocal(buffer);
   } catch (err) {
-    console.warn(`[ingest] Local OCR failed, falling back to VLM ERROR: ${err instanceof Error ? err.message : err}`);
-    if (!openai) throw new Error("Local OCR failed and no OpenAI client configured");
+    console.warn(
+      `[ingest] Local OCR failed, falling back to VLM ERROR: ${err instanceof Error ? err.message : err}`,
+    );
+    if (!openai)
+      throw new Error("Local OCR failed and no OpenAI client configured");
     return extractTextVlm(buffer, openai);
   }
 }
@@ -196,7 +207,9 @@ export async function ingestPdfToBlob(
   category: string,
   openai?: OpenAI | null,
 ): Promise<{ record: DocumentRecord }> {
-  console.log(`[ingest] Starting blob ingest: ${filename} (${(buffer.byteLength / 1024).toFixed(0)}KB), category=${category}`);
+  console.log(
+    `[ingest] Starting blob ingest: ${filename} (${(buffer.byteLength / 1024).toFixed(0)}KB), category=${category}`,
+  );
   const { text, pageCount } = await extractTextFromPdf(buffer, openai);
 
   const bytes = new Uint8Array(buffer);
@@ -232,7 +245,9 @@ export async function ingestPdfToBlob(
 
   db.documents.set(id, record);
 
-  console.log(`[ingest] Document record created: id=${id}, title="${record.title}", pages=${pageCount}, dates=${record.dates.length}`);
+  console.log(
+    `[ingest] Document record created: id=${id}, title="${record.title}", pages=${pageCount}, dates=${record.dates.length}`,
+  );
   return { record };
 }
 
@@ -245,7 +260,9 @@ export async function classifyDocument(
     const truncated = decode(tokens);
     const model = getConfig("TEXT_MODEL_SMALL") || "gpt-4.1-mini";
 
-    console.log(`[classify] Classifying document (${tokens.length} tokens) with model=${model}`);
+    console.log(
+      `[classify] Classifying document (${tokens.length} tokens) with model=${model}`,
+    );
 
     const response = await openai.chat.completions.create({
       model,
@@ -285,7 +302,10 @@ export async function classifyDocument(
     console.log(`[classify] Result: "${category}"`);
     return category;
   } catch (err) {
-    console.warn("[classify] Classification failed, defaulting to _new_filings:", err);
+    console.warn(
+      "[classify] Classification failed, defaulting to _new_filings:",
+      err,
+    );
     return "_new_filings";
   }
 }

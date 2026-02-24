@@ -145,10 +145,7 @@ export function getConfig(key: string): string | undefined {
     ) {
       return configCache.documentScanner.enabled.toString();
     }
-    if (
-      key === "SCANNER_ENDPOINTS" &&
-      configCache.documentScanner?.endpoints
-    ) {
+    if (key === "SCANNER_ENDPOINTS" && configCache.documentScanner?.endpoints) {
       return configCache.documentScanner.endpoints;
     }
 
@@ -271,7 +268,6 @@ export function documentScannerConfig() {
  */
 export function emailServiceConfig() {
   return {
-    workerUrl:
-      getConfig("EMAIL_WORKER_URL") || "https://email.proseva.app",
+    workerUrl: getConfig("EMAIL_WORKER_URL") || "https://email.proseva.app",
   };
 }

@@ -11,7 +11,9 @@ export function blobToF32(blob: Buffer | Uint8Array): Float32Array {
 }
 
 export function cosineSim(a: Float32Array, b: Float32Array): number {
-  let dot = 0, na = 0, nb = 0;
+  let dot = 0,
+    na = 0,
+    nb = 0;
   for (let i = 0; i < a.length; i++) {
     dot += a[i] * b[i];
     na += a[i] * a[i];
@@ -25,12 +27,24 @@ export function cosineSim(a: Float32Array, b: Float32Array): number {
 
 function buildVirgStmts(virgDb: Database) {
   return {
-    virginiaCode: virgDb.prepare("SELECT title, body FROM virginia_code WHERE section = ? LIMIT 1"),
-    constitution: virgDb.prepare("SELECT section_name, section_title, section_text FROM constitution WHERE article_id = ? AND section_count = ? LIMIT 1"),
-    authorities: virgDb.prepare("SELECT title, body FROM authorities WHERE short_name = ? LIMIT 1"),
-    courts: virgDb.prepare("SELECT name, locality, type, district, city FROM courts WHERE id = ? LIMIT 1"),
-    popularNames: virgDb.prepare("SELECT name, body FROM popular_names WHERE name = ? LIMIT 1"),
-    documents: virgDb.prepare("SELECT title, content FROM documents WHERE filename = ? LIMIT 1"),
+    virginiaCode: virgDb.prepare(
+      "SELECT title, body FROM virginia_code WHERE section = ? LIMIT 1",
+    ),
+    constitution: virgDb.prepare(
+      "SELECT section_name, section_title, section_text FROM constitution WHERE article_id = ? AND section_count = ? LIMIT 1",
+    ),
+    authorities: virgDb.prepare(
+      "SELECT title, body FROM authorities WHERE short_name = ? LIMIT 1",
+    ),
+    courts: virgDb.prepare(
+      "SELECT name, locality, type, district, city FROM courts WHERE id = ? LIMIT 1",
+    ),
+    popularNames: virgDb.prepare(
+      "SELECT name, body FROM popular_names WHERE name = ? LIMIT 1",
+    ),
+    documents: virgDb.prepare(
+      "SELECT title, content FROM documents WHERE filename = ? LIMIT 1",
+    ),
   };
 }
 
@@ -49,8 +63,13 @@ export function resolveSourceText(
       case "constitution": {
         const parts = sourceId.split(":");
         if (parts.length === 2) {
-          const row = virgStmts.constitution.get(parseInt(parts[0]), parseInt(parts[1])) as any;
-          return row ? `${row.section_name ?? ""} ${row.section_title ?? ""}\n${row.section_text ?? ""}`.trim() : null;
+          const row = virgStmts.constitution.get(
+            parseInt(parts[0]),
+            parseInt(parts[1]),
+          ) as any;
+          return row
+            ? `${row.section_name ?? ""} ${row.section_title ?? ""}\n${row.section_text ?? ""}`.trim()
+            : null;
         }
         return null;
       }
@@ -60,7 +79,9 @@ export function resolveSourceText(
       }
       case "courts": {
         const row = virgStmts.courts.get(parseInt(sourceId)) as any;
-        return row ? `${row.name ?? ""} - ${row.locality ?? ""} ${row.type ?? ""} ${row.district ?? ""} ${row.city ?? ""}`.trim() : null;
+        return row
+          ? `${row.name ?? ""} - ${row.locality ?? ""} ${row.type ?? ""} ${row.district ?? ""} ${row.city ?? ""}`.trim()
+          : null;
       }
       case "popular_names": {
         const row = virgStmts.popularNames.get(sourceId) as any;
@@ -96,16 +117,32 @@ export function createApp(embeddingsPath: string, virginiaPath?: string) {
     nodeCount: embDb.prepare("SELECT COUNT(*) as count FROM nodes"),
     edgeCount: embDb.prepare("SELECT COUNT(*) as count FROM edges"),
     embeddingCount: embDb.prepare("SELECT COUNT(*) as count FROM embeddings"),
-    nodeTypes: embDb.prepare("SELECT node_type as type, COUNT(*) as count FROM nodes GROUP BY node_type ORDER BY count DESC"),
-    edgeTypes: embDb.prepare("SELECT rel_type as type, COUNT(*) as count FROM edges GROUP BY rel_type ORDER BY count DESC"),
-    nodeById: embDb.prepare("SELECT id, source, source_id, chunk_idx, node_type FROM nodes WHERE id = ?"),
+    nodeTypes: embDb.prepare(
+      "SELECT node_type as type, COUNT(*) as count FROM nodes GROUP BY node_type ORDER BY count DESC",
+    ),
+    edgeTypes: embDb.prepare(
+      "SELECT rel_type as type, COUNT(*) as count FROM edges GROUP BY rel_type ORDER BY count DESC",
+    ),
+    nodeById: embDb.prepare(
+      "SELECT id, source, source_id, chunk_idx, node_type FROM nodes WHERE id = ?",
+    ),
     hasEmbedding: embDb.prepare("SELECT 1 FROM embeddings WHERE node_id = ?"),
-    edgesFrom: embDb.prepare("SELECT from_id, to_id, rel_type, weight FROM edges WHERE from_id = ?"),
-    edgesTo: embDb.prepare("SELECT from_id, to_id, rel_type, weight FROM edges WHERE to_id = ?"),
-    embedding: embDb.prepare("SELECT embedding FROM embeddings WHERE node_id = ?"),
+    edgesFrom: embDb.prepare(
+      "SELECT from_id, to_id, rel_type, weight FROM edges WHERE from_id = ?",
+    ),
+    edgesTo: embDb.prepare(
+      "SELECT from_id, to_id, rel_type, weight FROM edges WHERE to_id = ?",
+    ),
+    embedding: embDb.prepare(
+      "SELECT embedding FROM embeddings WHERE node_id = ?",
+    ),
     allEmbeddings: embDb.prepare("SELECT node_id, embedding FROM embeddings"),
-    nodesFiltered: embDb.prepare("SELECT id, source, source_id, chunk_idx, node_type FROM nodes WHERE (?1 IS NULL OR node_type = ?1) AND (?2 IS NULL OR source_id LIKE '%' || ?2 || '%' OR source LIKE '%' || ?2 || '%') LIMIT ?3 OFFSET ?4"),
-    nodesFilteredCount: embDb.prepare("SELECT COUNT(*) as count FROM nodes WHERE (?1 IS NULL OR node_type = ?1) AND (?2 IS NULL OR source_id LIKE '%' || ?2 || '%' OR source LIKE '%' || ?2 || '%')"),
+    nodesFiltered: embDb.prepare(
+      "SELECT id, source, source_id, chunk_idx, node_type FROM nodes WHERE (?1 IS NULL OR node_type = ?1) AND (?2 IS NULL OR source_id LIKE '%' || ?2 || '%' OR source LIKE '%' || ?2 || '%') LIMIT ?3 OFFSET ?4",
+    ),
+    nodesFilteredCount: embDb.prepare(
+      "SELECT COUNT(*) as count FROM nodes WHERE (?1 IS NULL OR node_type = ?1) AND (?2 IS NULL OR source_id LIKE '%' || ?2 || '%' OR source LIKE '%' || ?2 || '%')",
+    ),
   };
 
   function resolveNode(id: number) {
@@ -138,17 +175,53 @@ export function createApp(embeddingsPath: string, virginiaPath?: string) {
   const typeDefs = /* GraphQL */ `
     type Query {
       stats: Stats!
-      nodes(type: String, search: String, limit: Int, offset: Int): NodeConnection!
+      nodes(
+        type: String
+        search: String
+        limit: Int
+        offset: Int
+      ): NodeConnection!
       node(id: Int!): Node
       neighbors(id: Int!): [Edge!]!
       similar(id: Int!, limit: Int): [SimilarNode!]!
     }
-    type Stats { nodeCount: Int!, edgeCount: Int!, embeddingCount: Int!, nodeTypes: [TypeCount!]!, edgeTypes: [TypeCount!]! }
-    type TypeCount { type: String!, count: Int! }
-    type NodeConnection { nodes: [Node!]!, total: Int! }
-    type Node { id: Int!, source: String!, sourceId: String!, chunkIdx: Int!, nodeType: String!, hasEmbedding: Boolean!, sourceText: String, edges: [Edge!]! }
-    type Edge { fromId: Int!, toId: Int!, relType: String!, weight: Float, fromNode: Node, toNode: Node }
-    type SimilarNode { node: Node!, score: Float! }
+    type Stats {
+      nodeCount: Int!
+      edgeCount: Int!
+      embeddingCount: Int!
+      nodeTypes: [TypeCount!]!
+      edgeTypes: [TypeCount!]!
+    }
+    type TypeCount {
+      type: String!
+      count: Int!
+    }
+    type NodeConnection {
+      nodes: [Node!]!
+      total: Int!
+    }
+    type Node {
+      id: Int!
+      source: String!
+      sourceId: String!
+      chunkIdx: Int!
+      nodeType: String!
+      hasEmbedding: Boolean!
+      sourceText: String
+      edges: [Edge!]!
+    }
+    type Edge {
+      fromId: Int!
+      toId: Int!
+      relType: String!
+      weight: Float
+      fromNode: Node
+      toNode: Node
+    }
+    type SimilarNode {
+      node: Node!
+      score: Float!
+    }
   `;
 
   const resolvers = {
@@ -161,19 +234,32 @@ export function createApp(embeddingsPath: string, virginiaPath?: string) {
         edgeTypes: stmts.edgeTypes.all(),
       }),
 
-      nodes: (_: any, args: { type?: string; search?: string; limit?: number; offset?: number }) => {
+      nodes: (
+        _parent: any,
+        args: {
+          type?: string;
+          search?: string;
+          limit?: number;
+          offset?: number;
+        },
+      ) => {
         const limit = Math.min(args.limit ?? 50, 200);
         const offset = args.offset ?? 0;
         const type = args.type || null;
         const search = args.search || null;
-        const rows = stmts.nodesFiltered.all(type, search, limit, offset) as any[];
+        const rows = stmts.nodesFiltered.all(
+          type,
+          search,
+          limit,
+          offset,
+        ) as any[];
         const total = (stmts.nodesFilteredCount.get(type, search) as any).count;
         return { nodes: rows.map((r) => resolveNode(r.id)), total };
       },
 
-      node: (_: any, args: { id: number }) => resolveNode(args.id),
+      node: (_parent: any, args: { id: number }) => resolveNode(args.id),
 
-      neighbors: (_: any, args: { id: number }) => {
+      neighbors: (_parent: any, args: { id: number }) => {
         const from = stmts.edgesFrom.all(args.id) as any[];
         const to = stmts.edgesTo.all(args.id) as any[];
         return [...from, ...to].map((e) => ({
@@ -194,7 +280,10 @@ export function createApp(embeddingsPath: string, virginiaPath?: string) {
         for (const row of all) {
           if (row.node_id === args.id) continue;
           const vec = blobToF32(row.embedding);
-          scored.push({ nodeId: row.node_id, score: cosineSim(targetVec, vec) });
+          scored.push({
+            nodeId: row.node_id,
+            score: cosineSim(targetVec, vec),
+          });
         }
         scored.sort((a, b) => b.score - a.score);
         return scored.slice(0, topK).map((s) => ({
@@ -231,15 +320,21 @@ if (import.meta.main) {
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--embeddings" && args[i + 1]) embeddings = args[++i];
     else if (args[i] === "--virginia" && args[i + 1]) virginia = args[++i];
-    else if (args[i] === "--port" && args[i + 1]) port = parseInt(args[++i], 10);
+    else if (args[i] === "--port" && args[i + 1])
+      port = parseInt(args[++i], 10);
   }
   if (!embeddings) {
-    console.error("Usage: bun server.ts --embeddings <path> [--virginia <path>] [--port <n>]");
+    console.error(
+      "Usage: bun server.ts --embeddings <path> [--virginia <path>] [--port <n>]",
+    );
     process.exit(1);
   }
 
   const { yoga } = createApp(embeddings, virginia || undefined);
-  const htmlPath = join(dirname(new URL(import.meta.url).pathname), "index.html");
+  const htmlPath = join(
+    dirname(new URL(import.meta.url).pathname),
+    "index.html",
+  );
 
   const server = Bun.serve({
     port,
@@ -249,7 +344,9 @@ if (import.meta.main) {
       if (url.pathname === "/" || url.pathname === "/index.html") {
         try {
           const html = readFileSync(htmlPath, "utf-8");
-          return new Response(html, { headers: { "Content-Type": "text/html" } });
+          return new Response(html, {
+            headers: { "Content-Type": "text/html" },
+          });
         } catch {
           return new Response("index.html not found", { status: 404 });
         }

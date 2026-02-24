@@ -9,12 +9,12 @@
 
 Grab the latest release for your platform from the [Releases](https://github.com/geoffsee/proseva/releases/latest) page.
 
-| Platform          | File                                  |
-| ----------------- | ------------------------------------- |
-| macOS (Apple Silicon) | `ProSeVA-*-arm64.dmg`             |
-| macOS (Intel)     | `ProSeVA-*.dmg`                       |
-| Windows           | `ProSeVA.Setup.*.exe`                 |
-| Linux             | `ProSeVA-*.AppImage`                  |
+| Platform              | File                  |
+| --------------------- | --------------------- |
+| macOS (Apple Silicon) | `ProSeVA-*-arm64.dmg` |
+| macOS (Intel)         | `ProSeVA-*.dmg`       |
+| Windows               | `ProSeVA.Setup.*.exe` |
+| Linux                 | `ProSeVA-*.AppImage`  |
 
 ## License
 

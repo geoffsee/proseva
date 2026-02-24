@@ -26,7 +26,9 @@ function printAssistant(text: string) {
 
 function printToolCall(name: string, input: unknown) {
   const inputStr = JSON.stringify(input, null, 2);
-  console.log(`\n${C.bold}${C.yellow}TOOL CALL:${C.reset} ${C.magenta}${name}${C.reset}`);
+  console.log(
+    `\n${C.bold}${C.yellow}TOOL CALL:${C.reset} ${C.magenta}${name}${C.reset}`,
+  );
   if (inputStr.length > 500) {
     console.log(`${C.dim}${inputStr.slice(0, 500)}...${C.reset}`);
   } else {
@@ -36,8 +38,13 @@ function printToolCall(name: string, input: unknown) {
 
 function printToolResult(name: string, result: string) {
   const maxLen = 1500;
-  const display = result.length > maxLen ? result.slice(0, maxLen) + `\n... (${result.length} chars total)` : result;
-  console.log(`${C.bold}${C.blue}TOOL RESULT:${C.reset} ${C.magenta}${name}${C.reset}`);
+  const display =
+    result.length > maxLen
+      ? result.slice(0, maxLen) + `\n... (${result.length} chars total)`
+      : result;
+  console.log(
+    `${C.bold}${C.blue}TOOL RESULT:${C.reset} ${C.magenta}${name}${C.reset}`,
+  );
   console.log(`${C.dim}${display}${C.reset}`);
 }
 
@@ -61,10 +68,24 @@ const tools: Anthropic.Tool[] = [
     input_schema: {
       type: "object" as const,
       properties: {
-        type: { type: "string", description: "Filter by node type, e.g. 'section', 'court', 'title', 'constitution_section', 'authority'" },
-        search: { type: "string", description: "Search term to match against source and source_id fields" },
-        limit: { type: "number", description: "Max results to return (default 20, max 200)" },
-        offset: { type: "number", description: "Pagination offset (default 0)" },
+        type: {
+          type: "string",
+          description:
+            "Filter by node type, e.g. 'section', 'court', 'title', 'constitution_section', 'authority'",
+        },
+        search: {
+          type: "string",
+          description:
+            "Search term to match against source and source_id fields",
+        },
+        limit: {
+          type: "number",
+          description: "Max results to return (default 20, max 200)",
+        },
+        offset: {
+          type: "number",
+          description: "Pagination offset (default 0)",
+        },
       },
       required: [],
     },
@@ -100,8 +121,14 @@ const tools: Anthropic.Tool[] = [
     input_schema: {
       type: "object" as const,
       properties: {
-        id: { type: "number", description: "The node ID to find similar nodes for" },
-        limit: { type: "number", description: "Number of similar nodes to return (default 10, max 50)" },
+        id: {
+          type: "number",
+          description: "The node ID to find similar nodes for",
+        },
+        limit: {
+          type: "number",
+          description: "Number of similar nodes to return (default 10, max 50)",
+        },
       },
       required: ["id"],
     },
@@ -153,7 +180,11 @@ const QUERIES: Record<string, string> = {
 
 type YogaInstance = ReturnType<typeof createApp>["yoga"];
 
-async function gql(yoga: YogaInstance, query: string, variables: Record<string, unknown> = {}) {
+async function gql(
+  yoga: YogaInstance,
+  query: string,
+  variables: Record<string, unknown> = {},
+) {
   const res = await yoga.fetch("http://localhost/graphql", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -179,7 +210,11 @@ function truncateSourceText(obj: any): any {
   return obj;
 }
 
-async function executeTool(yoga: YogaInstance, name: string, input: Record<string, unknown>): Promise<string> {
+async function executeTool(
+  yoga: YogaInstance,
+  name: string,
+  input: Record<string, unknown>,
+): Promise<string> {
   const query = QUERIES[name];
   if (!query) return JSON.stringify({ error: `Unknown tool: ${name}` });
 
@@ -256,14 +291,21 @@ Use both graph traversal and embedding similarity to find connections.`,
 
 // --- Agentic loop ---
 
-async function runScenario(client: Anthropic, yoga: YogaInstance, scenario: string, prompt: string): Promise<string> {
+async function runScenario(
+  client: Anthropic,
+  yoga: YogaInstance,
+  scenario: string,
+  prompt: string,
+): Promise<string> {
   console.log(`\n${C.bold}${"=".repeat(60)}${C.reset}`);
   console.log(`${C.bold}Scenario: ${scenario}${C.reset}`);
   console.log(`${"=".repeat(60)}`);
 
   printUser(prompt);
 
-  const messages: Anthropic.MessageParam[] = [{ role: "user", content: prompt }];
+  const messages: Anthropic.MessageParam[] = [
+    { role: "user", content: prompt },
+  ];
   const maxTurns = 25;
   let finalText = "";
 
@@ -297,7 +339,9 @@ async function runScenario(client: Anthropic, yoga: YogaInstance, scenario: stri
 
     // If stop_reason is end_turn (no tool calls), we're done
     if (response.stop_reason === "end_turn") {
-      console.log(`\n${C.bold}${C.green}Scenario complete after ${turn + 1} turns.${C.reset}`);
+      console.log(
+        `\n${C.bold}${C.green}Scenario complete after ${turn + 1} turns.${C.reset}`,
+      );
       break;
     }
 
@@ -310,7 +354,11 @@ async function runScenario(client: Anthropic, yoga: YogaInstance, scenario: stri
       const toolResults: Anthropic.ToolResultBlockParam[] = [];
       for (const tb of toolUseBlocks) {
         printToolCall(tb.name, tb.input);
-        const result = await executeTool(yoga, tb.name, tb.input as Record<string, unknown>);
+        const result = await executeTool(
+          yoga,
+          tb.name,
+          tb.input as Record<string, unknown>,
+        );
         printToolResult(tb.name, result);
         toolResults.push({
           type: "tool_result",
@@ -336,19 +384,25 @@ if (import.meta.main) {
 
   try {
     for (let i = 0; i < args.length; i++) {
-      if (args[i] === "--embeddings" && args[i + 1]) embeddingsPath = args[++i]!;
-      else if (args[i] === "--virginia" && args[i + 1]) virginiaPath = args[++i]!;
-      else if (args[i] === "--scenario" && args[i + 1]) scenarioName = args[++i]!;
+      if (args[i] === "--embeddings" && args[i + 1])
+        embeddingsPath = args[++i]!;
+      else if (args[i] === "--virginia" && args[i + 1])
+        virginiaPath = args[++i]!;
+      else if (args[i] === "--scenario" && args[i + 1])
+        scenarioName = args[++i]!;
     }
   } catch (e) {
     console.error("ERROR PARSING COMMAND LINE ARGUMENTS");
     console.error(e);
   }
 
-
   if (!embeddingsPath) {
-    console.error("Usage: bun scenario.ts --embeddings <path> [--virginia <path>] [--scenario <name>]");
-    console.error(`\nAvailable scenarios: ${Object.keys(SCENARIOS).join(", ")}`);
+    console.error(
+      "Usage: bun scenario.ts --embeddings <path> [--virginia <path>] [--scenario <name>]",
+    );
+    console.error(
+      `\nAvailable scenarios: ${Object.keys(SCENARIOS).join(", ")}`,
+    );
     process.exit(1);
   }
 
@@ -364,12 +418,20 @@ if (import.meta.main) {
   }
 
   const client = new Anthropic();
-  const { yoga, cleanup } = createApp(embeddingsPath, virginiaPath || undefined);
+  const { yoga, cleanup } = createApp(
+    embeddingsPath,
+    virginiaPath || undefined,
+  );
 
   const outPath = `scenario-${scenarioName}.md`;
 
   try {
-    const result = await runScenario(client, yoga, scenarioName, SCENARIOS[scenarioName]!);
+    const result = await runScenario(
+      client,
+      yoga,
+      scenarioName,
+      SCENARIOS[scenarioName]!,
+    );
     writeFileSync(outPath, result);
     console.log(`\n${C.bold}Output written to ${outPath}${C.reset}`);
   } finally {

@@ -16,7 +16,6 @@ const total = scripts.length;
 let completed = 0;
 let failed = 0;
 
-const cyan = (s: string) => `\x1b[36m${s}\x1b[0m`;
 const green = (s: string) => `\x1b[32m${s}\x1b[0m`;
 const red = (s: string) => `\x1b[31m${s}\x1b[0m`;
 const dim = (s: string) => `\x1b[2m${s}\x1b[0m`;
@@ -26,7 +25,7 @@ console.log(bold(`Refreshing ${total} datasets...\n`));
 
 const start = performance.now();
 
-const results = await Promise.allSettled(
+await Promise.allSettled(
   scripts.map(async (script) => {
     const name = nameOf(script);
     const t0 = performance.now();
@@ -40,13 +39,13 @@ const results = await Promise.allSettled(
     if (exitCode === 0) {
       completed++;
       console.log(
-        `  ${green("✓")} ${name.padEnd(pad)}  ${dim(`${elapsed}s`)}  ${dim(`[${completed + failed}/${total}]`)}`
+        `  ${green("✓")} ${name.padEnd(pad)}  ${dim(`${elapsed}s`)}  ${dim(`[${completed + failed}/${total}]`)}`,
       );
     } else {
       failed++;
       const stderr = await new Response(proc.stderr).text();
       console.log(
-        `  ${red("✗")} ${name.padEnd(pad)}  ${dim(`${elapsed}s`)}  ${dim(`[${completed + failed}/${total}]`)}`
+        `  ${red("✗")} ${name.padEnd(pad)}  ${dim(`${elapsed}s`)}  ${dim(`[${completed + failed}/${total}]`)}`,
       );
       if (stderr.trim()) {
         for (const line of stderr.trim().split("\n")) {
@@ -56,7 +55,7 @@ const results = await Promise.allSettled(
     }
 
     return { name, exitCode };
-  })
+  }),
 );
 
 const elapsed = ((performance.now() - start) / 1000).toFixed(1);
@@ -64,7 +63,9 @@ console.log();
 
 if (failed > 0) {
   console.log(
-    bold(`Done in ${elapsed}s: ${green(`${completed} passed`)}, ${red(`${failed} failed`)}`)
+    bold(
+      `Done in ${elapsed}s: ${green(`${completed} passed`)}, ${red(`${failed} failed`)}`,
+    ),
   );
   process.exit(1);
 } else {

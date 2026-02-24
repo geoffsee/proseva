@@ -1,4 +1,4 @@
-import { createWorker, type Worker } from "tesseract.js";
+import { createWorker } from "tesseract.js";
 import fs from "fs";
 import { binarizeImageToPng, renderPdfPagesToPng } from "../pdfjs";
 
@@ -7,18 +7,29 @@ async function ocrFile(path: string, preprocess: boolean) {
   const worker = await createWorker("eng");
 
   if (isPdf) {
-    const pages = await renderPdfPagesToPng(path, { dpi: 300, binarize: preprocess });
-    console.log(`--- ${path} (${pages.length} page${pages.length > 1 ? "s" : ""}) ---`);
+    const pages = await renderPdfPagesToPng(path, {
+      dpi: 300,
+      binarize: preprocess,
+    });
+    console.log(
+      `--- ${path} (${pages.length} page${pages.length > 1 ? "s" : ""}) ---`,
+    );
     for (let i = 0; i < pages.length; i++) {
       console.log(`\n=== Page ${i + 1} ===`);
-      const { data: { text } } = await worker.recognize(pages[i]);
+      const {
+        data: { text },
+      } = await worker.recognize(pages[i]);
       console.log(text);
     }
   } else {
     console.log(`--- ${path} ---`);
     const bytes = fs.readFileSync(path);
-    const input = preprocess ? await binarizeImageToPng(new Uint8Array(bytes)) : new Uint8Array(bytes);
-    const { data: { text } } = await worker.recognize(input);
+    const input = preprocess
+      ? await binarizeImageToPng(new Uint8Array(bytes))
+      : new Uint8Array(bytes);
+    const {
+      data: { text },
+    } = await worker.recognize(input);
     console.log(text);
   }
 
@@ -28,7 +39,7 @@ async function ocrFile(path: string, preprocess: boolean) {
 // CLI
 const args = process.argv.slice(2);
 const preprocess = args.includes("--binarize");
-const files = args.filter(a => !a.startsWith("--"));
+const files = args.filter((a) => !a.startsWith("--"));
 
 if (files.length === 0) {
   const glob = new Bun.Glob("../test-data/*.pdf");

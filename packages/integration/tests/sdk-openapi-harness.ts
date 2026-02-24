@@ -1,4 +1,4 @@
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -16,8 +16,7 @@ type OpenApiOp = {
 };
 
 function readJson<T>(p: string): T {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  return require(p) as T;
+  return JSON.parse(readFileSync(p, "utf-8")) as T;
 }
 
 function isHttpMethod(x: string): x is Lowercase<Method> {
@@ -38,7 +37,10 @@ function collectOps(spec: OpenAPISpec): OpenApiOp[] {
   return ops;
 }
 
-function parseParams(op: any, pathItem: any): {
+function parseParams(
+  op: any,
+  pathItem: any,
+): {
   path: string[];
   query: string[];
 } {
@@ -68,7 +70,11 @@ function exampleFromSchema(schema: any): any {
   if (schema.type === "integer" || schema.type === "number") return 1;
   if (schema.type === "boolean") return true;
   if (schema.type === "array") return [];
-  if (schema.type === "object" || schema.properties || schema.additionalProperties) {
+  if (
+    schema.type === "object" ||
+    schema.properties ||
+    schema.additionalProperties
+  ) {
     const out: Record<string, any> = {};
     const req: string[] = Array.isArray(schema.required) ? schema.required : [];
     for (const key of req) {
@@ -120,7 +126,9 @@ async function serveWithRetries(
     } catch (err: any) {
       const msg = String(err);
       const code =
-        err && typeof err === "object" && "code" in err ? (err as any).code : "";
+        err && typeof err === "object" && "code" in err
+          ? (err as any).code
+          : "";
       if (code === "EADDRINUSE" || msg.includes("EADDRINUSE")) continue;
       if (
         code === "EACCES" ||
@@ -140,18 +148,27 @@ async function serveWithRetries(
   );
 }
 
-async function startMockOpenAI(): Promise<{ baseUrl: string; close: () => Promise<void> }> {
+async function startMockOpenAI(): Promise<{
+  baseUrl: string;
+  close: () => Promise<void>;
+}> {
   return serveWithRetries("mock-openai", async (req) => {
     const url = new URL(req.url);
     const method = req.method.toUpperCase();
     const pathname = url.pathname;
     const noV1Path = pathname.startsWith("/v1/") ? pathname.slice(3) : pathname;
 
-    if (method === "GET" && (pathname === "/v1/models" || noV1Path === "/models")) {
+    if (
+      method === "GET" &&
+      (pathname === "/v1/models" || noV1Path === "/models")
+    ) {
       return Response.json({ data: [{ id: "gpt-test" }] });
     }
 
-    if (method === "POST" && (pathname === "/v1/embeddings" || noV1Path === "/embeddings")) {
+    if (
+      method === "POST" &&
+      (pathname === "/v1/embeddings" || noV1Path === "/embeddings")
+    ) {
       return Response.json({ data: [{ embedding: [0.01, 0.02, 0.03] }] });
     }
 
@@ -190,7 +207,10 @@ async function startMockOpenAI(): Promise<{ baseUrl: string; close: () => Promis
   });
 }
 
-async function startProsevaServer(): Promise<{ baseUrl: string; close: () => Promise<void> }> {
+async function startProsevaServer(): Promise<{
+  baseUrl: string;
+  close: () => Promise<void>;
+}> {
   const { router } = await import("../../server/src");
   // Avoid persistence writes (debounced) racing cleanup.
   const [{ resetDb }, { InMemoryAdapter }] = await Promise.all([
@@ -245,7 +265,8 @@ async function main() {
   process.env.OPENAI_ENDPOINT = openai.baseUrl;
 
   // Avoid filesystem encryption keypair persistence in harness runs.
-  const { setKeypairForceMemory } = await import("../../server/src/encryption.ts");
+  const { setKeypairForceMemory } =
+    await import("../../server/src/encryption.ts");
   setKeypairForceMemory(true);
 
   const server = await startProsevaServer();
@@ -420,16 +441,22 @@ async function main() {
     mark("POST", "/cases/{caseId}/parties");
     mustBeAllowed(createParty.response, "POST /cases/{caseId}/parties");
     ids.partyId = (createParty.data as any)?.id;
-    if (!ids.partyId) throw new Error("POST /cases/{caseId}/parties did not return id");
+    if (!ids.partyId)
+      throw new Error("POST /cases/{caseId}/parties did not return id");
 
     const createCaseFiling = await authed.POST("/cases/{caseId}/filings", {
       params: { path: { caseId: ids.caseId } },
-      body: { title: "Harness Case Filing", date: "2024-01-01", type: "motion" },
+      body: {
+        title: "Harness Case Filing",
+        date: "2024-01-01",
+        type: "motion",
+      },
     } as any);
     mark("POST", "/cases/{caseId}/filings");
     mustBeAllowed(createCaseFiling.response, "POST /cases/{caseId}/filings");
     ids.caseFilingId = (createCaseFiling.data as any)?.id;
-    if (!ids.caseFilingId) throw new Error("POST /cases/{caseId}/filings did not return id");
+    if (!ids.caseFilingId)
+      throw new Error("POST /cases/{caseId}/filings did not return id");
 
     // Upload a document (requires OpenAI stub to extract text).
     {
@@ -441,11 +468,16 @@ async function main() {
         "sample.pdf",
       );
       form.append("category", "harness");
-      const up = await authed.POST("/documents/upload", { body: form as any } as any);
+      const up = await authed.POST("/documents/upload", {
+        body: form as any,
+      } as any);
       mark("POST", "/documents/upload");
       mustBeAllowed(up.response, "POST /documents/upload");
       if (up.response.status !== 201) {
-        const text = await up.response.clone().text().catch(() => "");
+        const text = await up.response
+          .clone()
+          .text()
+          .catch(() => "");
         throw new Error(
           `POST /documents/upload expected 201, got ${up.response.status}: ${text}`,
         );
@@ -481,7 +513,8 @@ async function main() {
     } as any);
     mark("POST", "/estate-plans/{planId}/beneficiaries");
     mustBeAllowed(ben.response, "POST /estate-plans/{planId}/beneficiaries");
-    ids.beneficiaryId = (ben.data as any)?.id ?? (ben.data as any)?.beneficiary?.id;
+    ids.beneficiaryId =
+      (ben.data as any)?.id ?? (ben.data as any)?.beneficiary?.id;
     if (!ids.beneficiaryId) ids.beneficiaryId = "missing";
 
     const asset = await authed.POST("/estate-plans/{planId}/assets", {
@@ -499,7 +532,8 @@ async function main() {
     } as any);
     mark("POST", "/estate-plans/{planId}/documents");
     mustBeAllowed(estateDoc.response, "POST /estate-plans/{planId}/documents");
-    ids.estateDocId = (estateDoc.data as any)?.id ?? (estateDoc.data as any)?.document?.id;
+    ids.estateDocId =
+      (estateDoc.data as any)?.id ?? (estateDoc.data as any)?.document?.id;
     if (!ids.estateDocId) ids.estateDocId = "missing";
 
     // Notifications + fax.
@@ -558,7 +592,11 @@ async function main() {
     mustBeAllowed(chat.response, "POST /chat");
 
     const rep = await authed.POST("/reports", {
-      body: { type: "case-summary", caseId: ids.caseId, options: { includeAI: false } },
+      body: {
+        type: "case-summary",
+        caseId: ids.caseId,
+        options: { includeAI: false },
+      },
     } as any);
     mark("POST", "/reports");
     mustBeAllowed(rep.response, "POST /reports");
@@ -597,17 +635,31 @@ async function main() {
           out[name] = ids[name];
           continue;
         }
-        if (name === "filingId" && template.includes("/cases/") && template.includes("/filings/")) {
+        if (
+          name === "filingId" &&
+          template.includes("/cases/") &&
+          template.includes("/filings/")
+        ) {
           out[name] = ids.caseFilingId ?? ids.filingId ?? "missing";
           continue;
         }
         if (name === "id") {
-          if (template.startsWith("/documents/")) out[name] = ids.documentId ?? "missing";
-          else if (template.includes("/estate-plans/") && template.includes("/beneficiaries/"))
+          if (template.startsWith("/documents/"))
+            out[name] = ids.documentId ?? "missing";
+          else if (
+            template.includes("/estate-plans/") &&
+            template.includes("/beneficiaries/")
+          )
             out[name] = ids.beneficiaryId ?? "missing";
-          else if (template.includes("/estate-plans/") && template.includes("/assets/"))
+          else if (
+            template.includes("/estate-plans/") &&
+            template.includes("/assets/")
+          )
             out[name] = ids.assetId ?? "missing";
-          else if (template.includes("/estate-plans/") && template.includes("/documents/"))
+          else if (
+            template.includes("/estate-plans/") &&
+            template.includes("/documents/")
+          )
             out[name] = ids.estateDocId ?? "missing";
           else out[name] = ids.documentId ?? "missing";
           continue;
@@ -636,7 +688,10 @@ async function main() {
       const opKey = `${method} ${p}`;
       if (covered.has(opKey)) continue;
 
-      const { path: pathParams, query: queryParams } = parseParams(op, pathItem);
+      const { path: pathParams, query: queryParams } = parseParams(
+        op,
+        pathItem,
+      );
       const params: any = {};
       if (pathParams.length) params.path = resolvePathParams(p, pathParams);
       if (queryParams.length) params.query = resolveQueryParams(queryParams);
@@ -658,7 +713,11 @@ async function main() {
         } else if (p === "/chat") {
           body = { messages: [{ role: "user", content: "Hello" }] };
         } else if (p === "/reports") {
-          body = { type: "case-summary", caseId: ids.caseId, options: { includeAI: false } };
+          body = {
+            type: "case-summary",
+            caseId: ids.caseId,
+            options: { includeAI: false },
+          };
         } else if (p === "/config/test-twilio") {
           body = { testPhone: "+15555550123" };
         } else if (p === "/config/test-fax") {
@@ -689,17 +748,33 @@ async function main() {
     }
 
     // 5) Cleanup some deletes explicitly at the end (best-effort)
-    await (authed as any).DELETE("/notes/{noteId}", { params: { path: { noteId: ids.noteId } } });
-    await (authed as any).DELETE("/filings/{filingId}", { params: { path: { filingId: ids.filingId } } });
-    await (authed as any).DELETE("/evidences/{evidenceId}", { params: { path: { evidenceId: ids.evidenceId } } });
-    await (authed as any).DELETE("/finances/{entryId}", { params: { path: { entryId: ids.entryId } } });
-    await (authed as any).DELETE("/deadlines/{deadlineId}", { params: { path: { deadlineId: ids.deadlineId } } });
-    await (authed as any).DELETE("/contacts/{contactId}", { params: { path: { contactId: ids.contactId } } });
-    await (authed as any).DELETE("/cases/{caseId}", { params: { path: { caseId: ids.caseId } } });
+    await (authed as any).DELETE("/notes/{noteId}", {
+      params: { path: { noteId: ids.noteId } },
+    });
+    await (authed as any).DELETE("/filings/{filingId}", {
+      params: { path: { filingId: ids.filingId } },
+    });
+    await (authed as any).DELETE("/evidences/{evidenceId}", {
+      params: { path: { evidenceId: ids.evidenceId } },
+    });
+    await (authed as any).DELETE("/finances/{entryId}", {
+      params: { path: { entryId: ids.entryId } },
+    });
+    await (authed as any).DELETE("/deadlines/{deadlineId}", {
+      params: { path: { deadlineId: ids.deadlineId } },
+    });
+    await (authed as any).DELETE("/contacts/{contactId}", {
+      params: { path: { contactId: ids.contactId } },
+    });
+    await (authed as any).DELETE("/cases/{caseId}", {
+      params: { path: { caseId: ids.caseId } },
+    });
 
     // Exit with a clear single-line success marker for CI logs.
     // eslint-disable-next-line no-console
-    console.log(`SDK OpenAPI harness: covered ${covered.size}/${all.length} operations`);
+    console.log(
+      `SDK OpenAPI harness: covered ${covered.size}/${all.length} operations`,
+    );
   }
 
   // Stop servers before deleting temp dirs to avoid races with background tasks.

@@ -601,7 +601,8 @@ describe("executeTool", () => {
       const mockOpenai = {
         chat: {
           completions: {
-            create: vi.fn()
+            create: vi
+              .fn()
               .mockResolvedValueOnce({
                 choices: [
                   {
@@ -670,7 +671,8 @@ describe("executeTool", () => {
       const mockOpenai = {
         chat: {
           completions: {
-            create: vi.fn()
+            create: vi
+              .fn()
               .mockResolvedValueOnce({
                 choices: [
                   {

@@ -42,7 +42,7 @@ async function ensureAppleBinary(): Promise<boolean> {
       "-o",
       SWIFT_BIN,
     ],
-    { stdout: "inherit", stderr: "inherit" }
+    { stdout: "inherit", stderr: "inherit" },
   );
   const code = await proc.exited;
   return code === 0;
@@ -80,7 +80,10 @@ async function ocrApple(filePath: string): Promise<OcrResult> {
 
 // ── Tesseract backend (PDF.js rendering) ───────────────
 async function ocrTesseract(filePath: string): Promise<OcrResult> {
-  const pngs = await renderPdfPagesToPng(filePath, { dpi: 300, binarize: true });
+  const pngs = await renderPdfPagesToPng(filePath, {
+    dpi: 300,
+    binarize: true,
+  });
   const worker = await createWorker("eng");
   const pages: OcrPage[] = [];
 
@@ -99,7 +102,7 @@ async function ocrTesseract(filePath: string): Promise<OcrResult> {
 // ── Engine selection ───────────────────────────────────
 async function detectEngine(): Promise<Engine> {
   console.warn("[ingest] Detecting OCR engine: auto-detecting...");
-  console.warn(`[ingest] Using engine for platform: ${process.platform}`)
+  console.warn(`[ingest] Using engine for platform: ${process.platform}`);
   if (process.platform === "darwin") {
     const ok = await ensureAppleBinary();
     if (ok) return "apple";
@@ -110,7 +113,7 @@ async function detectEngine(): Promise<Engine> {
 // ── Public API ─────────────────────────────────────────
 export async function ocrPdf(
   filePath: string,
-  opts?: { engine?: Engine }
+  opts?: { engine?: Engine },
 ): Promise<OcrResult> {
   const engine = opts?.engine ?? (await detectEngine());
 
@@ -123,7 +126,7 @@ export async function ocrPdf(
       return ocrTesseract(filePath);
     case "docling":
       throw new Error(
-        "Docling engine: use transformers/index.ts directly (--split --binarize)"
+        "Docling engine: use transformers/index.ts directly (--split --binarize)",
       );
     default:
       throw new Error(`Unknown engine: ${engine}`);
@@ -152,7 +155,9 @@ if (import.meta.main) {
   }
 
   if (files.length === 0) {
-    console.error("Usage: bun run ocr.ts [--engine apple|tesseract|docling] <file ...>");
+    console.error(
+      "Usage: bun run ocr.ts [--engine apple|tesseract|docling] <file ...>",
+    );
     process.exit(1);
   }
 

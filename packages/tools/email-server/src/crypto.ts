@@ -21,11 +21,7 @@ export async function encryptForInstance(plaintext: ArrayBuffer, instancePublicK
 
 	const ephemeralKeypair = await crypto.subtle.generateKey(ECDH_PARAMS, true, ['deriveBits']);
 
-	const sharedBits = await crypto.subtle.deriveBits(
-		{ name: 'ECDH', public: instancePublicKey },
-		ephemeralKeypair.privateKey,
-		256,
-	);
+	const sharedBits = await crypto.subtle.deriveBits({ name: 'ECDH', public: instancePublicKey }, ephemeralKeypair.privateKey, 256);
 
 	const aesKey = await crypto.subtle.importKey('raw', sharedBits, { name: 'AES-GCM' }, false, ['encrypt']);
 

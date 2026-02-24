@@ -4,7 +4,15 @@ import {
   compressCaseGraphForPrompt,
   type AnalyzeCaseGraphResult,
 } from "./chat-graph";
-import type { Case, Contact, Deadline, DocumentRecord, Evidence, Filing, Note } from "./db";
+import type {
+  Case,
+  Contact,
+  Deadline,
+  DocumentRecord,
+  Evidence,
+  Filing,
+  Note,
+} from "./db";
 
 const now = "2024-01-01T00:00:00.000Z";
 

@@ -66,13 +66,20 @@ class SqliteConnection implements DatabaseConnection {
 
   async run(sql: string, params?: unknown[]): Promise<DatabaseResult> {
     const normalizedSql = this.normalizeSql(sql);
-    const info = this.db.prepare(normalizedSql).run(...(params || []) as any[]);
+    const info = this.db
+      .prepare(normalizedSql)
+      .run(...((params || []) as any[]));
     return new SqliteResult(info.changes);
   }
 
-  async runAndReadAll(sql: string, params?: unknown[]): Promise<DatabaseReader> {
+  async runAndReadAll(
+    sql: string,
+    params?: unknown[],
+  ): Promise<DatabaseReader> {
     const normalizedSql = this.normalizeSql(sql);
-    const rows = this.db.prepare(normalizedSql).all(...(params || []) as any[]);
+    const rows = this.db
+      .prepare(normalizedSql)
+      .all(...((params || []) as any[]));
     return new SqliteReader(rows as Record<string, unknown>[]);
   }
 
@@ -88,7 +95,7 @@ class SqliteConnection implements DatabaseConnection {
 
   private normalizeSql(sql: string): string {
     // Convert $1, $2 positional params to SQLite ?1, ?2
-    return sql.replace(/\$(\d+)/g, '?$1');
+    return sql.replace(/\$(\d+)/g, "?$1");
   }
 }
 
@@ -98,8 +105,13 @@ export class SqliteDatabase implements DatabaseInstance {
     this.db = db;
   }
 
-  static async create(path: string, _options?: Record<string, string>): Promise<SqliteDatabase> {
-    const db = new Database(path === ":memory:" ? ":memory:" : path, { create: true });
+  static async create(
+    path: string,
+    _options?: Record<string, string>,
+  ): Promise<SqliteDatabase> {
+    const db = new Database(path === ":memory:" ? ":memory:" : path, {
+      create: true,
+    });
     return new SqliteDatabase(db);
   }
 

@@ -6,39 +6,37 @@
 	"workers_dev": false,
 	"preview_urls": false,
 	"observability": {
-		"enabled": true
+		"enabled": true,
 	},
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
+	"compatibility_flags": ["nodejs_compat"],
 
 	// D1 database for instance registry and email metadata
 	"d1_databases": [
 		{
 			"binding": "DB",
 			"database_name": "proseva-email",
-			"database_id": "<d1-database>"
-		}
+			"database_id": "<d1-database>",
+		},
 	],
 
 	// R2 bucket for encrypted email blobs
 	"r2_buckets": [
 		{
 			"binding": "EMAIL_BUCKET",
-			"bucket_name": "proseva-email"
-		}
+			"bucket_name": "proseva-email",
+		},
 	],
 
 	// Environment variables (non-secret)
 	"vars": {
 		"EMAIL_TTL_DAYS": "7",
-		"INSTANCE_PRUNE_DAYS": "90"
+		"INSTANCE_PRUNE_DAYS": "90",
 	},
 
 	// Daily cleanup cron (3 AM UTC)
 	"triggers": {
-		"crons": ["0 3 * * *"]
-	}
+		"crons": ["0 3 * * *"],
+	},
 
 	// Secrets (set via `wrangler secret put`):
 	// - REGISTRATION_SECRET: shared secret for instance registration

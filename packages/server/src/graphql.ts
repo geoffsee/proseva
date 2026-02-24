@@ -60,7 +60,9 @@ const schema = createSchema({
     },
     Query: {
       courts: () => {
-        const rows = datasetsDb.query("SELECT * FROM courts ORDER BY name").all() as CourtRow[];
+        const rows = datasetsDb
+          .query("SELECT * FROM courts ORDER BY name")
+          .all() as CourtRow[];
         return rows.map((row) => ({
           name: row.name,
           locality: row.locality,
@@ -71,7 +73,12 @@ const schema = createSchema({
           phones: row.phones ? JSON.parse(row.phones) : null,
           fax: row.fax,
           email: row.email,
-          address: [row.address, row.city || row.state || row.zip ? `${row.city ?? ""}, ${row.state ?? "VA"} ${row.zip ?? ""}` : null]
+          address: [
+            row.address,
+            row.city || row.state || row.zip
+              ? `${row.city ?? ""}, ${row.state ?? "VA"} ${row.zip ?? ""}`
+              : null,
+          ]
             .filter(Boolean)
             .join(", "),
           city: row.city ?? "",
