@@ -1225,6 +1225,59 @@ export const emailApi = {
   },
 };
 
+// --- GraphQL helper ---
+
+async function graphqlQuery<T = unknown>(
+  query: string,
+  variables?: Record<string, unknown>,
+): Promise<T> {
+  const res = await fetch(`${API_BASE}/graphql`, {
+    method: "POST",
+    headers: await getAuthHeaders(),
+    body: JSON.stringify({ query, variables }),
+  });
+  if (!res.ok) throw new Error(`GraphQL error: ${res.status} ${res.statusText}`);
+  const json = await res.json();
+  if (json.errors?.length) throw new Error(json.errors[0].message);
+  return json.data as T;
+}
+
+// --- Virginia Courts (GraphQL) ---
+
+export type CourtInfo = {
+  name: string;
+  locality: string;
+  type: "General District" | "Juvenile & Domestic Relations" | "Combined District";
+  district: string;
+  clerk: string | null;
+  phone: string | null;
+  phones?: Record<string, string | undefined>;
+  fax: string | null;
+  email: string | null;
+  address: string | null;
+  city: string;
+  state: string;
+  zip: string;
+  hours: string | null;
+  website: string;
+  judges: string[];
+};
+
+const COURTS_QUERY = `{
+  courts {
+    name locality type district clerk
+    phone phones fax email address
+    city state zip hours website judges
+  }
+}`;
+
+export const virginiaCourtsApi = {
+  list: async (): Promise<CourtInfo[]> => {
+    const data = await graphqlQuery<{ courts: CourtInfo[] }>(COURTS_QUERY);
+    return data.courts;
+  },
+};
+
 export const api = {
   cases: casesApi,
   contacts: contactsApi,
@@ -1250,4 +1303,5 @@ export const api = {
   documents: documentsApi,
   ingest: ingestApi,
   email: emailApi,
+  virginiaCourts: virginiaCourtsApi,
 };

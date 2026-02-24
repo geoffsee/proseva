@@ -12,8 +12,6 @@ const { pdfUrl } = getDatasetResources("courts") as {
 const DIR = new URL("../../data/courts", import.meta.url).pathname;
 const pdfPath = `${DIR}/district_courts_directory.pdf`;
 const jsonPath = `${DIR}/courts.json`;
-const vaCourtsJsonPath = new URL("../../courts/va-courts.json", import.meta.url).pathname;
-
 
 const res = await fetch(pdfUrl, { headers: HEADERS });
 if (!res.ok) {
@@ -26,5 +24,4 @@ await Bun.write(pdfPath, await res.arrayBuffer());
 const text = await extractTextFromPdf(pdfPath);
 const courtsJson = parseVirginiaCourts(text);
 await Bun.write(jsonPath, JSON.stringify(courtsJson));
-await Bun.write(vaCourtsJsonPath, JSON.stringify(courtsJson));
-console.error(`Wrote ${courtsJson.length} courts → ${jsonPath} and ${vaCourtsJsonPath}`);
+console.error(`Wrote ${courtsJson.length} courts → ${jsonPath}`);

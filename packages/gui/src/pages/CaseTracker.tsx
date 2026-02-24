@@ -21,7 +21,7 @@ import { LuPlus, LuFolder } from "react-icons/lu";
 import { observer } from "mobx-react-lite";
 import { useStore } from "../store/StoreContext";
 import { EmptyState } from "../components/shared/EmptyState";
-import { VIRGINIA_COURTS } from "../lib/virginia";
+import { useVirginiaCourts } from "../hooks/useVirginiaCourts";
 
 const STATUS_COLOR: Record<string, string> = {
   active: "green",
@@ -31,6 +31,7 @@ const STATUS_COLOR: Record<string, string> = {
 
 const CaseTracker = observer(function CaseTracker() {
   const { caseStore } = useStore();
+  const { courts } = useVirginiaCourts();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -131,7 +132,7 @@ const CaseTracker = observer(function CaseTracker() {
                   }}
                 >
                   <option value="">Select court...</option>
-                  {VIRGINIA_COURTS.map((c) => (
+                  {courts.map((c) => (
                     <option key={c.name} value={c.name}>
                       {c.name}
                     </option>

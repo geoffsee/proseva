@@ -67,6 +67,7 @@ import { authRouter, verifyToken } from "./auth-api";
 import { getConfig } from "./config";
 import { researchRouter } from "./research";
 import { handleResearchChat } from "./research-agent";
+import { yoga } from "./graphql";
 import { cosine_similarity_dataspace, ensureWasmSimilarityInit } from "./wasm-similarity-init";
 import { getChatSystemPrompt } from "./prompts";
 import {
@@ -381,6 +382,9 @@ router.get(
   "/health",
   asIttyRoute("get", "/health", () => ({ status: "ok" })),
 );
+
+// Mount GraphQL (graphql-yoga) endpoint
+router.all("/graphql", (req: Request) => yoga.fetch(req));
 
 // Initialize WASM modules and database before handling any requests.
 ensureWasmSimilarityInit();

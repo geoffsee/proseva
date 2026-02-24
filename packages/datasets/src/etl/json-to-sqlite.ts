@@ -24,6 +24,7 @@ db.run(`
     district TEXT,
     clerk TEXT,
     phone TEXT,
+    phones TEXT,
     fax TEXT,
     email TEXT,
     address TEXT,
@@ -113,8 +114,8 @@ console.log(`Initialized database at ${DB_PATH}`);
 // --- HELPER TO INSERT DATA ---
 
 const insertCourt = db.prepare(`
-  INSERT INTO courts (name, locality, type, district, clerk, phone, fax, email, address, city, state, zip, hours, homepage, judges)
-  VALUES ($name, $locality, $type, $district, $clerk, $phone, $fax, $email, $address, $city, $state, $zip, $hours, $homepage, $judges)
+  INSERT INTO courts (name, locality, type, district, clerk, phone, phones, fax, email, address, city, state, zip, hours, homepage, judges)
+  VALUES ($name, $locality, $type, $district, $clerk, $phone, $phones, $fax, $email, $address, $city, $state, $zip, $hours, $homepage, $judges)
 `);
 
 const insertConstitution = db.prepare(`
@@ -158,6 +159,7 @@ if (await courtsJsonFile.exists()) {
         $district: c.district,
         $clerk: c.clerk,
         $phone: c.phone,
+        $phones: c.phones ? JSON.stringify(c.phones) : null,
         $fax: c.fax,
         $email: c.email,
         $address: c.address,

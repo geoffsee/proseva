@@ -15,7 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { toaster } from "../ui/toaster";
 import { faxApi } from "../../lib/api";
-import { VIRGINIA_COURTS } from "../../lib/virginia";
+import { useVirginiaCourts } from "../../hooks/useVirginiaCourts";
 import type { Filing } from "../../types";
 
 interface SendFaxDialogProps {
@@ -37,10 +37,11 @@ export function SendFaxDialog({
   const [manualFax, setManualFax] = useState("");
   const [recipientName, setRecipientName] = useState("");
   const [sending, setSending] = useState(false);
+  const { courts } = useVirginiaCourts();
 
   // Find matching court from the case's court field
   const matchedCourt = courtName
-    ? VIRGINIA_COURTS.find(
+    ? courts.find(
         (c) => c.name.toLowerCase() === courtName.toLowerCase(),
       )
     : undefined;

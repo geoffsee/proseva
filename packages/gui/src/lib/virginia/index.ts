@@ -1,4 +1,3 @@
-export { VIRGINIA_COURTS, type CourtInfo } from "./courts";
 export { VIRGINIA_STATUTES, type StatuteRef } from "./statutes";
 export { LEGAL_GLOSSARY, type GlossaryEntry } from "./glossary";
 export { FILING_DEADLINES, type DeadlineRule } from "./deadlines";
