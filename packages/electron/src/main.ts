@@ -65,6 +65,7 @@ function startServer(): ChildProcess {
     ...(process.env as Record<string, string>),
     PROSEVA_DATA_DIR: dataDir,
     PORT: String(SERVER_PORT),
+    EXPLORER_URL: EXPLORER_URL,
   };
 
   if (isDev) {

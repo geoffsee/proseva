@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { getConfig } from "./config";
+import { explorerTools, executeExplorerTool, isExplorerToolName } from "./explorer-tools";
 
 // --- Shared constants & helpers (same as research.ts) ---
 
@@ -354,6 +355,7 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
       },
     },
   },
+  ...explorerTools,
 ];
 
 // --- Tool execution functions ---
@@ -749,6 +751,13 @@ async function executeTool(
         args as unknown as Parameters<typeof searchLawyers>[0],
       );
     default:
+      if (isExplorerToolName(name)) {
+        try {
+          return JSON.parse(await executeExplorerTool(name, args));
+        } catch {
+          return { error: `Explorer tool '${name}' failed — explorer may be unavailable` };
+        }
+      }
       return { error: `Unknown tool: ${name}` };
   }
 }
@@ -783,12 +792,7 @@ export async function handleResearchChat(
     ...(endpoint ? { baseURL: endpoint } : {}),
   });
 
-  const model = getConfig("TEXT_MODEL_SMALL") || "gpt-4o-mini";
-
-  const systemMessage: OpenAI.Chat.Completions.ChatCompletionSystemMessageParam =
-    {
-      role: "system",
-      content: `You are a legal research assistant specializing in U.S. law. You help users find court opinions, statutes, regulations, academic papers, government documents, and lawyers.
+  const systemPrompt = `You are a legal research assistant specializing in U.S. law. You help users find court opinions, statutes, regulations, academic papers, government documents, and lawyers.
 
 When a user asks a research question, use the available tools to search for relevant information. You can call multiple tools in sequence to provide comprehensive answers.
 
@@ -800,34 +804,34 @@ Guidelines:
 - Always include a disclaimer that this is for educational purposes and does not constitute legal advice.
 - When searching for court opinions, try specific legal terms and key phrases.
 - For statute searches, specify the state when the user mentions a jurisdiction.
-- Be proactive: if the user asks about a topic, search both opinions and statutes when relevant.`,
-    };
+- Be proactive: if the user asks about a topic, search both opinions and statutes when relevant.
+- You have access to a Virginia law knowledge graph via explorer tools (get_stats, search_nodes, get_node, get_neighbors, find_similar). Use these for Virginia Code lookups, graph traversal of related legal provisions, and semantic similarity search. search_nodes returns truncated text — use get_node for full text of important sections.`;
 
-  const chatMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-    systemMessage,
-    ...messages.map((m) => ({
-      role: m.role as "user" | "assistant",
-      content: m.content,
-    })),
+  const userMessages = messages.map((m) => ({
+    role: m.role as "user" | "assistant",
+    content: m.content,
+  }));
+
+  // === Phase 1: Tool-calling with TEXT_MODEL_SMALL ===
+  const toolMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+    { role: "system", content: systemPrompt },
+    ...userMessages,
   ];
 
   const toolResults: Array<{ toolName: string; results: unknown }> = [];
-  let iterations = 0;
   const maxIterations = 5;
 
-  while (iterations < maxIterations) {
-    iterations++;
-
+  for (let i = 0; i < maxIterations; i++) {
     const response = await client.chat.completions.create({
-      model,
-      messages: chatMessages,
+      model: getConfig("TEXT_MODEL_SMALL") || "gpt-4o-mini",
+      messages: toolMessages,
       tools,
     });
 
     const choice = response.choices[0];
 
     if (choice.message.tool_calls?.length) {
-      chatMessages.push(choice.message);
+      toolMessages.push(choice.message);
 
       for (const toolCall of choice.message.tool_calls) {
         if (toolCall.type !== "function") continue;
@@ -856,31 +860,40 @@ Guidelines:
           });
         }
 
-        chatMessages.push({
+        toolMessages.push({
           role: "tool",
           tool_call_id: toolCall.id,
           content: JSON.stringify(result),
         });
       }
-    } else {
-      return {
-        reply: choice.message.content || "I couldn't generate a response.",
-        toolResults,
-      };
+      continue;
     }
+    break;
   }
 
-  // If we exhausted iterations, get the final message content
-  const lastAssistant = chatMessages
-    .filter((m) => m.role === "assistant")
-    .pop();
-  const fallbackReply =
-    (lastAssistant &&
-    "content" in lastAssistant &&
-    typeof lastAssistant.content === "string"
-      ? lastAssistant.content
-      : null) ||
-    "I completed several research steps. Please review the results in the sidebar.";
+  // === Phase 2: Conversational response with TEXT_MODEL_LARGE ===
+  const conversationMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+    { role: "system", content: systemPrompt },
+    ...userMessages,
+  ];
 
-  return { reply: fallbackReply, toolResults };
+  if (toolResults.length > 0) {
+    const contextSummary = toolResults
+      .map((r) => `[${r.toolName}]: ${JSON.stringify(r.results)}`)
+      .join("\n\n");
+    conversationMessages.push({
+      role: "assistant",
+      content: `I retrieved the following data to help answer your question:\n\n${contextSummary}`,
+    });
+  }
+
+  const finalCompletion = await client.chat.completions.create({
+    model: getConfig("TEXT_MODEL_LARGE") || "gpt-4o",
+    messages: conversationMessages,
+  });
+
+  return {
+    reply: finalCompletion.choices[0].message.content ?? "Sorry, I was unable to complete the request.",
+    toolResults,
+  };
 }

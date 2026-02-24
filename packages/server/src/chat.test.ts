@@ -19,6 +19,16 @@ vi.mock("fs/promises", async (importOriginal) => {
   };
 });
 
+const mockExecuteExplorerTool = vi.fn();
+
+vi.mock("./explorer-tools", async (importOriginal) => {
+  const actual = (await importOriginal()) as Record<string, unknown>;
+  return {
+    ...actual,
+    executeExplorerTool: (...args: unknown[]) => mockExecuteExplorerTool(...args),
+  };
+});
+
 import { setupTestServer, api } from "./test-helpers";
 import { db, type Contact } from "./db";
 
@@ -27,6 +37,9 @@ const ctx = setupTestServer();
 describe("Chat API", () => {
   beforeEach(() => {
     mockCreate.mockReset();
+    mockExecuteExplorerTool.mockReset();
+    // Default: returns stop with content (works for both Phase 1 and Phase 2).
+    // Tests that need specific sequences override with mockResolvedValueOnce.
     mockCreate.mockResolvedValue({
       choices: [
         {
@@ -59,7 +72,7 @@ describe("Chat API", () => {
   });
 
   it("executes tool calls and returns final reply", async () => {
-    // First call returns tool_calls, second returns final answer
+    // Phase 1: tool_calls → stop, Phase 2: final answer
     mockCreate
       .mockResolvedValueOnce({
         choices: [
@@ -76,6 +89,11 @@ describe("Chat API", () => {
               ],
             },
           },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [
+          { finish_reason: "stop", message: { content: null } },
         ],
       })
       .mockResolvedValueOnce({
@@ -97,7 +115,7 @@ describe("Chat API", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.reply).toBe("You have no cases.");
-    expect(mockCreate).toHaveBeenCalledTimes(2);
+    expect(mockCreate).toHaveBeenCalledTimes(3);
   });
 
   it("handles GetDeadlines tool with caseId filter", async () => {
@@ -137,6 +155,11 @@ describe("Chat API", () => {
               ],
             },
           },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [
+          { finish_reason: "stop", message: { content: null } },
         ],
       })
       .mockResolvedValueOnce({
@@ -195,6 +218,11 @@ describe("Chat API", () => {
       })
       .mockResolvedValueOnce({
         choices: [
+          { finish_reason: "stop", message: { content: null } },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [
           { finish_reason: "stop", message: { content: "Found John." } },
         ],
       });
@@ -231,6 +259,11 @@ describe("Chat API", () => {
       })
       .mockResolvedValueOnce({
         choices: [
+          { finish_reason: "stop", message: { content: null } },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [
           { finish_reason: "stop", message: { content: "No finances." } },
         ],
       });
@@ -263,6 +296,11 @@ describe("Chat API", () => {
               ],
             },
           },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [
+          { finish_reason: "stop", message: { content: null } },
         ],
       })
       .mockResolvedValueOnce({
@@ -304,6 +342,11 @@ describe("Chat API", () => {
       })
       .mockResolvedValueOnce({
         choices: [
+          { finish_reason: "stop", message: { content: null } },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [
           { finish_reason: "stop", message: { content: "Doc not found." } },
         ],
       });
@@ -339,6 +382,11 @@ describe("Chat API", () => {
               ],
             },
           },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [
+          { finish_reason: "stop", message: { content: null } },
         ],
       })
       .mockResolvedValueOnce({
@@ -388,11 +436,17 @@ describe("Chat API", () => {
       completed: false,
     });
 
-    mockCreate.mockResolvedValueOnce({
-      choices: [
-        { finish_reason: "stop", message: { content: "Graph complete." } },
-      ],
-    });
+    mockCreate
+      .mockResolvedValueOnce({
+        choices: [
+          { finish_reason: "stop", message: { content: null } },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [
+          { finish_reason: "stop", message: { content: "Graph complete." } },
+        ],
+      });
 
     const res = await api.post(
       "/api/chat",
@@ -403,7 +457,7 @@ describe("Chat API", () => {
     );
     const body = await res.json();
     expect(body.reply).toBe("Graph complete.");
-    expect(mockCreate).toHaveBeenCalledTimes(1);
+    expect(mockCreate).toHaveBeenCalledTimes(2);
 
     const firstCall = mockCreate.mock.calls[0]?.[0] as {
       tools?: Array<{ function: { name: string } }>;
@@ -442,6 +496,11 @@ describe("Chat API", () => {
         ],
       })
       .mockResolvedValueOnce({
+        choices: [
+          { finish_reason: "stop", message: { content: null } },
+        ],
+      })
+      .mockResolvedValueOnce({
         choices: [{ finish_reason: "stop", message: { content: "Done." } }],
       });
 
@@ -456,22 +515,325 @@ describe("Chat API", () => {
     expect(body.reply).toBe("Done.");
   });
 
-  it("returns fallback after max iterations", async () => {
-    // Always return tool calls to exhaust the loop
-    mockCreate.mockResolvedValue({
-      choices: [
-        {
-          finish_reason: "tool_calls",
-          message: {
-            content: null,
-            tool_calls: [
-              {
-                id: "call_loop",
+  it("includes explorer tools in the tools array sent to OpenAI", async () => {
+    mockCreate
+      .mockResolvedValueOnce({
+        choices: [
+          { finish_reason: "stop", message: { content: null } },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [
+          { finish_reason: "stop", message: { content: "Here is info." } },
+        ],
+      });
+
+    await api.post(
+      "/api/chat",
+      { messages: [{ role: "user", content: "Tell me about FOIA" }] },
+      ctx.baseUrl,
+    );
+
+    const firstCall = mockCreate.mock.calls[0]?.[0] as {
+      tools?: Array<{ function: { name: string } }>;
+    };
+    const toolNames = firstCall.tools?.map((t) => t.function.name) ?? [];
+    expect(toolNames).toContain("get_stats");
+    expect(toolNames).toContain("search_nodes");
+    expect(toolNames).toContain("get_node");
+    expect(toolNames).toContain("get_neighbors");
+    expect(toolNames).toContain("find_similar");
+  });
+
+  it("dispatches search_nodes explorer tool call and returns result", async () => {
+    mockExecuteExplorerTool.mockResolvedValue(
+      JSON.stringify({ nodes: { total: 1, nodes: [{ id: 42, sourceId: "§2.2-3700" }] } }),
+    );
+
+    mockCreate
+      .mockResolvedValueOnce({
+        choices: [
+          {
+            finish_reason: "tool_calls",
+            message: {
+              content: null,
+              tool_calls: [
+                {
+                  id: "call_explorer_1",
+                  type: "function",
+                  function: {
+                    name: "search_nodes",
+                    arguments: '{"search":"FOIA","type":"section"}',
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [
+          { finish_reason: "stop", message: { content: null } },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: { content: "Virginia FOIA is at §2.2-3700." },
+          },
+        ],
+      });
+
+    const res = await api.post(
+      "/api/chat",
+      { messages: [{ role: "user", content: "What is Virginia FOIA?" }] },
+      ctx.baseUrl,
+    );
+    const body = await res.json();
+    expect(body.reply).toBe("Virginia FOIA is at §2.2-3700.");
+    expect(mockExecuteExplorerTool).toHaveBeenCalledWith("search_nodes", {
+      search: "FOIA",
+      type: "section",
+    });
+    expect(mockCreate).toHaveBeenCalledTimes(3);
+  });
+
+  it("dispatches get_node explorer tool call", async () => {
+    mockExecuteExplorerTool.mockResolvedValue(
+      JSON.stringify({ node: { id: 42, sourceText: "Full FOIA text here" } }),
+    );
+
+    mockCreate
+      .mockResolvedValueOnce({
+        choices: [
+          {
+            finish_reason: "tool_calls",
+            message: {
+              content: null,
+              tool_calls: [
+                {
+                  id: "call_explorer_2",
+                  type: "function",
+                  function: {
+                    name: "get_node",
+                    arguments: '{"id":42}',
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [
+          { finish_reason: "stop", message: { content: null } },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [
+          { finish_reason: "stop", message: { content: "Here is the text." } },
+        ],
+      });
+
+    const res = await api.post(
+      "/api/chat",
+      { messages: [{ role: "user", content: "Read node 42" }] },
+      ctx.baseUrl,
+    );
+    const body = await res.json();
+    expect(body.reply).toBe("Here is the text.");
+    expect(mockExecuteExplorerTool).toHaveBeenCalledWith("get_node", { id: 42 });
+  });
+
+  it("handles explorer tool failure gracefully", async () => {
+    mockExecuteExplorerTool.mockRejectedValue(new Error("ECONNREFUSED"));
+
+    mockCreate
+      .mockResolvedValueOnce({
+        choices: [
+          {
+            finish_reason: "tool_calls",
+            message: {
+              content: null,
+              tool_calls: [
+                {
+                  id: "call_explorer_fail",
+                  type: "function",
+                  function: {
+                    name: "get_stats",
+                    arguments: "{}",
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [
+          { finish_reason: "stop", message: { content: null } },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: { content: "Explorer is unavailable, but I can still help." },
+          },
+        ],
+      });
+
+    const res = await api.post(
+      "/api/chat",
+      { messages: [{ role: "user", content: "Get knowledge graph stats" }] },
+      ctx.baseUrl,
+    );
+    const body = await res.json();
+    expect(body.reply).toBe("Explorer is unavailable, but I can still help.");
+    expect(mockCreate).toHaveBeenCalledTimes(3);
+  });
+
+  it("includes explorer tool note in system prompt", async () => {
+    mockCreate
+      .mockResolvedValueOnce({
+        choices: [
+          { finish_reason: "stop", message: { content: null } },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [
+          { finish_reason: "stop", message: { content: "OK." } },
+        ],
+      });
+
+    await api.post(
+      "/api/chat",
+      { messages: [{ role: "user", content: "hi" }] },
+      ctx.baseUrl,
+    );
+
+    const firstCall = mockCreate.mock.calls[0]?.[0] as {
+      messages?: Array<{ role: string; content?: string }>;
+    };
+    const systemMessage = firstCall.messages?.find((m) => m.role === "system");
+    expect(systemMessage?.content).toContain("knowledge graph");
+    expect(systemMessage?.content).toContain("search_nodes");
+  });
+
+  it("Phase 2 uses TEXT_MODEL_LARGE without tools parameter", async () => {
+    mockCreate
+      .mockResolvedValueOnce({
+        choices: [
+          { finish_reason: "stop", message: { content: null } },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [
+          { finish_reason: "stop", message: { content: "Hello!" } },
+        ],
+      });
+
+    await api.post(
+      "/api/chat",
+      { messages: [{ role: "user", content: "hi" }] },
+      ctx.baseUrl,
+    );
+
+    expect(mockCreate).toHaveBeenCalledTimes(2);
+
+    // Phase 1 call should have tools
+    const phase1Call = mockCreate.mock.calls[0]?.[0] as {
+      model?: string;
+      tools?: unknown;
+    };
+    expect(phase1Call.tools).toBeDefined();
+
+    // Phase 2 call should NOT have tools and should use TEXT_MODEL_LARGE
+    const phase2Call = mockCreate.mock.calls[1]?.[0] as {
+      model?: string;
+      tools?: unknown;
+    };
+    expect(phase2Call.tools).toBeUndefined();
+    expect(phase2Call.model).toBe("gpt-4o");
+  });
+
+  it("injects tool results into Phase 2 context as assistant message", async () => {
+    mockCreate
+      .mockResolvedValueOnce({
+        choices: [
+          {
+            finish_reason: "tool_calls",
+            message: {
+              content: null,
+              tool_calls: [
+                {
+                  id: "call_1",
                   type: "function",
                   function: { name: "GetCases", arguments: "{}" },
-              },
-            ],
+                },
+              ],
+            },
           },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [
+          { finish_reason: "stop", message: { content: null } },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [
+          { finish_reason: "stop", message: { content: "Here are your cases." } },
+        ],
+      });
+
+    await api.post(
+      "/api/chat",
+      { messages: [{ role: "user", content: "Show cases" }] },
+      ctx.baseUrl,
+    );
+
+    expect(mockCreate).toHaveBeenCalledTimes(3);
+
+    // Phase 2 call should include an assistant message with tool results
+    const phase2Call = mockCreate.mock.calls[2]?.[0] as {
+      messages?: Array<{ role: string; content?: string }>;
+    };
+    const assistantContext = phase2Call.messages?.find(
+      (m) => m.role === "assistant" && m.content?.includes("[GetCases]:"),
+    );
+    expect(assistantContext).toBeDefined();
+    expect(assistantContext?.content).toContain("I retrieved the following data");
+  });
+
+  it("returns fallback after max iterations", async () => {
+    // All 10 Phase 1 iterations return tool calls, then Phase 2 provides the reply
+    for (let i = 0; i < 10; i++) {
+      mockCreate.mockResolvedValueOnce({
+        choices: [
+          {
+            finish_reason: "tool_calls",
+            message: {
+              content: null,
+              tool_calls: [
+                {
+                  id: `call_loop_${i}`,
+                  type: "function",
+                  function: { name: "GetCases", arguments: "{}" },
+                },
+              ],
+            },
+          },
+        ],
+      });
+    }
+    // Phase 2: conversational response
+    mockCreate.mockResolvedValueOnce({
+      choices: [
+        {
+          finish_reason: "stop",
+          message: { content: "Too many tool calls, but here is what I found." },
         },
       ],
     });
@@ -484,7 +846,7 @@ describe("Chat API", () => {
       ctx.baseUrl,
     );
     const body = await res.json();
-    expect(body.reply).toBe("Sorry, I was unable to complete the request.");
-    expect(mockCreate).toHaveBeenCalledTimes(10);
+    expect(body.reply).toBe("Too many tool calls, but here is what I found.");
+    expect(mockCreate).toHaveBeenCalledTimes(11);
   });
 });

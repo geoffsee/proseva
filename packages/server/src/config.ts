@@ -167,6 +167,7 @@ export function getConfig(key: string): string | undefined {
   const defaults: Record<string, string> = {
     SCANNER_ENABLED: "true",
     SCANNER_ENDPOINTS: "http://localhost:8085",
+    EXPLORER_URL: "http://localhost:3002",
   };
   return defaults[key];
 }

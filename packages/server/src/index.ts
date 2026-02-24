@@ -73,6 +73,7 @@ import {
   generateChronologyReport,
 } from "./reports.js";
 import { analyzeCaseGraph, compressCaseGraphForPrompt } from "./chat-graph";
+import { explorerTools, executeExplorerTool, isExplorerToolName } from "./explorer-tools";
 import {
   asIttyRoute,
   created as openapiCreated,
@@ -1323,6 +1324,7 @@ router
           },
         },
       },
+      ...explorerTools,
     ];
 
     const parseStringArg = (value: unknown): string | undefined => {
@@ -1374,7 +1376,9 @@ router
 Graph context bootstrap (compressed JSON snapshot):
 ${graphSnapshotText}
 
-Treat this snapshot as baseline context for case connectivity and bottlenecks. Use tools for exact record-level lookups when needed.`;
+Treat this snapshot as baseline context for case connectivity and bottlenecks. Use tools for exact record-level lookups when needed.
+
+You also have access to a Virginia law knowledge graph via explorer tools (get_stats, search_nodes, get_node, get_neighbors, find_similar). Use these for Virginia Code lookups, graph traversal of legal provisions, and semantic similarity search. search_nodes returns truncated text — use get_node for full text of important sections.`;
 
     const executeTool = async (
       name: string,
@@ -1533,11 +1537,19 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
           }
         }
         default:
+          if (isExplorerToolName(name)) {
+            try {
+              return await executeExplorerTool(name, args);
+            } catch {
+              return JSON.stringify({ error: `Explorer tool '${name}' failed — explorer may be unavailable` });
+            }
+          }
           return JSON.stringify({ error: "Unknown tool" });
       }
     };
 
-    const chatMessages: OpenAI.ChatCompletionMessageParam[] = [
+    // === Phase 1: Tool-calling with TEXT_MODEL_SMALL ===
+    const toolMessages: OpenAI.ChatCompletionMessageParam[] = [
       { role: "system", content: systemPrompt },
       ...messages.map((m: { role: string; content: string }) => ({
         role: m.role as "user" | "assistant",
@@ -1545,11 +1557,12 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
       })),
     ];
 
-    // Tool-calling loop
+    const collectedToolResults: { tool: string; result: string }[] = [];
+
     for (let i = 0; i < 10; i++) {
       const completion = await openai.chat.completions.create({
         model: getConfig("TEXT_MODEL_SMALL") || "gpt-4o-mini",
-        messages: chatMessages,
+        messages: toolMessages,
         tools,
       });
 
@@ -1559,7 +1572,7 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
         choice.finish_reason === "tool_calls" ||
         choice.message.tool_calls?.length
       ) {
-        chatMessages.push(choice.message);
+        toolMessages.push(choice.message);
         for (const toolCall of choice.message.tool_calls ?? []) {
           if (toolCall.type !== "function") continue;
           let args: Record<string, unknown> = {};
@@ -1572,7 +1585,8 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
             args = {};
           }
           const result = await executeTool(toolCall.function.name, args);
-          chatMessages.push({
+          collectedToolResults.push({ tool: toolCall.function.name, result });
+          toolMessages.push({
             role: "tool",
             tool_call_id: toolCall.id,
             content: result,
@@ -1580,13 +1594,36 @@ Treat this snapshot as baseline context for case connectivity and bottlenecks. U
         }
         continue;
       }
-
-      return {
-        reply: choice.message.content ?? "Sorry, I was unable to complete the request.",
-      };
+      break;
     }
 
-    return { reply: "Sorry, I was unable to complete the request." };
+    // === Phase 2: Conversational response with TEXT_MODEL_LARGE ===
+    const conversationMessages: OpenAI.ChatCompletionMessageParam[] = [
+      { role: "system", content: systemPrompt },
+      ...messages.map((m: { role: string; content: string }) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      })),
+    ];
+
+    if (collectedToolResults.length > 0) {
+      const contextSummary = collectedToolResults
+        .map((r) => `[${r.tool}]: ${r.result}`)
+        .join("\n\n");
+      conversationMessages.push({
+        role: "assistant",
+        content: `I retrieved the following data to help answer your question:\n\n${contextSummary}`,
+      });
+    }
+
+    const finalCompletion = await openai.chat.completions.create({
+      model: getConfig("TEXT_MODEL_LARGE") || "gpt-4o",
+      messages: conversationMessages,
+    });
+
+    return {
+      reply: finalCompletion.choices[0].message.content ?? "Sorry, I was unable to complete the request.",
+    };
   }))
 
   // --- Reports ---
