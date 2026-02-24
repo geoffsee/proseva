@@ -2,6 +2,7 @@ import { resolve } from "node:path";
 import { mkdirSync, existsSync, renameSync } from "node:fs";
 import { createHash } from "node:crypto";
 import {
+  SqliteDatabase,
   type DatabaseInstance,
   type DatabaseConnection,
 } from "@proseva/database";

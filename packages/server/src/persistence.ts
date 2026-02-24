@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 import { mkdirSync, existsSync, renameSync } from "node:fs";
 import {
+  SqliteDatabase,
   type DatabaseInstance,
   type DatabaseConnection,
 } from "@proseva/database";
