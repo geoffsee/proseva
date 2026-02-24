@@ -7,7 +7,7 @@ import React, {
   useMemo,
 } from "react";
 
-type Listener = () => void;
+type Listener = (data?: unknown) => void;
 
 interface ServerEventsContextValue {
   subscribe: (event: string, listener: Listener) => () => void;
@@ -48,9 +48,9 @@ export function ServerEventsProvider({
 
       ws.onmessage = (e) => {
         try {
-          const { event } = JSON.parse(e.data) as { event: string };
+          const { event, data } = JSON.parse(e.data) as { event: string; data?: unknown };
           const set = listenersRef.current.get(event);
-          if (set) set.forEach((fn) => fn());
+          if (set) set.forEach((fn) => fn(data));
         } catch {
           /* ignore malformed */
         }
@@ -98,6 +98,6 @@ export function useServerEvent(event: string, listener: Listener) {
   useEffect(() => {
     listenerRef.current = listener;
     if (!ctx) return;
-    return ctx.subscribe(event, () => listenerRef.current());
+    return ctx.subscribe(event, (data) => listenerRef.current(data));
   }, [ctx, event]);
 }

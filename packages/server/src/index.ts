@@ -1604,7 +1604,9 @@ You also have access to a Virginia law knowledge graph via explorer tools (get_s
             } catch {
               args = {};
             }
+            broadcast("activity-status", { source: "chat", phase: "tool-start", tool: toolCall.function.name });
             const result = await executeTool(toolCall.function.name, args);
+            broadcast("activity-status", { source: "chat", phase: "tool-done", tool: toolCall.function.name });
             collectedToolResults.push({ tool: toolCall.function.name, result });
             toolMessages.push({
               role: "tool",
@@ -1636,10 +1638,12 @@ You also have access to a Virginia law knowledge graph via explorer tools (get_s
         });
       }
 
+      broadcast("activity-status", { source: "chat", phase: "generating" });
       const finalCompletion = await openai.chat.completions.create({
         model: getConfig("TEXT_MODEL_LARGE") || "gpt-4o",
         messages: conversationMessages,
       });
+      broadcast("activity-status", { source: "chat", phase: "idle" });
 
       return {
         reply:
@@ -2407,6 +2411,7 @@ router.post(
           role: m.role as "user" | "assistant",
           content: m.content,
         })),
+        (data) => broadcast("activity-status", data),
       );
 
       return result;

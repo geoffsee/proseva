@@ -782,6 +782,7 @@ export interface ResearchChatResponse {
 
 export async function handleResearchChat(
   messages: ResearchChatMessage[],
+  onActivity?: (data: { source: "research"; phase: string; tool?: string }) => void,
 ): Promise<ResearchChatResponse> {
   const apiKey = getConfig("OPENAI_API_KEY");
   if (!apiKey) {
@@ -853,12 +854,15 @@ Guidelines:
 
         let result: unknown;
         try {
+          onActivity?.({ source: "research", phase: "tool-start", tool: toolCall.function.name });
           result = await executeTool(toolCall.function.name, args);
+          onActivity?.({ source: "research", phase: "tool-done", tool: toolCall.function.name });
           toolResults.push({
             toolName: toolCall.function.name,
             results: result,
           });
         } catch (err) {
+          onActivity?.({ source: "research", phase: "tool-done", tool: toolCall.function.name });
           result = { error: (err as Error).message };
           toolResults.push({
             toolName: toolCall.function.name,
@@ -891,10 +895,12 @@ Guidelines:
     });
   }
 
+  onActivity?.({ source: "research", phase: "generating" });
   const finalCompletion = await client.chat.completions.create({
     model: getConfig("TEXT_MODEL_LARGE") || "gpt-4o",
     messages: conversationMessages,
   });
+  onActivity?.({ source: "research", phase: "idle" });
 
   return {
     reply:

@@ -29,6 +29,7 @@ import { useState, useRef, useEffect, type ElementType } from "react";
 import { observer } from "mobx-react-lite";
 import Markdown from "react-markdown";
 import { useStore } from "../store/StoreContext";
+import { useActivityStatus } from "../hooks/useActivityStatus";
 
 interface ResultItem {
   id?: string | number;
@@ -227,6 +228,7 @@ const Research = observer(function Research() {
   const { researchStore } = useStore();
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  const activityStatus = useActivityStatus("research");
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -377,7 +379,7 @@ const Research = observer(function Research() {
                 </Box>
                 <Box bg="bg.subtle" px="4" py="3" borderRadius="xl">
                   <Text fontSize="sm" color="fg.muted">
-                    Researching...
+                    {activityStatus || "Researching..."}
                   </Text>
                 </Box>
               </HStack>

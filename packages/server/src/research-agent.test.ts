@@ -902,6 +902,240 @@ describe("Research Agent", () => {
     expect(phase2Call.model).toBe("gpt-4o");
   });
 
+  describe("onActivity callback", () => {
+    it("calls onActivity with tool-start and tool-done around tool execution", async () => {
+      const onActivity = vi.fn();
+
+      mockCreate
+        .mockResolvedValueOnce({
+          choices: [
+            {
+              finish_reason: "tool_calls",
+              message: {
+                content: null,
+                tool_calls: [
+                  {
+                    id: "call_1",
+                    type: "function",
+                    function: {
+                      name: "search_opinions",
+                      arguments: '{"query":"test"}',
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          choices: [{ finish_reason: "stop", message: { content: null } }],
+        })
+        .mockResolvedValueOnce({
+          choices: [
+            {
+              finish_reason: "stop",
+              message: { content: "Done." },
+            },
+          ],
+        });
+
+      await handleResearchChat(
+        [{ role: "user", content: "test" }],
+        onActivity,
+      );
+
+      expect(onActivity).toHaveBeenCalledWith({
+        source: "research",
+        phase: "tool-start",
+        tool: "search_opinions",
+      });
+      expect(onActivity).toHaveBeenCalledWith({
+        source: "research",
+        phase: "tool-done",
+        tool: "search_opinions",
+      });
+    });
+
+    it("calls onActivity with generating and idle around Phase 2", async () => {
+      const onActivity = vi.fn();
+
+      mockCreate
+        .mockResolvedValueOnce({
+          choices: [{ finish_reason: "stop", message: { content: null } }],
+        })
+        .mockResolvedValueOnce({
+          choices: [
+            {
+              finish_reason: "stop",
+              message: { content: "Hello." },
+            },
+          ],
+        });
+
+      await handleResearchChat(
+        [{ role: "user", content: "hi" }],
+        onActivity,
+      );
+
+      expect(onActivity).toHaveBeenCalledWith({
+        source: "research",
+        phase: "generating",
+      });
+      expect(onActivity).toHaveBeenCalledWith({
+        source: "research",
+        phase: "idle",
+      });
+    });
+
+    it("calls onActivity in correct order: tool-start, tool-done, generating, idle", async () => {
+      const onActivity = vi.fn();
+
+      mockCreate
+        .mockResolvedValueOnce({
+          choices: [
+            {
+              finish_reason: "tool_calls",
+              message: {
+                content: null,
+                tool_calls: [
+                  {
+                    id: "call_1",
+                    type: "function",
+                    function: {
+                      name: "search_opinions",
+                      arguments: '{"query":"test"}',
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          choices: [{ finish_reason: "stop", message: { content: null } }],
+        })
+        .mockResolvedValueOnce({
+          choices: [
+            {
+              finish_reason: "stop",
+              message: { content: "Result." },
+            },
+          ],
+        });
+
+      await handleResearchChat(
+        [{ role: "user", content: "search" }],
+        onActivity,
+      );
+
+      const phases = onActivity.mock.calls.map(
+        (call: [{ phase: string }]) => call[0].phase,
+      );
+      expect(phases).toEqual([
+        "tool-start",
+        "tool-done",
+        "generating",
+        "idle",
+      ]);
+    });
+
+    it("calls tool-done even when tool execution fails", async () => {
+      const onActivity = vi.fn();
+      mockExecuteExplorerTool.mockRejectedValue(new Error("ECONNREFUSED"));
+
+      mockCreate
+        .mockResolvedValueOnce({
+          choices: [
+            {
+              finish_reason: "tool_calls",
+              message: {
+                content: null,
+                tool_calls: [
+                  {
+                    id: "call_1",
+                    type: "function",
+                    function: {
+                      name: "get_stats",
+                      arguments: "{}",
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          choices: [{ finish_reason: "stop", message: { content: null } }],
+        })
+        .mockResolvedValueOnce({
+          choices: [
+            {
+              finish_reason: "stop",
+              message: { content: "Error handled." },
+            },
+          ],
+        });
+
+      await handleResearchChat(
+        [{ role: "user", content: "stats" }],
+        onActivity,
+      );
+
+      expect(onActivity).toHaveBeenCalledWith({
+        source: "research",
+        phase: "tool-start",
+        tool: "get_stats",
+      });
+      expect(onActivity).toHaveBeenCalledWith({
+        source: "research",
+        phase: "tool-done",
+        tool: "get_stats",
+      });
+    });
+
+    it("works without onActivity callback (backward compatible)", async () => {
+      mockCreate
+        .mockResolvedValueOnce({
+          choices: [
+            {
+              finish_reason: "tool_calls",
+              message: {
+                content: null,
+                tool_calls: [
+                  {
+                    id: "call_1",
+                    type: "function",
+                    function: {
+                      name: "search_opinions",
+                      arguments: '{"query":"test"}',
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          choices: [{ finish_reason: "stop", message: { content: null } }],
+        })
+        .mockResolvedValueOnce({
+          choices: [
+            {
+              finish_reason: "stop",
+              message: { content: "No callback, still works." },
+            },
+          ],
+        });
+
+      // Call without onActivity — should not throw
+      const response = await handleResearchChat([
+        { role: "user", content: "test" },
+      ]);
+
+      expect(response.reply).toBe("No callback, still works.");
+    });
+  });
+
   it("injects tool results into Phase 2 context as assistant message", async () => {
     mockCreate
       .mockResolvedValueOnce({

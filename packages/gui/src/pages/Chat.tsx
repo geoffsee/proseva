@@ -13,11 +13,13 @@ import { useState, useRef, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import Markdown from "react-markdown";
 import { useStore } from "../store/StoreContext";
+import { useActivityStatus } from "../hooks/useActivityStatus";
 
 const Chat = observer(function Chat() {
   const { chatStore } = useStore();
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  const activityStatus = useActivityStatus("chat");
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -119,7 +121,7 @@ const Chat = observer(function Chat() {
               </Box>
               <Box bg="bg.subtle" px="4" py="3" borderRadius="xl">
                 <Text fontSize="sm" color="fg.muted">
-                  Typing...
+                  {activityStatus || "Typing..."}
                 </Text>
               </Box>
             </HStack>
