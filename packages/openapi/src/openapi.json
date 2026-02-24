@@ -1403,6 +1403,156 @@
         }
       }
     },
+    "/email/status": {
+      "get": {
+        "operationId": "getEmailStatus",
+        "tags": ["Email"],
+        "summary": "Get email service status",
+        "responses": {
+          "200": {
+            "description": "Email service status",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EmailServiceStatus" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/email/poll": {
+      "post": {
+        "operationId": "pollEmails",
+        "tags": ["Email"],
+        "summary": "Poll for new emails",
+        "responses": {
+          "200": {
+            "description": "Poll result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["success", "imported"],
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "imported": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/email/register": {
+      "post": {
+        "operationId": "registerEmail",
+        "tags": ["Email"],
+        "summary": "Register an email address",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["registrationSecret"],
+                "properties": {
+                  "registrationSecret": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Registration result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["emailAddress"],
+                  "properties": {
+                    "emailAddress": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Registration failed",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/email/test": {
+      "post": {
+        "operationId": "testEmail",
+        "tags": ["Email"],
+        "summary": "Test email connection",
+        "responses": {
+          "200": {
+            "description": "Test result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["success"],
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "error": { "type": "string" },
+                    "pendingEmails": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/email/rotate-key": {
+      "post": {
+        "operationId": "rotateEmailKey",
+        "tags": ["Email"],
+        "summary": "Rotate email encryption key",
+        "responses": {
+          "200": {
+            "description": "Key rotated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["success"],
+                  "properties": {
+                    "success": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Key rotation failed",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/fax-jobs": {
       "get": {
         "operationId": "listFaxJobs",
@@ -4544,6 +4694,29 @@
           "evaluationId": { "type": "string", "format": "uuid" },
           "pushSent": { "type": "boolean" },
           "smsSent": { "type": "boolean" }
+        }
+      },
+      "EmailServiceStatus": {
+        "type": "object",
+        "required": [
+          "configured",
+          "instanceId",
+          "emailAddress",
+          "pollingEnabled",
+          "pollingIntervalSeconds",
+          "lastPollAt",
+          "lastPollCount",
+          "lastPollError"
+        ],
+        "properties": {
+          "configured": { "type": "boolean" },
+          "instanceId": { "type": "string", "nullable": true },
+          "emailAddress": { "type": "string", "nullable": true },
+          "pollingEnabled": { "type": "boolean" },
+          "pollingIntervalSeconds": { "type": "integer" },
+          "lastPollAt": { "type": "string", "nullable": true },
+          "lastPollCount": { "type": "integer" },
+          "lastPollError": { "type": "string", "nullable": true }
         }
       },
       "SchedulerStatusResponse": {

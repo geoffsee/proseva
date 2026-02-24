@@ -2,7 +2,6 @@ import { AutoRouter, cors } from "itty-router";
 import { join, basename } from "path";
 import { readFile, readdir, stat } from "fs/promises";
 import OpenAI from "openai";
-import { parseEml } from "@proseva/correspondence";
 import {
   db,
   initDb,
@@ -10,7 +9,6 @@ import {
   type Party,
   type Filing,
   type Correspondence,
-  type CorrespondenceAttachment,
   type Contact,
   type Deadline,
   type FinancialEntry,
@@ -23,7 +21,6 @@ import {
   type FaxJob,
 } from "./db";
 import {
-  BlobStore,
   getBlobStore,
   migrateResearchAttachmentsToBlobStore,
 } from "./blob-store";
@@ -49,7 +46,6 @@ import {
   registerEmailAddress,
   testEmailConnection,
   rotateEmailKey,
-  restartEmailPoller,
 } from "./email-service";
 import { importSingleEml } from "./correspondence-import";
 import {
