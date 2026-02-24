@@ -1,31 +1,21 @@
 #!/usr/bin/env bun
 
-const BASE_URL = "https://www.vacourts.gov/static";
+import { configureFetchForDataset, getDatasetResources, HEADERS } from "../lib";
+
 const DIR = new URL("../../data/other/", import.meta.url).pathname;
 
-const files: [string, string][] = [
-  [
-    "courtadmin/aoc/djs/resources/ust/ust_table.pdf",
-    "ust_table.pdf",
-  ],
-  [
-    "resources/small_claims_court_procedures.pdf",
-    "small_claims_court_procedures.pdf",
-  ],
-  [
-    "courts/vacourtfacility/complete.pdf",
-    "courthouse_facility_guidelines.pdf",
-  ],
-  ["directories/dist.pdf", "district_courts_directory.pdf"],
-  ["courts/scv/rulesofcourt.pdf", "rulesofcourt.pdf"],
-];
+configureFetchForDataset("other");
+const files = getDatasetResources("other") as Array<{
+  url: string;
+  localName: string;
+}>;
 
 console.log(`Fetching miscellaneous resources into ${DIR}...`);
 
-for (const [remotePath, localName] of files) {
+for (const { url, localName } of files) {
   process.stdout.write(`  ${localName.padEnd(40)} `);
   try {
-    const res = await fetch(`${BASE_URL}/${remotePath}`);
+    const res = await fetch(url, { headers: HEADERS });
     if (res.ok) {
       await Bun.write(`${DIR}/${localName}`, await res.arrayBuffer());
       console.log("OK");

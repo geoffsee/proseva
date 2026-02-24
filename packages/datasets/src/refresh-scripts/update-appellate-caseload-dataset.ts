@@ -1,7 +1,8 @@
 #!/usr/bin/env bun
 
-const BASE_URL =
-  "https://www.vacourts.gov/static/courtadmin/aoc/djs/programs/cpss/csi/stats";
+import { configureFetchForDataset, getDatasetResources, HEADERS } from "../lib";
+import { pdfToJson } from "../etl/pdf-json";
+
 const DIR = new URL(
   "../../data/appellate_caseload/",
   import.meta.url
@@ -9,40 +10,67 @@ const DIR = new URL(
 
 const currentYear = new Date().getFullYear();
 
-const courts: [string, string][] = [
-  ["scv", "scv"],
-  ["cav", "cav"],
-];
-
 console.log("Fetching most recent appellate caseload reports...");
 
-for (const [courtDir, prefix] of courts) {
-  let found: number | null = null;
-  for (const year of [currentYear, currentYear - 1]) {
-    const file = `${prefix}_caseload_rpt_${year}.pdf`;
-    const res = await fetch(`${BASE_URL}/${courtDir}/${file}`, {
-      method: "HEAD",
-    });
-    if (res.ok) {
-      found = year;
-      break;
-    }
-  }
+configureFetchForDataset("appellate_caseload");
 
-  if (!found) {
-    console.log(
-      `  ${courtDir}: no report found for ${currentYear} or ${currentYear - 1}`
-    );
-    continue;
-  }
+let foundYear: number | null = null;
+let foundResources: Array<{ url: string; localName: string }> = [];
 
-  const file = `${prefix}_caseload_rpt_${found}.pdf`;
-  process.stdout.write(`  ${courtDir}/${file.padEnd(35)} `);
+for (const year of [currentYear, currentYear - 1]) {
+  const resources = getDatasetResources("appellate_caseload", year) as Array<{
+    url: string;
+    localName: string;
+  }>;
+
+  const ok = await Promise.all(
+    resources.map(async ({ url }) => {
+      try {
+        const res = await fetch(url, { headers: HEADERS, method: "HEAD" });
+        return res.ok;
+      } catch {
+        return false;
+      }
+    })
+  );
+
+  const present = resources.filter((_, i) => ok[i]);
+  if (present.length) {
+    foundYear = year;
+    foundResources = present;
+    break;
+  }
+}
+
+if (!foundYear || !foundResources.length) {
+  console.log(
+    `  no report found for ${currentYear} or ${currentYear - 1}`
+  );
+  console.log("Done.");
+  process.exit(0);
+}
+
+for (const { url, localName } of foundResources) {
+  const courtDir =
+    localName.startsWith("scv_") ? "scv" : localName.startsWith("cav_") ? "cav" : "";
+  const outpath = courtDir ? `${DIR}/${courtDir}/${localName}` : `${DIR}/${localName}`;
+
+  process.stdout.write(`  ${outpath.replace(`${DIR}/`, "").padEnd(40)} `);
   try {
-    const res = await fetch(`${BASE_URL}/${courtDir}/${file}`);
+    const res = await fetch(url, { headers: HEADERS });
     if (res.ok) {
-      await Bun.write(`${DIR}/${courtDir}/${file}`, await res.arrayBuffer());
+      const buffer = await res.arrayBuffer();
+      await Bun.write(outpath, buffer);
       console.log("OK");
+
+      if (localName.endsWith(".pdf")) {
+        const jsonName = localName.replace(".pdf", ".json");
+        const jsonPath = outpath.replace(".pdf", ".json");
+        process.stdout.write(`  converting to ${jsonName.padEnd(40)} `);
+        const jsonData = await pdfToJson(outpath);
+        await Bun.write(jsonPath, JSON.stringify(jsonData, null, 2));
+        console.log("OK");
+      }
     } else {
       console.log(`FAILED (${res.status})`);
     }

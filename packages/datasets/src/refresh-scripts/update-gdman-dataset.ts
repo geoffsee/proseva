@@ -1,20 +1,36 @@
 #!/usr/bin/env bun
 
-const BASE_URL =
-  "https://www.vacourts.gov/static/courts/gd/resources/manuals/gdman";
+import { configureFetchForDataset, getDatasetResources, HEADERS } from "../lib";
+import { pdfToJson } from "../etl/pdf-json";
+
 const DIR = new URL("../../data/gdman/", import.meta.url).pathname;
 
-const files = ["gd_manual.pdf"];
+configureFetchForDataset("gdman");
+const files = getDatasetResources("gdman") as Array<{
+  url: string;
+  localName: string;
+}>;
 
 console.log(`Fetching GD Manual resources into ${DIR}...`);
 
-for (const f of files) {
-  process.stdout.write(`  ${f.padEnd(25)} `);
+for (const { url, localName } of files) {
+  process.stdout.write(`  ${localName.padEnd(25)} `);
   try {
-    const res = await fetch(`${BASE_URL}/${f}`);
+    const res = await fetch(url, { headers: HEADERS });
     if (res.ok) {
-      await Bun.write(`${DIR}/${f}`, await res.arrayBuffer());
+      const buffer = await res.arrayBuffer();
+      const outpath = `${DIR}/${localName}`;
+      await Bun.write(outpath, buffer);
       console.log("OK");
+
+      if (localName.endsWith(".pdf")) {
+        const jsonName = localName.replace(".pdf", ".json");
+        const jsonPath = `${DIR}/${jsonName}`;
+        process.stdout.write(`  Converting to ${jsonName}... `);
+        const jsonData = await pdfToJson(outpath);
+        await Bun.write(jsonPath, JSON.stringify(jsonData, null, 2));
+        console.log("OK");
+      }
     } else {
       console.log(`FAILED (${res.status})`);
     }

@@ -512,6 +512,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/documents/{id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Download the original PDF document */
+        get: operations["downloadDocument"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/documents/{id}/text": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Get extracted text of a document */
+        get: operations["getDocumentText"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/ingest/status": {
         parameters: {
             query?: never;
@@ -1474,6 +1512,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/config/test-scanner": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Test document scanner connection */
+        post: operations["testScanner"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/config/reinitialize/{service}": {
         parameters: {
             query?: never;
@@ -1909,14 +1964,14 @@ export interface components {
         DocumentEntry: {
             id: string;
             filename: string;
-            path: string;
             category: string;
             title: string;
             pageCount: number;
-            textFile: string;
             dates: string[];
             fileSize: number;
+            hash: string;
             caseId?: string;
+            createdAt: string;
         };
         ErrorResponse: {
             error: string;
@@ -3975,6 +4030,64 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Document not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    downloadDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description PDF file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            /** @description Document not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getDocumentText: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Extracted text */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
             };
             /** @description Document not found */
             404: {
@@ -6384,6 +6497,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FaxGatewayTestResponse"];
+                };
+            };
+        };
+    };
+    testScanner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Test result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        error?: string;
+                        model?: string;
+                    };
                 };
             };
         };

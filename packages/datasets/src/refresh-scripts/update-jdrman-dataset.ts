@@ -1,40 +1,36 @@
 #!/usr/bin/env bun
 
-const BASE_URL =
-  "https://www.vacourts.gov/static/courts/jdr/resources/manuals/jdrman";
+import { configureFetchForDataset, getDatasetResources, HEADERS } from "../lib";
+import { pdfToJson } from "../etl/pdf-json";
+
 const DIR = new URL("../../data/jdrman/", import.meta.url).pathname;
 
-const files = [
-  "toc_jdr_manual.pdf",
-  "chapter01.pdf",
-  "chapter02.pdf",
-  "chapter03.pdf",
-  "chapter04.pdf",
-  "chapter05.pdf",
-  "chapter06.pdf",
-  "chapter07.pdf",
-  "chapter08.pdf",
-  "chapter09.pdf",
-  "chapter10.pdf",
-  "chapter11.pdf",
-  "chapter12.pdf",
-  "chapter13.pdf",
-  "appendix_a.pdf",
-  "appendix_b.pdf",
-  "appendix_c.pdf",
-  "index.pdf",
-  "glossary.pdf",
-];
+configureFetchForDataset("jdrman");
+const files = getDatasetResources("jdrman") as Array<{
+  url: string;
+  localName: string;
+}>;
 
 console.log(`Fetching JDR Manual resources into ${DIR}...`);
 
-for (const f of files) {
-  process.stdout.write(`  ${f.padEnd(25)} `);
+for (const { url, localName } of files) {
+  process.stdout.write(`  ${localName.padEnd(25)} `);
   try {
-    const res = await fetch(`${BASE_URL}/${f}`);
+    const res = await fetch(url, { headers: HEADERS });
     if (res.ok) {
-      await Bun.write(`${DIR}/${f}`, await res.arrayBuffer());
+      const buffer = await res.arrayBuffer();
+      const outpath = `${DIR}/${localName}`;
+      await Bun.write(outpath, buffer);
       console.log("OK");
+
+      if (localName.endsWith(".pdf")) {
+        const jsonName = localName.replace(".pdf", ".json");
+        const jsonPath = `${DIR}/${jsonName}`;
+        process.stdout.write(`  Converting to ${jsonName}... `);
+        const jsonData = await pdfToJson(outpath);
+        await Bun.write(jsonPath, JSON.stringify(jsonData, null, 2));
+        console.log("OK");
+      }
     } else {
       console.log(`FAILED (${res.status})`);
     }

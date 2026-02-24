@@ -1,19 +1,7 @@
-import type * as MupdfTypes from "mupdf";
 import { createWorker } from "tesseract.js";
 import fs from "fs";
 import path from "path";
-
-// Lazy-load mupdf so the server can start even when the WASM package is
-// not resolvable (e.g. VLM-only OCR mode).  The module is cached after
-// the first successful import.
-let _mupdf: typeof MupdfTypes | undefined;
-function mupdf(): typeof MupdfTypes {
-  if (!_mupdf) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    _mupdf = require("mupdf") as typeof MupdfTypes;
-  }
-  return _mupdf;
-}
+import { renderPdfPagesToPng } from "./pdfjs";
 
 // ── Types ──────────────────────────────────────────────
 export interface OcrPage {
@@ -65,7 +53,7 @@ function parseAppleOutput(stdout: string): OcrPage[] {
   const parts = stdout.split(/\n=== Page (\d+) ===\n/);
   // parts: [preamble, "1", text1, "2", text2, ...]
   for (let i = 1; i < parts.length; i += 2) {
-    const pageNum = parseInt(parts[i], 10);
+    const pageNum = parseInt(parts.at(i)!, 10);
     const text = (parts[i + 1] ?? "").trimEnd();
     pages.push({ page: pageNum, text });
   }
@@ -90,93 +78,14 @@ async function ocrApple(filePath: string): Promise<OcrResult> {
   return { engine: "apple-vision", pages: parseAppleOutput(stdout) };
 }
 
-// ── Tesseract + mupdf binarization backend ─────────────
-function renderPagesToPng(filePath: string): Uint8Array[] {
-  const m = mupdf();
-  const bytes = fs.readFileSync(filePath);
-  const doc = m.Document.openDocument(bytes, "application/pdf");
-  const pngs: Uint8Array[] = [];
-  const scale = 300 / 72;
-
-  for (let i = 0; i < doc.countPages(); i++) {
-    const page = doc.loadPage(i);
-    const pix = page.toPixmap(
-      m.Matrix.scale(scale, scale),
-      m.ColorSpace.DeviceRGB,
-      false
-    );
-    pngs.push(pix.asPNG());
-    pix.destroy();
-    page.destroy();
-  }
-  doc.destroy();
-  return pngs;
-}
-
-function binarize(png: Uint8Array): Uint8Array {
-  const m = mupdf();
-  const pix = new m.Image(new m.Buffer(png)).toPixmap();
-  const w = pix.getWidth();
-  const h = pix.getHeight();
-  const channels = pix.getNumberOfComponents();
-  const raw = pix.getPixels();
-
-  const gray = new Uint8Array(w * h);
-  for (let i = 0; i < w * h; i++) {
-    const off = i * channels;
-    gray[i] =
-      channels >= 3
-        ? Math.round(0.299 * raw[off] + 0.587 * raw[off + 1] + 0.114 * raw[off + 2])
-        : raw[off];
-  }
-
-  // Otsu threshold
-  const hist = new Int32Array(256);
-  for (const v of gray) hist[v]++;
-  const total = gray.length;
-  let sum = 0;
-  for (let i = 0; i < 256; i++) sum += i * hist[i];
-
-  let sumB = 0,
-    wB = 0,
-    maxVar = 0,
-    threshold = 128;
-  for (let t = 0; t < 256; t++) {
-    wB += hist[t];
-    if (wB === 0) continue;
-    const wF = total - wB;
-    if (wF === 0) break;
-    sumB += t * hist[t];
-    const mB = sumB / wB;
-    const mF = (sum - sumB) / wF;
-    const between = wB * wF * (mB - mF) * (mB - mF);
-    if (between > maxVar) {
-      maxVar = between;
-      threshold = t;
-    }
-  }
-
-  const outPix = new m.Pixmap(m.ColorSpace.DeviceRGB, [0, 0, w, h], false);
-  const outData = outPix.getPixels();
-  for (let i = 0; i < w * h; i++) {
-    const val = gray[i] < threshold ? 0 : 255;
-    outData[i * 3] = val;
-    outData[i * 3 + 1] = val;
-    outData[i * 3 + 2] = val;
-  }
-  const result = outPix.asPNG();
-  outPix.destroy();
-  pix.destroy();
-  return result;
-}
-
+// ── Tesseract backend (PDF.js rendering) ───────────────
 async function ocrTesseract(filePath: string): Promise<OcrResult> {
-  const pngs = renderPagesToPng(filePath);
+  const pngs = await renderPdfPagesToPng(filePath, { dpi: 300, binarize: true });
   const worker = await createWorker("eng");
   const pages: OcrPage[] = [];
 
   for (let i = 0; i < pngs.length; i++) {
-    const input = Buffer.from(binarize(pngs[i]));
+    const input = Buffer.from(pngs.at(i)!);
     const {
       data: { text },
     } = await worker.recognize(input);
@@ -230,8 +139,8 @@ if (import.meta.main) {
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--engine" && args[i + 1]) {
       engine = args[++i] as Engine;
-    } else if (!args[i].startsWith("--")) {
-      files.push(args[i]);
+    } else if (!args.at(i)!.startsWith("--")) {
+      files.push(args.at(i)!);
     }
   }
 

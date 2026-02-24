@@ -3,11 +3,10 @@
   "version": "0.0.0-prerelease",
   "module": "src/index.ts",
   "type": "module",
-  "private": true,
   "scripts": {
     "build": "echo 'No build needed'",
     "test": "echo 'No tests yet'",
-    "refresh:all": "echo 'ONLY FOR USE IN CI WORKFLOWS' && bun src/refresh.ts",
+    "refresh:data-sets": "echo 'ONLY FOR USE IN CI WORKFLOWS' && bun src/refresh.ts",
     "refresh:annual_reports": "bun run src/refresh-scripts/update-annual-reports-dataset.ts",
     "refresh:appellate_caseload": "bun run src/refresh-scripts/update-appellate-caseload-dataset.ts",
     "refresh:benchbook": "bun run src/refresh-scripts/update-benchbook-dataset.ts",
@@ -20,7 +19,8 @@
     "refresh:jdrman": "bun run src/refresh-scripts/update-jdrman-dataset.ts",
     "refresh:other": "bun run src/refresh-scripts/update-other-dataset.ts",
     "refresh:vcc": "bun run src/refresh-scripts/update-vcc-dataset.ts",
-    "refresh:virginia_code": "bun run src/refresh-scripts/update-virginia-code-dataset.ts"
+    "refresh:virginia_code": "bun run src/refresh-scripts/update-virginia-code-dataset.ts",
+    "etl:sqlite": "bun run src/etl/json-to-sqlite.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"
@@ -29,6 +29,8 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "mupdf": "^1.27.0"
+    "@proseva/ocr": "workspace:*",
+    "csv-parse": "^6.1.0",
+    "pdfjs-dist": "^5.4.624"
   }
 }

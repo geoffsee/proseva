@@ -7,9 +7,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 DIST_SERVER_DIR="$REPO_ROOT/dist-server"
 NODE_MODULES_DIR="$REPO_ROOT/node_modules"
 
-EXTERNAL_FLAGS=(
-  "--external" "mupdf"
-)
+EXTERNAL_FLAGS=()
 
 detect_platform() {
   local os arch
@@ -82,11 +80,6 @@ copy_runtime_assets() {
   # Use "_modules" instead of "node_modules" so electron-builder does not
   # strip the directory from extraResources.
   mkdir -p "$DIST_SERVER_DIR/_modules"
-
-  # mupdf WASM cannot be embedded in the compiled binary; copy the
-  # package so it can be required at runtime.
-  rm -rf "$DIST_SERVER_DIR/_modules/mupdf"
-  cp -R "$NODE_MODULES_DIR/mupdf" "$DIST_SERVER_DIR/_modules/"
 }
 
 main() {

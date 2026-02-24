@@ -1,66 +1,30 @@
 #!/usr/bin/env bun
 
-const BASE_URL = "https://www.vacourts.gov/static/courts/sjr/reports";
+import { downloadResource, findMostRecentResource } from "../lib";
+import { pdfToJson } from "../etl/pdf-json";
+
 const DIR = new URL("../../data/annual_reports/", import.meta.url).pathname;
 
-const HEADERS = {
-  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-};
+console.log("Checking for most recent State of the Judiciary report...");
 
-const currentYear = new Date().getFullYear();
-
-console.log(`Checking for most recent State of the Judiciary report (starting from ${currentYear})...`);
-
-let found: { year: number; url: string; isHtml: boolean } | null = null;
-
-// Search through years
-for (let year = currentYear; year >= currentYear - 10; year--) {
-  const attempts = [
-    {
-      url: `https://ar.vacourts.gov/${year}annualreport.html`,
-      isHtml: true,
-    },
-    {
-      url: `${BASE_URL}/${year}/state_of_the_judiciary_report.pdf`,
-      isHtml: false,
-    },
-    {
-      url: `https://www.vacourts.gov/static/courts/sjr/reports/${year}_sjr.pdf`,
-      isHtml: false,
-    },
-  ];
-
-  for (const attempt of attempts) {
-    try {
-      const res = await fetch(attempt.url, { headers: HEADERS, method: "HEAD" });
-      if (res.ok) {
-        found = { year, url: attempt.url, isHtml: attempt.isHtml };
-        break;
-      }
-    } catch  {
-      // Ignore fetch errors
-    }
-  }
-  if (found) break;
-}
-
+const found = await findMostRecentResource("annual_reports", 10, "HEAD");
 if (!found) {
-  console.error(
-    `Error: Could not find a report for years ${currentYear} through ${currentYear - 10}.`
-  );
+  console.error(`Error: Could not find a report for the last 10 years.`);
   process.exit(1);
 }
 
-const ext = found.isHtml ? "html" : "pdf";
-const localName = `state_of_the_judiciary_report_${found.year}.${ext}`;
-console.log(`Fetching ${localName} from ${found.url} into ${DIR}...`);
+const outpath = `${DIR}/${found.localName}`;
+console.log(`Fetching ${found.localName} into ${DIR}...`);
+await downloadResource(found.url, outpath);
 
-const res = await fetch(found.url, { headers: HEADERS });
-if (!res.ok) {
-  console.error(`Download failed (${res.status})`);
-  process.exit(1);
+const sizeMB = (Bun.file(outpath).size / 1024 / 1024).toFixed(1);
+console.log(`Done. Downloaded ${found.localName} (${sizeMB}M).`);
+
+if (found.localName.endsWith(".pdf")) {
+  const jsonName = found.localName.replace(".pdf", ".json");
+  const jsonPath = `${DIR}/${jsonName}`;
+  console.log(`Converting ${found.localName} to ${jsonName}...`);
+  const jsonData = await pdfToJson(outpath);
+  await Bun.write(jsonPath, JSON.stringify(jsonData, null, 2));
+  console.log("Done.");
 }
-await Bun.write(`${DIR}/${localName}`, await res.arrayBuffer());
-
-const sizeMB = (Bun.file(`${DIR}/${localName}`).size / 1024 / 1024).toFixed(1);
-console.log(`Done. Downloaded ${localName} (${sizeMB}M).`);

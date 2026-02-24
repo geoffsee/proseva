@@ -1,24 +1,26 @@
 {
   "name": "@proseva/ocr",
   "version": "0.0.0-prerelease",
+  "type": "module",
   "private": true,
   "scripts": {
     "build": "echo 'No build needed'",
     "test": "echo 'No tests yet'"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "^1.3.9"
   },
   "exports": {
-    ".": "./ocr.ts"
+    ".": "./src/ocr.ts"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
   "dependencies": {
     "@huggingface/transformers": "^3.8.1",
-    "mupdf": "^1.27.0",
+    "@napi-rs/canvas": "^0.1.80",
     "onnxruntime-web": "^1.24.1",
+    "pdfjs-dist": "^4.10.38",
     "tesseract.js": "^7.0.0"
   }
 }

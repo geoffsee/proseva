@@ -56,6 +56,7 @@ pids/
 .proseva-data/
 *.sqlite
 *.sqlite3
+!/packages/datasets/data/virginia.db
 
 # Optional npm cache directory
 .npm
@@ -87,4 +88,8 @@ apple-ocr
 /packages/datasets/data/**/*.csv
 /tools/ckan-discover/target/
 /packages/tools/scanner-server/inbox/processed/*.*
+# Dataset storage (except generated artifacts)
 /packages/datasets/data/
+!/packages/datasets/data/virginia.db
+!/packages/datasets/data/**/*.json
+/packages/datasets/courts/va-courts.json

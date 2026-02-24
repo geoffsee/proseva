@@ -1,7 +1,7 @@
 # @proseva/datasets
 
 This package contains datasets used by the Proseva platform, primarily focused on Virginia judicial and legal resources.
-
+They are updated automatically once per month.
 ## Datasets
 
 The following datasets are available in the `data/` directory:

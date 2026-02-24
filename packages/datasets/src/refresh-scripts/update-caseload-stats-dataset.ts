@@ -1,28 +1,36 @@
 #!/usr/bin/env bun
 
-const BASE_URL =
-  "https://www.vacourts.gov/static/courtadmin/aoc/djs/programs/cpss/csi";
+import { configureFetchForDataset, getDatasetResources, HEADERS } from "../lib";
+import { pdfToJson } from "../etl/pdf-json";
+
 const DIR = new URL("../../data/caseload_stats/", import.meta.url).pathname;
 
-const files: [string, string][] = [
-  ["stats/cc_filings.pdf", "cc_filings.pdf"],
-  ["stats/cc_disps.pdf", "cc_disps.pdf"],
-  ["stats/gdc_filings.pdf", "gdc_filings.pdf"],
-  ["stats/gdc_disps.pdf", "gdc_disps.pdf"],
-  ["stats/jdr_filings.pdf", "jdr_filings.pdf"],
-  ["stats/jdr_disps.pdf", "jdr_disps.pdf"],
-  ["public_qrg.pdf", "public_qrg.pdf"],
-];
+configureFetchForDataset("caseload_stats");
+const files = getDatasetResources("caseload_stats") as Array<{
+  url: string;
+  localName: string;
+}>;
 
 console.log(`Fetching caseload statistics into ${DIR}...`);
 
-for (const [remotePath, localName] of files) {
+for (const { url, localName } of files) {
   process.stdout.write(`  ${localName.padEnd(25)} `);
   try {
-    const res = await fetch(`${BASE_URL}/${remotePath}`);
+    const res = await fetch(url, { headers: HEADERS });
     if (res.ok) {
-      await Bun.write(`${DIR}/${localName}`, await res.arrayBuffer());
+      const buffer = await res.arrayBuffer();
+      const outpath = `${DIR}/${localName}`;
+      await Bun.write(outpath, buffer);
       console.log("OK");
+
+      if (localName.endsWith(".pdf")) {
+        const jsonName = localName.replace(".pdf", ".json");
+        const jsonPath = `${DIR}/${jsonName}`;
+        process.stdout.write(`  Converting to ${jsonName}... `);
+        const jsonData = await pdfToJson(outpath);
+        await Bun.write(jsonPath, JSON.stringify(jsonData, null, 2));
+        console.log("OK");
+      }
     } else {
       console.log(`FAILED (${res.status})`);
     }

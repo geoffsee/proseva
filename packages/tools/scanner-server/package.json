@@ -1,0 +1,7 @@
+{
+  "name": "@proseva/scanner-server",
+  "version": "0.0.0",
+  "dependencies": {
+    "marked": "^17.0.3"
+  }
+}

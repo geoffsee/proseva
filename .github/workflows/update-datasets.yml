@@ -13,23 +13,22 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
 
-      - run: bun install
+      - name: Install dependencies
+        run: bun install
         working-directory: packages/datasets
 
-      - name: Update courts dataset
-        run: bun packages/datasets/src/refresh-scripts/update-courts-dataset.ts
+      - name: Refresh all datasets
+        run: bun run refresh:data-sets
+        working-directory: packages/datasets
 
-      - name: Update JDR manual dataset
-        run: bun packages/datasets/src/refresh-scripts/update-jdrman-dataset.ts
-
-      - name: Update VCC dataset
-        run: bun packages/datasets/src/refresh-scripts/update-vcc-dataset.ts
+      - name: Generate SQLite database
+        run: bun run etl:sqlite
+        working-directory: packages/datasets
 
       - name: Commit if changed
         run: |
-          git diff --quiet packages/datasets/data/ && exit 0
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add packages/datasets/data/
-          git commit -m "Update datasets"
-          git push
+          git add packages/datasets/data/*.json
+          git add packages/datasets/data/virginia.db
+          git diff --staged --quiet || (git commit -m "Update datasets and SQLite artifact" && git push)
