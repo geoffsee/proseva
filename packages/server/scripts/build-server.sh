@@ -7,8 +7,6 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 DIST_SERVER_DIR="$REPO_ROOT/dist-server"
 NODE_MODULES_DIR="$REPO_ROOT/node_modules"
 
-EXTERNAL_FLAGS=()
-
 detect_platform() {
   local os arch
   os="$(uname -s)"
@@ -62,14 +60,12 @@ run_bundler() {
     --compile \
     --target "$compile_target" \
     src/index.ts \
-    "${EXTERNAL_FLAGS[@]}" \
     --outfile "$DIST_SERVER_DIR/proseva-server"
 
   # Bundle the in-process server module (for ELECTRON_INPROC_SERVER mode)
   bun build \
     --target node \
     src/index.server.ts \
-    "${EXTERNAL_FLAGS[@]}" \
     --outdir="$DIST_SERVER_DIR"
 }
 
