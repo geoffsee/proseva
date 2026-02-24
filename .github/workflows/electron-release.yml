@@ -32,6 +32,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+        with:
+          lfs: true
 
       - uses: oven-sh/setup-bun@v2
         with:
