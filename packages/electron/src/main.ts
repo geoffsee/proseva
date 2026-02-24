@@ -9,7 +9,7 @@ import {
   EXPLORER_PORT,
   EXPLORER_URL,
   toServerUrl,
-} from "./url-routing";
+} from "./url-routing.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
