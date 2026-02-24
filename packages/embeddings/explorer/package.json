@@ -1,0 +1,15 @@
+{
+  "name": "@proseva/embeddings-explorer",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "bun run server.ts",
+    "demo": "bun run scenario.ts --embeddings ../../datasets/data/embeddings.sqlite.db --virginia ../../datasets/data/virginia.db --scenario foia"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "graphql": "^16.12.0",
+    "graphql-yoga": "^5.18.0"
+  }
+}

@@ -1,6 +1,10 @@
 import { createSchema, createYoga } from "graphql-yoga";
 // @ts-expect-error — Bun embeds the .sqlite file at compile time
 import datasetsDb from "../../datasets/data/virginia.db" with { type: "sqlite" };
+// @ts-expect-error — Bun embeds the .sqlite file at compile time
+import embeddingsDb from "../../datasets/data/embeddings.sqlite.db" with { type: "sqlite" };
+
+export { embeddingsDb };
 
 interface CourtRow {
   name: string;

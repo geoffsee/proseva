@@ -9,7 +9,9 @@ jobs:
   update-datasets:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+        with:
+          lfs: true
 
       - uses: oven-sh/setup-bun@v2
 
@@ -25,10 +27,32 @@ jobs:
         run: bun run etl:sqlite
         working-directory: packages/datasets
 
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: actions/cache@v4
+        with:
+          path: |
+            packages/embeddings/target
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: embeddings-rust-${{ runner.os }}-${{ hashFiles('packages/embeddings/Cargo.lock') }}
+          restore-keys: embeddings-rust-${{ runner.os }}-
+
+      - name: Build embeddings knowledge graph
+        run: |
+          cargo build --release
+          ./target/release/proseva-embeddings \
+            --input ../datasets/data/virginia.db \
+            --output ../datasets/data/embeddings.sqlite.db
+        working-directory: packages/embeddings
+
       - name: Commit if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add packages/datasets/data/*.json
           git add packages/datasets/data/virginia.db
+          git add packages/datasets/data/embeddings.sqlite.db
           git diff --staged --quiet || (git commit -m "Update datasets and SQLite artifact" && git push)

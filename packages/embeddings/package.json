@@ -1,0 +1,12 @@
+{
+  "name": "@proseva/embeddings",
+  "version": "0.0.0-prerelease",
+  "description": "Builds knowledge graphs by precomputing embeddings",
+  "scripts": {
+    "build": "cargo build --release",
+    "postinstall": "cargo check"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.52"
+  }
+}
