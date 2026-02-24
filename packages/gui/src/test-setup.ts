@@ -1,4 +1,17 @@
 import "@testing-library/jest-dom/vitest";
+import { vi } from "vitest";
+
+// Global mock for virginiaCourtsApi — prevents real fetch calls from
+// useVirginiaCourts in any component test that doesn't provide its own mock.
+vi.mock("./lib/api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./lib/api")>();
+  return {
+    ...actual,
+    virginiaCourtsApi: {
+      list: vi.fn().mockResolvedValue([]),
+    },
+  };
+});
 
 // Suppress known harmless Node.js process warnings that pollute CI output
 const _originalEmit = process.emit;

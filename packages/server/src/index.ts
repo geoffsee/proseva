@@ -383,8 +383,17 @@ router.get(
   asIttyRoute("get", "/health", () => ({ status: "ok" })),
 );
 
-// Mount GraphQL (graphql-yoga) endpoint
-router.all("/graphql", (req: Request) => yoga.fetch(req));
+// Mount GraphQL (graphql-yoga) endpoint.
+// Wrap yoga's response in a native Response so itty-router's format chain
+// recognises it (yoga ships its own Response class via @whatwg-node/fetch).
+router.all("/graphql", async (req: Request) => {
+  const yogaRes = await yoga.fetch(req);
+  return new Response(yogaRes.body, {
+    status: yogaRes.status,
+    statusText: yogaRes.statusText,
+    headers: Object.fromEntries(yogaRes.headers.entries()),
+  });
+});
 
 // Initialize WASM modules and database before handling any requests.
 ensureWasmSimilarityInit();

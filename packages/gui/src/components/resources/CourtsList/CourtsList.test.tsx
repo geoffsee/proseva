@@ -1,10 +1,12 @@
-import { render, screen } from "../../../test-utils";
+import { render, screen, waitFor } from "../../../test-utils";
 import { describe, it, expect } from "vitest";
 import { CourtsList } from "./index";
 
 describe("CourtsList", () => {
-  it("renders heading", () => {
+  it("renders heading", async () => {
     render(<CourtsList />);
-    expect(screen.getByText("Virginia Courts")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Virginia Courts")).toBeInTheDocument();
+    });
   });
 });

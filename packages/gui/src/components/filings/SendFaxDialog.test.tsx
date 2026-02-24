@@ -11,6 +11,27 @@ vi.mock("../../lib/api", () => ({
       status: "pending",
     }),
   },
+  virginiaCourtsApi: {
+    list: vi.fn().mockResolvedValue([
+      {
+        name: "Accomack GD",
+        locality: "Accomack",
+        type: "General District",
+        district: "2A Judicial District",
+        clerk: null,
+        phone: "757/787-0923",
+        fax: "757-787-5619",
+        email: null,
+        address: "P. O. Box 276, Accomac, VA 23301",
+        city: "Accomac",
+        state: "VA",
+        zip: "23301",
+        hours: null,
+        website: "",
+        judges: [],
+      },
+    ]),
+  },
 }));
 
 vi.mock("../ui/toaster", () => ({
