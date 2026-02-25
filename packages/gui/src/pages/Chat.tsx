@@ -10,7 +10,7 @@ import {
 } from "@chakra-ui/react";
 import { LuSend, LuBot, LuUser, LuStickyNote } from "react-icons/lu";
 import { useState, useRef, useEffect } from "react";
-import AddEditNoteDialog from "../components/notes/AddEditNoteDialog";
+import { AddEditNoteDialog } from "../components/notes/AddEditNoteDialog";
 import type { Note } from "../types";
 import { observer } from "mobx-react-lite";
 import Markdown from "react-markdown";

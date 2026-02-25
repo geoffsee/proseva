@@ -12,7 +12,7 @@ vi.mock("../store/StoreContext", () => ({
 }));
 
 vi.mock("../components/notes/AddEditNoteDialog", () => ({
-  default: ({ open, form, onSave }: { open: boolean; form: { title: string; content: string }; onSave: () => void }) =>
+  AddEditNoteDialog: ({ open, form, onSave }: { open: boolean; form: { title: string; content: string }; onSave: () => void }) =>
     open ? (
       <div data-testid="add-edit-note-dialog">
         <input data-testid="note-title" value={form.title} readOnly />

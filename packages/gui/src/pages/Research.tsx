@@ -31,7 +31,7 @@ import { observer } from "mobx-react-lite";
 import Markdown from "react-markdown";
 import { useStore } from "../store/StoreContext";
 import { useActivityStatus } from "../hooks/useActivityStatus";
-import AddEditNoteDialog from "../components/notes/AddEditNoteDialog";
+import { AddEditNoteDialog } from "../components/notes/AddEditNoteDialog";
 import type { Note } from "../types";
 
 interface ResultItem {
