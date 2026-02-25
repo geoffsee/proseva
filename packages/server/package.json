@@ -5,18 +5,25 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "sleep 3; DATASETS_DIR=../datasets/data bun run --watch src/index.ts",
+    "dev": "sleep 3; CHAT_DETERMINISTIC_GRAPH=1 DATASETS_DIR=../datasets/data bun run --watch src/index.ts",
     "start": "bun run src/index.ts",
     "test": "vitest run",
     "build": "./scripts/build-server.sh",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "postinstall": "bunx drizzle-kit pull",
+    "generate:schema": "bunx drizzle-kit pull",
+    "db:studio": "bunx drizzle-kit studio",
+    "test:semantic-search": "bun run scripts/test-semantic-search.ts 'legal authority on child preference for Virginia custody consideration'"
   },
   "dependencies": {
+    "@pothos/core": "^4.12.0",
+    "@pothos/plugin-drizzle": "^0.17.0",
     "@proseva/correspondence": "workspace:*",
     "@proseva/database": "workspace:*",
     "@proseva/sdk": "workspace:*",
     "croner": "^10.0.1",
     "date-fns": "^4.1.0",
+    "drizzle-orm": "^1.0.0-beta.15-859cf75",
     "firebase-admin": "^13.6.1",
     "gpt-tokenizer": "^3.4.0",
     "graphql": "^16.12.0",
@@ -32,6 +39,7 @@
     "@types/bun": "^1.3.8",
     "@types/node": "^24.10.1",
     "@vitest/coverage-v8": "^4.0.18",
+    "drizzle-kit": "^1.0.0-beta.15-859cf75",
     "happy-dom": "^20.4.0",
     "typescript": "~5.9.3",
     "vitest": "^4.0.18"

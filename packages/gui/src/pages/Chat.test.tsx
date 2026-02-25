@@ -5,6 +5,9 @@ import { useStore } from "../store/StoreContext";
 import type { IRootStore } from "../store/RootStore";
 
 const mockSendMessage = vi.fn();
+const mockClearMessages = vi.fn();
+const mockArchiveConversation = vi.fn();
+const mockLoadConversation = vi.fn();
 const mockAddNote = vi.fn();
 
 vi.mock("../store/StoreContext", () => ({
@@ -36,12 +39,22 @@ const defaultMessages = [
   },
 ];
 
-function mockStore(overrides?: { messages?: typeof defaultMessages; isTyping?: boolean }) {
+function mockStore(overrides?: {
+  messages?: typeof defaultMessages;
+  isTyping?: boolean;
+  historySorted?: Array<{ id: string; title: string; updatedAt: string }>;
+  selectedHistoryId?: string | null;
+}) {
   vi.mocked(useStore).mockReturnValue({
     chatStore: {
       messages: overrides?.messages ?? defaultMessages,
+      historySorted: overrides?.historySorted ?? [],
+      selectedHistoryId: overrides?.selectedHistoryId ?? null,
       isTyping: overrides?.isTyping ?? false,
       sendMessage: mockSendMessage,
+      clearMessages: mockClearMessages,
+      archiveConversation: mockArchiveConversation,
+      loadConversation: mockLoadConversation,
     },
     noteStore: {
       addNote: mockAddNote,
@@ -81,6 +94,51 @@ describe("Chat", () => {
   it("renders send button", () => {
     render(<Chat />);
     expect(screen.getByLabelText("Send")).toBeInTheDocument();
+  });
+
+  it("renders archive conversation button", () => {
+    render(<Chat />);
+    expect(screen.getByLabelText("Archive conversation")).toBeInTheDocument();
+  });
+
+  it("archives conversation when archive button is clicked", () => {
+    render(<Chat />);
+    fireEvent.click(screen.getByLabelText("Archive conversation"));
+    expect(mockArchiveConversation).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens history dropdown and loads a selected conversation", () => {
+    mockStore({
+      historySorted: [
+        {
+          id: "hist-1",
+          title: "Custody strategy discussion",
+          updatedAt: "2026-02-25T20:00:00.000Z",
+        },
+      ],
+    });
+    render(<Chat />);
+    fireEvent.click(screen.getByLabelText("Conversation history"));
+    fireEvent.click(
+      screen.getByLabelText("Open conversation Custody strategy discussion"),
+    );
+    expect(mockLoadConversation).toHaveBeenCalledWith("hist-1");
+  });
+
+  it("shows active marker for the selected conversation", () => {
+    mockStore({
+      selectedHistoryId: "hist-1",
+      historySorted: [
+        {
+          id: "hist-1",
+          title: "Custody strategy discussion",
+          updatedAt: "2026-02-25T20:00:00.000Z",
+        },
+      ],
+    });
+    render(<Chat />);
+    fireEvent.click(screen.getByLabelText("Conversation history"));
+    expect(screen.getByText("Active")).toBeInTheDocument();
   });
 
   it("sends message when send button is clicked", () => {

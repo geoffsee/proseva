@@ -1,10 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockCreate = vi.fn();
+const mockEmbeddingsCreate = vi.fn();
+const mockCosineSimilarityDataSpace = vi.fn();
 
 vi.mock("openai", () => ({
   default: class MockOpenAI {
     chat = { completions: { create: mockCreate } };
+    embeddings = { create: mockEmbeddingsCreate };
   },
 }));
 
@@ -30,6 +33,12 @@ vi.mock("./explorer-tools", async (importOriginal) => {
   };
 });
 
+vi.mock("./wasm-similarity-init", () => ({
+  ensureWasmSimilarityInit: vi.fn(),
+  cosine_similarity_dataspace: (...args: unknown[]) =>
+    mockCosineSimilarityDataSpace(...args),
+}));
+
 import { setupTestServer, api } from "./test-helpers";
 import { db, type Contact } from "./db";
 
@@ -38,7 +47,10 @@ const ctx = setupTestServer();
 describe("Chat API", () => {
   beforeEach(() => {
     mockCreate.mockReset();
+    mockEmbeddingsCreate.mockReset();
+    mockCosineSimilarityDataSpace.mockReset();
     mockExecuteExplorerTool.mockReset();
+    delete process.env.CHAT_DETERMINISTIC_GRAPH;
     // Default: returns stop with content (works for both Phase 1 and Phase 2).
     // Tests that need specific sequences override with mockResolvedValueOnce.
     mockCreate.mockResolvedValue({
@@ -49,6 +61,10 @@ describe("Chat API", () => {
         },
       ],
     });
+    mockEmbeddingsCreate.mockResolvedValue({
+      data: [{ embedding: [0.1, 0.2, 0.3] }],
+    });
+    mockCosineSimilarityDataSpace.mockReturnValue([0.99, 0]);
   });
 
   it("returns a reply from the chat endpoint", async () => {
@@ -96,6 +112,9 @@ describe("Chat API", () => {
         choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
+        choices: [{ finish_reason: "stop", message: { content: null } }],
+      })
+      .mockResolvedValueOnce({
         choices: [
           {
             finish_reason: "stop",
@@ -114,7 +133,7 @@ describe("Chat API", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.reply).toBe("You have no cases.");
-    expect(mockCreate).toHaveBeenCalledTimes(3);
+    expect(mockCreate).toHaveBeenCalledTimes(4);
   });
 
   it("handles GetDeadlines tool with caseId filter", async () => {
@@ -155,6 +174,9 @@ describe("Chat API", () => {
             },
           },
         ],
+      })
+      .mockResolvedValueOnce({
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [{ finish_reason: "stop", message: { content: null } }],
@@ -217,6 +239,9 @@ describe("Chat API", () => {
         choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
+        choices: [{ finish_reason: "stop", message: { content: null } }],
+      })
+      .mockResolvedValueOnce({
         choices: [
           { finish_reason: "stop", message: { content: "Found John." } },
         ],
@@ -251,6 +276,9 @@ describe("Chat API", () => {
             },
           },
         ],
+      })
+      .mockResolvedValueOnce({
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [{ finish_reason: "stop", message: { content: null } }],
@@ -295,6 +323,9 @@ describe("Chat API", () => {
         choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
+        choices: [{ finish_reason: "stop", message: { content: null } }],
+      })
+      .mockResolvedValueOnce({
         choices: [{ finish_reason: "stop", message: { content: "No docs." } }],
       });
 
@@ -330,6 +361,9 @@ describe("Chat API", () => {
             },
           },
         ],
+      })
+      .mockResolvedValueOnce({
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [{ finish_reason: "stop", message: { content: null } }],
@@ -377,6 +411,9 @@ describe("Chat API", () => {
         choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
+        choices: [{ finish_reason: "stop", message: { content: null } }],
+      })
+      .mockResolvedValueOnce({
         choices: [
           { finish_reason: "stop", message: { content: "No timeline." } },
         ],
@@ -391,6 +428,68 @@ describe("Chat API", () => {
     );
     const body = await res.json();
     expect(body.reply).toBe("No timeline.");
+  });
+
+  it("handles SearchKnowledge tool", async () => {
+    db.embeddings.set("emb_1", {
+      id: "emb_1",
+      source: "va-code",
+      content: "Best interests of the child factors include age and condition.",
+      embedding: [0.11, 0.21, 0.31],
+    });
+
+    mockCreate
+      .mockResolvedValueOnce({
+        choices: [
+          {
+            finish_reason: "tool_calls",
+            message: {
+              content: null,
+              tool_calls: [
+                {
+                  id: "call_search_knowledge",
+                  type: "function",
+                  function: {
+                    name: "SearchKnowledge",
+                    arguments:
+                      '{"query":"best interests of the child","topK":1}',
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [{ finish_reason: "stop", message: { content: null } }],
+      })
+      .mockResolvedValueOnce({
+        choices: [{ finish_reason: "stop", message: { content: null } }],
+      })
+      .mockResolvedValueOnce({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: { content: "I found one relevant knowledge result." },
+          },
+        ],
+      });
+
+    const res = await api.post(
+      "/api/chat",
+      {
+        messages: [{ role: "user", content: "search legal knowledge" }],
+      },
+      ctx.baseUrl,
+    );
+    const body = await res.json();
+    expect(body.reply).toBe("I found one relevant knowledge result.");
+    expect(mockEmbeddingsCreate).toHaveBeenCalledWith({
+      model: "text-embedding-3-small",
+      input: "best interests of the child",
+      dimensions: 3,
+    });
+    expect(mockCosineSimilarityDataSpace).toHaveBeenCalled();
   });
 
   it("bootstraps compressed graph context and does not expose graph as a tool", async () => {
@@ -428,6 +527,9 @@ describe("Chat API", () => {
         choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
+        choices: [{ finish_reason: "stop", message: { content: null } }],
+      })
+      .mockResolvedValueOnce({
         choices: [
           { finish_reason: "stop", message: { content: "Graph complete." } },
         ],
@@ -442,7 +544,7 @@ describe("Chat API", () => {
     );
     const body = await res.json();
     expect(body.reply).toBe("Graph complete.");
-    expect(mockCreate).toHaveBeenCalledTimes(2);
+    expect(mockCreate).toHaveBeenCalledTimes(3);
 
     const firstCall = mockCreate.mock.calls[0]?.[0] as {
       tools?: Array<{ function: { name: string } }>;
@@ -479,6 +581,9 @@ describe("Chat API", () => {
             },
           },
         ],
+      })
+      .mockResolvedValueOnce({
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [{ finish_reason: "stop", message: { content: null } }],
@@ -558,6 +663,9 @@ describe("Chat API", () => {
         choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
+        choices: [{ finish_reason: "stop", message: { content: null } }],
+      })
+      .mockResolvedValueOnce({
         choices: [
           {
             finish_reason: "stop",
@@ -577,7 +685,105 @@ describe("Chat API", () => {
       search: "FOIA",
       type: "section",
     });
-    expect(mockCreate).toHaveBeenCalledTimes(3);
+    expect(mockCreate).toHaveBeenCalledTimes(4);
+  });
+
+  it("forces SearchKnowledge when search_nodes returns zero repeatedly", async () => {
+    db.embeddings.set("emb_force_1", {
+      id: "emb_force_1",
+      source: "va-code",
+      content: "Virginia custody definitions and standards.",
+      embedding: [0.11, 0.21, 0.31],
+    });
+
+    mockExecuteExplorerTool.mockResolvedValue(
+      JSON.stringify({
+        nodes: { total: 0, nodes: [] },
+      }),
+    );
+
+    mockCreate
+      .mockResolvedValueOnce({
+        choices: [
+          {
+            finish_reason: "tool_calls",
+            message: {
+              content: null,
+              tool_calls: [
+                {
+                  id: "call_explorer_empty_1",
+                  type: "function",
+                  function: {
+                    name: "search_nodes",
+                    arguments: '{"search":"legal custody","type":"section"}',
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [
+          {
+            finish_reason: "tool_calls",
+            message: {
+              content: null,
+              tool_calls: [
+                {
+                  id: "call_explorer_empty_2",
+                  type: "function",
+                  function: {
+                    name: "search_nodes",
+                    arguments: '{"search":"physical custody","type":"section"}',
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [{ finish_reason: "stop", message: { content: null } }],
+      })
+      .mockResolvedValueOnce({
+        choices: [{ finish_reason: "stop", message: { content: null } }],
+      })
+      .mockResolvedValueOnce({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: { content: "I found additional details from knowledge." },
+          },
+        ],
+      });
+
+    const originalQuery =
+      "Search your knowledge for more details about legal vs physical custody in Virginia";
+
+    const res = await api.post(
+      "/api/chat",
+      { messages: [{ role: "user", content: originalQuery }] },
+      ctx.baseUrl,
+    );
+    const body = await res.json();
+    expect(body.reply).toBe("I found additional details from knowledge.");
+
+    expect(mockExecuteExplorerTool).toHaveBeenCalledTimes(2);
+    expect(mockExecuteExplorerTool).toHaveBeenNthCalledWith(1, "search_nodes", {
+      search: "legal custody",
+      type: "section",
+    });
+    expect(mockExecuteExplorerTool).toHaveBeenNthCalledWith(2, "search_nodes", {
+      search: "physical custody",
+      type: "section",
+    });
+    expect(mockEmbeddingsCreate).toHaveBeenCalledWith({
+      model: "text-embedding-3-small",
+      input: originalQuery,
+      dimensions: 3,
+    });
+    expect(mockCreate).toHaveBeenCalledTimes(5);
   });
 
   it("dispatches get_node explorer tool call", async () => {
@@ -605,6 +811,9 @@ describe("Chat API", () => {
             },
           },
         ],
+      })
+      .mockResolvedValueOnce({
+        choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
         choices: [{ finish_reason: "stop", message: { content: null } }],
@@ -655,6 +864,9 @@ describe("Chat API", () => {
         choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
+        choices: [{ finish_reason: "stop", message: { content: null } }],
+      })
+      .mockResolvedValueOnce({
         choices: [
           {
             finish_reason: "stop",
@@ -672,11 +884,14 @@ describe("Chat API", () => {
     );
     const body = await res.json();
     expect(body.reply).toBe("Explorer is unavailable, but I can still help.");
-    expect(mockCreate).toHaveBeenCalledTimes(3);
+    expect(mockCreate).toHaveBeenCalledTimes(4);
   });
 
   it("includes explorer tool note in system prompt", async () => {
     mockCreate
+      .mockResolvedValueOnce({
+        choices: [{ finish_reason: "stop", message: { content: null } }],
+      })
       .mockResolvedValueOnce({
         choices: [{ finish_reason: "stop", message: { content: null } }],
       })
@@ -704,6 +919,9 @@ describe("Chat API", () => {
         choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
+        choices: [{ finish_reason: "stop", message: { content: null } }],
+      })
+      .mockResolvedValueOnce({
         choices: [{ finish_reason: "stop", message: { content: "Hello!" } }],
       });
 
@@ -713,7 +931,7 @@ describe("Chat API", () => {
       ctx.baseUrl,
     );
 
-    expect(mockCreate).toHaveBeenCalledTimes(2);
+    expect(mockCreate).toHaveBeenCalledTimes(3);
 
     // Phase 1 call should have tools
     const phase1Call = mockCreate.mock.calls[0]?.[0] as {
@@ -723,12 +941,254 @@ describe("Chat API", () => {
     expect(phase1Call.tools).toBeDefined();
 
     // Phase 2 call should NOT have tools and should use TEXT_MODEL_LARGE
-    const phase2Call = mockCreate.mock.calls[1]?.[0] as {
+    const phase2Call = mockCreate.mock.calls[2]?.[0] as {
       model?: string;
       tools?: unknown;
     };
     expect(phase2Call.tools).toBeUndefined();
     expect(phase2Call.model).toBe("gpt-4o");
+  });
+
+  it("builds optimized tool-calling context for follow-up turns", async () => {
+    mockCreate
+      .mockResolvedValueOnce({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: { content: "optimized custody query with virginia code" },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [{ finish_reason: "stop", message: { content: null } }],
+      })
+      .mockResolvedValueOnce({
+        choices: [{ finish_reason: "stop", message: { content: null } }],
+      })
+      .mockResolvedValueOnce({
+        choices: [{ finish_reason: "stop", message: { content: "Done." } }],
+      });
+
+    await api.post(
+      "/api/chat",
+      {
+        messages: [
+          {
+            role: "assistant",
+            content:
+              "Legal custody is decision-making authority. Physical custody is residence/time.",
+          },
+          {
+            role: "user",
+            content: "Search your knowledge for more details.",
+          },
+        ],
+      },
+      ctx.baseUrl,
+    );
+
+    const optimizationCall = mockCreate.mock.calls[0]?.[0] as {
+      tools?: unknown;
+      messages?: Array<{ role: string; content?: string }>;
+    };
+    expect(optimizationCall.tools).toBeUndefined();
+    const optimizationUserPrompt = optimizationCall.messages?.find(
+      (m) => m.role === "user",
+    );
+    expect(optimizationUserPrompt?.content).toContain(
+      "Merge the former assistant response and latest user message",
+    );
+    expect(optimizationUserPrompt?.content).toContain("Tool semantics:");
+    expect(optimizationUserPrompt?.content).toContain("SearchKnowledge");
+    expect(optimizationUserPrompt?.content).toContain("search_nodes");
+    expect(optimizationUserPrompt?.content).toContain("get_node");
+
+    const phase1Call = mockCreate.mock.calls[1]?.[0] as {
+      tools?: unknown;
+      messages?: Array<{ role: string; content?: string }>;
+    };
+    expect(phase1Call.tools).toBeDefined();
+    const optimizedContextSystem = phase1Call.messages?.find(
+      (m) =>
+        m.role === "system" &&
+        (m.content ?? "").includes("Tool-calling optimized context"),
+    );
+    expect(optimizedContextSystem?.content).toContain(
+      "optimized custody query with virginia code",
+    );
+  });
+
+  it("uses deterministic GraphQL orchestration for legal queries when enabled", async () => {
+    process.env.CHAT_DETERMINISTIC_GRAPH = "1";
+    const realFetch = globalThis.fetch.bind(globalThis);
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = typeof input === "string" ? input : input.toString();
+        if (url.includes("/graphql")) {
+          const body =
+            typeof init?.body === "string" ? init.body : String(init?.body ?? "");
+          if (body.includes("IntrospectQueryRoot") || body.includes("__schema")) {
+            return new Response(
+              JSON.stringify({
+                data: {
+                  __schema: {
+                    queryType: {
+                      name: "Query",
+                      fields: [
+                        {
+                          name: "nodes",
+                          args: [
+                            { name: "type", type: { kind: "SCALAR", name: "String" } },
+                            { name: "search", type: { kind: "SCALAR", name: "String" } },
+                            { name: "limit", type: { kind: "SCALAR", name: "Int" } },
+                            { name: "offset", type: { kind: "SCALAR", name: "Int" } },
+                          ],
+                          type: { kind: "OBJECT", name: "NodeConnection" },
+                        },
+                        {
+                          name: "node",
+                          args: [
+                            {
+                              name: "id",
+                              type: {
+                                kind: "NON_NULL",
+                                ofType: { kind: "SCALAR", name: "Int" },
+                              },
+                            },
+                          ],
+                          type: { kind: "OBJECT", name: "Node" },
+                        },
+                      ],
+                    },
+                  },
+                },
+              }),
+              {
+                status: 200,
+                headers: { "content-type": "application/json" },
+              },
+            );
+          }
+          return new Response(
+            JSON.stringify({
+              data: {
+                nodes: {
+                  total: 1,
+                  nodes: [
+                    {
+                      id: 42,
+                      source: "virginia_code",
+                      sourceId: "20-124.3",
+                      nodeType: "section",
+                      sourceText:
+                        "In determining custody, the court shall consider the best interests of the child.",
+                    },
+                  ],
+                },
+              },
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/json" },
+            },
+          );
+        }
+        return realFetch(input, init);
+      },
+    );
+
+    mockCreate
+      .mockResolvedValueOnce({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: {
+              content: "optimized legal retrieval context for custody in virginia",
+            },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: {
+              content: JSON.stringify({
+                intent: "custody distinction",
+                queries: [
+                  {
+                    purpose: "find custody statutes",
+                    query:
+                      "query ($search: String, $type: String, $limit: Int, $offset: Int) { nodes(type: $type, search: $search, limit: $limit, offset: $offset) { total nodes { id source sourceId nodeType sourceText } } }",
+                    variables: {
+                      search: "custody",
+                      type: "section",
+                      limit: 3,
+                      offset: 0,
+                    },
+                  },
+                ],
+              }),
+            },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: {
+              content:
+                '{"intent":"custody distinction","key_findings":["legal vs physical custody differ"],"legal_chunks":[{"source":"virginia_code","source_id":"20-124.3","content":"best interests of the child"}],"gaps":"none","confidence":"high"}',
+            },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: {
+              content: "Legal custody is decision authority; physical custody is residence/time.",
+            },
+          },
+        ],
+      });
+
+    try {
+      const res = await api.post(
+        "/api/chat",
+        {
+          messages: [
+            {
+              role: "assistant",
+              content: "Legal custody is decision-making authority.",
+            },
+            {
+              role: "user",
+              content:
+                "Explain the difference between legal custody and physical custody in Virginia.",
+            },
+          ],
+        },
+        ctx.baseUrl,
+      );
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(typeof body.reply).toBe("string");
+      expect(body.reply).toContain("Legal custody is decision authority");
+      const graphqlCalls = fetchSpy.mock.calls.filter((call) => {
+        const input = call[0];
+        const url = typeof input === "string" ? input : input.toString();
+        return url.includes("/graphql");
+      });
+      expect(graphqlCalls.length).toBe(2);
+      expect(mockCreate).toHaveBeenCalledTimes(4);
+    } finally {
+      fetchSpy.mockRestore();
+      delete process.env.CHAT_DETERMINISTIC_GRAPH;
+    }
   });
 
   it("injects tool results into Phase 2 context as assistant message", async () => {
@@ -754,6 +1214,9 @@ describe("Chat API", () => {
         choices: [{ finish_reason: "stop", message: { content: null } }],
       })
       .mockResolvedValueOnce({
+        choices: [{ finish_reason: "stop", message: { content: null } }],
+      })
+      .mockResolvedValueOnce({
         choices: [
           {
             finish_reason: "stop",
@@ -768,19 +1231,14 @@ describe("Chat API", () => {
       ctx.baseUrl,
     );
 
-    expect(mockCreate).toHaveBeenCalledTimes(3);
+    expect(mockCreate).toHaveBeenCalledTimes(4);
 
-    // Phase 2 call should include an assistant message with tool results
-    const phase2Call = mockCreate.mock.calls[2]?.[0] as {
-      messages?: Array<{ role: string; content?: string }>;
+    // Phase 2 call should reuse tool transcript (tool role message present)
+    const phase2Call = mockCreate.mock.calls[3]?.[0] as {
+      messages?: Array<{ role: string; content?: string | null }>;
     };
-    const assistantContext = phase2Call.messages?.find(
-      (m) => m.role === "assistant" && m.content?.includes("[GetCases]:"),
-    );
-    expect(assistantContext).toBeDefined();
-    expect(assistantContext?.content).toContain(
-      "I retrieved the following data",
-    );
+    const toolContext = phase2Call.messages?.find((m) => m.role === "tool");
+    expect(toolContext).toBeDefined();
   });
 
   it("returns fallback after max iterations", async () => {
@@ -806,6 +1264,9 @@ describe("Chat API", () => {
     }
     // Phase 2: conversational response
     mockCreate.mockResolvedValueOnce({
+      choices: [{ finish_reason: "stop", message: { content: null } }],
+    });
+    mockCreate.mockResolvedValueOnce({
       choices: [
         {
           finish_reason: "stop",
@@ -825,6 +1286,6 @@ describe("Chat API", () => {
     );
     const body = await res.json();
     expect(body.reply).toBe("Too many tool calls, but here is what I found.");
-    expect(mockCreate).toHaveBeenCalledTimes(11);
+    expect(mockCreate).toHaveBeenCalledTimes(12);
   });
 });

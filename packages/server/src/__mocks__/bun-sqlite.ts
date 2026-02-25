@@ -37,17 +37,43 @@ export class Database {
     }
     this.db = new BetterSqlite3(resolvedPath);
 
-    // Auto-seed courts table when opening virginia.db (test mock)
+    // Auto-seed all virginia.db tables when opening virginia.db (test mock)
     if (dbPath && dbPath.endsWith("virginia.db")) {
       this.db.exec(`
         CREATE TABLE IF NOT EXISTS courts (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           name TEXT NOT NULL,
           locality TEXT, type TEXT, district TEXT, clerk TEXT,
-          phone TEXT, phones TEXT, fax TEXT, email TEXT,
+          phone TEXT, fax TEXT, email TEXT,
           address TEXT, city TEXT, state TEXT, zip TEXT,
           hours TEXT, homepage TEXT, judges TEXT
-        )
+        );
+        CREATE TABLE IF NOT EXISTS constitution (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          article_id INTEGER, article TEXT, article_name TEXT,
+          section_name TEXT, section_title TEXT, section_text TEXT,
+          section_count INTEGER, last_update TEXT
+        );
+        CREATE TABLE IF NOT EXISTS virginia_code (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title_num TEXT, title_name TEXT, subtitle_num TEXT, subtitle_name TEXT,
+          part_num TEXT, part_name TEXT, chapter_num TEXT, chapter_name TEXT,
+          article_num TEXT, article_name TEXT, subpart_num TEXT, subpart_name TEXT,
+          section TEXT, title TEXT, body TEXT
+        );
+        CREATE TABLE IF NOT EXISTS popular_names (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT, title_num TEXT, section TEXT, body TEXT
+        );
+        CREATE TABLE IF NOT EXISTS authorities (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT, short_name TEXT, codified TEXT,
+          title TEXT, section TEXT, body TEXT
+        );
+        CREATE TABLE IF NOT EXISTS documents (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          dataset TEXT, filename TEXT, title TEXT, content TEXT
+        );
       `);
     }
   }

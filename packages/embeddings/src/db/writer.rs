@@ -3,7 +3,7 @@ use rusqlite::Connection;
 
 use crate::embed::embedding_to_blob;
 use crate::graph::edges::Edge;
-use crate::graph::nodes::Node;
+use crate::graph::nodes::{ChunkMeta, Node};
 
 pub fn create_output_db(path: &str) -> Result<Connection> {
     // Remove existing file if present
@@ -42,6 +42,12 @@ pub fn create_output_db(path: &str) -> Result<Connection> {
         CREATE TABLE embeddings (
             node_id   INTEGER PRIMARY KEY REFERENCES nodes(id),
             embedding BLOB NOT NULL
+        );
+
+        CREATE TABLE chunk_meta (
+            node_id    INTEGER PRIMARY KEY REFERENCES nodes(id),
+            char_start INTEGER NOT NULL,
+            char_end   INTEGER NOT NULL
         );
 
         CREATE INDEX idx_nodes_source ON nodes(source, source_id);
@@ -106,6 +112,20 @@ pub fn write_edges(conn: &Connection, edges: &[Edge]) -> Result<usize> {
     }
     tx.commit()?;
     Ok(edges.len())
+}
+
+pub fn write_chunk_meta(conn: &Connection, meta: &[ChunkMeta]) -> Result<usize> {
+    let tx = conn.unchecked_transaction()?;
+    {
+        let mut stmt = tx.prepare(
+            "INSERT INTO chunk_meta (node_id, char_start, char_end) VALUES (?1, ?2, ?3)",
+        )?;
+        for m in meta {
+            stmt.execute(rusqlite::params![m.node_id, m.char_start, m.char_end])?;
+        }
+    }
+    tx.commit()?;
+    Ok(meta.len())
 }
 
 pub fn write_embeddings(

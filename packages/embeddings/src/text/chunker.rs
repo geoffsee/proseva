@@ -4,42 +4,67 @@ fn approx_token_count(text: &str) -> usize {
     text.split_whitespace().count()
 }
 
+/// A chunk of text with its byte offsets into the original input.
+#[derive(Debug, Clone)]
+pub struct ChunkSpan {
+    pub text: String,
+    pub char_start: usize,
+    pub char_end: usize,
+}
+
+/// A sentence with its byte offsets into the original input.
+#[derive(Debug, Clone)]
+struct SentenceSpan {
+    text: String,
+    byte_start: usize,
+    byte_end: usize,
+}
+
 /// Split text into overlapping chunks of approximately `max_tokens` tokens,
 /// with `overlap_tokens` overlap between consecutive chunks.
 /// Splits on sentence boundaries when possible.
-pub fn chunk_text(text: &str, max_tokens: usize, overlap_tokens: usize) -> Vec<String> {
+/// Returns spans with byte offsets into the original text.
+pub fn chunk_text(text: &str, max_tokens: usize, overlap_tokens: usize) -> Vec<ChunkSpan> {
     let total_tokens = approx_token_count(text);
     if total_tokens <= max_tokens {
-        return vec![text.to_string()];
+        return vec![ChunkSpan {
+            text: text.to_string(),
+            char_start: 0,
+            char_end: text.len(),
+        }];
     }
 
     let sentences = split_sentences(text);
     let mut chunks = Vec::new();
-    let mut current_chunk: Vec<&str> = Vec::new();
+    let mut current_chunk: Vec<&SentenceSpan> = Vec::new();
     let mut current_len = 0usize;
 
     for sentence in &sentences {
-        let sent_len = approx_token_count(sentence);
+        let sent_len = approx_token_count(&sentence.text);
 
         // If a single sentence exceeds max_tokens, add it as its own chunk
         if sent_len > max_tokens {
             if !current_chunk.is_empty() {
-                chunks.push(current_chunk.join(" "));
+                chunks.push(spans_to_chunk(&current_chunk));
                 current_chunk.clear();
                 current_len = 0;
             }
-            chunks.push(sentence.to_string());
+            chunks.push(ChunkSpan {
+                text: sentence.text.clone(),
+                char_start: sentence.byte_start,
+                char_end: sentence.byte_end,
+            });
             continue;
         }
 
         if current_len + sent_len > max_tokens && !current_chunk.is_empty() {
-            chunks.push(current_chunk.join(" "));
+            chunks.push(spans_to_chunk(&current_chunk));
 
             // Build overlap from the end of the current chunk
-            let mut overlap_chunk: Vec<&str> = Vec::new();
+            let mut overlap_chunk: Vec<&SentenceSpan> = Vec::new();
             let mut overlap_len = 0;
-            for &s in current_chunk.iter().rev() {
-                let s_len = approx_token_count(s);
+            for s in current_chunk.iter().rev() {
+                let s_len = approx_token_count(&s.text);
                 if overlap_len + s_len > overlap_tokens {
                     break;
                 }
@@ -57,33 +82,65 @@ pub fn chunk_text(text: &str, max_tokens: usize, overlap_tokens: usize) -> Vec<S
     }
 
     if !current_chunk.is_empty() {
-        chunks.push(current_chunk.join(" "));
+        chunks.push(spans_to_chunk(&current_chunk));
     }
 
     chunks
 }
 
+fn spans_to_chunk(spans: &[&SentenceSpan]) -> ChunkSpan {
+    let text = spans
+        .iter()
+        .map(|s| s.text.as_str())
+        .collect::<Vec<_>>()
+        .join(" ");
+    let char_start = spans.first().map(|s| s.byte_start).unwrap_or(0);
+    let char_end = spans.last().map(|s| s.byte_end).unwrap_or(0);
+    ChunkSpan {
+        text,
+        char_start,
+        char_end,
+    }
+}
+
 /// Simple sentence splitter: split on period/question mark/exclamation followed by space or end.
-fn split_sentences(text: &str) -> Vec<String> {
+/// Tracks byte offsets into the original string.
+fn split_sentences(text: &str) -> Vec<SentenceSpan> {
     let mut sentences = Vec::new();
     let mut current = String::new();
+    let mut current_start: Option<usize> = None;
 
-    for ch in text.chars() {
+    for (byte_pos, ch) in text.char_indices() {
+        // Track start of current sentence (first non-whitespace)
+        if current_start.is_none() && !ch.is_whitespace() {
+            current_start = Some(byte_pos);
+        }
+
         current.push(ch);
+
         if (ch == '.' || ch == '?' || ch == '!') && current.len() > 1 {
-            // Look ahead is not trivial with chars, so we finalize on sentence-ending punctuation
-            // This is approximate and good enough for chunking purposes
             let trimmed = current.trim().to_string();
             if !trimmed.is_empty() {
-                sentences.push(trimmed);
+                let start = current_start.unwrap_or(byte_pos);
+                sentences.push(SentenceSpan {
+                    text: trimmed,
+                    byte_start: start,
+                    byte_end: byte_pos + ch.len_utf8(),
+                });
             }
             current = String::new();
+            current_start = None;
         }
     }
 
     let trimmed = current.trim().to_string();
     if !trimmed.is_empty() {
-        sentences.push(trimmed);
+        let start = current_start.unwrap_or(0);
+        sentences.push(SentenceSpan {
+            text: trimmed,
+            byte_start: start,
+            byte_end: text.len(),
+        });
     }
 
     sentences
@@ -98,14 +155,19 @@ mod tests {
         let text = "This is short.";
         let chunks = chunk_text(text, 500, 50);
         assert_eq!(chunks.len(), 1);
-        assert_eq!(chunks[0], text);
+        assert_eq!(chunks[0].text, text);
+        assert_eq!(chunks[0].char_start, 0);
+        assert_eq!(chunks[0].char_end, text.len());
     }
 
     #[test]
     fn test_long_text_chunks() {
-        let words: Vec<String> = (0..1000).map(|i| format!("word{i}")).collect();
-        let text = words.join(" ") + ".";
-        let chunks = chunk_text(&text, 500, 50);
+        // Create text with multiple sentence boundaries so chunking can split
+        let sentences: Vec<String> = (0..100)
+            .map(|i| format!("This is sentence number {} with some filler words.", i))
+            .collect();
+        let text = sentences.join(" ");
+        let chunks = chunk_text(&text, 50, 10);
         assert!(chunks.len() >= 2);
     }
 
@@ -119,5 +181,28 @@ mod tests {
         let chunks = chunk_text(&text, 30, 10);
         // With overlap, later chunks should contain some words from the end of previous chunks
         assert!(chunks.len() >= 2);
+    }
+
+    #[test]
+    fn test_chunk_offsets_cover_text() {
+        let text = "First sentence. Second sentence. Third sentence.";
+        let chunks = chunk_text(text, 3, 1);
+        // Each chunk's offsets should be within the original text
+        for chunk in &chunks {
+            assert!(chunk.char_start <= chunk.char_end);
+            assert!(chunk.char_end <= text.len());
+        }
+    }
+
+    #[test]
+    fn test_sentence_split_offsets() {
+        let text = "Hello world. Goodbye world.";
+        let sentences = split_sentences(text);
+        assert_eq!(sentences.len(), 2);
+        assert_eq!(sentences[0].text, "Hello world.");
+        assert_eq!(sentences[0].byte_start, 0);
+        assert_eq!(sentences[0].byte_end, 12);
+        assert_eq!(sentences[1].text, "Goodbye world.");
+        assert_eq!(&text[sentences[1].byte_start..sentences[1].byte_end], "Goodbye world.");
     }
 }

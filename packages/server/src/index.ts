@@ -1,4 +1,6 @@
 import { AutoRouter, cors } from "itty-router";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import OpenAI from "openai";
 import { db, initDb } from "./db";
 import {
@@ -51,6 +53,7 @@ const UNAUTHENTICATED_ROUTES = new Set([
   "/api/security/status",
   "/api/security/verify-passphrase",
   "/api/auth/login",
+  "/api/graphql",
 ]);
 
 const requireUnlockedDatabase = (request: Request) => {
@@ -175,6 +178,13 @@ router.all("/graphql", async (req: Request) => {
 // Initialize WASM modules and database before handling any requests.
 ensureWasmSimilarityInit();
 await initDb();
+const datasetsDir = process.env.DATASETS_DIR;
+const embeddingsDbPath = datasetsDir
+  ? join(datasetsDir, "embeddings.sqlite.db")
+  : null;
+console.info(
+  `[startup][embeddings] db.embeddings.size=${db.embeddings.size} DATASETS_DIR=${datasetsDir ?? "<unset>"} embeddings_db_path=${embeddingsDbPath ?? "<n/a>"} embeddings_db_exists=${embeddingsDbPath ? existsSync(embeddingsDbPath) : false}`,
+);
 
 // Initialize the blob store and migrate any legacy research attachments.
 getBlobStore();

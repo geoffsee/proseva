@@ -48,6 +48,7 @@ export const RootStore = types
 
 export type IRootStore = ReturnType<typeof RootStore.create>;
 type CaseSnapshot = SnapshotIn<typeof CaseStore>;
+type ChatSnapshot = SnapshotIn<typeof ChatStore>;
 
 /**
  * Creates a root store with empty defaults (sync, instant).
@@ -176,7 +177,7 @@ export async function hydrateStore(store: IRootStore): Promise<void> {
     deadlines,
     finances,
     contacts,
-    chat,
+    chatPersisted,
     notes,
     tasks,
     evidences,
@@ -196,6 +197,39 @@ export async function hydrateStore(store: IRootStore): Promise<void> {
     kvLoad(STORAGE_KEYS.research, []),
   ]);
 
+  const hydratedChat: Pick<
+    ChatSnapshot,
+    "messages" | "history" | "selectedHistoryId"
+  > = Array.isArray(chatPersisted)
+    ? {
+        messages: chatPersisted as ChatSnapshot["messages"],
+        history: [],
+        selectedHistoryId: null,
+      }
+    : {
+        messages:
+          chatPersisted &&
+          typeof chatPersisted === "object" &&
+          Array.isArray((chatPersisted as { messages?: unknown[] }).messages)
+            ? ((chatPersisted as { messages: unknown[] })
+                .messages as ChatSnapshot["messages"])
+            : [],
+        history:
+          chatPersisted &&
+          typeof chatPersisted === "object" &&
+          Array.isArray((chatPersisted as { history?: unknown[] }).history)
+            ? ((chatPersisted as { history: unknown[] })
+                .history as ChatSnapshot["history"])
+            : [],
+        selectedHistoryId:
+          chatPersisted &&
+          typeof chatPersisted === "object" &&
+          ("selectedHistoryId" in chatPersisted
+            ? ((chatPersisted as { selectedHistoryId?: string | null })
+                .selectedHistoryId ?? null)
+            : null),
+      };
+
   // Apply snapshots to hydrate the store
   applySnapshot(store.caseStore, {
     cases: cases as CaseSnapshot["cases"],
@@ -209,7 +243,7 @@ export async function hydrateStore(store: IRootStore): Promise<void> {
   });
   applySnapshot(store.financeStore, { entries: finances });
   applySnapshot(store.contactStore, { contacts });
-  applySnapshot(store.chatStore, { messages: chat });
+  applySnapshot(store.chatStore, hydratedChat);
   applySnapshot(store.noteStore, { notes });
   applySnapshot(store.taskStore, { tasks });
   applySnapshot(store.evidenceStore, {
@@ -271,7 +305,7 @@ function registerPersistenceWatchers(store: IRootStore): void {
   onSnapshot(store.deadlineStore, (snap) => persistDeadlines(snap.deadlines));
   onSnapshot(store.financeStore, (snap) => persistFinances(snap.entries));
   onSnapshot(store.contactStore, (snap) => persistContacts(snap.contacts));
-  onSnapshot(store.chatStore, (snap) => persistChat(snap.messages));
+  onSnapshot(store.chatStore, (snap) => persistChat(snap));
   onSnapshot(store.noteStore, (snap) => persistNotes(snap.notes));
   onSnapshot(store.taskStore, (snap) => persistTasks(snap.tasks));
   onSnapshot(store.evidenceStore, (snap) => persistEvidences(snap.evidences));

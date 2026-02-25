@@ -1275,15 +1275,15 @@ export type CourtInfo = {
   state: string;
   zip: string;
   hours: string | null;
-  website: string;
+  homepage: string | null;
   judges: string[];
 };
 
 const COURTS_QUERY = `{
   courts {
-    name locality type district clerk
-    phone phones fax email address
-    city state zip hours website judges
+    id name locality type district clerk
+    phone fax email address
+    city state zip hours homepage judges
   }
 }`;
 

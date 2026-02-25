@@ -1,6 +1,6 @@
 import { Database } from "bun:sqlite";
 import { createSchema, createYoga } from "graphql-yoga";
-import { readFileSync } from "fs";
+import { readFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
 
 // --- Cosine similarity (exported for unit testing) ---
@@ -104,7 +104,9 @@ export function resolveSourceText(
 // --- App factory (exported for testing) ---
 
 export function createApp(embeddingsPath: string, virginiaPath?: string) {
-  const embDb = new Database(embeddingsPath, { readonly: true });
+  // Open embeddings DB in default mode instead of readonly.
+  // In practice, Bun's sqlite readonly mode can fail with WAL-mode DBs.
+  const embDb = new Database(embeddingsPath);
 
   let virgDb: Database | null = null;
   let virgStmts: ReturnType<typeof buildVirgStmts> | null = null;
@@ -314,27 +316,43 @@ export function createApp(embeddingsPath: string, virginiaPath?: string) {
 
 if (import.meta.main) {
   const args = process.argv.slice(2);
+  const explorerDir = dirname(new URL(import.meta.url).pathname);
+  const defaultEmbeddings = join(
+    explorerDir,
+    "../../datasets/data/embeddings.sqlite.db",
+  );
+  const defaultVirginia = join(explorerDir, "../../datasets/data/virginia.db");
+
   let embeddings = "";
   let virginia = "";
-  let port = 3000;
+  let port = 3002;
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--embeddings" && args[i + 1]) embeddings = args[++i];
     else if (args[i] === "--virginia" && args[i + 1]) virginia = args[++i];
     else if (args[i] === "--port" && args[i + 1])
       port = parseInt(args[++i], 10);
   }
+
+  // Convenience defaults for local dev in this monorepo.
+  if (!embeddings && existsSync(defaultEmbeddings)) {
+    embeddings = defaultEmbeddings;
+  }
+  if (!virginia && existsSync(defaultVirginia)) {
+    virginia = defaultVirginia;
+  }
+
   if (!embeddings) {
     console.error(
       "Usage: bun server.ts --embeddings <path> [--virginia <path>] [--port <n>]",
+    );
+    console.error(
+      `Hint: expected default embeddings DB at ${defaultEmbeddings}`,
     );
     process.exit(1);
   }
 
   const { yoga } = createApp(embeddings, virginia || undefined);
-  const htmlPath = join(
-    dirname(new URL(import.meta.url).pathname),
-    "index.html",
-  );
+  const htmlPath = join(explorerDir, "index.html");
 
   const server = Bun.serve({
     port,

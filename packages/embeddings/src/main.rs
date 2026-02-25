@@ -1,7 +1,7 @@
 mod db;
 mod embed;
+mod etl;
 mod graph;
-mod qwen3;
 mod text;
 
 use std::path::PathBuf;
@@ -22,10 +22,6 @@ struct Args {
     /// Path to write embeddings.sqlite.db (output)
     #[arg(long)]
     output: Option<PathBuf>,
-
-    /// Fastembed model name
-    #[arg(long, default_value = "Octen/Octen-Embedding-0.6B")]
-    model: String,
 
     /// Skip embedding computation (only build graph)
     #[arg(long, default_value_t = false)]
@@ -54,7 +50,6 @@ fn main() -> Result<()> {
 
     println!("Input:  {}", input_path.display());
     println!("Output: {}", output_path.display());
-    println!("Model:  {}", args.model);
     println!();
 
     // Open input database
@@ -83,7 +78,10 @@ fn main() -> Result<()> {
     let document_rows = db::reader::read_documents(&input_conn)?;
     println!("  documents:      {} rows", document_rows.len());
 
-    let node_result = graph::nodes::build_nodes(
+    // --- ETL: clean, enrich, filter, dedup ---
+    println!("\n  Running ETL pipeline...");
+    let etl_start = Instant::now();
+    let cleaned = etl::run_etl(
         &code_rows,
         &constitution_rows,
         &authority_rows,
@@ -91,6 +89,19 @@ fn main() -> Result<()> {
         &popular_name_rows,
         &document_rows,
     )?;
+
+    println!(
+        "  ETL output: virginia_code={}, constitution={}, authorities={}, courts={}, popular_names={}, documents={}",
+        cleaned.virginia_code.height(),
+        cleaned.constitution.height(),
+        cleaned.authorities.height(),
+        cleaned.courts.height(),
+        cleaned.popular_names.height(),
+        cleaned.documents.height(),
+    );
+    println!("  ETL took:       {:.2}s", etl_start.elapsed().as_secs_f64());
+
+    let node_result = graph::nodes::build_nodes(&cleaned)?;
 
     let synthetic_count = node_result.nodes.iter().filter(|n| n.synthetic).count();
     let embeddable_count = node_result.nodes.len() - synthetic_count;
@@ -147,7 +158,11 @@ fn main() -> Result<()> {
     let out_conn = db::writer::create_output_db(output_path.to_str().unwrap())?;
     let nodes_written = db::writer::write_nodes(&out_conn, &node_result.nodes)?;
     let edges_written = db::writer::write_edges(&out_conn, &edges)?;
-    println!("  Wrote {} nodes, {} edges", nodes_written, edges_written);
+    let chunk_meta_written = db::writer::write_chunk_meta(&out_conn, &node_result.chunk_meta)?;
+    println!(
+        "  Wrote {} nodes, {} edges, {} chunk_meta entries",
+        nodes_written, edges_written, chunk_meta_written
+    );
 
     // ========== Pass 3: Embed — Compute Vectors ==========
     if args.skip_embeddings {
@@ -156,10 +171,10 @@ fn main() -> Result<()> {
         println!("\n=== Pass 3: Computing embeddings ===");
         let pass3_start = Instant::now();
 
-        let mut embedder = embed::Embedder::new(&args.model, args.batch_size)?;
+        let embedder = embed::Embedder::new(args.batch_size)?;
         let dims = embedder.model_dimensions();
 
-        db::writer::write_model_info(&out_conn, &args.model, dims)?;
+        db::writer::write_model_info(&out_conn, "Octen-Embedding-0.6B-INT4-ONNX", dims)?;
 
         // Collect embeddable nodes and their texts
         let mut embed_node_ids = Vec::new();

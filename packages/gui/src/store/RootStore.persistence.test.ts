@@ -67,6 +67,13 @@ const chatSnapshot = {
   createdAt: "2026-01-04T00:00:00.000Z",
 };
 
+const chatHistorySnapshot = {
+  id: "hist-1",
+  title: "Persisted conversation",
+  updatedAt: "2026-01-09T00:00:00.000Z",
+  messages: [chatSnapshot],
+};
+
 const noteSnapshot = {
   id: "note-1",
   title: "Persisted note",
@@ -185,12 +192,16 @@ describe("RootStore persistence", () => {
   });
 
   it("hydrates persisted data for all storage-backed stores", async () => {
-    const persistedByKey: Record<string, unknown[]> = {
+    const persistedByKey: Record<string, unknown> = {
       [STORAGE_KEYS.cases]: [caseSnapshot],
       [STORAGE_KEYS.deadlines]: [deadlineSnapshot],
       [STORAGE_KEYS.finances]: [financeSnapshot],
       [STORAGE_KEYS.contacts]: [contactSnapshot],
-      [STORAGE_KEYS.chat]: [chatSnapshot],
+      [STORAGE_KEYS.chat]: {
+        messages: [chatSnapshot],
+        history: [chatHistorySnapshot],
+        selectedHistoryId: "hist-1",
+      },
       [STORAGE_KEYS.notes]: [noteSnapshot],
       [STORAGE_KEYS.tasks]: [taskSnapshot],
       [STORAGE_KEYS.evidences]: [evidenceSnapshot],
@@ -213,12 +224,29 @@ describe("RootStore persistence", () => {
     expect(store.financeStore.entries[0].amount).toBe(120);
     expect(store.contactStore.contacts[0].name).toBe("Jordan Clerk");
     expect(store.chatStore.messages[0].text).toBe("Persisted chat message");
+    expect(store.chatStore.history[0].id).toBe("hist-1");
+    expect(store.chatStore.selectedHistoryId).toBe("hist-1");
     expect(store.noteStore.notes[0].title).toBe("Persisted note");
     expect(store.taskStore.tasks[0].title).toBe("Persisted task");
     expect(store.evidenceStore.evidences[0].title).toBe("Receipt");
     expect(store.filingStore.filings[0].title).toBe("Motion to compel");
     expect(store.estatePlanStore.plans[0].title).toBe("Estate Plan");
     expect(store.researchStore.messages[0].text).toBe("Persisted research");
+  });
+
+  it("hydrates legacy chat payloads stored as a message array", async () => {
+    vi.mocked(kvLoad).mockImplementation(async (key, fallback) => {
+      if (key === STORAGE_KEYS.chat) return [chatSnapshot];
+      return fallback;
+    });
+    vi.mocked(kvSave).mockResolvedValue(undefined);
+
+    const store = createRootStore();
+    await hydrateStore(store);
+
+    expect(store.chatStore.messages[0].text).toBe("Persisted chat message");
+    expect(store.chatStore.history).toHaveLength(0);
+    expect(store.chatStore.selectedHistoryId).toBeNull();
   });
 
   it("migrates localStorage data into KV when KV is empty", async () => {

@@ -29,9 +29,9 @@ export function CourtsList() {
             <Text fontSize="sm" color="fg.muted">
               Phone: {c.phone}
             </Text>
-            {c.website && (
+            {c.homepage && (
               <ChakraLink
-                href={c.website}
+                href={c.homepage}
                 target="_blank"
                 fontSize="sm"
                 color="blue.fg"

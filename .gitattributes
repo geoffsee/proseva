@@ -1,2 +1,4 @@
 packages/datasets/data/virginia.db filter=lfs diff=lfs merge=lfs -text
 packages/datasets/data/embeddings.sqlite.db filter=lfs diff=lfs merge=lfs -text
+packages/embeddings/onnx/weights/model.int4.onnx filter=lfs diff=lfs merge=lfs -text
+packages/embeddings/onnx/weights/model.int4.onnx.data filter=lfs diff=lfs merge=lfs -text
