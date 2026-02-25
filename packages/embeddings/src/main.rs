@@ -1,6 +1,7 @@
 mod db;
 mod embed;
 mod graph;
+mod qwen3;
 mod text;
 
 use std::path::PathBuf;
@@ -23,7 +24,7 @@ struct Args {
     output: Option<PathBuf>,
 
     /// Fastembed model name
-    #[arg(long, default_value = "BAAI/bge-small-en-v1.5")]
+    #[arg(long, default_value = "Octen/Octen-Embedding-0.6B")]
     model: String,
 
     /// Skip embedding computation (only build graph)
@@ -31,7 +32,7 @@ struct Args {
     skip_embeddings: bool,
 
     /// Batch size for embedding computation
-    #[arg(long, default_value_t = 256)]
+    #[arg(long, default_value_t = 4)]
     batch_size: usize,
 }
 
@@ -155,7 +156,7 @@ fn main() -> Result<()> {
         println!("\n=== Pass 3: Computing embeddings ===");
         let pass3_start = Instant::now();
 
-        let embedder = embed::Embedder::new(&args.model, args.batch_size)?;
+        let mut embedder = embed::Embedder::new(&args.model, args.batch_size)?;
         let dims = embedder.model_dimensions();
 
         db::writer::write_model_info(&out_conn, &args.model, dims)?;

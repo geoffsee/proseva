@@ -1,5 +1,19 @@
 # proseva-embeddings
 
+## Quick Eval (test fixture)
+
+```bash
+# Generate the small test database (35 rows, ~28KB)
+cargo run --bin generate-fixtures
+
+# Run the full pipeline against it
+cargo run --release --bin proseva-embeddings -- \
+  --input fixtures/test-virginia.db \
+  --output fixtures/test-embeddings.sqlite.db
+```
+
+---
+
 Rust CLI tool that builds a knowledge graph and precomputed vector embeddings from `virginia.db`. This is a one-shot build tool — run it once when the dataset changes, ship the output `embeddings.sqlite.db` alongside `virginia.db`.
 
 ## Overview
