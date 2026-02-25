@@ -30,7 +30,7 @@
     "vitest": "^4.0.18"
   },
   "scripts": {
-    "postinstall": "./scripts/setup-hooks.sh",
+    "postinstall": "bash scripts/setup-hooks.sh",
     "clean": "./cleanup.sh",
     "build": "bun --filter=@proseva/* run --parallel build",
     "dev": "bun --filter=@proseva/server --filter=@proseva/gui run --parallel dev",
