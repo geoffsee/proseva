@@ -15,6 +15,14 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+
       - name: Install dependencies
         run: bun install
         working-directory: packages/datasets
@@ -40,13 +48,24 @@ jobs:
           key: embeddings-rust-${{ runner.os }}-${{ hashFiles('packages/embeddings/Cargo.lock') }}
           restore-keys: embeddings-rust-${{ runner.os }}-
 
-      - name: Build embeddings knowledge graph
+      - name: Build embeddings knowledge graph (skip Rust embeddings)
         run: |
-          cargo build --release
+          cargo build --release --bin proseva-embeddings
           ./target/release/proseva-embeddings \
             --input ../datasets/data/virginia.db \
-            --output ../datasets/data/embeddings.sqlite.db
+            --output ../datasets/data/embeddings.sqlite.db \
+            --skip-embeddings
         working-directory: packages/embeddings
+
+      - name: Populate embeddings via Python Octen embedder
+        run: |
+          uv sync --frozen
+          uv run python src/embed_va_db.py \
+            --input-db ../../datasets/data/virginia.db \
+            --output-db ../../datasets/data/embeddings.sqlite.db \
+            --batch-size 64 \
+            --max-seq-length 512
+        working-directory: packages/embeddings/python-embedder
 
       - name: Commit if changed
         run: |
