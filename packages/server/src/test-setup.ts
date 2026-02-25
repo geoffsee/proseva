@@ -2,6 +2,9 @@ import { initDb } from "./db";
 import { InMemoryAdapter } from "./persistence";
 import { setKeypairForceMemory } from "./encryption";
 
+// Point graphql.ts at an in-memory path so the mock Database class is used.
+process.env.DATASETS_DIR = ":memory:";
+
 // Use in-memory KV store for ML-KEM keypair during tests.
 setKeypairForceMemory(true);
 

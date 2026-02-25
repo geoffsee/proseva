@@ -18,10 +18,6 @@ extraResources:
     to: dist/
     filter:
       - "**/*"
-  - from: ../datasets/data/embeddings.sqlite.db
-    to: explorer-data/embeddings.sqlite.db
-  - from: ../datasets/data/virginia.db
-    to: explorer-data/virginia.db
 
 afterSign: src/notarize.cjs
 

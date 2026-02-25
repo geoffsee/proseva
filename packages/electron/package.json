@@ -12,7 +12,8 @@
     "dist:local": "bun run build && electron-builder --mac --arm64"
   },
   "dependencies": {
-    "@proseva/gui": "workspace:*"
+    "@proseva/gui": "workspace:*",
+    "fzstd": "^0.1.1"
   },
   "devDependencies": {
     "@electron/notarize": "^3.1.1",

@@ -3,6 +3,7 @@ import { spawn, type ChildProcess } from "child_process";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import { decompress } from "fzstd";
 import {
   SERVER_PORT,
   SERVER_URL,
@@ -62,12 +63,58 @@ function initDataDir(): void {
   }
 }
 
+// --- Datasets decompression ---
+function getDatasetsDir(): string {
+  if (isDev) return path.join(PROJECT_ROOT, "packages", "datasets", "data");
+  return path.join(app.getPath("userData"), "datasets");
+}
+
+function ensureDatasets(): void {
+  if (isDev) return;
+
+  const distServerDir = getResourcePath("dist-server");
+  const bundledVersion = path.join(distServerDir, "datasets.version");
+  if (!fs.existsSync(bundledVersion)) {
+    console.warn("[datasets] No datasets.version found in bundle, skipping decompression");
+    return;
+  }
+
+  const version = fs.readFileSync(bundledVersion, "utf-8").trim();
+  const datasetsDir = getDatasetsDir();
+  const localVersion = path.join(datasetsDir, "datasets.version");
+
+  if (fs.existsSync(localVersion) && fs.readFileSync(localVersion, "utf-8").trim() === version) {
+    console.log("[datasets] Already up to date (version:", version + ")");
+    return;
+  }
+
+  console.log("[datasets] Decompressing datasets (version:", version + ")...");
+  fs.mkdirSync(datasetsDir, { recursive: true });
+
+  for (const dbFile of ["virginia.db", "embeddings.sqlite.db"]) {
+    const zstPath = path.join(distServerDir, `${dbFile}.zst`);
+    if (!fs.existsSync(zstPath)) {
+      console.warn(`[datasets] ${dbFile}.zst not found, skipping`);
+      continue;
+    }
+    const compressed = fs.readFileSync(zstPath);
+    const decompressed = decompress(new Uint8Array(compressed));
+    fs.writeFileSync(path.join(datasetsDir, dbFile), decompressed);
+    console.log(`[datasets] Decompressed ${dbFile}`);
+  }
+
+  fs.writeFileSync(localVersion, version);
+  console.log("[datasets] Decompression complete");
+}
+
 // --- Server management ---
 function startServer(): ChildProcess {
   const dataDir = getDataDir();
+  const datasetsDir = getDatasetsDir();
   const env: Record<string, string> = {
     ...(process.env as Record<string, string>),
     PROSEVA_DATA_DIR: dataDir,
+    DATASETS_DIR: datasetsDir,
     PORT: String(SERVER_PORT),
     EXPLORER_URL: EXPLORER_URL,
   };
@@ -119,31 +166,10 @@ async function waitForServer(maxRetries = 30, delayMs = 500): Promise<boolean> {
 
 // --- Explorer management ---
 function getExplorerDbPaths(): { embeddings: string; virginia: string } {
-  if (isDev) {
-    return {
-      embeddings: path.join(
-        PROJECT_ROOT,
-        "packages",
-        "datasets",
-        "data",
-        "embeddings.sqlite.db",
-      ),
-      virginia: path.join(
-        PROJECT_ROOT,
-        "packages",
-        "datasets",
-        "data",
-        "virginia.db",
-      ),
-    };
-  }
+  const datasetsDir = getDatasetsDir();
   return {
-    embeddings: path.join(
-      process.resourcesPath,
-      "explorer-data",
-      "embeddings.sqlite.db",
-    ),
-    virginia: path.join(process.resourcesPath, "explorer-data", "virginia.db"),
+    embeddings: path.join(datasetsDir, "embeddings.sqlite.db"),
+    virginia: path.join(datasetsDir, "virginia.db"),
   };
 }
 
@@ -355,6 +381,7 @@ app.whenReady().then(async () => {
     return out;
   });
   initDataDir();
+  ensureDatasets();
 
   serverProcess = startServer();
 

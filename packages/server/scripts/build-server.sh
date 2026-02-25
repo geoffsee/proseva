@@ -92,6 +92,23 @@ copy_runtime_assets() {
   mkdir -p "$DIST_SERVER_DIR/_modules"
 }
 
+compress_datasets() {
+  local datasets_dir="$REPO_ROOT/packages/datasets/data"
+  local version
+  version="$(bun -e "console.log(require('$REPO_ROOT/package.json').version)")"
+
+  for db_file in virginia.db embeddings.sqlite.db; do
+    if [[ -f "$datasets_dir/$db_file" ]]; then
+      echo "Compressing $db_file with zstd level 19..."
+      bun -e "
+        const data = require('fs').readFileSync('$datasets_dir/$db_file');
+        require('fs').writeFileSync('$DIST_SERVER_DIR/${db_file}.zst', Bun.zstdCompressSync(data, { level: 19 }));
+      "
+    fi
+  done
+  echo "$version" > "$DIST_SERVER_DIR/datasets.version"
+}
+
 main() {
   local platform="${1:-auto}"
   if [[ "$platform" == "auto" ]]; then
@@ -103,6 +120,7 @@ main() {
   run_bundler "$platform"
   build_explorer "$platform"
   copy_runtime_assets
+  compress_datasets
 }
 
 main "$@"

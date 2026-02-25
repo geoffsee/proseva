@@ -1,10 +1,11 @@
 import { createSchema, createYoga } from "graphql-yoga";
-// @ts-expect-error — Bun embeds the .sqlite file at compile time
-import datasetsDb from "../../datasets/data/virginia.db" with { type: "sqlite", embed: "true" };
-// @ts-expect-error — Bun embeds the .sqlite file at compile time
-import embeddingsDb from "../../datasets/data/embeddings.sqlite.db" with { type: "sqlite", embed: "true" };
+import { Database } from "bun:sqlite";
+import { join } from "path";
 
-export { embeddingsDb };
+const datasetsDir = process.env.DATASETS_DIR;
+if (!datasetsDir) throw new Error("DATASETS_DIR environment variable is required");
+
+const datasetsDb = new Database(join(datasetsDir, "virginia.db"), { readonly: true });
 
 interface CourtRow {
   name: string;

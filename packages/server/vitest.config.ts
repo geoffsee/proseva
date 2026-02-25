@@ -4,14 +4,6 @@ import { resolve } from "path";
 export default defineConfig({
   resolve: {
     alias: {
-      "../../datasets/data/virginia.db": resolve(
-        import.meta.dirname ?? __dirname,
-        "src/__mocks__/virginia-db.ts",
-      ),
-      "../../datasets/data/embeddings.sqlite.db": resolve(
-        import.meta.dirname ?? __dirname,
-        "src/__mocks__/embeddings-db.ts",
-      ),
       "bun:sqlite": resolve(
         import.meta.dirname ?? __dirname,
         "src/__mocks__/bun-sqlite.ts",
