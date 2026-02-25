@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "bun run --watch src/index.ts",
+    "dev": "sleep 3; DATASETS_DIR=../datasets/data bun run --watch src/index.ts",
     "start": "bun run src/index.ts",
     "test": "vitest run",
     "build": "./scripts/build-server.sh",

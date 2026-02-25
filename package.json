@@ -33,7 +33,7 @@
     "postinstall": "bash scripts/setup-hooks.sh",
     "clean": "./cleanup.sh",
     "build": "bun --filter=@proseva/* run --parallel build",
-    "dev": "bun --filter=@proseva/server --filter=@proseva/gui run --parallel dev",
+    "dev": "bun --filter=@proseva/server --filter=@proseva/gui --filter=@proseva/gui --filter=@proseva/scanner-server run --parallel dev",
     "test": "vitest run --silent='passed-only'",
     "test:coverage": "vitest run --silent='passed-only' --coverage",
     "lint": "eslint .",
