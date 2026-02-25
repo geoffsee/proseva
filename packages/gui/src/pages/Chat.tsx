@@ -8,18 +8,30 @@ import {
   IconButton,
   Icon,
 } from "@chakra-ui/react";
-import { LuSend, LuBot, LuUser } from "react-icons/lu";
+import { LuSend, LuBot, LuUser, LuStickyNote } from "react-icons/lu";
 import { useState, useRef, useEffect } from "react";
+import AddEditNoteDialog from "../components/notes/AddEditNoteDialog";
+import type { Note } from "../types";
 import { observer } from "mobx-react-lite";
 import Markdown from "react-markdown";
 import { useStore } from "../store/StoreContext";
 import { useActivityStatus } from "../hooks/useActivityStatus";
 
+const emptyForm: Omit<Note, "id" | "createdAt" | "updatedAt"> = {
+  title: "",
+  content: "",
+  category: "general",
+  tags: [],
+};
+
 const Chat = observer(function Chat() {
-  const { chatStore } = useStore();
+  const { chatStore, noteStore, caseStore } = useStore();
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const activityStatus = useActivityStatus("chat");
+  const [saveNoteOpen, setSaveNoteOpen] = useState(false);
+  const [saveNoteForm, setSaveNoteForm] =
+    useState<Omit<Note, "id" | "createdAt" | "updatedAt">>(emptyForm);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -30,6 +42,22 @@ const Chat = observer(function Chat() {
     if (!text || chatStore.isTyping) return;
     setInput("");
     chatStore.sendMessage(text);
+  };
+
+  const openSaveNote = (text: string) => {
+    setSaveNoteForm({
+      title: "Chat — " + text.slice(0, 50).replace(/\n/g, " "),
+      content: text,
+      category: "general",
+      tags: ["chat"],
+    });
+    setSaveNoteOpen(true);
+  };
+
+  const handleSaveNote = () => {
+    noteStore.addNote(saveNoteForm);
+    setSaveNoteOpen(false);
+    setSaveNoteForm(emptyForm);
   };
 
   return (
@@ -71,38 +99,50 @@ const Chat = observer(function Chat() {
                   {msg.role === "assistant" ? <LuBot /> : <LuUser />}
                 </Icon>
               </Box>
-              <Box
-                bg={msg.role === "assistant" ? "bg.subtle" : "blue.500"}
-                color={msg.role === "user" ? "white" : undefined}
-                px="4"
-                py="3"
-                borderRadius="xl"
-                fontSize="sm"
-                css={
-                  msg.role === "assistant"
-                    ? {
-                        "& p": { marginBottom: "0.5em" },
-                        "& p:last-child": { marginBottom: 0 },
-                        "& ul, & ol": {
-                          paddingLeft: "1.5em",
-                          marginBottom: "0.5em",
-                        },
-                        "& h1, & h2, & h3": {
-                          fontWeight: "bold",
-                          marginTop: "0.75em",
-                          marginBottom: "0.25em",
-                        },
-                        "& strong": { fontWeight: "bold" },
-                      }
-                    : { whiteSpace: "pre-wrap" }
-                }
-              >
-                {msg.role === "assistant" ? (
-                  <Markdown>{msg.text}</Markdown>
-                ) : (
-                  <Text>{msg.text}</Text>
+              <VStack align="start" gap="1">
+                <Box
+                  bg={msg.role === "assistant" ? "bg.subtle" : "blue.500"}
+                  color={msg.role === "user" ? "white" : undefined}
+                  px="4"
+                  py="3"
+                  borderRadius="xl"
+                  fontSize="sm"
+                  css={
+                    msg.role === "assistant"
+                      ? {
+                          "& p": { marginBottom: "0.5em" },
+                          "& p:last-child": { marginBottom: 0 },
+                          "& ul, & ol": {
+                            paddingLeft: "1.5em",
+                            marginBottom: "0.5em",
+                          },
+                          "& h1, & h2, & h3": {
+                            fontWeight: "bold",
+                            marginTop: "0.75em",
+                            marginBottom: "0.25em",
+                          },
+                          "& strong": { fontWeight: "bold" },
+                        }
+                      : { whiteSpace: "pre-wrap" }
+                  }
+                >
+                  {msg.role === "assistant" ? (
+                    <Markdown>{msg.text}</Markdown>
+                  ) : (
+                    <Text>{msg.text}</Text>
+                  )}
+                </Box>
+                {msg.role === "assistant" && (
+                  <IconButton
+                    aria-label="Save as note"
+                    variant="ghost"
+                    size="xs"
+                    onClick={() => openSaveNote(msg.text)}
+                  >
+                    <LuStickyNote />
+                  </IconButton>
                 )}
-              </Box>
+              </VStack>
             </HStack>
           ))}
 
@@ -150,6 +190,18 @@ const Chat = observer(function Chat() {
           <LuSend />
         </IconButton>
       </HStack>
+
+      <AddEditNoteDialog
+        open={saveNoteOpen}
+        onOpenChange={(o) => {
+          setSaveNoteOpen(o);
+          if (!o) setSaveNoteForm(emptyForm);
+        }}
+        form={saveNoteForm}
+        onFormChange={setSaveNoteForm}
+        onSave={handleSaveNote}
+        cases={caseStore.cases.map((c) => ({ id: c.id, name: c.name }))}
+      />
     </VStack>
   );
 });

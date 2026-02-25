@@ -1,38 +1,61 @@
-import { render, screen, fireEvent } from "../test-utils";
+import { render, screen, fireEvent, waitFor } from "../test-utils";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import Chat from "./Chat";
 import { useStore } from "../store/StoreContext";
 import type { IRootStore } from "../store/RootStore";
 
 const mockSendMessage = vi.fn();
+const mockAddNote = vi.fn();
 
 vi.mock("../store/StoreContext", () => ({
   useStore: vi.fn(),
 }));
 
+vi.mock("../components/notes/AddEditNoteDialog", () => ({
+  default: ({ open, form, onSave }: { open: boolean; form: { title: string; content: string }; onSave: () => void }) =>
+    open ? (
+      <div data-testid="add-edit-note-dialog">
+        <input data-testid="note-title" value={form.title} readOnly />
+        <button onClick={onSave}>Save</button>
+      </div>
+    ) : null,
+}));
+
+const defaultMessages = [
+  {
+    id: "1",
+    role: "user" as const,
+    text: "What is discovery?",
+    timestamp: Date.now(),
+  },
+  {
+    id: "2",
+    role: "assistant" as const,
+    text: "Discovery is the process...",
+    timestamp: Date.now(),
+  },
+];
+
+function mockStore(overrides?: { messages?: typeof defaultMessages; isTyping?: boolean }) {
+  vi.mocked(useStore).mockReturnValue({
+    chatStore: {
+      messages: overrides?.messages ?? defaultMessages,
+      isTyping: overrides?.isTyping ?? false,
+      sendMessage: mockSendMessage,
+    },
+    noteStore: {
+      addNote: mockAddNote,
+    },
+    caseStore: {
+      cases: [{ id: "case-1", name: "Smith v. Jones" }],
+    },
+  } as unknown as IRootStore);
+}
+
 describe("Chat", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useStore).mockReturnValue({
-      chatStore: {
-        messages: [
-          {
-            id: "1",
-            role: "user" as const,
-            text: "What is discovery?",
-            timestamp: Date.now(),
-          },
-          {
-            id: "2",
-            role: "assistant" as const,
-            text: "Discovery is the process...",
-            timestamp: Date.now(),
-          },
-        ],
-        isTyping: false,
-        sendMessage: mockSendMessage,
-      },
-    } as unknown as IRootStore);
+    mockStore();
   });
 
   it("renders AI Assistant heading", () => {
@@ -90,25 +113,13 @@ describe("Chat", () => {
   });
 
   it("shows empty state when no messages", () => {
-    vi.mocked(useStore).mockReturnValue({
-      chatStore: {
-        messages: [],
-        isTyping: false,
-        sendMessage: vi.fn(),
-      },
-    } as unknown as IRootStore);
+    mockStore({ messages: [] });
     render(<Chat />);
     expect(screen.getByText(/Send a message to start/)).toBeInTheDocument();
   });
 
   it("displays typing indicator when chatStore.isTyping is true", () => {
-    vi.mocked(useStore).mockReturnValue({
-      chatStore: {
-        messages: [],
-        isTyping: true,
-        sendMessage: vi.fn(),
-      },
-    } as unknown as IRootStore);
+    mockStore({ messages: [], isTyping: true });
     render(<Chat />);
     expect(screen.getByText("Typing...")).toBeInTheDocument();
   });
@@ -133,5 +144,73 @@ describe("Chat", () => {
     render(<Chat />);
     const { container } = render(<Chat />);
     expect(container.querySelectorAll("svg").length).toBeGreaterThan(0);
+  });
+
+  describe("save as note", () => {
+    it("shows save-as-note button on assistant messages only", () => {
+      render(<Chat />);
+      const saveButtons = screen.getAllByLabelText("Save as note");
+      // Only assistant messages get the button (1 assistant message in default mock)
+      expect(saveButtons).toHaveLength(1);
+    });
+
+    it("does not show save-as-note button when there are no assistant messages", () => {
+      mockStore({
+        messages: [
+          { id: "1", role: "user" as const, text: "Hello", timestamp: Date.now() },
+        ],
+      });
+      render(<Chat />);
+      expect(screen.queryByLabelText("Save as note")).not.toBeInTheDocument();
+    });
+
+    it("opens dialog with pre-filled content when save button is clicked", async () => {
+      render(<Chat />);
+      fireEvent.click(screen.getByLabelText("Save as note"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("add-edit-note-dialog")).toBeInTheDocument();
+      });
+      expect(screen.getByTestId("note-title")).toHaveValue(
+        "Chat — Discovery is the process...",
+      );
+    });
+
+    it("pre-fills title with first 50 chars of message text", async () => {
+      const longText = "A".repeat(100);
+      mockStore({
+        messages: [
+          { id: "1", role: "assistant" as const, text: longText, timestamp: Date.now() },
+        ],
+      });
+      render(<Chat />);
+      fireEvent.click(screen.getByLabelText("Save as note"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("note-title")).toHaveValue(
+          "Chat — " + "A".repeat(50),
+        );
+      });
+    });
+
+    it("calls noteStore.addNote when save is confirmed", async () => {
+      render(<Chat />);
+      fireEvent.click(screen.getByLabelText("Save as note"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("add-edit-note-dialog")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+      expect(mockAddNote).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Chat — Discovery is the process...",
+          content: "Discovery is the process...",
+          category: "general",
+          tags: ["chat"],
+        }),
+      );
+    });
   });
 });

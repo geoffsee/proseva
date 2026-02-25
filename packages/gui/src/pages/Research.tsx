@@ -24,12 +24,15 @@ import {
   LuBuilding,
   LuGavel,
   LuUsers,
+  LuStickyNote,
 } from "react-icons/lu";
 import { useState, useRef, useEffect, type ElementType } from "react";
 import { observer } from "mobx-react-lite";
 import Markdown from "react-markdown";
 import { useStore } from "../store/StoreContext";
 import { useActivityStatus } from "../hooks/useActivityStatus";
+import AddEditNoteDialog from "../components/notes/AddEditNoteDialog";
+import type { Note } from "../types";
 
 interface ResultItem {
   id?: string | number;
@@ -224,11 +227,21 @@ function ResultsSidebar({
   );
 }
 
+const emptyForm: Omit<Note, "id" | "createdAt" | "updatedAt"> = {
+  title: "",
+  content: "",
+  category: "research",
+  tags: [],
+};
+
 const Research = observer(function Research() {
-  const { researchStore } = useStore();
+  const { researchStore, noteStore, caseStore } = useStore();
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const activityStatus = useActivityStatus("research");
+  const [saveNoteOpen, setSaveNoteOpen] = useState(false);
+  const [saveNoteForm, setSaveNoteForm] =
+    useState<Omit<Note, "id" | "createdAt" | "updatedAt">>(emptyForm);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -243,6 +256,22 @@ const Research = observer(function Research() {
 
   const handleQuickAction = (prompt: string) => {
     setInput(prompt);
+  };
+
+  const openSaveNote = (text: string) => {
+    setSaveNoteForm({
+      title: "Research — " + text.slice(0, 50).replace(/\n/g, " "),
+      content: text,
+      category: "research",
+      tags: ["research"],
+    });
+    setSaveNoteOpen(true);
+  };
+
+  const handleSaveNote = () => {
+    noteStore.addNote(saveNoteForm);
+    setSaveNoteOpen(false);
+    setSaveNoteForm(emptyForm);
   };
 
   return (
@@ -329,38 +358,50 @@ const Research = observer(function Research() {
                     {msg.role === "assistant" ? <LuBot /> : <LuUser />}
                   </Icon>
                 </Box>
-                <Box
-                  bg={msg.role === "assistant" ? "bg.subtle" : "blue.500"}
-                  color={msg.role === "user" ? "white" : undefined}
-                  px="4"
-                  py="3"
-                  borderRadius="xl"
-                  fontSize="sm"
-                  css={
-                    msg.role === "assistant"
-                      ? {
-                          "& p": { marginBottom: "0.5em" },
-                          "& p:last-child": { marginBottom: 0 },
-                          "& ul, & ol": {
-                            paddingLeft: "1.5em",
-                            marginBottom: "0.5em",
-                          },
-                          "& h1, & h2, & h3": {
-                            fontWeight: "bold",
-                            marginTop: "0.75em",
-                            marginBottom: "0.25em",
-                          },
-                          "& strong": { fontWeight: "bold" },
-                        }
-                      : { whiteSpace: "pre-wrap" }
-                  }
-                >
-                  {msg.role === "assistant" ? (
-                    <Markdown>{msg.text}</Markdown>
-                  ) : (
-                    <Text>{msg.text}</Text>
+                <VStack align="start" gap="1">
+                  <Box
+                    bg={msg.role === "assistant" ? "bg.subtle" : "blue.500"}
+                    color={msg.role === "user" ? "white" : undefined}
+                    px="4"
+                    py="3"
+                    borderRadius="xl"
+                    fontSize="sm"
+                    css={
+                      msg.role === "assistant"
+                        ? {
+                            "& p": { marginBottom: "0.5em" },
+                            "& p:last-child": { marginBottom: 0 },
+                            "& ul, & ol": {
+                              paddingLeft: "1.5em",
+                              marginBottom: "0.5em",
+                            },
+                            "& h1, & h2, & h3": {
+                              fontWeight: "bold",
+                              marginTop: "0.75em",
+                              marginBottom: "0.25em",
+                            },
+                            "& strong": { fontWeight: "bold" },
+                          }
+                        : { whiteSpace: "pre-wrap" }
+                    }
+                  >
+                    {msg.role === "assistant" ? (
+                      <Markdown>{msg.text}</Markdown>
+                    ) : (
+                      <Text>{msg.text}</Text>
+                    )}
+                  </Box>
+                  {msg.role === "assistant" && (
+                    <IconButton
+                      aria-label="Save as note"
+                      variant="ghost"
+                      size="xs"
+                      onClick={() => openSaveNote(msg.text)}
+                    >
+                      <LuStickyNote />
+                    </IconButton>
                   )}
-                </Box>
+                </VStack>
               </HStack>
             ))}
 
@@ -447,6 +488,17 @@ const Research = observer(function Research() {
           )}
         </Box>
       )}
+      <AddEditNoteDialog
+        open={saveNoteOpen}
+        onOpenChange={(o) => {
+          setSaveNoteOpen(o);
+          if (!o) setSaveNoteForm(emptyForm);
+        }}
+        form={saveNoteForm}
+        onFormChange={setSaveNoteForm}
+        onSave={handleSaveNote}
+        cases={caseStore.cases.map((c) => ({ id: c.id, name: c.name }))}
+      />
     </HStack>
   );
 });

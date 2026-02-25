@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "../test-utils";
+import { render, screen, fireEvent, waitFor } from "../test-utils";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import Research from "./Research";
 import { useStore } from "../store/StoreContext";
@@ -6,12 +6,30 @@ import { useStore } from "../store/StoreContext";
 const mockSendMessage = vi.fn();
 const mockClearMessages = vi.fn();
 const mockToggleSidebar = vi.fn();
+const mockAddNote = vi.fn();
 
 vi.mock("../store/StoreContext", () => ({
-  useStore: vi.fn(() => ({
+  useStore: vi.fn(),
+}));
+
+vi.mock("../components/notes/AddEditNoteDialog", () => ({
+  default: ({ open, form, onSave }: { open: boolean; form: { title: string; content: string }; onSave: () => void }) =>
+    open ? (
+      <div data-testid="add-edit-note-dialog">
+        <input data-testid="note-title" value={form.title} readOnly />
+        <button onClick={onSave}>Save</button>
+      </div>
+    ) : null,
+}));
+
+function mockStore(overrides?: {
+  messages?: Array<{ id: string; role: "user" | "assistant"; text: string; createdAt: string; toolResults: unknown[] }>;
+  isTyping?: boolean;
+}) {
+  vi.mocked(useStore).mockReturnValue({
     researchStore: {
-      messages: [],
-      isTyping: false,
+      messages: overrides?.messages ?? [],
+      isTyping: overrides?.isTyping ?? false,
       sidebarResults: [],
       sidebarOpen: true,
       resultsByType: {},
@@ -19,24 +37,19 @@ vi.mock("../store/StoreContext", () => ({
       clearMessages: mockClearMessages,
       toggleSidebar: mockToggleSidebar,
     },
-  })),
-}));
+    noteStore: {
+      addNote: mockAddNote,
+    },
+    caseStore: {
+      cases: [{ id: "case-1", name: "Smith v. Jones" }],
+    },
+  } as unknown as ReturnType<typeof useStore>);
+}
 
 describe("Research", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useStore).mockReturnValue({
-      researchStore: {
-        messages: [],
-        isTyping: false,
-        sidebarResults: [],
-        sidebarOpen: true,
-        resultsByType: {},
-        sendMessage: mockSendMessage,
-        clearMessages: mockClearMessages,
-        toggleSidebar: mockToggleSidebar,
-      },
-    } as unknown as ReturnType<typeof useStore>);
+    mockStore();
   });
 
   it("renders Case Research heading", () => {
@@ -112,33 +125,24 @@ describe("Research", () => {
   });
 
   it("displays chat messages", () => {
-    vi.mocked(useStore).mockReturnValue({
-      researchStore: {
-        messages: [
-          {
-            id: "1",
-            role: "user" as const,
-            text: "Search for patent cases",
-            createdAt: new Date().toISOString(),
-            toolResults: [],
-          },
-          {
-            id: "2",
-            role: "assistant" as const,
-            text: "I found several patent cases...",
-            createdAt: new Date().toISOString(),
-            toolResults: [],
-          },
-        ],
-        isTyping: false,
-        sidebarResults: [],
-        sidebarOpen: true,
-        resultsByType: {},
-        sendMessage: mockSendMessage,
-        clearMessages: mockClearMessages,
-        toggleSidebar: mockToggleSidebar,
-      },
-    } as unknown as ReturnType<typeof useStore>);
+    mockStore({
+      messages: [
+        {
+          id: "1",
+          role: "user" as const,
+          text: "Search for patent cases",
+          createdAt: new Date().toISOString(),
+          toolResults: [],
+        },
+        {
+          id: "2",
+          role: "assistant" as const,
+          text: "I found several patent cases...",
+          createdAt: new Date().toISOString(),
+          toolResults: [],
+        },
+      ],
+    });
     render(<Research />);
     expect(screen.getByText("Search for patent cases")).toBeInTheDocument();
     expect(
@@ -147,18 +151,7 @@ describe("Research", () => {
   });
 
   it("displays typing indicator when isTyping is true", () => {
-    vi.mocked(useStore).mockReturnValue({
-      researchStore: {
-        messages: [],
-        isTyping: true,
-        sidebarResults: [],
-        sidebarOpen: true,
-        resultsByType: {},
-        sendMessage: mockSendMessage,
-        clearMessages: mockClearMessages,
-        toggleSidebar: mockToggleSidebar,
-      },
-    } as unknown as ReturnType<typeof useStore>);
+    mockStore({ isTyping: true });
     render(<Research />);
     expect(screen.getByText("Researching...")).toBeInTheDocument();
   });
@@ -187,5 +180,98 @@ describe("Research", () => {
       /Ask a research question/,
     ) as HTMLInputElement;
     expect(input.value).toBe("Search for court opinions about ");
+  });
+
+  describe("save as note", () => {
+    const messagesWithAssistant = [
+      {
+        id: "1",
+        role: "user" as const,
+        text: "Search for patent cases",
+        createdAt: new Date().toISOString(),
+        toolResults: [],
+      },
+      {
+        id: "2",
+        role: "assistant" as const,
+        text: "I found several patent cases...",
+        createdAt: new Date().toISOString(),
+        toolResults: [],
+      },
+    ];
+
+    it("shows save-as-note button on assistant messages only", () => {
+      mockStore({ messages: messagesWithAssistant });
+      render(<Research />);
+      const saveButtons = screen.getAllByLabelText("Save as note");
+      expect(saveButtons).toHaveLength(1);
+    });
+
+    it("does not show save-as-note button when there are no assistant messages", () => {
+      mockStore({
+        messages: [
+          {
+            id: "1",
+            role: "user" as const,
+            text: "Hello",
+            createdAt: new Date().toISOString(),
+            toolResults: [],
+          },
+        ],
+      });
+      render(<Research />);
+      expect(screen.queryByLabelText("Save as note")).not.toBeInTheDocument();
+    });
+
+    it("opens dialog with pre-filled content when save button is clicked", async () => {
+      mockStore({ messages: messagesWithAssistant });
+      render(<Research />);
+      fireEvent.click(screen.getByLabelText("Save as note"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("add-edit-note-dialog")).toBeInTheDocument();
+      });
+      expect(screen.getByTestId("note-title")).toHaveValue(
+        "Research — I found several patent cases...",
+      );
+    });
+
+    it("pre-fills title with first 50 chars of message text", async () => {
+      const longText = "B".repeat(100);
+      mockStore({
+        messages: [
+          { id: "1", role: "assistant" as const, text: longText, createdAt: new Date().toISOString(), toolResults: [] },
+        ],
+      });
+      render(<Research />);
+      fireEvent.click(screen.getByLabelText("Save as note"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("note-title")).toHaveValue(
+          "Research — " + "B".repeat(50),
+        );
+      });
+    });
+
+    it("calls noteStore.addNote when save is confirmed", async () => {
+      mockStore({ messages: messagesWithAssistant });
+      render(<Research />);
+      fireEvent.click(screen.getByLabelText("Save as note"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("add-edit-note-dialog")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+      expect(mockAddNote).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Research — I found several patent cases...",
+          content: "I found several patent cases...",
+          category: "research",
+          tags: ["research"],
+        }),
+      );
+    });
   });
 });
