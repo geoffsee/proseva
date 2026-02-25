@@ -302,6 +302,11 @@ Bun.serve({
     const nextDocMatch = path.match(/^\/eSCL\/ScanJobs\/(\d+)\/NextDocument$/);
     if (method === "GET" && nextDocMatch) {
       const jobId = nextDocMatch[1];
+      if(!jobId) {
+        log(method, path, 404, "no such job");
+        return new Response("Job not found", { status: 404 });
+      }
+
       const job = jobs.get(jobId);
 
       if (!job) {
@@ -337,6 +342,10 @@ Bun.serve({
     const deleteMatch = path.match(/^\/eSCL\/ScanJobs\/(\d+)$/);
     if (method === "DELETE" && deleteMatch) {
       const jobId = deleteMatch[1];
+      if(!jobId) {
+        log(method, path, 404, "no such job");
+        return new Response("Job not found", { status: 404 });
+      }
       jobs.delete(jobId);
       scannerState = "Idle";
       log(method, path, 204, `job=${jobId}`);
