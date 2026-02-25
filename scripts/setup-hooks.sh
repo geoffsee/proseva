@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Skip hook setup in CI environments
+[ "$CI" = "true" ] && exit 0
+
 HOOK_DIR="$(git rev-parse --show-toplevel)/.git/hooks"
 
 cat > "$HOOK_DIR/pre-commit" << 'EOF'
