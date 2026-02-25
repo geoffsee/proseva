@@ -229,7 +229,7 @@ Bun.serve({
 
     // GET /eSCL/ScannerStatus
     if (method === "GET" && path === "/eSCL/ScannerStatus") {
-      log(method, path, 200, `adf=${adfState}`);
+      // log(method, path, 200, `adf=${adfState}`);
       return new Response(statusXml(), {
         headers: { "content-type": "application/xml" },
       });

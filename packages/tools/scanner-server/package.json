@@ -2,7 +2,7 @@
   "name": "@proseva/scanner-server",
   "version": "0.0.0",
   "scripts": {
-    "dev": "WATCH_DIR=inbox bun run server.ts"
+    "dev": "WATCH_DIR=inbox bun run server.ts --watch"
   },
   "dependencies": {
     "marked": "^17.0.3"
