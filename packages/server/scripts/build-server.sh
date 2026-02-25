@@ -64,7 +64,7 @@ run_bundler() {
 
   # Bundle the in-process server module (for ELECTRON_INPROC_SERVER mode)
   bun build \
-    --target node \
+    --target bun \
     src/index.server.ts \
     --outdir="$DIST_SERVER_DIR"
 }

@@ -1,8 +1,8 @@
 import { createSchema, createYoga } from "graphql-yoga";
 // @ts-expect-error — Bun embeds the .sqlite file at compile time
-import datasetsDb from "../../datasets/data/virginia.db" with { type: "sqlite" };
+import datasetsDb from "../../datasets/data/virginia.db" with { type: "sqlite", embed: "true" };
 // @ts-expect-error — Bun embeds the .sqlite file at compile time
-import embeddingsDb from "../../datasets/data/embeddings.sqlite.db" with { type: "sqlite" };
+import embeddingsDb from "../../datasets/data/embeddings.sqlite.db" with { type: "sqlite", embed: "true" };
 
 export { embeddingsDb };
 

@@ -8,7 +8,7 @@
     "dev": "bun run --watch src/index.ts",
     "start": "bun run src/index.ts",
     "test": "vitest run",
-    "build": "tsc -p tsconfig.json",
+    "build": "./scripts/build-server.sh",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
