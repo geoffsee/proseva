@@ -28,7 +28,7 @@ struct Args {
     skip_embeddings: bool,
 
     /// Batch size for embedding computation
-    #[arg(long, default_value_t = 4)]
+    #[arg(long, default_value_t = 64)]
     batch_size: usize,
 }
 
@@ -193,9 +193,63 @@ fn main() -> Result<()> {
         }
 
         println!("  Embedding {} texts...", embed_texts.len());
-        let embeddings = embedder.embed_all(&embed_texts)?;
 
-        let embeds_written = db::writer::write_embeddings(&out_conn, &embed_node_ids, &embeddings)?;
+        // Sort texts by length (proxy for token count) so similar-length texts
+        // are grouped together — gives more predictable batch timing and better
+        // progress estimates. Since the ONNX model pads every input to 512 tokens,
+        // this doesn't change compute per-text, but it improves batch-level reporting.
+        let mut order: Vec<usize> = (0..embed_texts.len()).collect();
+        order.sort_by_key(|&i| embed_texts[i].len());
+
+        let sorted_ids: Vec<i64> = order.iter().map(|&i| embed_node_ids[i]).collect();
+        let sorted_texts: Vec<String> = order.iter().map(|&i| embed_texts[i].clone()).collect();
+
+        // Report text-length distribution
+        {
+            let lengths: Vec<usize> = sorted_texts.iter().map(|t| t.len()).collect();
+            let total_chars: usize = lengths.iter().sum();
+            let min_len = lengths.first().copied().unwrap_or(0);
+            let max_len = lengths.last().copied().unwrap_or(0);
+            let median_len = lengths[lengths.len() / 2];
+            let avg_len = total_chars as f64 / lengths.len() as f64;
+
+            // Bucket distribution: <100, 100-500, 500-1000, 1000-2000, 2000+ chars
+            let buckets = [
+                (0, 100, "< 100"),
+                (100, 500, "100-500"),
+                (500, 1000, "500-1k"),
+                (1000, 2000, "1k-2k"),
+                (2000, usize::MAX, "2k+"),
+            ];
+            let mut counts = vec![0usize; buckets.len()];
+            for &l in &lengths {
+                for (i, &(lo, hi, _)) in buckets.iter().enumerate() {
+                    if l >= lo && l < hi {
+                        counts[i] += 1;
+                        break;
+                    }
+                }
+            }
+
+            println!("  Text length distribution (chars):");
+            println!(
+                "    min={}, median={}, mean={:.0}, max={}",
+                min_len, median_len, avg_len, max_len,
+            );
+            let bucket_str: Vec<String> = buckets
+                .iter()
+                .zip(counts.iter())
+                .filter(|(_, &c)| c > 0)
+                .map(|(&(_, _, label), &c)| format!("{}={}", label, c))
+                .collect();
+            println!("    buckets: {}", bucket_str.join(", "));
+        }
+
+        let embeds_written = embedder.embed_batched(
+            &sorted_ids,
+            &sorted_texts,
+            |ids, vecs| db::writer::write_embeddings_batch(&out_conn, ids, vecs),
+        )?;
         println!("  Wrote {} embeddings", embeds_written);
         println!(
             "  Pass 3 took:    {:.2}s",

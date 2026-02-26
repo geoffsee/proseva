@@ -128,11 +128,11 @@ pub fn write_chunk_meta(conn: &Connection, meta: &[ChunkMeta]) -> Result<usize> 
     Ok(meta.len())
 }
 
-pub fn write_embeddings(
+pub fn write_embeddings_batch(
     conn: &Connection,
     node_ids: &[i64],
     embeddings: &[Vec<f32>],
-) -> Result<usize> {
+) -> Result<()> {
     assert_eq!(node_ids.len(), embeddings.len());
 
     let tx = conn.unchecked_transaction()?;
@@ -147,5 +147,5 @@ pub fn write_embeddings(
         }
     }
     tx.commit()?;
-    Ok(node_ids.len())
+    Ok(())
 }

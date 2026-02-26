@@ -13,7 +13,7 @@ polars = { version = "0.46", features = ["lazy", "strings", "regex"] }
 scraper = "0.20"
 indicatif = "0.17"
 anyhow = "1"
-int4_runner = "0.1.0"
+int4_runner = "0.1.1"
 tokio = { version = "1", features = ["full"] }
 
 [[bin]]
@@ -23,6 +23,10 @@ path = "fixtures/generate.rs"
 [[bin]]
 name = "embedding-server"
 path = "src/bin/embedding_server.rs"
+
+[[bin]]
+name = "bench-embed"
+path = "src/bin/bench_embed.rs"
 
 [profile.release]
 opt-level = 3

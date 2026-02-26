@@ -1191,9 +1191,9 @@ dependencies = [
 
 [[package]]
 name = "int4_runner"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9302db705d2e89ba3156783763d86c3b37874340a90b085b42a6396a4858543"
+checksum = "11e11de30c538b8400d1598e5936502cb9cb843924a99bc56ba4aeb036181b55"
 dependencies = [
  "axum",
  "ndarray",
@@ -1257,6 +1257,16 @@ name = "libc"
 version = "0.2.182"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6800badb6cb2082ffd7b6a67e6125bb39f18782f793520caee8cb8846be06112"
+
+[[package]]
+name = "libloading"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "754ca22de805bb5744484a5b151a9e1a8e837d5dc232c2d7d8c2e3492edc8b60"
+dependencies = [
+ "cfg-if",
+ "windows-link",
+]
 
 [[package]]
 name = "libm"
@@ -1632,6 +1642,7 @@ version = "2.0.0-rc.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4a5df903c0d2c07b56950f1058104ab0c8557159f2741782223704de9be73c3c"
 dependencies = [
+ "libloading",
  "ndarray",
  "ort-sys",
  "smallvec",

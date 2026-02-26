@@ -58,10 +58,20 @@ impl Embedder {
         self.dims
     }
 
-    /// Embed a list of texts, returning one Vec<f32> per text.
-    pub fn embed_all(&self, texts: &[String]) -> Result<Vec<Vec<f32>>> {
+    /// Embed texts in batches, calling the callback with (node_ids, embeddings)
+    /// after each batch so results can be written incrementally.
+    pub fn embed_batched<F>(
+        &self,
+        node_ids: &[i64],
+        texts: &[String],
+        mut on_batch: F,
+    ) -> Result<usize>
+    where
+        F: FnMut(&[i64], &[Vec<f32>]) -> Result<()>,
+    {
+        assert_eq!(node_ids.len(), texts.len());
         if texts.is_empty() {
-            return Ok(vec![]);
+            return Ok(0);
         }
 
         let pb = ProgressBar::new(texts.len() as u64);
@@ -71,39 +81,42 @@ impl Embedder {
                 .unwrap(),
         );
 
-        let mut all_embeddings = Vec::with_capacity(texts.len());
         let total_batches = (texts.len() + self.batch_size - 1) / self.batch_size;
+        let mut total_written = 0;
 
         let mut offset = 0;
         let mut batch_num = 0;
         while offset < texts.len() {
             let end = (offset + self.batch_size).min(texts.len());
-            let chunk = &texts[offset..end];
+            let text_chunk = &texts[offset..end];
+            let id_chunk = &node_ids[offset..end];
             batch_num += 1;
 
             let batch_start = std::time::Instant::now();
             let embeddings = self
                 .model
-                .embed_batch(chunk)
+                .embed_batch(text_chunk)
                 .map_err(|e| anyhow::anyhow!("Embedding batch failed: {e}"))?;
+
+            let vecs: Vec<Vec<f32>> = embeddings.into_iter().map(|e| e.values).collect();
+
+            on_batch(id_chunk, &vecs)?;
+            total_written += vecs.len();
 
             pb.println(format!(
                 "  Batch {}/{} ({} texts) in {:.2}s",
                 batch_num,
                 total_batches,
-                chunk.len(),
+                text_chunk.len(),
                 batch_start.elapsed().as_secs_f64()
             ));
 
-            for emb in embeddings {
-                all_embeddings.push(emb.values);
-            }
-            pb.inc(chunk.len() as u64);
+            pb.inc(text_chunk.len() as u64);
             offset = end;
         }
 
         pb.finish_with_message("Embedding complete");
-        Ok(all_embeddings)
+        Ok(total_written)
     }
 }
 

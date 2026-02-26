@@ -48,6 +48,10 @@ graph TD
             writer[writer.rs<br/>Write embeddings.sqlite.db]
         end
 
+        subgraph "etl/"
+            etl[mod.rs<br/>Clean, filter, dedup]
+        end
+
         subgraph "graph/"
             nodes[nodes.rs<br/>Node creation + chunking]
             edges[edges.rs<br/>Edge extraction]
@@ -59,16 +63,17 @@ graph TD
         end
 
         subgraph "embed/"
-            embedder[mod.rs<br/>fastembed wrapper]
+            embedder[mod.rs<br/>int4_runner wrapper]
         end
     end
 
     main --> reader
+    main --> etl
     main --> writer
     main --> nodes
     main --> edges
     main --> embedder
-    nodes --> html
+    etl --> html
     nodes --> chunker
     edges --> nodes
 ```
@@ -89,8 +94,7 @@ cargo run --release -- \
 | ------------------- | ------------------------ | ------------------------------------ |
 | `--input`           | (required)               | Path to `virginia.db`                |
 | `--output`          | sibling of input         | Path to write `embeddings.sqlite.db` |
-| `--model`           | `BAAI/bge-small-en-v1.5` | fastembed model name                 |
-| `--batch-size`      | `256`                    | Texts per embedding batch            |
+| `--batch-size`      | `64`                     | Texts per embedding batch            |
 | `--skip-embeddings` | `false`                  | Only build graph, skip Pass 3        |
 
 ---
@@ -102,8 +106,8 @@ flowchart TD
     START([Start]) --> READ[Read 6 tables from virginia.db]
 
     READ --> PASS1["<b>Pass 1: Parse</b><br/>Build nodes from all tables"]
-    PASS1 --> STRIP[Strip HTML from text]
-    STRIP --> CHUNK{Text > threshold?}
+    PASS1 --> ETL["<b>ETL</b><br/>Strip HTML, normalize whitespace,<br/>concat fields, filter, dedup"]
+    ETL --> CHUNK{Text > threshold?}
     CHUNK -->|Yes| SPLIT[Chunk into ~500-token<br/>overlapping segments]
     CHUNK -->|No| SINGLE[Keep as single node]
     SPLIT --> NODES[(In-memory:<br/>nodes + cleaned text)]
@@ -122,7 +126,8 @@ flowchart TD
     WRITE --> SKIP{--skip-embeddings?}
     SKIP -->|Yes| DONE([Done])
     SKIP -->|No| PASS3["<b>Pass 3: Embed</b><br/>Compute vectors"]
-    PASS3 --> BATCH[Batch embed 256 texts at a time<br/>via BAAI/bge-small-en-v1.5]
+    PASS3 --> SORT[Sort texts by length]
+    SORT --> BATCH[Batch embed 64 texts at a time<br/>via Octen-Embedding-0.6B INT4 ONNX]
     BATCH --> BLOB[Serialize as f32 BLOBs]
     BLOB --> WEMBED[Write embeddings to DB]
     WEMBED --> DONE
@@ -132,7 +137,9 @@ flowchart TD
 
 ### Pass 1: Parse — Build Nodes
 
-Reads every table in `virginia.db` and creates a **node** for each embeddable unit of content.
+> `src/main.rs:59-116` · `src/etl/mod.rs` · `src/graph/nodes.rs`
+
+Reads every table in `virginia.db`, runs the ETL pipeline (HTML strip, field concat, filter, dedup), then creates a **node** for each embeddable unit of content.
 
 ```mermaid
 graph TD
@@ -170,26 +177,62 @@ graph TD
 
 **Synthetic nodes** (title, chapter, article) represent structural groupings. They participate in hierarchy edges but do not get embeddings — they have no standalone text content worth embedding.
 
-#### Text Preparation
+#### Text Preparation Pipeline
 
-Each node type prepares its embeddable text differently:
+Texts go through three transformation stages before embedding. Each stage is documented below with source file references.
 
-| Node type              | Text formula                                                                                  |
-| ---------------------- | --------------------------------------------------------------------------------------------- |
-| `section`              | `strip_html(title) + " " + strip_html(body)`                                                  |
-| `constitution_section` | `strip_html(section_name) + " " + strip_html(section_title) + " " + strip_html(section_text)` |
-| `authority`            | `strip_html(title) + " " + strip_html(body)`                                                  |
-| `court`                | `name + locality + court_type + district + city`                                              |
-| `popular_name`         | `strip_html(name) + " " + strip_html(body)`                                                   |
-| `manual_chunk`         | `strip_html(title) + " " + strip_html(content)`                                               |
+##### Stage 1: ETL — HTML strip + field concatenation
 
-#### HTML Stripping
+> `src/etl/mod.rs` · `src/text/html.rs`
 
-Uses the `scraper` crate to parse HTML fragments, extract text content, and normalize whitespace. If the input contains no `<` characters, it skips parsing and just normalizes whitespace (fast path).
+Raw database fields are cleaned and concatenated into a single `clean_text` per row using [Polars](https://pola.rs/) DataFrames.
 
-#### Chunking
+**HTML stripping** (`src/text/html.rs:4-17`): If the input contains `<`, the `scraper` crate parses it as an HTML fragment, extracts all text nodes, and joins them with `" "`. Otherwise, only whitespace normalization is applied (fast path).
 
-Large texts are split into overlapping segments to keep each embedding focused:
+**Whitespace normalization** (`src/text/html.rs:19-21`): `split_whitespace().join(" ")` — collapses tabs, newlines, and runs of spaces into single spaces.
+
+**Field concatenation** (`src/etl/mod.rs`): Each source type builds `clean_text` differently:
+
+| Node type              | `clean_text` formula                                                          | ETL function (line)       |
+| ---------------------- | ----------------------------------------------------------------------------- | ------------------------- |
+| `section`              | `title_name \| chapter_name \| strip(title) strip(body)`                     | `clean_virginia_code` (58)  |
+| `constitution_section` | `article_name \| strip(section_name) strip(section_title) strip(section_text)` | `clean_constitution` (118) |
+| `authority`            | `strip(title) strip(body)`                                                   | `clean_authorities` (175)  |
+| `court`                | `name locality court_type district city` (no HTML strip)                      | `clean_courts` (211)       |
+| `popular_name`         | `name strip(body)`                                                           | `clean_popular_names` (250) |
+| `manual_chunk`         | `strip(title) strip(content)`                                                | `clean_documents` (281)    |
+
+**Filtering and dedup** (applied per source during ETL):
+
+| Filter                           | Applies to      | Line  |
+| -------------------------------- | --------------- | ----- |
+| Drop rows where `section` empty  | virginia_code   | `etl/mod.rs:99`  |
+| Drop rows where `clean_text` ≤ 20 chars | virginia_code | `etl/mod.rs:100` |
+| Dedup on exact `clean_text` match | virginia_code  | `etl/mod.rs:101` |
+| Drop rows where `section_text` empty | constitution | `etl/mod.rs:160` |
+| Drop rows where `short_name` empty | authorities   | `etl/mod.rs:201` |
+| Drop rows where `clean_text` ≤ 10 chars | authorities, popular_names | `etl/mod.rs:202,272` |
+| Drop rows where `name` empty    | popular_names   | `etl/mod.rs:271` |
+| Drop rows where `filename` empty | documents      | `etl/mod.rs:307` |
+
+##### Stage 2: Chunking
+
+> `src/graph/nodes.rs` · `src/text/chunker.rs`
+
+During node building (`src/graph/nodes.rs:46`), the `clean_text` from ETL is either used as-is or split into overlapping chunks:
+
+- **Documents** (`nodes.rs:340`): always chunked via `chunk_text(text, 500, 50)`
+- **Authorities** (`nodes.rs:220-223`): chunked only if `split_whitespace().count() > 512`
+- **All others** (sections, constitution, courts, popular names): no chunking
+
+The chunker (`src/text/chunker.rs:27`) works as follows:
+
+1. **Short-circuit** (line 29): if total word count ≤ `max_tokens`, return the text unchanged
+2. **Sentence split** (line 37, `split_sentences` at line 108): split on `.`, `?`, `!` boundaries, tracking byte offsets
+3. **Greedy accumulation** (lines 42-82): sentences are added until `max_tokens` (500) would be exceeded, then a chunk is emitted
+4. **Overlap** (lines 64-77): the last ~50 tokens of sentences from the previous chunk carry into the next
+5. **Join** (line 93-96): chunk sentences are joined with `" "`
+6. **Oversized sentences** (lines 46-58): a single sentence exceeding `max_tokens` becomes its own chunk
 
 ```mermaid
 graph LR
@@ -203,16 +246,23 @@ graph LR
     B -.->|50-token overlap| C
 ```
 
-- **Max chunk size**: ~500 tokens (word-approximated)
-- **Overlap**: ~50 tokens between consecutive chunks
-- Splits on **sentence boundaries** (`.`, `?`, `!`) to maintain coherence
-- If a single sentence exceeds 500 tokens, it becomes its own chunk
-- Authorities: only chunked if total text > 512 tokens
-- Documents: always chunked
+##### Stage 3: Length sorting (pre-embed)
+
+> `src/main.rs:201-205`
+
+Before embedding, texts are sorted by character length. This groups similar-length texts into the same batches, minimizing wasted padding in the ONNX model (which pads all texts in a batch to the length of the longest). No text content is modified.
+
+##### Stage 4: Embedding
+
+> `src/embed/mod.rs`
+
+**No text transformation** — texts are passed verbatim to `int4_runner::EmbeddingModel::embed_batch()` (line 98). The model handles tokenization internally.
 
 ---
 
 ### Pass 2: Extract — Build Edges
+
+> `src/main.rs:118-149` · `src/graph/edges.rs`
 
 Builds three types of relationships between nodes.
 
@@ -270,26 +320,24 @@ All edges are sorted by `(from_id, to_id, rel_type)` and deduplicated. The outpu
 
 ### Pass 3: Embed — Compute Vectors
 
+> `src/embed/mod.rs` · `src/main.rs:167-258`
+
 ```mermaid
 flowchart LR
-    TEXTS["42k+ texts"] --> BATCH["Batch (256 texts)"]
-    BATCH --> MODEL["BAAI/bge-small-en-v1.5<br/>(ONNX via fastembed)"]
-    MODEL --> VEC["Vec&lt;f32&gt; × 384"]
+    TEXTS["42k+ texts"] --> SORT["Sort by length"]
+    SORT --> BATCH["Batch (64 texts)"]
+    BATCH --> MODEL["Octen-Embedding-0.6B<br/>(INT4 ONNX via int4_runner)"]
+    MODEL --> VEC["Vec&lt;f32&gt; × 1024"]
     VEC --> BLOB["to_le_bytes()"]
-    BLOB --> DB["embeddings table<br/>1,536 bytes/vector"]
+    BLOB --> DB["embeddings table<br/>4,096 bytes/vector"]
 ```
 
-- **Model**: `BAAI/bge-small-en-v1.5` — 384 dimensions, ~130MB ONNX model downloaded on first run
-- **Batch size**: 256 texts per batch (configurable via `--batch-size`)
+- **Model**: `Octen-Embedding-0.6B-INT4-ONNX` — 1024 dimensions, local INT4-quantized ONNX model in `onnx/`
+- **Batch size**: 64 texts per batch (configurable via `--batch-size`)
+- **Dynamic padding**: `int4_runner` v0.1.1 pads each batch to `[N, max_len_in_batch]` instead of fixed `[1, 512]` — length sorting (stage 3 above) keeps `max_len` per batch small
 - **Skips**: synthetic hierarchy nodes (no text to embed) and nodes with empty text
-- **Storage**: raw little-endian `f32` bytes — 384 floats \* 4 bytes = **1,536 bytes** per vector
+- **Storage**: raw little-endian `f32` bytes — 1024 floats \* 4 bytes = **4,096 bytes** per vector
 - **Progress**: `indicatif` progress bar with ETA
-
-Supported models (via `--model`):
-
-- `BAAI/bge-small-en-v1.5` (default, 384 dims)
-- `BAAI/bge-base-en-v1.5`
-- `BAAI/bge-large-en-v1.5`
 
 ---
 
@@ -331,10 +379,10 @@ erDiagram
 
 **`model_info`** — metadata about the embedding model used.
 
-| key          | value (example)          |
-| ------------ | ------------------------ |
-| `model_name` | `BAAI/bge-small-en-v1.5` |
-| `dimensions` | `384`                    |
+| key          | value (example)                       |
+| ------------ | ------------------------------------- |
+| `model_name` | `Octen-Embedding-0.6B-INT4-ONNX`     |
+| `dimensions` | `1024`                                |
 
 **`nodes`** — one row per embeddable or structural unit.
 
@@ -357,10 +405,10 @@ erDiagram
 
 **`embeddings`** — one row per non-synthetic node.
 
-| Column      | Description                                    |
-| ----------- | ---------------------------------------------- |
-| `node_id`   | FK to nodes.id                                 |
-| `embedding` | 1,536-byte BLOB (384 little-endian f32 values) |
+| Column      | Description                                      |
+| ----------- | ------------------------------------------------ |
+| `node_id`   | FK to nodes.id                                   |
+| `embedding` | 4,096-byte BLOB (1024 little-endian f32 values)  |
 
 ### Indexes
 
@@ -418,20 +466,22 @@ cargo run --release -- \
 # Verify embeddings
 sqlite3 ../datasets/data/embeddings.sqlite.db "SELECT count(*) FROM embeddings"
 sqlite3 ../datasets/data/embeddings.sqlite.db "SELECT length(embedding) FROM embeddings LIMIT 1"
-# → should return 1536 (384 * 4)
+# → should return 4096 (1024 * 4)
 ```
 
 ---
 
 ## Dependencies
 
-| Crate       | Version        | Purpose                                       |
-| ----------- | -------------- | --------------------------------------------- |
-| `rusqlite`  | 0.31 (bundled) | SQLite read/write                             |
-| `fastembed` | 4              | ONNX-based text embeddings                    |
-| `clap`      | 4 (derive)     | CLI argument parsing                          |
-| `scraper`   | 0.20           | HTML parsing and text extraction              |
-| `regex`     | 1              | Citation pattern matching                     |
-| `indicatif` | 0.17           | Progress bars                                 |
-| `anyhow`    | 1              | Error handling                                |
-| `rayon`     | 1              | Parallel iteration (available for future use) |
+| Crate         | Version        | Purpose                                      |
+| ------------- | -------------- | -------------------------------------------- |
+| `rusqlite`    | 0.31 (bundled) | SQLite read/write                            |
+| `int4_runner` | 0.1.1          | INT4-quantized ONNX embedding inference      |
+| `polars`      | 0.46           | DataFrame-based ETL pipeline                 |
+| `clap`        | 4 (derive)     | CLI argument parsing                         |
+| `scraper`     | 0.20           | HTML parsing and text extraction             |
+| `regex`       | 1              | Citation pattern matching                    |
+| `indicatif`   | 0.17           | Progress bars                                |
+| `anyhow`      | 1              | Error handling                               |
+| `tokio`       | 1              | Async runtime (embedding server)             |
+| `serde`/`serde_json` | 1       | JSON serialization                           |
