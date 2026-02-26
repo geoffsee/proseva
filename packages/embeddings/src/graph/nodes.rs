@@ -117,7 +117,7 @@ pub fn build_nodes(cleaned: &CleanedData) -> Result<NodeBuildResult> {
             next_id += 1;
         }
 
-        // Create section nodes (from cleaned/enriched text)
+        // Create section nodes (from cleaned/enriched text, chunked if long)
         for i in 0..df.height() {
             let section = sections.get(i).unwrap_or("");
             let clean_text = clean_texts.get(i).unwrap_or("");
@@ -126,21 +126,31 @@ pub fn build_nodes(cleaned: &CleanedData) -> Result<NodeBuildResult> {
                 continue;
             }
 
-            let node = Node {
-                id: next_id,
-                source: "virginia_code".into(),
-                source_id: section.to_string(),
-                chunk_idx: 0,
-                node_type: "section".into(),
-                synthetic: false,
-            };
-            lookup
-                .entry(("virginia_code".into(), section.to_string()))
-                .or_default()
-                .push(next_id);
-            texts.insert(next_id, clean_text.to_string());
-            nodes.push(node);
-            next_id += 1;
+            let chunks = chunk_text(clean_text, 500, 50);
+            for (idx, chunk) in chunks.iter().enumerate() {
+                let node = Node {
+                    id: next_id,
+                    source: "virginia_code".into(),
+                    source_id: section.to_string(),
+                    chunk_idx: idx as i64,
+                    node_type: "section".into(),
+                    synthetic: false,
+                };
+                lookup
+                    .entry(("virginia_code".into(), section.to_string()))
+                    .or_default()
+                    .push(next_id);
+                texts.insert(next_id, chunk.text.clone());
+                if chunks.len() > 1 {
+                    chunk_meta.push(ChunkMeta {
+                        node_id: next_id,
+                        char_start: chunk.char_start,
+                        char_end: chunk.char_end,
+                    });
+                }
+                nodes.push(node);
+                next_id += 1;
+            }
         }
     }
 
@@ -178,28 +188,38 @@ pub fn build_nodes(cleaned: &CleanedData) -> Result<NodeBuildResult> {
             next_id += 1;
         }
 
-        // Constitution sections
+        // Constitution sections (chunked if long)
         for i in 0..df.height() {
             let article_id = article_ids.get(i).unwrap_or(0);
             let section_count = section_counts.get(i).unwrap_or(0);
             let clean_text = clean_texts.get(i).unwrap_or("");
 
             let source_id = format!("{article_id}:{section_count}");
-            let node = Node {
-                id: next_id,
-                source: "constitution".into(),
-                source_id: source_id.clone(),
-                chunk_idx: 0,
-                node_type: "constitution_section".into(),
-                synthetic: false,
-            };
-            lookup
-                .entry(("constitution".into(), source_id))
-                .or_default()
-                .push(next_id);
-            texts.insert(next_id, clean_text.to_string());
-            nodes.push(node);
-            next_id += 1;
+            let chunks = chunk_text(clean_text, 500, 50);
+            for (idx, chunk) in chunks.iter().enumerate() {
+                let node = Node {
+                    id: next_id,
+                    source: "constitution".into(),
+                    source_id: source_id.clone(),
+                    chunk_idx: idx as i64,
+                    node_type: "constitution_section".into(),
+                    synthetic: false,
+                };
+                lookup
+                    .entry(("constitution".into(), source_id.clone()))
+                    .or_default()
+                    .push(next_id);
+                texts.insert(next_id, chunk.text.clone());
+                if chunks.len() > 1 {
+                    chunk_meta.push(ChunkMeta {
+                        node_id: next_id,
+                        char_start: chunk.char_start,
+                        char_end: chunk.char_end,
+                    });
+                }
+                nodes.push(node);
+                next_id += 1;
+            }
         }
     }
 
@@ -217,38 +237,13 @@ pub fn build_nodes(cleaned: &CleanedData) -> Result<NodeBuildResult> {
                 continue;
             }
 
-            let token_count = clean_text.split_whitespace().count();
-
-            if token_count > 512 {
-                let chunks = chunk_text(clean_text, 500, 50);
-                for (idx, chunk) in chunks.iter().enumerate() {
-                    let node = Node {
-                        id: next_id,
-                        source: "authorities".into(),
-                        source_id: short_name.to_string(),
-                        chunk_idx: idx as i64,
-                        node_type: "authority".into(),
-                        synthetic: false,
-                    };
-                    lookup
-                        .entry(("authorities".into(), short_name.to_string()))
-                        .or_default()
-                        .push(next_id);
-                    texts.insert(next_id, chunk.text.clone());
-                    chunk_meta.push(ChunkMeta {
-                        node_id: next_id,
-                        char_start: chunk.char_start,
-                        char_end: chunk.char_end,
-                    });
-                    nodes.push(node);
-                    next_id += 1;
-                }
-            } else {
+            let chunks = chunk_text(clean_text, 500, 50);
+            for (idx, chunk) in chunks.iter().enumerate() {
                 let node = Node {
                     id: next_id,
                     source: "authorities".into(),
                     source_id: short_name.to_string(),
-                    chunk_idx: 0,
+                    chunk_idx: idx as i64,
                     node_type: "authority".into(),
                     synthetic: false,
                 };
@@ -256,7 +251,14 @@ pub fn build_nodes(cleaned: &CleanedData) -> Result<NodeBuildResult> {
                     .entry(("authorities".into(), short_name.to_string()))
                     .or_default()
                     .push(next_id);
-                texts.insert(next_id, clean_text.to_string());
+                texts.insert(next_id, chunk.text.clone());
+                if chunks.len() > 1 {
+                    chunk_meta.push(ChunkMeta {
+                        node_id: next_id,
+                        char_start: chunk.char_start,
+                        char_end: chunk.char_end,
+                    });
+                }
                 nodes.push(node);
                 next_id += 1;
             }
@@ -305,21 +307,31 @@ pub fn build_nodes(cleaned: &CleanedData) -> Result<NodeBuildResult> {
                 continue;
             }
 
-            let node = Node {
-                id: next_id,
-                source: "popular_names".into(),
-                source_id: name.to_string(),
-                chunk_idx: 0,
-                node_type: "popular_name".into(),
-                synthetic: false,
-            };
-            lookup
-                .entry(("popular_names".into(), name.to_string()))
-                .or_default()
-                .push(next_id);
-            texts.insert(next_id, clean_text.to_string());
-            nodes.push(node);
-            next_id += 1;
+            let chunks = chunk_text(clean_text, 500, 50);
+            for (idx, chunk) in chunks.iter().enumerate() {
+                let node = Node {
+                    id: next_id,
+                    source: "popular_names".into(),
+                    source_id: name.to_string(),
+                    chunk_idx: idx as i64,
+                    node_type: "popular_name".into(),
+                    synthetic: false,
+                };
+                lookup
+                    .entry(("popular_names".into(), name.to_string()))
+                    .or_default()
+                    .push(next_id);
+                texts.insert(next_id, chunk.text.clone());
+                if chunks.len() > 1 {
+                    chunk_meta.push(ChunkMeta {
+                        node_id: next_id,
+                        char_start: chunk.char_start,
+                        char_end: chunk.char_end,
+                    });
+                }
+                nodes.push(node);
+                next_id += 1;
+            }
         }
     }
 
