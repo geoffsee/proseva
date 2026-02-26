@@ -42,18 +42,19 @@ pub fn chunk_text(text: &str, max_tokens: usize, overlap_tokens: usize) -> Vec<C
     for sentence in &sentences {
         let sent_len = approx_token_count(&sentence.text);
 
-        // If a single sentence exceeds max_tokens, add it as its own chunk
+        // If a single sentence exceeds max_tokens, force-split at word boundaries
         if sent_len > max_tokens {
             if !current_chunk.is_empty() {
                 chunks.push(spans_to_chunk(&current_chunk));
                 current_chunk.clear();
                 current_len = 0;
             }
-            chunks.push(ChunkSpan {
-                text: sentence.text.clone(),
-                char_start: sentence.byte_start,
-                char_end: sentence.byte_end,
-            });
+            chunks.extend(split_by_words(
+                &sentence.text,
+                sentence.byte_start,
+                max_tokens,
+                overlap_tokens,
+            ));
             continue;
         }
 
@@ -101,6 +102,52 @@ fn spans_to_chunk(spans: &[&SentenceSpan]) -> ChunkSpan {
         char_start,
         char_end,
     }
+}
+
+/// Force-split a long sentence into chunks of `max_tokens` words with overlap.
+/// Used when a sentence has no internal punctuation boundaries.
+fn split_by_words(
+    text: &str,
+    base_offset: usize,
+    max_tokens: usize,
+    overlap_tokens: usize,
+) -> Vec<ChunkSpan> {
+    let words: Vec<(usize, &str)> = text
+        .split_whitespace()
+        .map(|w| {
+            let offset = w.as_ptr() as usize - text.as_ptr() as usize;
+            (offset, w)
+        })
+        .collect();
+
+    if words.is_empty() {
+        return vec![];
+    }
+
+    let mut chunks = Vec::new();
+    let mut start = 0;
+
+    while start < words.len() {
+        let end = (start + max_tokens).min(words.len());
+        let chunk_start = words[start].0;
+        let last_word = words[end - 1];
+        let chunk_end = last_word.0 + last_word.1.len();
+
+        chunks.push(ChunkSpan {
+            text: text[chunk_start..chunk_end].to_string(),
+            char_start: base_offset + chunk_start,
+            char_end: base_offset + chunk_end,
+        });
+
+        if end >= words.len() {
+            break;
+        }
+
+        // Advance with overlap
+        start = end.saturating_sub(overlap_tokens);
+    }
+
+    chunks
 }
 
 /// Simple sentence splitter: split on period/question mark/exclamation followed by space or end.

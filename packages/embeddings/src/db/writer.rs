@@ -128,6 +128,27 @@ pub fn write_chunk_meta(conn: &Connection, meta: &[ChunkMeta]) -> Result<usize> 
     Ok(meta.len())
 }
 
+pub fn open_output_db(path: &str) -> Result<Connection> {
+    if !std::path::Path::new(path).exists() {
+        anyhow::bail!("Output database not found: {path}");
+    }
+
+    let conn = Connection::open(path)?;
+    conn.execute_batch(
+        "
+        PRAGMA journal_mode = WAL;
+        PRAGMA synchronous = NORMAL;
+        ",
+    )?;
+    Ok(conn)
+}
+
+pub fn clear_embeddings(conn: &Connection) -> Result<()> {
+    conn.execute("DELETE FROM embeddings", [])?;
+    conn.execute("DELETE FROM model_info", [])?;
+    Ok(())
+}
+
 pub fn write_embeddings_batch(
     conn: &Connection,
     node_ids: &[i64],

@@ -9,6 +9,7 @@ use std::time::Instant;
 
 use anyhow::Result;
 use clap::Parser;
+use polars::prelude::*;
 use rusqlite::Connection;
 
 #[derive(Parser, Debug)]
@@ -17,7 +18,7 @@ use rusqlite::Connection;
 struct Args {
     /// Path to virginia.db (input)
     #[arg(long)]
-    input: PathBuf,
+    input: Option<PathBuf>,
 
     /// Path to write embeddings.sqlite.db (output)
     #[arg(long)]
@@ -30,13 +31,88 @@ struct Args {
     /// Batch size for embedding computation
     #[arg(long, default_value_t = 64)]
     batch_size: usize,
+
+    /// Run ETL + graph only, write embeddable texts to Parquet, skip embedding
+    #[arg(long)]
+    prepare: Option<PathBuf>,
+
+    /// Skip ETL + graph, read texts from Parquet, run embedding only
+    #[arg(long)]
+    embed_from: Option<PathBuf>,
 }
 
 fn main() -> Result<()> {
     let args = Args::parse();
     let total_start = Instant::now();
 
-    let input_path = &args.input;
+    // Validate mutually exclusive flags
+    if args.prepare.is_some() && args.embed_from.is_some() {
+        anyhow::bail!("--prepare and --embed-from are mutually exclusive");
+    }
+
+    // --embed-from mode: skip ETL, read from Parquet, embed into existing DB
+    if let Some(ref parquet_path) = args.embed_from {
+        if !parquet_path.exists() {
+            anyhow::bail!("Parquet file not found: {}", parquet_path.display());
+        }
+        let output_path = args
+            .output
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("--output is required with --embed-from"))?;
+
+        println!("Parquet: {}", parquet_path.display());
+        println!("Output:  {}", output_path.display());
+        println!();
+
+        // Read (node_id, text) pairs from Parquet
+        println!("=== Reading texts from Parquet ===");
+        let read_start = Instant::now();
+
+        let df = LazyFrame::scan_parquet(parquet_path, Default::default())?
+            .collect()?;
+
+        let node_ids: Vec<i64> = df
+            .column("node_id")?
+            .i64()?
+            .into_no_null_iter()
+            .collect();
+        let texts: Vec<String> = df
+            .column("text")?
+            .str()?
+            .into_no_null_iter()
+            .map(|s| s.to_string())
+            .collect();
+
+        println!(
+            "  Loaded {} texts in {:.2}s",
+            texts.len(),
+            read_start.elapsed().as_secs_f64()
+        );
+        println!();
+
+        // Open existing DB
+        let out_conn = db::writer::open_output_db(output_path.to_str().unwrap())?;
+
+        // Clear previous embeddings for re-run support
+        db::writer::clear_embeddings(&out_conn)?;
+
+        // Run embedding
+        run_embedding(&out_conn, &node_ids, &texts, args.batch_size)?;
+
+        println!(
+            "\n=== Done in {:.2}s ===",
+            total_start.elapsed().as_secs_f64()
+        );
+        println!("Output: {}", output_path.display());
+        return Ok(());
+    }
+
+    // Normal + --prepare modes require --input
+    let input_path = args
+        .input
+        .as_ref()
+        .ok_or_else(|| anyhow::anyhow!("--input is required (unless using --embed-from)"))?;
+
     if !input_path.exists() {
         anyhow::bail!("Input file not found: {}", input_path.display());
     }
@@ -164,97 +240,63 @@ fn main() -> Result<()> {
         nodes_written, edges_written, chunk_meta_written
     );
 
+    // Collect embeddable texts (used by both --prepare and Pass 3)
+    let mut embed_node_ids = Vec::new();
+    let mut embed_texts = Vec::new();
+
+    for node in &node_result.nodes {
+        if node.synthetic {
+            continue;
+        }
+        if let Some(text) = node_result.texts.get(&node.id) {
+            if !text.is_empty() {
+                embed_node_ids.push(node.id);
+                embed_texts.push(text.clone());
+            }
+        }
+    }
+
+    // ========== --prepare: write Parquet and exit ==========
+    if let Some(ref parquet_path) = args.prepare {
+        println!("\n=== Writing Parquet ===");
+        let parquet_start = Instant::now();
+
+        let id_series = Column::new("node_id".into(), &embed_node_ids);
+        let text_series = Column::new("text".into(), &embed_texts);
+        let mut df = DataFrame::new(vec![id_series, text_series])?;
+
+        let file = std::fs::File::create(parquet_path)?;
+        ParquetWriter::new(file).finish(&mut df)?;
+
+        println!(
+            "  Wrote {} rows to {}",
+            embed_node_ids.len(),
+            parquet_path.display()
+        );
+        println!(
+            "  Parquet write took: {:.2}s",
+            parquet_start.elapsed().as_secs_f64()
+        );
+        println!("\n  Skipping embeddings (--prepare)");
+        println!(
+            "  Write took:     {:.2}s",
+            write_start.elapsed().as_secs_f64()
+        );
+        println!();
+        println!(
+            "=== Done in {:.2}s ===",
+            total_start.elapsed().as_secs_f64()
+        );
+        println!("Output: {}", output_path.display());
+        println!("Parquet: {}", parquet_path.display());
+        return Ok(());
+    }
+
     // ========== Pass 3: Embed — Compute Vectors ==========
     if args.skip_embeddings {
         println!("\n  Skipping embeddings (--skip-embeddings)");
     } else {
-        println!("\n=== Pass 3: Computing embeddings ===");
-        let pass3_start = Instant::now();
-
-        let embedder = embed::Embedder::new(args.batch_size)?;
-        let dims = embedder.model_dimensions();
-
-        db::writer::write_model_info(&out_conn, "Octen-Embedding-0.6B-INT4-ONNX", dims)?;
-
-        // Collect embeddable nodes and their texts
-        let mut embed_node_ids = Vec::new();
-        let mut embed_texts = Vec::new();
-
-        for node in &node_result.nodes {
-            if node.synthetic {
-                continue;
-            }
-            if let Some(text) = node_result.texts.get(&node.id) {
-                if !text.is_empty() {
-                    embed_node_ids.push(node.id);
-                    embed_texts.push(text.clone());
-                }
-            }
-        }
-
-        println!("  Embedding {} texts...", embed_texts.len());
-
-        // Sort texts by length (proxy for token count) so similar-length texts
-        // are grouped together — gives more predictable batch timing and better
-        // progress estimates. Since the ONNX model pads every input to 512 tokens,
-        // this doesn't change compute per-text, but it improves batch-level reporting.
-        let mut order: Vec<usize> = (0..embed_texts.len()).collect();
-        order.sort_by_key(|&i| embed_texts[i].len());
-
-        let sorted_ids: Vec<i64> = order.iter().map(|&i| embed_node_ids[i]).collect();
-        let sorted_texts: Vec<String> = order.iter().map(|&i| embed_texts[i].clone()).collect();
-
-        // Report text-length distribution
-        {
-            let lengths: Vec<usize> = sorted_texts.iter().map(|t| t.len()).collect();
-            let total_chars: usize = lengths.iter().sum();
-            let min_len = lengths.first().copied().unwrap_or(0);
-            let max_len = lengths.last().copied().unwrap_or(0);
-            let median_len = lengths[lengths.len() / 2];
-            let avg_len = total_chars as f64 / lengths.len() as f64;
-
-            // Bucket distribution: <100, 100-500, 500-1000, 1000-2000, 2000+ chars
-            let buckets = [
-                (0, 100, "< 100"),
-                (100, 500, "100-500"),
-                (500, 1000, "500-1k"),
-                (1000, 2000, "1k-2k"),
-                (2000, usize::MAX, "2k+"),
-            ];
-            let mut counts = vec![0usize; buckets.len()];
-            for &l in &lengths {
-                for (i, &(lo, hi, _)) in buckets.iter().enumerate() {
-                    if l >= lo && l < hi {
-                        counts[i] += 1;
-                        break;
-                    }
-                }
-            }
-
-            println!("  Text length distribution (chars):");
-            println!(
-                "    min={}, median={}, mean={:.0}, max={}",
-                min_len, median_len, avg_len, max_len,
-            );
-            let bucket_str: Vec<String> = buckets
-                .iter()
-                .zip(counts.iter())
-                .filter(|(_, &c)| c > 0)
-                .map(|(&(_, _, label), &c)| format!("{}={}", label, c))
-                .collect();
-            println!("    buckets: {}", bucket_str.join(", "));
-        }
-
-        let embeds_written = embedder.embed_batched(
-            &sorted_ids,
-            &sorted_texts,
-            |ids, vecs| db::writer::write_embeddings_batch(&out_conn, ids, vecs),
-        )?;
-        println!("  Wrote {} embeddings", embeds_written);
-        println!(
-            "  Pass 3 took:    {:.2}s",
-            pass3_start.elapsed().as_secs_f64()
-        );
+        run_embedding(&out_conn, &embed_node_ids, &embed_texts, args.batch_size)?;
     }
 
     println!(
@@ -268,6 +310,85 @@ fn main() -> Result<()> {
         total_start.elapsed().as_secs_f64()
     );
     println!("Output: {}", output_path.display());
+
+    Ok(())
+}
+
+fn run_embedding(
+    out_conn: &Connection,
+    embed_node_ids: &[i64],
+    embed_texts: &[String],
+    batch_size: usize,
+) -> Result<()> {
+    println!("\n=== Pass 3: Computing embeddings ===");
+    let pass3_start = Instant::now();
+
+    let embedder = embed::Embedder::new(batch_size)?;
+    let dims = embedder.model_dimensions();
+
+    db::writer::write_model_info(out_conn, "Octen-Embedding-0.6B-INT4-ONNX", dims)?;
+
+    println!("  Embedding {} texts...", embed_texts.len());
+
+    // Sort texts by length (proxy for token count) so similar-length texts
+    // are grouped together — gives more predictable batch timing and better
+    // progress estimates.
+    let mut order: Vec<usize> = (0..embed_texts.len()).collect();
+    order.sort_by_key(|&i| embed_texts[i].len());
+
+    let sorted_ids: Vec<i64> = order.iter().map(|&i| embed_node_ids[i]).collect();
+    let sorted_texts: Vec<String> = order.iter().map(|&i| embed_texts[i].clone()).collect();
+
+    // Report text-length distribution
+    {
+        let lengths: Vec<usize> = sorted_texts.iter().map(|t| t.len()).collect();
+        let total_chars: usize = lengths.iter().sum();
+        let min_len = lengths.first().copied().unwrap_or(0);
+        let max_len = lengths.last().copied().unwrap_or(0);
+        let median_len = lengths[lengths.len() / 2];
+        let avg_len = total_chars as f64 / lengths.len() as f64;
+
+        let buckets = [
+            (0, 100, "< 100"),
+            (100, 500, "100-500"),
+            (500, 1000, "500-1k"),
+            (1000, 2000, "1k-2k"),
+            (2000, usize::MAX, "2k+"),
+        ];
+        let mut counts = vec![0usize; buckets.len()];
+        for &l in &lengths {
+            for (i, &(lo, hi, _)) in buckets.iter().enumerate() {
+                if l >= lo && l < hi {
+                    counts[i] += 1;
+                    break;
+                }
+            }
+        }
+
+        println!("  Text length distribution (chars):");
+        println!(
+            "    min={}, median={}, mean={:.0}, max={}",
+            min_len, median_len, avg_len, max_len,
+        );
+        let bucket_str: Vec<String> = buckets
+            .iter()
+            .zip(counts.iter())
+            .filter(|(_, &c)| c > 0)
+            .map(|(&(_, _, label), &c)| format!("{}={}", label, c))
+            .collect();
+        println!("    buckets: {}", bucket_str.join(", "));
+    }
+
+    let embeds_written = embedder.embed_batched(
+        &sorted_ids,
+        &sorted_texts,
+        |ids, vecs| db::writer::write_embeddings_batch(out_conn, ids, vecs),
+    )?;
+    println!("  Wrote {} embeddings", embeds_written);
+    println!(
+        "  Pass 3 took:    {:.2}s",
+        pass3_start.elapsed().as_secs_f64()
+    );
 
     Ok(())
 }
