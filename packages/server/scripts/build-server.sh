@@ -32,11 +32,6 @@ validate_platform() {
   esac
 }
 
-install_server_deps() {
-  cd "$REPO_ROOT"
-  bun install --frozen-lockfile
-}
-
 get_bun_compile_target() {
   local platform="$1"
   case "$platform" in
@@ -116,7 +111,6 @@ main() {
   fi
 
   validate_platform "$platform"
-  install_server_deps
   run_bundler "$platform"
   build_explorer "$platform"
   copy_runtime_assets

@@ -159,7 +159,69 @@ Open the generated image and use it to guide your analysis:
 | 60-74 | Conditional pass |
 | < 60 | Fail |
 
-## Step 4 — Advance the chat pipeline
+## Step 4 — Run tests before and after changes
+
+Before making any code changes, run the test suite to establish a green
+baseline. After every change, run tests again to catch regressions
+immediately.
+
+### Run all tests
+
+```bash
+bun run test
+```
+
+This runs Vitest across all packages (server, gui, sdk) via the root
+workspace config. All tests must pass before you proceed.
+
+### Run tests for a specific package
+
+When your change is scoped to one package, run just that package's tests for
+faster feedback:
+
+```bash
+# Server tests (chat pipeline, persistence, API routes)
+cd packages/server && bun run test
+
+# GUI tests (components, hooks, stores)
+cd packages/gui && bun run test
+
+# Embeddings tests
+cd packages/embeddings && bun run test
+```
+
+### Run tests with coverage
+
+```bash
+bun run test:coverage
+```
+
+GUI has 70% coverage thresholds for lines, functions, branches, and
+statements. Do not let coverage drop below the threshold.
+
+### Run E2E tests
+
+If your change affects the GUI or server-client interaction:
+
+```bash
+cd packages/gui && bun run test:e2e
+```
+
+This runs Playwright against `http://localhost:5173` (the dev server must be
+running). Use `test:e2e:headed` to watch the browser, or `test:e2e:debug` to
+step through.
+
+### Test discipline
+
+- **Never skip a failing test.** If a test fails, fix the code or update the
+  test — do not delete or `.skip` it.
+- **Add tests for new behavior.** If you change prompt logic, add a unit test
+  in `packages/server/src/` that asserts the new behavior. If you change a
+  component, add or update a `.test.tsx` in the same directory.
+- **Run the full suite before declaring a change complete.** A passing
+  single-package run is not enough — cross-package regressions are real.
+
+## Step 5 — Advance the chat pipeline
 
 After interpreting scores, your goal is to improve the system. Use the
 remediation owner and defect list to decide where to act:
@@ -173,13 +235,15 @@ remediation owner and defect list to decide where to act:
 
 ### Advancement loop
 
-1. Run a sweep (or a targeted question) and score it.
-2. Read the scored report. Identify the lowest-scoring category.
-3. Investigate the relevant code for the remediation owner.
-4. Make a focused change to address the top defect.
-5. Re-run the same question(s) and score again.
-6. Compare before/after scores to confirm improvement.
-7. Repeat until the target band is reached.
+1. Run the full test suite (`bun run test`) — confirm green baseline.
+2. Run a sweep (or a targeted question) and score it.
+3. Generate the histogram and identify the lowest-scoring category.
+4. Investigate the relevant code for the remediation owner.
+5. Make a focused change to address the top defect.
+6. Run the full test suite again — all tests must pass.
+7. Re-run the same question(s) and score again.
+8. Compare before/after scores to confirm improvement.
+9. Repeat until the target band is reached.
 
 ### Regression checks
 

@@ -700,7 +700,7 @@ export const runDeterministicGraphOrchestration = async ({
               semantic_search_results: mcpSearchResult
                 ? {
                     answers: mcpSearchResult.answers
-                      .filter((a) => a.score >= 0.45)
+                      .filter((a) => a.score >= 0.35)
                       .map((a) => ({
                         source: a.source,
                         source_id: a.source_id,
