@@ -1,0 +1,41 @@
+name: Evaluate Embeddings
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - packages/datasets/data/embeddings.sqlite.db
+  pull_request:
+    branches: [main]
+    paths:
+      - packages/datasets/data/embeddings.sqlite.db
+  workflow_dispatch:
+
+jobs:
+  evaluate:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          lfs: true
+
+      - uses: oven-sh/setup-bun@v2
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            packages/embeddings/target
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: embeddings-rust-${{ runner.os }}-${{ hashFiles('packages/embeddings/Cargo.lock') }}
+          restore-keys: embeddings-rust-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: bun install
+        working-directory: packages/embeddings
+
+      - name: Run evaluation
+        run: bash run_evaluation.sh
+        working-directory: packages/embeddings
