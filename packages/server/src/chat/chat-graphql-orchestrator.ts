@@ -272,10 +272,11 @@ const deterministicToolGuide = `Explorer GraphQL schema intent:
 
 Planning policy:
 - CRITICAL: nodes(search: ...) only matches source_id (e.g. "20-124.3") and source (e.g. "virginia_code"). It does NOT search node text or topics. Using topic words like "custody" or "best interests" as the search value will return zero results.
-- To retrieve statutes by topic, use section number prefixes. Key Virginia custody section prefixes: "20-124" (custody/visitation orders), "20-146" (UCCJA jurisdiction), "20-108" (support/modification), "16.1-278" (juvenile court custody matters).
-- When MCP semantic results list source_ids in context below, prefer retrieving those specific nodes with node(id) rather than re-running nodes(search:...).
-- CRITICAL: Do NOT hardcode node(id: X) or similar(id: X) with arbitrary integer IDs you invent. You cannot predict which node IDs exist in the database. Only use node(id) or similar(id) with integer IDs that will be returned by a PRECEDING nodes() query within your plan.
-- If you have no prior nodes() results to draw IDs from, use only nodes(search:...) queries with section number prefixes.
+- To retrieve statutes by topic, use section number prefixes. Key Virginia custody/family law section prefixes: "20-124" (custody/visitation orders, best interests of the child standard), "20-146" (UCCJA jurisdiction), "20-108" (support/modification), "16.1-278" (juvenile court custody matters).
+- When MCP semantic results list sources in context below, you may use their node_id integers directly for node(id) or similar(id) queries. NEVER derive integer IDs from source_id strings (e.g., do NOT use node(id: 63) because you see source_id "63.2-1205" — node_id and source_id are completely different fields).
+- CRITICAL: Do NOT hardcode node(id: X) or similar(id: X) with arbitrary integer IDs you invent. Only use node_id values explicitly provided in the MCP context above, or IDs returned from a nodes() query within the same plan.
+- When the query is about a topic with low-confidence semantic results (score < 0.40) or the retrieved sections appear to be from unrelated areas of law, ALSO issue a nodes(search:...) query using the appropriate section number prefix to find authoritative sections directly.
+- When the query concerns custody, child custody, best interests of the child, visitation, or parenting time, ALWAYS include nodes(search: "20-124", limit: 5) to retrieve the primary family law sections.
 - Keep plan small (1-4 queries), deterministic, and citation-oriented.
 - Never use mutations.
 - CRITICAL: Every query MUST include selection sets for all object/connection return types.
@@ -597,13 +598,13 @@ export const runDeterministicGraphOrchestration = async ({
 
   // Format MCP results as context for the planner
   const mcpContextForPlanner = mcpSearchResult?.answers.length
-    ? `\n\nSemantic search already found these relevant sources (use GraphQL to find additional or related nodes):\n${mcpSearchResult.answers
-        .slice(0, 3)
+    ? `\n\nSemantic search already found these relevant sources. You may use their node_id integers directly for node(id) or similar(id) queries:\n${mcpSearchResult.answers
+        .slice(0, 5)
         .map(
           (a) =>
-            `- ${a.source}:${a.source_id} (${a.node_type}, score=${a.score.toFixed(3)}): ${previewText(a.content, 100)}`,
+            `- ${a.source}:${a.source_id} (node_id=${a.node_id}, ${a.node_type}, score=${a.score.toFixed(3)}): ${previewText(a.content, 100)}`,
         )
-        .join("\n")}`
+        .join("\n")}\n\nIMPORTANT: node_id is the integer database ID for node(id) queries. Do NOT derive IDs from source_id strings. If semantic scores are low or sections appear unrelated, also issue nodes(search:...) queries with section number prefixes to find authoritative sources.`
     : "\n\nNote: Semantic vector search is unavailable. Compensate by issuing 2-3 nodes(search:...) queries using section number prefixes (e.g. \"20-124\" for custody statutes, \"20-146\" for UCCJA, \"16.1-278\" for juvenile court) — nodes(search:...) matches source_id, not content, so topic words will return zero results.";
 
   const planner = await openai.chat.completions.create({

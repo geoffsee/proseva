@@ -136,6 +136,15 @@ Recommended remediation:
 ## 9. Amendments
 
 <!-- AMENDMENTS_START -->
+### Amendment 1 (2026-02-28, rubric-v1.1)
+
+**Trigger**: CeilingCount is 7 out of 10 (>0.7), indicating the rubric may lack discriminating power at the top end.
+**Change**: Add a supplementary evaluation dimension for "Citation Precision and Formatting" to encourage more granular feedback on citation practices.
+**Judge prompt addition**: null
+**New supplementary dimension**: "Citation Precision and Formatting"
+**Defect taxonomy addition**: null
+**Safeguard check**: yes
+
 <!-- AMENDMENTS_END -->
 
 Each amendment follows this template:
