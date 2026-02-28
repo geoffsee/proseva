@@ -2,7 +2,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockCreate = vi.fn();
 const mockEmbeddingsCreate = vi.fn();
-const mockCosineSimilarityDataSpace = vi.fn();
+const mockSearchKnowledge = vi.fn();
+const mockGetEmbeddingDim = vi.fn();
+const mockCallKnowledgeTool = vi.fn();
+const mockGetKnowledgeTools = vi.fn();
+const mockCallCaseTool = vi.fn();
+const mockGetCaseTools = vi.fn();
 
 vi.mock("openai", () => ({
   default: class MockOpenAI {
@@ -22,25 +27,22 @@ vi.mock("fs/promises", async (importOriginal) => {
   };
 });
 
-const mockExecuteExplorerTool = vi.fn();
-
-vi.mock("./explorer-tools", async (importOriginal) => {
-  const actual = (await importOriginal()) as Record<string, unknown>;
-  return {
-    ...actual,
-    executeExplorerTool: (...args: unknown[]) =>
-      mockExecuteExplorerTool(...args),
-  };
-});
-
-vi.mock("./wasm-similarity-init", () => ({
-  ensureWasmSimilarityInit: vi.fn(),
-  cosine_similarity_dataspace: (...args: unknown[]) =>
-    mockCosineSimilarityDataSpace(...args),
+vi.mock("../mcp-knowledge-client", () => ({
+  searchKnowledge: (...args: unknown[]) => mockSearchKnowledge(...args),
+  getEmbeddingDim: (...args: unknown[]) => mockGetEmbeddingDim(...args),
+  callKnowledgeTool: (...args: unknown[]) => mockCallKnowledgeTool(...args),
+  getKnowledgeTools: (...args: unknown[]) => mockGetKnowledgeTools(...args),
+  closeMcpClient: vi.fn(),
 }));
 
-import { setupTestServer, api } from "./test-helpers";
-import { db, type Contact } from "./db";
+vi.mock("../mcp-case-client", () => ({
+  callCaseTool: (...args: unknown[]) => mockCallCaseTool(...args),
+  getCaseTools: (...args: unknown[]) => mockGetCaseTools(...args),
+  closeCaseMcpClient: vi.fn(),
+}));
+
+import { setupTestServer, api } from "../test-helpers";
+import { db, type Contact } from "../db";
 
 const ctx = setupTestServer();
 
@@ -48,8 +50,12 @@ describe("Chat API", () => {
   beforeEach(() => {
     mockCreate.mockReset();
     mockEmbeddingsCreate.mockReset();
-    mockCosineSimilarityDataSpace.mockReset();
-    mockExecuteExplorerTool.mockReset();
+    mockSearchKnowledge.mockReset();
+    mockGetEmbeddingDim.mockReset();
+    mockCallKnowledgeTool.mockReset();
+    mockGetKnowledgeTools.mockReset();
+    mockCallCaseTool.mockReset();
+    mockGetCaseTools.mockReset();
     delete process.env.CHAT_DETERMINISTIC_GRAPH;
     // Default: returns stop with content (works for both Phase 1 and Phase 2).
     // Tests that need specific sequences override with mockResolvedValueOnce.
@@ -64,7 +70,133 @@ describe("Chat API", () => {
     mockEmbeddingsCreate.mockResolvedValue({
       data: [{ embedding: [0.1, 0.2, 0.3] }],
     });
-    mockCosineSimilarityDataSpace.mockReturnValue([0.99, 0]);
+    mockGetEmbeddingDim.mockResolvedValue(3);
+    mockCallCaseTool.mockResolvedValue("[]");
+    mockCallKnowledgeTool.mockResolvedValue("{}");
+    mockGetCaseTools.mockResolvedValue([
+      {
+        type: "function",
+        function: {
+          name: "GetCases",
+          description: "List all cases",
+          parameters: { type: "object", properties: {} },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "GetDeadlines",
+          description: "List deadlines",
+          parameters: { type: "object", properties: {} },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "GetContacts",
+          description: "List contacts",
+          parameters: { type: "object", properties: {} },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "GetFinances",
+          description: "List finances",
+          parameters: { type: "object", properties: {} },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "GetDocuments",
+          description: "List documents",
+          parameters: { type: "object", properties: {} },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "GetDocumentText",
+          description: "Get document text",
+          parameters: { type: "object", properties: {} },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "SearchTimeline",
+          description: "Search timeline",
+          parameters: { type: "object", properties: {} },
+        },
+      },
+    ]);
+    mockGetKnowledgeTools.mockResolvedValue([
+      {
+        type: "function",
+        function: {
+          name: "SearchKnowledge",
+          description: "Semantic retrieval for legal knowledge",
+          parameters: { type: "object", properties: {} },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "get_stats",
+          description: "Dataset stats",
+          parameters: { type: "object", properties: {} },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "search_nodes",
+          description: "Search legal nodes",
+          parameters: { type: "object", properties: {} },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "get_node",
+          description: "Get legal node",
+          parameters: { type: "object", properties: {} },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "get_neighbors",
+          description: "Get related legal nodes",
+          parameters: { type: "object", properties: {} },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "find_similar",
+          description: "Find similar legal nodes",
+          parameters: { type: "object", properties: {} },
+        },
+      },
+    ]);
+    mockSearchKnowledge.mockResolvedValue({
+      answers: [
+        {
+          node_id: 1,
+          source: "va-code",
+          source_id: "20-124.3",
+          node_type: "section",
+          content: "Best interests of the child factors include age and condition.",
+          score: 0.99,
+          semantic_score: 0.99,
+          lexical_score: 0.5,
+          graph_coherence: 0.3,
+        },
+      ],
+      context: [],
+    });
   });
 
   it("returns a reply from the chat endpoint", async () => {
@@ -431,13 +563,6 @@ describe("Chat API", () => {
   });
 
   it("handles SearchKnowledge tool", async () => {
-    db.embeddings.set("emb_1", {
-      id: "emb_1",
-      source: "va-code",
-      content: "Best interests of the child factors include age and condition.",
-      embedding: [0.11, 0.21, 0.31],
-    });
-
     mockCreate
       .mockResolvedValueOnce({
         choices: [
@@ -485,11 +610,11 @@ describe("Chat API", () => {
     const body = await res.json();
     expect(body.reply).toBe("I found one relevant knowledge result.");
     expect(mockEmbeddingsCreate).toHaveBeenCalledWith({
-      model: "text-embedding-3-small",
+      model: "octen-embedding-0.6b",
       input: "best interests of the child",
-      dimensions: 3,
+      encoding_format: "float",
     });
-    expect(mockCosineSimilarityDataSpace).toHaveBeenCalled();
+    expect(mockSearchKnowledge).toHaveBeenCalled();
   });
 
   it("bootstraps compressed graph context and does not expose graph as a tool", async () => {
@@ -603,7 +728,7 @@ describe("Chat API", () => {
     expect(body.reply).toBe("Done.");
   });
 
-  it("includes explorer tools in the tools array sent to OpenAI", async () => {
+  it("includes knowledge MCP tools in the tools array sent to OpenAI", async () => {
     mockCreate
       .mockResolvedValueOnce({
         choices: [{ finish_reason: "stop", message: { content: null } }],
@@ -631,10 +756,11 @@ describe("Chat API", () => {
     expect(toolNames).toContain("find_similar");
   });
 
-  it("dispatches search_nodes explorer tool call and returns result", async () => {
-    mockExecuteExplorerTool.mockResolvedValue(
+  it("dispatches search_nodes knowledge tool call and returns result", async () => {
+    mockCallKnowledgeTool.mockResolvedValue(
       JSON.stringify({
-        nodes: { total: 1, nodes: [{ id: 42, sourceId: "§2.2-3700" }] },
+        total: 1,
+        nodes: [{ id: 42, source_id: "§2.2-3700" }],
       }),
     );
 
@@ -681,7 +807,7 @@ describe("Chat API", () => {
     );
     const body = await res.json();
     expect(body.reply).toBe("Virginia FOIA is at §2.2-3700.");
-    expect(mockExecuteExplorerTool).toHaveBeenCalledWith("search_nodes", {
+    expect(mockCallKnowledgeTool).toHaveBeenCalledWith("search_nodes", {
       search: "FOIA",
       type: "section",
     });
@@ -689,16 +815,10 @@ describe("Chat API", () => {
   });
 
   it("forces SearchKnowledge when search_nodes returns zero repeatedly", async () => {
-    db.embeddings.set("emb_force_1", {
-      id: "emb_force_1",
-      source: "va-code",
-      content: "Virginia custody definitions and standards.",
-      embedding: [0.11, 0.21, 0.31],
-    });
-
-    mockExecuteExplorerTool.mockResolvedValue(
+    mockCallKnowledgeTool.mockResolvedValue(
       JSON.stringify({
-        nodes: { total: 0, nodes: [] },
+        total: 0,
+        nodes: [],
       }),
     );
 
@@ -769,26 +889,22 @@ describe("Chat API", () => {
     const body = await res.json();
     expect(body.reply).toBe("I found additional details from knowledge.");
 
-    expect(mockExecuteExplorerTool).toHaveBeenCalledTimes(2);
-    expect(mockExecuteExplorerTool).toHaveBeenNthCalledWith(1, "search_nodes", {
+    expect(mockCallKnowledgeTool).toHaveBeenCalledTimes(2);
+    expect(mockCallKnowledgeTool).toHaveBeenNthCalledWith(1, "search_nodes", {
       search: "legal custody",
       type: "section",
     });
-    expect(mockExecuteExplorerTool).toHaveBeenNthCalledWith(2, "search_nodes", {
+    expect(mockCallKnowledgeTool).toHaveBeenNthCalledWith(2, "search_nodes", {
       search: "physical custody",
       type: "section",
     });
-    expect(mockEmbeddingsCreate).toHaveBeenCalledWith({
-      model: "text-embedding-3-small",
-      input: originalQuery,
-      dimensions: 3,
-    });
+    expect(mockSearchKnowledge).toHaveBeenCalled();
     expect(mockCreate).toHaveBeenCalledTimes(5);
   });
 
-  it("dispatches get_node explorer tool call", async () => {
-    mockExecuteExplorerTool.mockResolvedValue(
-      JSON.stringify({ node: { id: 42, sourceText: "Full FOIA text here" } }),
+  it("dispatches get_node knowledge tool call", async () => {
+    mockCallKnowledgeTool.mockResolvedValue(
+      JSON.stringify({ id: 42, source_text: "Full FOIA text here" }),
     );
 
     mockCreate
@@ -831,13 +947,15 @@ describe("Chat API", () => {
     );
     const body = await res.json();
     expect(body.reply).toBe("Here is the text.");
-    expect(mockExecuteExplorerTool).toHaveBeenCalledWith("get_node", {
+    expect(mockCallKnowledgeTool).toHaveBeenCalledWith("get_node", {
       id: 42,
     });
   });
 
-  it("handles explorer tool failure gracefully", async () => {
-    mockExecuteExplorerTool.mockRejectedValue(new Error("ECONNREFUSED"));
+  it("handles knowledge tool failure gracefully", async () => {
+    mockCallKnowledgeTool.mockResolvedValue(
+      JSON.stringify({ error: "Knowledge tool 'get_stats' failed: ECONNREFUSED" }),
+    );
 
     mockCreate
       .mockResolvedValueOnce({
@@ -887,7 +1005,7 @@ describe("Chat API", () => {
     expect(mockCreate).toHaveBeenCalledTimes(4);
   });
 
-  it("includes explorer tool note in system prompt", async () => {
+  it("includes knowledge tool note in system prompt", async () => {
     mockCreate
       .mockResolvedValueOnce({
         choices: [{ finish_reason: "stop", message: { content: null } }],

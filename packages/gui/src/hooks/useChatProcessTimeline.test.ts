@@ -175,4 +175,90 @@ describe("useChatProcessTimeline", () => {
 
     expect(result.current.toolSummaryText).toBeNull();
   });
+
+  it("clears timeline state when reset is called", () => {
+    const { result } = renderHook(() => useChatProcessTimeline("chat"));
+
+    act(() => {
+      capturedListener?.({
+        source: "chat",
+        runId: "run-reset",
+        stage: "request-start",
+        message: "Start",
+        at: "2026-02-25T20:00:00.000Z",
+      });
+      capturedListener?.({
+        source: "chat",
+        runId: "run-reset",
+        stage: "tool-summary-done",
+        message: "Tool summary prepared.",
+        at: "2026-02-25T20:00:01.000Z",
+        data: {
+          summary_text:
+            '{"legal_chunks":[{"source":"virginia_code","source_id":"20-124.3"}]}',
+        },
+      });
+    });
+
+    expect(result.current.events.length).toBeGreaterThan(0);
+    expect(result.current.sources.length).toBeGreaterThan(0);
+    expect(result.current.toolSummaryText).not.toBeNull();
+
+    act(() => {
+      result.current.reset();
+    });
+
+    expect(result.current.activeRunId).toBeNull();
+    expect(result.current.events).toHaveLength(0);
+    expect(result.current.sources).toHaveLength(0);
+    expect(result.current.toolSummaryText).toBeNull();
+    expect(result.current.isRunning).toBe(false);
+  });
+
+  it("prefers legal_chunks from tool summary for displayed sources", () => {
+    const { result } = renderHook(() => useChatProcessTimeline("chat"));
+
+    act(() => {
+      capturedListener?.({
+        source: "chat",
+        runId: "run-c",
+        stage: "request-start",
+        message: "Start",
+        at: "2026-02-25T20:00:00.000Z",
+      });
+      capturedListener?.({
+        source: "chat",
+        runId: "run-c",
+        stage: "tool-call-done",
+        message: "GraphQL retrieval query completed.",
+        at: "2026-02-25T20:00:01.000Z",
+        data: {
+          sources: [
+            {
+              source: "virginia_code",
+              source_id: "23.1",
+              node_type: "title",
+            },
+          ],
+        },
+      });
+      capturedListener?.({
+        source: "chat",
+        runId: "run-c",
+        stage: "tool-summary-done",
+        message: "Tool summary prepared.",
+        at: "2026-02-25T20:00:02.000Z",
+        data: {
+          summary_text:
+            "```json\n{\"intent\":\"custody\",\"legal_chunks\":[{\"source\":\"virginia_code\",\"source_id\":\"20-124.3\",\"node_type\":\"section\",\"score\":0.91,\"direct_text_excerpt\":\"The court shall determine legal and physical custody...\"}]}\n```",
+        },
+      });
+    });
+
+    expect(result.current.sources).toHaveLength(1);
+    expect(result.current.sources[0].label).toContain("virginia_code:20-124.3");
+    expect(result.current.sources[0].label).not.toContain("23.1");
+    expect(result.current.sources[0].score).toBe(0.91);
+  });
+
 });

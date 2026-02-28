@@ -5,9 +5,13 @@
   "scripts": {
     "dev": "cargo run --release --bin embedding-server",
     "build": "cargo build --release",
-    "postinstall": "cargo check"
+    "postinstall": "cargo check",
+    "mcp": "bun run mcp-server.ts",
+    "test": "vitest run"
   },
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "^0.2.52"
+    "@anthropic-ai/claude-agent-sdk": "^0.2.52",
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "wasm-similarity": "^1.0.9"
   }
 }

@@ -79,17 +79,20 @@ const Chat = observer(function Chat() {
 
   const archiveConversation = () => {
     chatStore.archiveConversation();
+    processTimeline.reset();
     setInput("");
   };
 
   const selectConversation = (id: string) => {
     chatStore.loadConversation(id);
+    processTimeline.reset();
     setHistoryOpen(false);
     setInput("");
   };
 
   const showProcessPanel =
-    chatStore.isTyping || processTimeline.events.length > 0;
+    chatStore.isTyping ||
+    (chatStore.messages.length > 0 && processTimeline.events.length > 0);
   const processStatusText =
     activityStatus ||
     processTimeline.currentMessage ||

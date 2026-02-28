@@ -239,6 +239,7 @@ export type ServerConfig = {
     smallModel?: string;
     reasoningModel?: string;
     embeddingsModel?: string;
+    embeddingsEndpoint?: string;
   };
 
   autoIngest?: {

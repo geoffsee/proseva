@@ -95,6 +95,9 @@ export function getConfig(key: string): string | undefined {
     if (key === "EMBEDDINGS_MODEL" && configCache.ai?.embeddingsModel) {
       return configCache.ai.embeddingsModel;
     }
+    if (key === "EMBEDDINGS_ENDPOINT" && configCache.ai?.embeddingsEndpoint) {
+      return configCache.ai.embeddingsEndpoint;
+    }
     if (key === "OCR_MODE" && (configCache.ai as any)?.ocrMode) {
       return (configCache.ai as any).ocrMode;
     }
@@ -165,6 +168,8 @@ export function getConfig(key: string): string | undefined {
     SCANNER_ENABLED: "true",
     SCANNER_ENDPOINTS: "http://localhost:8085",
     EXPLORER_URL: "http://localhost:3002",
+    EMBEDDINGS_ENDPOINT: "http://localhost:8000/v1",
+    EMBEDDINGS_MODEL: "octen-embedding-0.6b",
   };
   return defaults[key];
 }

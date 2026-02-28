@@ -7,7 +7,7 @@ import type {
   Evidence,
   Filing,
   Note,
-} from "./db";
+} from "../db";
 
 type GraphEntity =
   | "Workspace"

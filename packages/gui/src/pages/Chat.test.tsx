@@ -9,9 +9,20 @@ const mockClearMessages = vi.fn();
 const mockArchiveConversation = vi.fn();
 const mockLoadConversation = vi.fn();
 const mockAddNote = vi.fn();
+const mockUseActivityStatus = vi.fn();
+const mockUseChatProcessTimeline = vi.fn();
+const mockResetTimeline = vi.fn();
 
 vi.mock("../store/StoreContext", () => ({
   useStore: vi.fn(),
+}));
+
+vi.mock("../hooks/useActivityStatus", () => ({
+  useActivityStatus: (...args: unknown[]) => mockUseActivityStatus(...args),
+}));
+
+vi.mock("../hooks/useChatProcessTimeline", () => ({
+  useChatProcessTimeline: (...args: unknown[]) => mockUseChatProcessTimeline(...args),
 }));
 
 vi.mock("../components/notes/AddEditNoteDialog", () => ({
@@ -68,6 +79,16 @@ function mockStore(overrides?: {
 describe("Chat", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseActivityStatus.mockReturnValue(null);
+    mockUseChatProcessTimeline.mockReturnValue({
+      activeRunId: null,
+      currentMessage: null,
+      events: [],
+      isRunning: false,
+      reset: mockResetTimeline,
+      sources: [],
+      toolSummaryText: null,
+    });
     mockStore();
   });
 
@@ -105,6 +126,7 @@ describe("Chat", () => {
     render(<Chat />);
     fireEvent.click(screen.getByLabelText("Archive conversation"));
     expect(mockArchiveConversation).toHaveBeenCalledTimes(1);
+    expect(mockResetTimeline).toHaveBeenCalledTimes(1);
   });
 
   it("opens history dropdown and loads a selected conversation", () => {

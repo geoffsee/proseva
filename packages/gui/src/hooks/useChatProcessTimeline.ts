@@ -59,6 +59,16 @@ type DisplaySource = {
   preview?: string;
 };
 
+type SummaryLegalChunk = {
+  source: string;
+  source_id?: string;
+  node_type?: string;
+  score?: number;
+  content?: string;
+  chunk_text?: string;
+  direct_text_excerpt?: string;
+};
+
 const MAX_EVENTS = 16;
 const MAX_SOURCES = 8;
 
@@ -113,6 +123,65 @@ const toDisplaySource = (source: ChatProcessSource): DisplaySource => {
   };
 };
 
+const extractSummaryJson = (raw: string): Record<string, unknown> | null => {
+  const trimmed = raw.trim();
+  try {
+    const parsed = JSON.parse(trimmed) as unknown;
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>;
+    }
+  } catch {
+    // Try fenced JSON fallback below.
+  }
+
+  const fencedMatch = trimmed.match(/```json\s*([\s\S]*?)```/i);
+  if (!fencedMatch?.[1]) return null;
+  try {
+    const parsed = JSON.parse(fencedMatch[1]) as unknown;
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+};
+
+const parseSummarySources = (summaryText: string): DisplaySource[] => {
+  const parsed = extractSummaryJson(summaryText);
+  if (!parsed || !Array.isArray(parsed.legal_chunks)) return [];
+
+  const deduped = new Map<string, DisplaySource>();
+  for (const rawChunk of parsed.legal_chunks) {
+    if (!rawChunk || typeof rawChunk !== "object") continue;
+    const chunk = rawChunk as Partial<SummaryLegalChunk>;
+    if (typeof chunk.source !== "string" || chunk.source.length === 0) {
+      continue;
+    }
+    const display = toDisplaySource({
+      source: chunk.source,
+      source_id:
+        typeof chunk.source_id === "string" ? chunk.source_id : undefined,
+      node_type:
+        typeof chunk.node_type === "string" ? chunk.node_type : undefined,
+      score: typeof chunk.score === "number" ? chunk.score : undefined,
+      preview:
+        typeof chunk.chunk_text === "string"
+          ? chunk.chunk_text
+          : typeof chunk.content === "string"
+            ? chunk.content
+            : typeof chunk.direct_text_excerpt === "string"
+              ? chunk.direct_text_excerpt
+              : undefined,
+    });
+    const existing = deduped.get(display.key);
+    if (!existing || (display.score ?? -Infinity) >= (existing.score ?? -Infinity)) {
+      deduped.set(display.key, display);
+    }
+  }
+  return Array.from(deduped.values());
+};
+
 const parsePayload = (data?: unknown): ChatProcessEventPayload | null => {
   if (!data || typeof data !== "object") return null;
   const payload = data as Partial<ChatProcessEventPayload>;
@@ -133,6 +202,15 @@ export function useChatProcessTimeline(source: "chat") {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [sourceMap, setSourceMap] = useState<Record<string, DisplaySource>>({});
   const [toolSummaryText, setToolSummaryText] = useState<string | null>(null);
+
+  const reset = useCallback(() => {
+    activeRunIdRef.current = null;
+    setActiveRunId(null);
+    setIsRunning(false);
+    setEvents([]);
+    setSourceMap({});
+    setToolSummaryText(null);
+  }, []);
 
   const listener = useCallback(
     (raw?: unknown) => {
@@ -204,7 +282,18 @@ export function useChatProcessTimeline(source: "chat") {
         event.stage === "tool-summary-done" &&
         typeof event.data?.summary_text === "string"
       ) {
-        setToolSummaryText(event.data.summary_text);
+        const summaryText = event.data.summary_text;
+        setToolSummaryText(summaryText);
+        const summarySources = parseSummarySources(summaryText);
+        if (summarySources.length > 0) {
+          setSourceMap(() => {
+            const next: Record<string, DisplaySource> = {};
+            for (const source of summarySources) {
+              next[source.key] = source;
+            }
+            return next;
+          });
+        }
       }
 
       if (stagesThatStartRun.has(event.stage)) {
@@ -236,6 +325,7 @@ export function useChatProcessTimeline(source: "chat") {
     currentMessage,
     events,
     isRunning,
+    reset,
     sources,
     toolSummaryText,
   };

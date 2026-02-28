@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "bun run server.ts",
+    "dev": "bun run server.ts --watch",
     "demo": "bun run scenario.ts --embeddings ../../datasets/data/embeddings.sqlite.db --virginia ../../datasets/data/virginia.db --scenario foia"
   },
   "dependencies": {

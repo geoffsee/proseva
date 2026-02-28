@@ -4,7 +4,7 @@
   "version": "0.0.0-prerelease",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "sleep 4; vite",
     "build": "tsc --noEmit && vite build",
     "lint": "eslint .",
     "preview": "vite preview",

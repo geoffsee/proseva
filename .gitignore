@@ -94,3 +94,4 @@ apple-ocr
 !/packages/datasets/data/**/*.json
 /packages/datasets/courts/va-courts.json
 target
+/reports/
