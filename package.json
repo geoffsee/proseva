@@ -38,6 +38,7 @@
     "dev": "./scripts/dev.sh",
     "eval:ai": "bun run scripts/ai-eval-chat.ts",
     "eval:ai:score": "bun run scripts/ai-eval-score.ts",
+    "eval:ai:reflect": "bun run scripts/ai-eval-rubric-reflect.ts",
     "eval:ai:auto": "./scripts/auto-eval.sh",
     "test": "vitest run --silent='passed-only'",
     "test:coverage": "vitest run --silent='passed-only' --coverage",

@@ -132,3 +132,21 @@ Top defects:
 Recommended remediation:
 - ...
 ```
+
+## 9. Amendments
+
+<!-- AMENDMENTS_START -->
+<!-- AMENDMENTS_END -->
+
+Each amendment follows this template:
+
+```markdown
+### Amendment <N> (<date>, rubric-v1.<N>)
+
+**Trigger**: <data pattern that triggered this>
+**Change**: <one-sentence summary>
+**Judge prompt addition**: "<exact text appended to LLM prompt>" or null
+**New supplementary dimension**: "<field name>" or null
+**Defect taxonomy addition**: "<category name>" or null
+**Safeguard check**: yes/no/skipped
+```

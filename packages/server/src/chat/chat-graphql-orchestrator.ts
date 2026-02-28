@@ -265,21 +265,23 @@ const filterSourcesByQueryRelevance = (
 };
 
 const deterministicToolGuide = `Explorer GraphQL schema intent:
-- nodes(type, search, limit, offset): lexical discovery of candidate legal nodes.
+- nodes(type, search, limit, offset): substring search on source_id (section number) and source (corpus name). The search parameter matches the section number or corpus name — NOT the textual content of the node.
 - node(id): full sourceText for one legal node.
 - neighbors(id): legal graph relationships.
 - similar(id, limit): embedding-nearest related nodes.
 
 Planning policy:
-- Use nodes(...) as your primary discovery mechanism. When the primary search term may return few results, add a SECOND nodes() query with alternative keywords (synonyms, related legal concepts) to maximize coverage.
+- CRITICAL: nodes(search: ...) only matches source_id (e.g. "20-124.3") and source (e.g. "virginia_code"). It does NOT search node text or topics. Using topic words like "custody" or "best interests" as the search value will return zero results.
+- To retrieve statutes by topic, use section number prefixes. Key Virginia custody section prefixes: "20-124" (custody/visitation orders), "20-146" (UCCJA jurisdiction), "20-108" (support/modification), "16.1-278" (juvenile court custody matters).
+- When MCP semantic results list source_ids in context below, prefer retrieving those specific nodes with node(id) rather than re-running nodes(search:...).
 - CRITICAL: Do NOT hardcode node(id: X) or similar(id: X) with arbitrary integer IDs you invent. You cannot predict which node IDs exist in the database. Only use node(id) or similar(id) with integer IDs that will be returned by a PRECEDING nodes() query within your plan.
-- If you have no prior nodes() results to draw IDs from, use only nodes(search:...) queries.
+- If you have no prior nodes() results to draw IDs from, use only nodes(search:...) queries with section number prefixes.
 - Keep plan small (1-4 queries), deterministic, and citation-oriented.
 - Never use mutations.
 - CRITICAL: Every query MUST include selection sets for all object/connection return types.
 
 Example queries:
-query { nodes(search: "custody", limit: 5) { nodes { id source sourceId nodeType sourceText } total } }
+query { nodes(search: "20-124", limit: 5) { nodes { id source sourceId nodeType sourceText } total } }
 query { node(id: 42) { id source sourceId nodeType sourceText edges { relType toId toNode { id sourceId nodeType sourceText } } } }
 query { neighbors(id: 42) { fromId toId relType fromNode { id sourceId sourceText } toNode { id sourceId sourceText } } }
 query { similar(id: 42, limit: 3) { score node { id source sourceId nodeType sourceText } } }`;
@@ -602,7 +604,7 @@ export const runDeterministicGraphOrchestration = async ({
             `- ${a.source}:${a.source_id} (${a.node_type}, score=${a.score.toFixed(3)}): ${previewText(a.content, 100)}`,
         )
         .join("\n")}`
-    : "\n\nNote: Semantic vector search is unavailable. Compensate by issuing 2-3 nodes(search:...) queries with diverse search terms — use the primary legal concept, synonyms, and related terms to maximize lexical coverage.";
+    : "\n\nNote: Semantic vector search is unavailable. Compensate by issuing 2-3 nodes(search:...) queries using section number prefixes (e.g. \"20-124\" for custody statutes, \"20-146\" for UCCJA, \"16.1-278\" for juvenile court) — nodes(search:...) matches source_id, not content, so topic words will return zero results.";
 
   const planner = await openai.chat.completions.create({
     model: getConfig("TEXT_MODEL_SMALL") || "gpt-4o-mini",

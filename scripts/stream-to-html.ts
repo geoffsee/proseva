@@ -377,17 +377,36 @@ document.addEventListener('alpine:init', function() {
             var el = document.getElementById('content');
             if (!el || el.innerHTML.length === html.length) return;
 
-            // Save open/closed state of all <details> elements
+            // Save open/closed state by stable content key, not index.
+            // Indexes shift as new rows stream in, which collapses user-opened details.
             var openSet = {};
-            el.querySelectorAll('details').forEach(function(d, i) {
-              if (d.open) openSet[i] = true;
+            var keyCount = {};
+            el.querySelectorAll('details').forEach(function(d) {
+              var summaryEl = d.querySelector('summary');
+              var summary = summaryEl ? summaryEl.textContent.trim() : '';
+              var pre = d.querySelector('pre');
+              var snippet = pre ? pre.textContent.slice(0, 120) : '';
+              var baseKey = [d.className || '', summary, snippet].join('|');
+              var seen = keyCount[baseKey] || 0;
+              keyCount[baseKey] = seen + 1;
+              var key = baseKey + '#' + seen;
+              if (d.open) openSet[key] = true;
             });
 
             el.innerHTML = html;
 
             // Restore open state
-            el.querySelectorAll('details').forEach(function(d, i) {
-              if (openSet[i]) d.open = true;
+            var restoreCount = {};
+            el.querySelectorAll('details').forEach(function(d) {
+              var summaryEl = d.querySelector('summary');
+              var summary = summaryEl ? summaryEl.textContent.trim() : '';
+              var pre = d.querySelector('pre');
+              var snippet = pre ? pre.textContent.slice(0, 120) : '';
+              var baseKey = [d.className || '', summary, snippet].join('|');
+              var seen = restoreCount[baseKey] || 0;
+              restoreCount[baseKey] = seen + 1;
+              var key = baseKey + '#' + seen;
+              if (openSet[key]) d.open = true;
             });
 
             if (self.atBottom) document.getElementById('bottom').scrollIntoView();

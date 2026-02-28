@@ -64,6 +64,13 @@ type EvalResultInput = {
   } & Record<string, unknown>;
 };
 
+type RubricAmendments = {
+  rubricVersion: string;
+  judgePromptAdditions: string[];
+  supplementaryDimensions: string[];
+  defectTaxonomy: string[];
+};
+
 type LlmJudgment = {
   relevanceScore: number;
   citationHumanScore: number;
@@ -72,6 +79,7 @@ type LlmJudgment = {
   remediationOwner: "retrieval" | "orchestration" | "prompt" | "frontend formatting";
   rationale: string;
   warnings: string[];
+  supplementaryJudgments?: Record<string, unknown>;
 };
 
 type ResultScore = {
@@ -96,11 +104,13 @@ type ResultScore = {
   finalScore: number;
   band: "Strong pass" | "Pass with minor issues" | "Conditional pass" | "Fail";
   llmJudgment: LlmJudgment;
+  supplementaryJudgments?: Record<string, unknown>;
 };
 
 type ScoreReport = {
   generatedAt: string;
   sourceReportPath: string;
+  rubricVersion: string;
   config: {
     model: string;
     dryRun: boolean;
@@ -116,12 +126,76 @@ type ScoreReport = {
 };
 
 const DEFAULT_REPORTS_DIR = "reports/ai-eval";
-const DEFAULT_MODEL = process.env.AI_EVAL_SCORER_MODEL ?? "gpt-4o-mini";
+const DEFAULT_MODEL = process.env.AI_EVAL_SCORER_MODEL ?? "gpt-4.1";
 const RETRIEVAL_STAGES = new Set([
   "tool-call-done",
   "tool-summary-done",
   "tool-summary-tool-done",
 ]);
+
+const RUBRIC_DOC_PATH = join(
+  import.meta.dirname ?? process.cwd(),
+  "..",
+  "docs",
+  "ai-eval-scoring-standard.md",
+);
+
+const loadRubricAmendments = (): RubricAmendments => {
+  const base: RubricAmendments = {
+    rubricVersion: "v1.0",
+    judgePromptAdditions: [],
+    supplementaryDimensions: [],
+    defectTaxonomy: [],
+  };
+
+  let content: string;
+  try {
+    content = readFileSync(RUBRIC_DOC_PATH, "utf8");
+  } catch {
+    return base;
+  }
+
+  const startMarker = "<!-- AMENDMENTS_START -->";
+  const endMarker = "<!-- AMENDMENTS_END -->";
+  const startIdx = content.indexOf(startMarker);
+  const endIdx = content.indexOf(endMarker);
+  if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) {
+    return base;
+  }
+
+  const section = content.slice(startIdx + startMarker.length, endIdx).trim();
+  if (section.length === 0) {
+    return base;
+  }
+
+  const amendmentBlocks = section.split(/^### Amendment /m).filter((b) => b.trim().length > 0);
+  let amendmentCount = 0;
+
+  for (const block of amendmentBlocks) {
+    amendmentCount++;
+
+    const judgeMatch = block.match(/\*\*Judge prompt addition\*\*:\s*"(.+?)"/);
+    if (judgeMatch?.[1] && judgeMatch[1] !== "null") {
+      base.judgePromptAdditions.push(judgeMatch[1]);
+    }
+
+    const dimMatch = block.match(/\*\*New supplementary dimension\*\*:\s*"(.+?)"/);
+    if (dimMatch?.[1] && dimMatch[1] !== "null") {
+      base.supplementaryDimensions.push(dimMatch[1]);
+    }
+
+    const defectMatch = block.match(/\*\*Defect taxonomy addition\*\*:\s*"(.+?)"/);
+    if (defectMatch?.[1] && defectMatch[1] !== "null") {
+      base.defectTaxonomy.push(defectMatch[1]);
+    }
+  }
+
+  if (amendmentCount > 0) {
+    base.rubricVersion = `v1.${amendmentCount}`;
+  }
+
+  return base;
+};
 
 const usage = `AI eval scoring runner
 
@@ -335,6 +409,7 @@ const evaluateWithLlm = async (
   client: OpenAI | null,
   model: string,
   result: EvalResultInput,
+  amendments: RubricAmendments,
 ): Promise<LlmJudgment> => {
   if (!client) {
     return {
@@ -390,8 +465,8 @@ Return JSON shape:
   "safetyScore": number,
   "topDefects": string[],
   "remediationOwner": "retrieval" | "orchestration" | "prompt" | "frontend formatting",
-  "rationale": string
-}
+  "rationale": string${amendments.supplementaryDimensions.length > 0 ? ',\n  "supplementaryJudgments": {}' : ""}
+}${amendments.judgePromptAdditions.length > 0 ? `\n\nAdditional judge guidance:\n${amendments.judgePromptAdditions.map((a) => `- ${a}`).join("\n")}` : ""}${amendments.supplementaryDimensions.length > 0 ? `\n\nAlso evaluate these supplementary dimensions (include in supplementaryJudgments):\n${amendments.supplementaryDimensions.map((d) => `- ${d}`).join("\n")}` : ""}${amendments.defectTaxonomy.length > 0 ? `\n\nRecognized defect categories (use in topDefects when applicable):\n${amendments.defectTaxonomy.map((d) => `- ${d}`).join("\n")}` : ""}
 
 Input:
 ${JSON.stringify(promptPayload, null, 2)}`,
@@ -435,6 +510,13 @@ ${JSON.stringify(promptPayload, null, 2)}`,
       ? parsed.rationale.trim()
       : "No rationale provided.";
 
+  const supplementaryJudgments =
+    parsed.supplementaryJudgments &&
+    typeof parsed.supplementaryJudgments === "object" &&
+    !Array.isArray(parsed.supplementaryJudgments)
+      ? (parsed.supplementaryJudgments as Record<string, unknown>)
+      : undefined;
+
   return {
     relevanceScore: relevance.score,
     citationHumanScore: citationHuman.score,
@@ -443,6 +525,7 @@ ${JSON.stringify(promptPayload, null, 2)}`,
     remediationOwner,
     rationale,
     warnings,
+    supplementaryJudgments,
   };
 };
 
@@ -491,10 +574,11 @@ const scoreResult = async (
   client: OpenAI | null,
   model: string,
   result: EvalResultInput,
+  amendments: RubricAmendments,
 ): Promise<ResultScore> => {
   const execution = scoreExecutionReliability(result);
   const process = scoreProcessCompleteness(result);
-  const llmJudgment = await evaluateWithLlm(client, model, result);
+  const llmJudgment = await evaluateWithLlm(client, model, result, amendments);
   const citationPresence = result.metrics?.hasCitation ? 8 : 0;
   const citationFormat = hasStatuteCitationFormat(result) ? 6 : 0;
   const citationRelevance = llmJudgment.citationHumanScore;
@@ -532,6 +616,7 @@ const scoreResult = async (
     finalScore,
     band: scoreBand(finalScore),
     llmJudgment,
+    supplementaryJudgments: llmJudgment.supplementaryJudgments,
   };
 };
 
@@ -541,6 +626,7 @@ const toMarkdown = (report: ScoreReport): string => {
   lines.push("");
   lines.push(`Generated: ${report.generatedAt}`);
   lines.push(`Source report: ${report.sourceReportPath}`);
+  lines.push(`Rubric version: ${report.rubricVersion}`);
   lines.push(`Model: ${report.config.model}`);
   lines.push(`Dry-run: ${report.config.dryRun ? "yes" : "no"}`);
   lines.push("");
@@ -623,14 +709,16 @@ const run = async () => {
         baseURL: process.env.OPENAI_ENDPOINT?.trim() || undefined,
       });
 
+  const amendments = loadRubricAmendments();
   console.log(`[ai-eval-score] source ${sourceReportPath}`);
+  console.log(`[ai-eval-score] rubric ${amendments.rubricVersion}`);
   console.log(`[ai-eval-score] model ${opts.model}`);
   console.log(`[ai-eval-score] scoring ${input.results.length} result(s)`);
 
   const scoredResults: ResultScore[] = [];
   for (const result of input.results) {
     console.log(`[ai-eval-score] scoring result #${result.id}`);
-    const scored = await scoreResult(client, opts.model, result);
+    const scored = await scoreResult(client, opts.model, result, amendments);
     scoredResults.push(scored);
   }
 
@@ -649,6 +737,7 @@ const run = async () => {
   const scoreReport: ScoreReport = {
     generatedAt: new Date().toISOString(),
     sourceReportPath,
+    rubricVersion: amendments.rubricVersion,
     config: {
       model: opts.model,
       dryRun: opts.dryRun,

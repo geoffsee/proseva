@@ -18,7 +18,7 @@ Optional overrides (rarely needed):
 
 ```
 AI_EVAL_BASE_URL=http://localhost:3001/api
-AI_EVAL_SCORER_MODEL=gpt-4o-mini
+AI_EVAL_SCORER_MODEL=gpt-4.1
 OPENAI_ENDPOINT=<custom OpenAI-compatible base URL>
 ```
 
@@ -98,7 +98,7 @@ reports/ai-eval/ai-eval-<timestamp>-score-<timestamp>.md
 | Flag | Purpose |
 |---|---|
 | `--report <path>` | Score a specific report instead of the latest. |
-| `--model <name>` | OpenAI model for rubric judgment (default `gpt-4o-mini`). |
+| `--model <name>` | OpenAI model for rubric judgment (default `gpt-4.1`). |
 | `--dry-run` | Skip the LLM call; only compute automated category scores. |
 
 ## Step 3 — Interpret scores
@@ -262,6 +262,79 @@ for n in $(seq 1 20); do
 done
 ```
 
+## Step 6 — Refine the scoring rubric
+
+After completing a sweep and analyzing results, consider whether the rubric
+itself needs updating. The rubric evolves cyclically: amendments tighten
+criteria and add new defect categories, but never loosen existing standards.
+
+### When to propose an amendment
+
+- A defect pattern appears in 3+ scored results but has no matching defect
+  category.
+- All scores cluster at the ceiling (≥95) — the rubric may lack
+  discriminating power.
+- All scores cluster at the floor (<60) — the rubric may be measuring
+  something the pipeline can't yet control (but never lower standards).
+- LLM judge rationales repeatedly mention a concern not captured by the
+  current rubric.
+
+### How to propose an amendment
+
+Run the reflection script against recent score reports:
+
+```bash
+bun run eval:ai:reflect
+```
+
+This aggregates stats, detects patterns, and outputs a proposed amendment to
+stdout. Review the proposal carefully.
+
+### How to apply an amendment
+
+If the proposal is sound, apply it:
+
+```bash
+bun run eval:ai:reflect -- --apply
+```
+
+This appends the amendment to `docs/ai-eval-scoring-standard.md` inside the
+`<!-- AMENDMENTS_START -->` / `<!-- AMENDMENTS_END -->` markers.
+
+### Amendment template
+
+Each amendment must follow this exact template:
+
+```markdown
+### Amendment <N> (<date>, rubric-v1.<N>)
+
+**Trigger**: <data pattern that triggered this>
+**Change**: <one-sentence summary>
+**Judge prompt addition**: "<exact text appended to LLM prompt>" or null
+**New supplementary dimension**: "<field name>" or null
+**Defect taxonomy addition**: "<category name>" or null
+**Safeguard check**: yes/no/skipped
+```
+
+### Monotonic difficulty constraint
+
+Amendments must only:
+- **Tighten** existing criteria (e.g., require more specific citations)
+- **Add** new defect categories or supplementary dimensions
+- **Clarify** ambiguous guidance in the judge prompt
+
+Amendments must never:
+- Lower score thresholds
+- Remove defect categories
+- Weaken citation or safety requirements
+
+### Verification after amendment
+
+1. Re-run `bun run eval:ai:score` and confirm `rubricVersion` reflects the
+   new version (e.g., `v1.1`).
+2. Compare scores before and after — scores should stay the same or decrease
+   slightly (never inflate).
+
 ## Embedding search evaluation (separate pipeline)
 
 This evaluates the semantic search layer directly, independent of the chat API.
@@ -284,6 +357,7 @@ Prerequisites: Rust toolchain, `packages/datasets/data/embeddings.sqlite.db`,
 |---|---|
 | `scripts/ai-eval-chat.ts` | Chat evaluation runner |
 | `scripts/ai-eval-score.ts` | LLM-judged scoring runner |
+| `scripts/ai-eval-rubric-reflect.ts` | Post-sweep rubric reflection and amendment proposer |
 | `scripts/plot_eval_histogram.py` | Histogram generator for score reports (run with `uv run`) |
 | `docs/ai-eval-questions.md` | 20 evaluation questions |
 | `docs/ai-eval-scoring-standard.md` | Full scoring rubric specification |
