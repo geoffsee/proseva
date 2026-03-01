@@ -8,7 +8,7 @@
     "test": "echo 'No tests yet'",
     "refresh": "echo 'ONLY FOR USE IN CI WORKFLOWS' && bun ./src/refresh.ts",
     "refresh:annual_reports": "bun run src/refresh-scripts/update-annual-reports-dataset.ts",
-    "refresh:appellate_caseload": "bun run src/refresh-scripts/update-appellate-caseload-dataset.ts",
+
     "refresh:benchbook": "bun run src/refresh-scripts/update-benchbook-dataset.ts",
     "refresh:cac_manual": "bun run src/refresh-scripts/update-cac-manual-dataset.ts",
     "refresh:case_law_authorities": "bun run src/refresh-scripts/update-case-law-authorities-dataset.ts",

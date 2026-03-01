@@ -18,7 +18,7 @@ export const usesRelativeDirectory = (path: PathLike) =>
 
 export type DatasetKey =
   | "annual_reports"
-  | "appellate_caseload"
+
   | "benchbook"
   | "cac_manual"
   | "case_law_authorities"
@@ -67,22 +67,6 @@ export const DATASET_CONFIG: Record<
         url: `https://www.vacourts.gov/static/courts/sjr/reports/${year}_sjr.pdf`,
         localName: `state_of_the_judiciary_report_${year}.pdf`,
         isHtml: false,
-      },
-    ],
-  },
-  appellate_caseload: {
-    host: "www.vacourts.gov",
-    basePath: "/courtadmin/aoc/djs/programs/cpss/csi/stats",
-    description:
-      "Caseload statistics for the Supreme Court of Virginia (SCV) and Court of Appeals of Virginia (CAV).",
-    resources: (year = new Date().getFullYear()) => [
-      {
-        url: `/scv/scv_caseload_rpt_${year}.pdf`,
-        localName: `scv_caseload_rpt_${year}.pdf`,
-      },
-      {
-        url: `/cav/cav_caseload_rpt_${year}.pdf`,
-        localName: `cav_caseload_rpt_${year}.pdf`,
       },
     ],
   },

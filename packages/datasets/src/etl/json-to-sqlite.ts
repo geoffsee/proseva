@@ -3,6 +3,7 @@
 import { Database } from "bun:sqlite";
 import { Glob } from "bun";
 import { join, basename } from "path";
+import { existsSync } from "fs";
 
 const DATA_DIR = "data";
 const DB_PATH = join(DATA_DIR, "virginia.db");
@@ -267,7 +268,6 @@ for (const filename of authFiles) {
 // 5. Generic Documents (Manuals, Reports, Benchbook, stats, etc.)
 const datasetsToScan = [
   "annual_reports",
-  "appellate_caseload",
   "benchbook",
   "cac_manual",
   "caseload_stats",
@@ -279,6 +279,7 @@ const datasetsToScan = [
 
 for (const dataset of datasetsToScan) {
   const dir = join(DATA_DIR, dataset);
+  if (!existsSync(dir)) continue;
   const jsonFiles = Array.from(
     new Glob("**/*.json").scanSync({ cwd: dir, absolute: true }),
   );
