@@ -6,7 +6,7 @@
   "scripts": {
     "build": "echo 'No build needed'",
     "test": "echo 'No tests yet'",
-    "refresh:data-sets": "echo 'ONLY FOR USE IN CI WORKFLOWS' && bun src/refresh.ts",
+    "refresh": "echo 'ONLY FOR USE IN CI WORKFLOWS' && bun ./src/refresh.ts",
     "refresh:annual_reports": "bun run src/refresh-scripts/update-annual-reports-dataset.ts",
     "refresh:appellate_caseload": "bun run src/refresh-scripts/update-appellate-caseload-dataset.ts",
     "refresh:benchbook": "bun run src/refresh-scripts/update-benchbook-dataset.ts",
