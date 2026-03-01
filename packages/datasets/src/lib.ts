@@ -44,6 +44,7 @@ export const DATASET_CONFIG: Record<
         ) => Array<{ url: string; localName: string; isHtml?: boolean }>) // For dynamic (e.g., year-based)
       | { pdfUrl: string; parser?: (pdfPath: string) => Promise<unknown> }; // For parsed datasets like courts
     tlsRejectUnauthorized?: boolean; // For sites with cert issues (e.g., lis.virginia.gov)
+    protocol?: "http" | "https"; // Override default https (e.g., vcsc.virginia.gov is http-only)
   }
 > = {
   annual_reports: {
@@ -226,10 +227,15 @@ export const DATASET_CONFIG: Record<
   vcc: {
     host: "www.vcsc.virginia.gov",
     basePath: "/VCCs",
+    protocol: "http",
     description:
       "Virginia Crime Code (VCC) Book, containing codes used for charging and sentencing.",
     resources: (year = new Date().getFullYear()) => [
       { url: `/${year}/${year}VCCBook.pdf`, localName: `${year}VCCBook.pdf` },
+      {
+        url: `/${year}/${year}VCCCodeBook.pdf`,
+        localName: `${year}VCCCodeBook.pdf`,
+      },
     ],
   },
   virginia_code: {
@@ -326,15 +332,14 @@ export const DATASET_CONFIG: Record<
 
 export function getDatasetBaseUrl(
   key: DatasetKey,
-  options: { protocol?: "http" | "https"; host?: string; basePath?: string } = {
-    protocol: "https",
-  },
+  options: { protocol?: "http" | "https"; host?: string; basePath?: string } = {},
 ): string {
   const config = DATASET_CONFIG[key];
   if (!config) throw new Error(`Unknown dataset: ${key}`);
+  const protocol = options.protocol ?? config.protocol ?? "https";
   const host = options.host ?? config.host;
   const basePath = options.basePath ?? config.basePath;
-  return `${options.protocol}://${host}${basePath.startsWith("/") ? basePath : `/${basePath}`}`;
+  return `${protocol}://${host}${basePath.startsWith("/") ? basePath : `/${basePath}`}`;
 }
 
 /**
