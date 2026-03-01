@@ -20,7 +20,7 @@ jobs:
         working-directory: packages/datasets
 
       - name: Refresh all datasets
-        run: bun run refresh:data-sets
+        run: bun run refresh
         working-directory: packages/datasets
 
       - name: Generate SQLite database
