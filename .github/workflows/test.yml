@@ -17,6 +17,8 @@ jobs:
         with:
           bun-version: latest
       - run: bun install
+      - name: Reconstruct datasets from JSONL
+        run: bun run --filter=@proseva/datasets etl:import-jsonl
       - run: bun run build
       - run: bun run test:coverage
       - run: bun run typecheck
