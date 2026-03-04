@@ -24,9 +24,13 @@ export const optimizeToolDecisionContext = async ({
   let hasOptimizedToolContext = false;
 
   if (latestUserMessage.trim().length > 0 && latestAssistantMessage.trim().length > 0) {
-    const optimizationPrompt = `Merge the former assistant response and latest user message into a concise context optimized for tool calling.
+    const optimizationPrompt = `Merge the former assistant response and latest user message into a short keyword-rich search query for a legal knowledge base.
 
-Return only the optimized context text.
+Rules:
+- Output ONLY the search query (a concise noun-phrase, not a full sentence)
+- Focus on core legal concepts, statute topics, and Virginia Code references
+- Prefer specific terms (e.g. "child custody best interests Va. Code § 20-124.3") over generic ones
+- Do NOT output explanations, preamble, or formatting
 
 Use the following tool semantics to shape intent and terminology:
 ${toolSemanticGuide}
@@ -47,7 +51,7 @@ ${latestUserMessage}`;
           {
             role: "system",
             content:
-              "You produce concise retrieval-oriented context for downstream tool selection. Respect available tool semantics and optimize for intentional tool routing.",
+              "You produce a short, keyword-rich search query optimized for semantic retrieval over a legal knowledge base. Output a single concise noun-phrase query (not a sentence or question). Focus on the core legal concepts, statute topics, and specific Virginia Code references. Respect available tool semantics and optimize for intentional tool routing.",
           },
           { role: "user", content: optimizationPrompt },
         ],

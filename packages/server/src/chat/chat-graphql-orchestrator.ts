@@ -471,11 +471,11 @@ export const runDeterministicGraphOrchestration = async ({
           {
             role: "system",
             content:
-              "Produce one concise retrieval context sentence for deterministic GraphQL query planning.",
+              "Produce a short, keyword-rich search query optimized for semantic retrieval over a Virginia legal knowledge base. Output a single concise noun-phrase (not a sentence). Focus on core legal concepts, statute topics, and specific Virginia Code references.",
           },
           {
             role: "user",
-            content: `Merge the former assistant response and latest user message into a concise retrieval context.\n\nFormer assistant response:\n${latestAssistantMessage}\n\nLatest user message:\n${latestUserMessage}`,
+            content: `Merge the former assistant response and latest user message into a short keyword-rich search query.\n\nRules:\n- Output ONLY the search query (a concise noun-phrase)\n- Prefer specific terms (e.g. "child custody best interests Va. Code § 20-124.3") over generic ones\n- Do NOT output explanations or formatting\n\nFormer assistant response:\n${latestAssistantMessage}\n\nLatest user message:\n${latestUserMessage}`,
           },
         ],
       });
