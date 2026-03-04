@@ -1,4 +1,5 @@
 packages/datasets/data/**/*.json filter=lfs diff=lfs merge=lfs -text
 packages/datasets/data/graph.sqlite.jsonl filter=lfs diff=lfs merge=lfs -text
+packages/datasets/data/virginia.sqlite.jsonl filter=lfs diff=lfs merge=lfs -text
 packages/embeddings/onnx/weights/model.int4.onnx filter=lfs diff=lfs merge=lfs -text
 packages/embeddings/onnx/weights/model.int4.onnx.data filter=lfs diff=lfs merge=lfs -text

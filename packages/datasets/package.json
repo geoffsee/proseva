@@ -20,7 +20,9 @@
     "refresh:other": "bun run src/refresh-scripts/update-other-dataset.ts",
     "refresh:vcc": "bun run src/refresh-scripts/update-vcc-dataset.ts",
     "refresh:virginia_code": "bun run src/refresh-scripts/update-virginia-code-dataset.ts",
-    "etl:sqlite": "bun run src/etl/json-to-sqlite.ts"
+    "etl:sqlite": "bun run src/etl/json-to-sqlite.ts",
+    "etl:export-jsonl": "bun run src/etl/sqlite-to-jsonl.ts",
+    "etl:import-jsonl": "bun run src/etl/jsonl-to-sqlite.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"

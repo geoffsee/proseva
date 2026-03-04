@@ -171,6 +171,21 @@ impl EmbeddingPool {
     }
 }
 
+/// EmbeddingGemma prompt prefixes.
+/// See: https://huggingface.co/google/embeddinggemma-300m
+const DOCUMENT_PREFIX: &str = "title: none | text: ";
+const QUERY_PREFIX: &str = "task: search result | query: ";
+
+/// Apply the EmbeddingGemma document prefix to a text.
+pub fn format_document(text: &str) -> String {
+    format!("{DOCUMENT_PREFIX}{text}")
+}
+
+/// Apply the EmbeddingGemma query prefix to a text.
+pub fn format_query(text: &str) -> String {
+    format!("{QUERY_PREFIX}{text}")
+}
+
 pub struct Embedder {
     pub pool: Arc<EmbeddingPool>,
     batch_size: usize,
@@ -193,7 +208,7 @@ impl Embedder {
         let pool = Arc::new(EmbeddingPool::new(pool_size)?);
 
         // Probe dimensions
-        let probe = pool.embed(vec!["hello".to_string()], None).await?;
+        let probe = pool.embed(vec![format_document("hello")], None).await?;
         let dims = probe[0].len();
 
         println!(
@@ -249,9 +264,11 @@ impl Embedder {
             pb.set_message(format!("Batch {}/{}", batch_num, total_batches));
 
             let _batch_start = std::time::Instant::now();
+            // Apply EmbeddingGemma document prefix to each text
+            let prefixed: Vec<String> = text_chunk.iter().map(|t| format_document(t)).collect();
             let embeddings = self
                 .pool
-                .embed(text_chunk.clone(), None)
+                .embed(prefixed, None)
                 .await
                 .map_err(|e| anyhow::anyhow!("Embedding batch failed: {e}"))?;
 

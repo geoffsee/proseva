@@ -91,9 +91,12 @@ async fn embeddings_handler(
         Input::Multiple(v) => v,
     };
 
+    // Apply EmbeddingGemma query prefix for search queries
+    let prefixed: Vec<String> = texts.iter().map(|t| embed::format_query(t)).collect();
+
     // Note: We don't have a tokenizer exposed here to count tokens accurately,
     // so we'll just report 0 for now or use a heuristic. OpenAI expects usage.
-    let embeddings = state.embedder.pool.embed(texts, None).await.expect("Failed to generate embeddings");
+    let embeddings = state.embedder.pool.embed(prefixed, None).await.expect("Failed to generate embeddings");
 
     let data = embeddings
         .into_iter()

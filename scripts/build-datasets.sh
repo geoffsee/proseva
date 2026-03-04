@@ -11,14 +11,18 @@ DATA_DIR="$DATASETS_DIR/data"
 EMBEDDINGS_DIR="$REPO_ROOT/packages/embeddings"
 
 VIRGINIA_DB="$DATA_DIR/virginia.db"
+VIRGINIA_JSONL="$DATA_DIR/virginia.sqlite.jsonl"
 GRAPH_DB="$DATA_DIR/graph.sqlite.db"
 GRAPH_JSONL="$DATA_DIR/graph.sqlite.jsonl"
 
-# Step 1: Build virginia.db from source JSON files
+# Step 1: Build virginia.db
 if [[ -f "$VIRGINIA_DB" ]]; then
   echo "virginia.db exists — skipping ETL"
+elif [[ -f "$VIRGINIA_JSONL" ]]; then
+  echo "=== Building virginia.db from virginia.sqlite.jsonl ==="
+  (cd "$DATASETS_DIR" && bun run etl:import-jsonl)
 else
-  echo "=== Building virginia.db ==="
+  echo "=== Building virginia.db from source JSON files ==="
   (cd "$DATASETS_DIR" && bun run etl:sqlite)
 fi
 
