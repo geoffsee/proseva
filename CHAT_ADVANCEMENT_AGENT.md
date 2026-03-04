@@ -348,7 +348,7 @@ This builds the Rust embedding server (if needed), starts it, and runs 15
 natural-language queries against the embedding corpus. Output is printed to
 stdout with per-query hit rates and multi-metric similarity scores.
 
-Prerequisites: Rust toolchain, `packages/datasets/data/embeddings.sqlite.db`,
+Prerequisites: Rust toolchain, `packages/datasets/data/graph.sqlite.db`,
 `packages/datasets/data/virginia.db`.
 
 ## File reference

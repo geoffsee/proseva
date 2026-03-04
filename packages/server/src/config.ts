@@ -169,7 +169,7 @@ export function getConfig(key: string): string | undefined {
     SCANNER_ENDPOINTS: "http://localhost:8085",
     EXPLORER_URL: "http://localhost:3002",
     EMBEDDINGS_ENDPOINT: "http://localhost:8000/v1",
-    EMBEDDINGS_MODEL: "octen-embedding-0.6b",
+    EMBEDDINGS_MODEL: "onnx-community/embeddinggemma-300m-ONNX",
   };
   return defaults[key];
 }

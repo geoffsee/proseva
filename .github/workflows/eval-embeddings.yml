@@ -4,11 +4,11 @@ on:
   push:
     branches: [main]
     paths:
-      - packages/datasets/data/embeddings.sqlite.db
+      - packages/datasets/data/graph.sqlite.db
   pull_request:
     branches: [main]
     paths:
-      - packages/datasets/data/embeddings.sqlite.db
+      - packages/datasets/data/graph.sqlite.db
   workflow_dispatch:
 
 jobs:

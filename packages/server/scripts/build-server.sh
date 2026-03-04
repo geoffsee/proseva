@@ -78,6 +78,16 @@ build_explorer() {
     --outfile "$DIST_SERVER_DIR/proseva-explorer"
 }
 
+build_embeddings_server() {
+  local embeddings_dir="$REPO_ROOT/packages/embeddings"
+
+  echo "Building embeddings server (Rust release)..."
+  cargo build --release --bin embedding-server \
+    --manifest-path "$embeddings_dir/Cargo.toml"
+  cp "$embeddings_dir/target/release/embedding-server" "$DIST_SERVER_DIR/"
+  chmod +x "$DIST_SERVER_DIR/embedding-server"
+}
+
 copy_runtime_assets() {
   cp "$NODE_MODULES_DIR/wasm-similarity/wasm_similarity_bg.wasm" "$DIST_SERVER_DIR/"
   cp "$NODE_MODULES_DIR/wasm-pqc-subtle/wasm_pqc_subtle_bg.wasm" "$DIST_SERVER_DIR/"
@@ -92,7 +102,7 @@ compress_datasets() {
   local version
   version="$(bun -e "console.log(require('$REPO_ROOT/package.json').version)")"
 
-  for db_file in virginia.db embeddings.sqlite.db; do
+  for db_file in virginia.db graph.sqlite.db; do
     if [[ -f "$datasets_dir/$db_file" ]]; then
       echo "Compressing $db_file with zstd level 19..."
       bun -e "
@@ -104,6 +114,10 @@ compress_datasets() {
   echo "$version" > "$DIST_SERVER_DIR/datasets.version"
 }
 
+reconstruct_datasets() {
+  bash "$REPO_ROOT/scripts/build-datasets.sh"
+}
+
 main() {
   local platform="${1:-auto}"
   if [[ "$platform" == "auto" ]]; then
@@ -113,7 +127,9 @@ main() {
   validate_platform "$platform"
   run_bundler "$platform"
   build_explorer "$platform"
+  build_embeddings_server
   copy_runtime_assets
+  reconstruct_datasets
   compress_datasets
 }
 

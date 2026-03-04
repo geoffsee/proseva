@@ -91,7 +91,7 @@ function ensureDatasets(): void {
   console.log("[datasets] Decompressing datasets (version:", version + ")...");
   fs.mkdirSync(datasetsDir, { recursive: true });
 
-  for (const dbFile of ["virginia.db", "embeddings.sqlite.db"]) {
+  for (const dbFile of ["virginia.db", "graph.sqlite.db"]) {
     const zstPath = path.join(distServerDir, `${dbFile}.zst`);
     if (!fs.existsSync(zstPath)) {
       console.warn(`[datasets] ${dbFile}.zst not found, skipping`);
@@ -168,7 +168,7 @@ async function waitForServer(maxRetries = 30, delayMs = 500): Promise<boolean> {
 function getExplorerDbPaths(): { embeddings: string; virginia: string } {
   const datasetsDir = getDatasetsDir();
   return {
-    embeddings: path.join(datasetsDir, "embeddings.sqlite.db"),
+    embeddings: path.join(datasetsDir, "graph.sqlite.db"),
     virginia: path.join(datasetsDir, "virginia.db"),
   };
 }

@@ -1,14 +1,25 @@
+use std::io::{BufRead, BufReader, Write};
 use anyhow::Result;
 use rusqlite::Connection;
+use serde::{Deserialize, Serialize};
 
-use crate::embed::embedding_to_blob;
 use crate::graph::edges::Edge;
 use crate::graph::nodes::{ChunkMeta, Node};
 
 pub fn create_output_db(path: &str) -> Result<Connection> {
-    // Remove existing file if present
-    if std::path::Path::new(path).exists() {
-        std::fs::remove_file(path)?;
+    // Remove existing database and any stale WAL/SHM files if present
+    let db_path = std::path::Path::new(path);
+    if db_path.exists() {
+        std::fs::remove_file(db_path)?;
+    }
+    // Clean up potential leftovers from previous runs to avoid SQLite short-read errors
+    let wal_path = format!("{}-wal", path);
+    let shm_path = format!("{}-shm", path);
+    if std::path::Path::new(&wal_path).exists() {
+        let _ = std::fs::remove_file(&wal_path);
+    }
+    if std::path::Path::new(&shm_path).exists() {
+        let _ = std::fs::remove_file(&shm_path);
     }
 
     let conn = Connection::open(path)?;
@@ -39,15 +50,15 @@ pub fn create_output_db(path: &str) -> Result<Connection> {
             PRIMARY KEY (from_id, to_id, rel_type)
         );
 
-        CREATE TABLE embeddings (
-            node_id   INTEGER PRIMARY KEY REFERENCES nodes(id),
-            embedding BLOB NOT NULL
-        );
-
         CREATE TABLE chunk_meta (
             node_id    INTEGER PRIMARY KEY REFERENCES nodes(id),
             char_start INTEGER NOT NULL,
             char_end   INTEGER NOT NULL
+        );
+
+        CREATE TABLE embeddings (
+            node_id   INTEGER PRIMARY KEY REFERENCES nodes(id),
+            embedding BLOB NOT NULL
         );
 
         CREATE INDEX idx_nodes_source ON nodes(source, source_id);
@@ -144,29 +155,64 @@ pub fn open_output_db(path: &str) -> Result<Connection> {
 }
 
 pub fn clear_embeddings(conn: &Connection) -> Result<()> {
-    conn.execute("DELETE FROM embeddings", [])?;
     conn.execute("DELETE FROM model_info", [])?;
+    conn.execute("DELETE FROM embeddings", [])?;
     Ok(())
 }
 
-pub fn write_embeddings_batch(
-    conn: &Connection,
+#[derive(Serialize, Deserialize)]
+struct EmbeddingRecord {
+    node_id: i64,
+    embedding: Vec<f32>,
+}
+
+pub fn write_embeddings_jsonl_batch(
+    writer: &mut dyn Write,
     node_ids: &[i64],
     embeddings: &[Vec<f32>],
 ) -> Result<()> {
     assert_eq!(node_ids.len(), embeddings.len());
 
-    let tx = conn.unchecked_transaction()?;
-    {
-        let mut stmt = tx.prepare(
-            "INSERT INTO embeddings (node_id, embedding) VALUES (?1, ?2)",
-        )?;
+    for (node_id, embedding) in node_ids.iter().zip(embeddings.iter()) {
+        let record = EmbeddingRecord {
+            node_id: *node_id,
+            embedding: embedding.clone(),
+        };
+        serde_json::to_writer(&mut *writer, &record)?;
+        writer.write_all(b"\n")?;
+    }
 
-        for (node_id, embedding) in node_ids.iter().zip(embeddings.iter()) {
-            let blob = embedding_to_blob(embedding);
-            stmt.execute(rusqlite::params![node_id, blob])?;
+    Ok(())
+}
+
+pub fn load_embeddings_from_jsonl(conn: &Connection, jsonl_path: &std::path::Path) -> Result<usize> {
+    let file = std::fs::File::open(jsonl_path)?;
+    let reader = BufReader::new(file);
+
+    let tx = conn.unchecked_transaction()?;
+    let mut count = 0;
+    {
+        let mut stmt = tx.prepare("INSERT INTO embeddings (node_id, embedding) VALUES (?1, ?2)")?;
+
+        for line in reader.lines() {
+            let line = line?;
+            if line.trim().is_empty() {
+                continue;
+            }
+            let record: EmbeddingRecord = serde_json::from_str(&line)?;
+
+            // Convert Vec<f32> to bytes for BLOB
+            let bytes: Vec<u8> = record
+                .embedding
+                .iter()
+                .flat_map(|&f| f.to_le_bytes())
+                .collect();
+
+            stmt.execute(rusqlite::params![record.node_id, bytes])?;
+            count += 1;
         }
     }
     tx.commit()?;
-    Ok(())
+
+    Ok(count)
 }

@@ -215,7 +215,7 @@ describe("useChatProcessTimeline", () => {
     expect(result.current.isRunning).toBe(false);
   });
 
-  it("prefers legal_chunks from tool summary for displayed sources", () => {
+  it("merges legal_chunks from tool summary with retrieval sources", () => {
     const { result } = renderHook(() => useChatProcessTimeline("chat"));
 
     act(() => {
@@ -238,6 +238,7 @@ describe("useChatProcessTimeline", () => {
               source: "virginia_code",
               source_id: "23.1",
               node_type: "title",
+              score: 0.4,
             },
           ],
         },
@@ -255,10 +256,76 @@ describe("useChatProcessTimeline", () => {
       });
     });
 
-    expect(result.current.sources).toHaveLength(1);
+    expect(result.current.sources).toHaveLength(2);
     expect(result.current.sources[0].label).toContain("virginia_code:20-124.3");
-    expect(result.current.sources[0].label).not.toContain("23.1");
     expect(result.current.sources[0].score).toBe(0.91);
+    expect(result.current.sources[1].label).toContain("virginia_code:23.1");
+  });
+
+  it("pins statute_reference and string legal_chunks to top of sources", () => {
+    const { result } = renderHook(() => useChatProcessTimeline("chat"));
+
+    act(() => {
+      capturedListener?.({
+        source: "chat",
+        runId: "run-d",
+        stage: "request-start",
+        message: "Start",
+        at: "2026-02-25T20:00:00.000Z",
+      });
+      capturedListener?.({
+        source: "chat",
+        runId: "run-d",
+        stage: "tool-call-done",
+        message: "Search knowledge completed.",
+        at: "2026-02-25T20:00:01.000Z",
+        data: {
+          sources: [
+            {
+              source: "virginia_code",
+              source_id: "38.2-623",
+              node_type: "section",
+              score: 0.532,
+            },
+            {
+              source: "virginia_code",
+              source_id: "15.2-6900",
+              node_type: "section",
+              score: 0.446,
+            },
+          ],
+        },
+      });
+      capturedListener?.({
+        source: "chat",
+        runId: "run-d",
+        stage: "tool-summary-done",
+        message: "Tool summary prepared.",
+        at: "2026-02-25T20:00:02.000Z",
+        data: {
+          summary_text: JSON.stringify({
+            intent: "explain_custody_terms",
+            statute_reference: [
+              "Virginia Code § 20-124.2 - Definitions related to custody.",
+            ],
+            legal_chunks: [
+              'Virginia Code § 20-124.1 states: "...legal custody means the authority to make decisions..."',
+              'Virginia Code § 20-124.2 indicates: "...physical custody refers to where the child primarily resides..."',
+            ],
+          }),
+        },
+      });
+    });
+
+    // Pinned statutes from summary should appear first
+    expect(result.current.sources[0].pinned).toBe(true);
+    expect(result.current.sources[0].label).toContain("20-124.2");
+    expect(result.current.sources[1].pinned).toBe(true);
+    expect(result.current.sources[1].label).toContain("20-124.1");
+    // Embedding sources follow
+    expect(result.current.sources[2].label).toContain("38.2-623");
+    expect(result.current.sources[2].pinned).toBeUndefined();
+    expect(result.current.sources[3].label).toContain("15.2-6900");
   });
 
 });

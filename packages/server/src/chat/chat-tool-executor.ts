@@ -6,6 +6,7 @@ import {
   searchKnowledge,
 } from "../mcp-knowledge-client";
 import { callCaseTool } from "../mcp-case-client";
+import { callSqliteTool } from "../mcp-sqlite-client";
 
 const parseStringArg = (value: unknown): string | undefined => {
   if (typeof value !== "string") return undefined;
@@ -26,11 +27,13 @@ export const createExecuteTool = ({
   embeddingsClient,
   caseToolNames,
   knowledgeToolNames,
+  sqliteToolNames,
   searchKnowledgeToolName,
 }: {
   embeddingsClient: OpenAI;
   caseToolNames: Set<string>;
   knowledgeToolNames: Set<string>;
+  sqliteToolNames: Set<string>;
   searchKnowledgeToolName: string;
 }) => {
   return async (name: string, args: Record<string, unknown>): Promise<string> => {
@@ -47,7 +50,7 @@ export const createExecuteTool = ({
         }
         const topK = parseNumberArg(args.topK) ?? parseNumberArg(args.top_k) ?? 3;
         const embeddingsModel =
-          getConfig("EMBEDDINGS_MODEL") || "octen-embedding-0.6b";
+          getConfig("EMBEDDINGS_MODEL") || "onnx-community/embeddinggemma-300m-ONNX";
         const targetDim = await getEmbeddingDim();
         console.info(
           `[chat][SearchKnowledge] query_len=${query.length} topK=${topK} model=${embeddingsModel} target_dim=${targetDim}`,
@@ -93,6 +96,10 @@ export const createExecuteTool = ({
 
     if (knowledgeToolNames.has(name)) {
       return await callKnowledgeTool(name, args);
+    }
+
+    if (sqliteToolNames.has(name)) {
+      return await callSqliteTool(name, args);
     }
 
     return JSON.stringify({ error: "Unknown tool" });

@@ -35,7 +35,7 @@ const GQL = `http://localhost:${port}/api/graphql`;
 // --- detect corpus dimension from embeddings DB ---
 
 const datasetsDir = process.env.DATASETS_DIR ?? "../datasets/data";
-const embPath = resolve(datasetsDir, "embeddings.sqlite.db");
+const embPath = resolve(datasetsDir, "graph.sqlite.db");
 
 let corpusDim = 1024; // default
 if (existsSync(embPath)) {
@@ -51,7 +51,7 @@ if (existsSync(embPath)) {
 
 const embBase = process.env.OPENAI_BASE_URL ?? "http://localhost:8000/v1";
 const openai = new OpenAI({ baseURL: embBase, apiKey: process.env.OPENAI_API_KEY ?? "unused" });
-const model = process.env.EMBEDDINGS_MODEL ?? "Octen/Octen-Embedding-0.6B";
+const model = process.env.EMBEDDINGS_MODEL ?? "Octen/onnx-community/embeddinggemma-300m-ONNX";
 console.log(`Embedding query: "${query}" (model=${model}, base=${embBase}, dim=${corpusDim})`);
 
 const embResponse = await openai.embeddings.create({

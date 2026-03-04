@@ -159,8 +159,8 @@ function resolveEmbeddingsDbPath(): string | null {
   if (!datasetsDir) return null;
   const serverRoot = join(import.meta.dir, "../..");
   const candidates = [
-    resolve(datasetsDir, "embeddings.sqlite.db"),
-    resolve(serverRoot, datasetsDir, "embeddings.sqlite.db"),
+    resolve(datasetsDir, "graph.sqlite.db"),
+    resolve(serverRoot, datasetsDir, "graph.sqlite.db"),
   ];
   for (const c of candidates) {
     if (existsSync(c)) return c;

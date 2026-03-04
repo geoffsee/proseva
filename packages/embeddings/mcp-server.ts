@@ -608,7 +608,7 @@ function logTriageArtifacts(
 
 // ── CLI args ────────────────────────────────────────────────────────
 const mcpDir = dirname(new URL(import.meta.url).pathname);
-const defaultEmbeddings = join(mcpDir, "../datasets/data/embeddings.sqlite.db");
+const defaultEmbeddings = join(mcpDir, "../datasets/data/graph.sqlite.db");
 const defaultVirginia = join(mcpDir, "../datasets/data/virginia.db");
 
 const args = process.argv.slice(2);

@@ -78,6 +78,10 @@ export function initScheduler(): void {
   );
 }
 
+export function isSchedulerRunning(): boolean {
+  return schedulerJob !== null;
+}
+
 /**
  * Stop the scheduler
  */

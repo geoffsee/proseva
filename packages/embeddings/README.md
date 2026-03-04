@@ -9,12 +9,12 @@ cargo run --bin generate-fixtures
 # Run the full pipeline against it
 cargo run --release --bin proseva-embeddings -- \
   --input fixtures/test-virginia.db \
-  --output fixtures/test-embeddings.sqlite.db
+  --output fixtures/test-graph.sqlite.db
 ```
 
 ---
 
-Rust CLI tool that builds a knowledge graph and precomputed vector embeddings from `virginia.db`. This is a one-shot build tool — run it once when the dataset changes, ship the output `embeddings.sqlite.db` alongside `virginia.db`.
+Rust CLI tool that builds a knowledge graph and precomputed vector embeddings from `virginia.db`. This is a one-shot build tool — run it once when the dataset changes, ship the output `graph.sqlite.db` alongside `virginia.db`.
 
 ## Overview
 
@@ -23,7 +23,7 @@ graph LR
     VDB[(virginia.db)] --> P1[Pass 1: Parse]
     P1 --> P2[Pass 2: Extract]
     P2 --> P3[Pass 3: Embed]
-    P3 --> EDB[(embeddings.sqlite.db)]
+    P3 --> EDB[(graph.sqlite.db)]
 
     style VDB fill:#e8f4f8,stroke:#2196F3
     style EDB fill:#e8f5e9,stroke:#4CAF50
@@ -32,7 +32,7 @@ graph LR
     style P3 fill:#fff3e0,stroke:#FF9800
 ```
 
-The tool reads six tables from `virginia.db`, constructs a knowledge graph of nodes and edges, computes vector embeddings for semantic search, and writes everything to `embeddings.sqlite.db`.
+The tool reads six tables from `virginia.db`, constructs a knowledge graph of nodes and edges, computes vector embeddings for semantic search, and writes everything to `graph.sqlite.db`.
 
 ---
 
@@ -45,7 +45,7 @@ graph TD
 
         subgraph "db/"
             reader[reader.rs<br/>Read virginia.db]
-            writer[writer.rs<br/>Write embeddings.sqlite.db]
+            writer[writer.rs<br/>Write graph.sqlite.db]
         end
 
         subgraph "etl/"
@@ -85,7 +85,7 @@ graph TD
 ```bash
 cargo run --release -- \
   --input ../datasets/data/virginia.db \
-  --output ../datasets/data/embeddings.sqlite.db
+  --output ../datasets/data/graph.sqlite.db
 ```
 
 ### Flags
@@ -93,7 +93,7 @@ cargo run --release -- \
 | Flag                | Default                  | Description                          |
 | ------------------- | ------------------------ | ------------------------------------ |
 | `--input`           | (required)               | Path to `virginia.db`                |
-| `--output`          | sibling of input         | Path to write `embeddings.sqlite.db` |
+| `--output`          | sibling of input         | Path to write `graph.sqlite.db` |
 | `--batch-size`      | `64`                     | Texts per embedding batch            |
 | `--skip-embeddings` | `false`                  | Only build graph, skip Pass 3        |
 
@@ -127,7 +127,7 @@ flowchart TD
     SKIP -->|Yes| DONE([Done])
     SKIP -->|No| PASS3["<b>Pass 3: Embed</b><br/>Compute vectors"]
     PASS3 --> SORT[Sort texts by length]
-    SORT --> BATCH[Batch embed 64 texts at a time<br/>via Octen-Embedding-0.6B INT4 ONNX]
+    SORT --> BATCH[Batch embed 64 texts at a time<br/>via onnx-community/embeddinggemma-300m-ONNX INT4 ONNX]
     BATCH --> BLOB[Serialize as f32 BLOBs]
     BLOB --> WEMBED[Write embeddings to DB]
     WEMBED --> DONE
@@ -326,13 +326,13 @@ All edges are sorted by `(from_id, to_id, rel_type)` and deduplicated. The outpu
 flowchart LR
     TEXTS["42k+ texts"] --> SORT["Sort by length"]
     SORT --> BATCH["Batch (64 texts)"]
-    BATCH --> MODEL["Octen-Embedding-0.6B<br/>(INT4 ONNX via int4_runner)"]
+    BATCH --> MODEL["onnx-community/embeddinggemma-300m-ONNX<br/>(INT4 ONNX via int4_runner)"]
     MODEL --> VEC["Vec&lt;f32&gt; × 1024"]
     VEC --> BLOB["to_le_bytes()"]
     BLOB --> DB["embeddings table<br/>4,096 bytes/vector"]
 ```
 
-- **Model**: `Octen-Embedding-0.6B-INT4-ONNX` — 1024 dimensions, local INT4-quantized ONNX model in `onnx/`
+- **Model**: `onnx-community/embeddinggemma-300m-ONNX-INT4-ONNX` — 1024 dimensions, local INT4-quantized ONNX model in `onnx/`
 - **Batch size**: 64 texts per batch (configurable via `--batch-size`)
 - **Dynamic padding**: `int4_runner` v0.1.1 pads each batch to `[N, max_len_in_batch]` instead of fixed `[1, 512]` — length sorting (stage 3 above) keeps `max_len` per batch small
 - **Skips**: synthetic hierarchy nodes (no text to embed) and nodes with empty text
@@ -381,7 +381,7 @@ erDiagram
 
 | key          | value (example)                       |
 | ------------ | ------------------------------------- |
-| `model_name` | `Octen-Embedding-0.6B-INT4-ONNX`     |
+| `model_name` | `onnx-community/embeddinggemma-300m-ONNX-INT4-ONNX`     |
 | `dimensions` | `1024`                                |
 
 **`nodes`** — one row per embeddable or structural unit.
@@ -461,11 +461,11 @@ sqlite3 /tmp/test.db "SELECT node_type, count(*) FROM nodes GROUP BY node_type O
 # Full run with embeddings
 cargo run --release -- \
   --input ../datasets/data/virginia.db \
-  --output ../datasets/data/embeddings.sqlite.db
+  --output ../datasets/data/graph.sqlite.db
 
 # Verify embeddings
-sqlite3 ../datasets/data/embeddings.sqlite.db "SELECT count(*) FROM embeddings"
-sqlite3 ../datasets/data/embeddings.sqlite.db "SELECT length(embedding) FROM embeddings LIMIT 1"
+sqlite3 ../datasets/data/graph.sqlite.db "SELECT count(*) FROM embeddings"
+sqlite3 ../datasets/data/graph.sqlite.db "SELECT length(embedding) FROM embeddings LIMIT 1"
 # → should return 4096 (1024 * 4)
 ```
 

@@ -185,13 +185,19 @@ export const buildKnowledgeSystemNote = (
   const searchKnowledgeName = getSearchKnowledgeToolName(tools);
   const searchNodesName = getSearchNodesToolName(tools);
   const hasGetNode = hasTool(tools, "get_node");
+  const hasQuery = hasTool(tools, "query");
+
+  const sqliteNote = hasQuery
+    ? " For exact lookups, counts, filtering, or full text retrieval of specific sections, use the query tool with SQL (e.g. SELECT COUNT(*) FROM virginia_code WHERE title_num='20')."
+    : "";
+
   if (searchKnowledgeName && searchNodesName && hasGetNode) {
-    return `You also have access to a Virginia law knowledge graph via MCP tools, including ${searchKnowledgeName}, ${searchNodesName}, and get_node. Prefer ${searchKnowledgeName} for semantic legal retrieval. ${searchNodesName} may return truncated text; use get_node for important sections.`;
+    return `You also have access to a Virginia law knowledge graph via MCP tools, including ${searchKnowledgeName}, ${searchNodesName}, and get_node. Prefer ${searchKnowledgeName} for semantic legal retrieval. ${searchNodesName} may return truncated text; use get_node for important sections.${sqliteNote}`;
   }
   if (searchKnowledgeName) {
-    return `You also have access to a Virginia law knowledge graph via MCP tools. Prefer ${searchKnowledgeName} for semantic legal retrieval when legal questions are asked.`;
+    return `You also have access to a Virginia law knowledge graph via MCP tools. Prefer ${searchKnowledgeName} for semantic legal retrieval when legal questions are asked.${sqliteNote}`;
   }
-  return "You also have access to legal knowledge tools via MCP. Prefer legal retrieval tools when legal questions are asked.";
+  return `You also have access to legal knowledge tools via MCP. Prefer legal retrieval tools when legal questions are asked.${sqliteNote}`;
 };
 
 const toFiniteScore = (value: unknown): number | undefined => {

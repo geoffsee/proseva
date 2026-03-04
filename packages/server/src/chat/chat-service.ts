@@ -4,6 +4,7 @@ import { getConfig } from "../config";
 import { broadcast } from "../broadcast";
 import { getKnowledgeTools } from "../mcp-knowledge-client";
 import { getCaseTools } from "../mcp-case-client";
+import { getSqliteTools } from "../mcp-sqlite-client";
 import { getChatSystemPrompt } from "../prompts";
 import { analyzeCaseGraph, compressCaseGraphForPrompt } from "./chat-graph";
 import {
@@ -42,11 +43,13 @@ export const handleChat = async (messages: ChatInputMessage[]) => {
 
   const caseTools = await getCaseTools();
   const knowledgeTools = await getKnowledgeTools();
-  const tools: OpenAI.ChatCompletionTool[] = [...caseTools, ...knowledgeTools];
+  const sqliteTools = await getSqliteTools();
+  const tools: OpenAI.ChatCompletionTool[] = [...caseTools, ...knowledgeTools, ...sqliteTools];
   const toolLabelMap = buildToolLabelMap(tools);
   const toolSemanticGuide = buildToolSemanticGuide(tools);
   const caseToolNames = getFunctionToolNames(caseTools);
   const knowledgeToolNames = getFunctionToolNames(knowledgeTools);
+  const sqliteToolNames = getFunctionToolNames(sqliteTools);
   const searchKnowledgeToolName =
     getSearchKnowledgeToolName(knowledgeTools) ?? "SearchKnowledge";
   const searchNodesToolName = getSearchNodesToolName(knowledgeTools);
@@ -91,6 +94,7 @@ ${knowledgeSystemNote}`;
     embeddingsClient,
     caseToolNames,
     knowledgeToolNames,
+    sqliteToolNames,
     searchKnowledgeToolName,
   });
 

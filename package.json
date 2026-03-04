@@ -46,6 +46,7 @@
     "typecheck": "bun --filter @proseva/* typecheck",
     "server": "bun --filter=@proseva/server run",
     "datasets": "bun --filter=@proseva/datasets run",
+    "embeddings": "bun --filter=@proseva/embeddings run",
     "gui": "bun --filter=@proseva/gui run",
     "electron": "bun --filter=@proseva/electron run",
     "cli": "bun --filter=@proseva/cli run",
@@ -54,6 +55,7 @@
     "scan:random": "tools/scanner-server/generate-doc.ts",
     "scanner:run": "(cd tools/scanner-server && docker compose up -d)",
     "scanner:stop": "(cd tools/scanner-server && docker compose down)",
-    "scanner:logs": "(cd tools/scanner-server && docker compose logs -f)"
+    "scanner:logs": "(cd tools/scanner-server && docker compose logs -f)",
+    "prepare:datasets": "bash scripts/build-datasets.sh"
   }
 }

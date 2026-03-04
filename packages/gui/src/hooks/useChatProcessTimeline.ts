@@ -57,6 +57,7 @@ type DisplaySource = {
   label: string;
   score?: number;
   preview?: string;
+  pinned?: boolean;
 };
 
 type SummaryLegalChunk = {
@@ -147,38 +148,79 @@ const extractSummaryJson = (raw: string): Record<string, unknown> | null => {
   return null;
 };
 
+const VA_CODE_RE = /Virginia\s+Code\s+§\s*([\d]+(?:\.[\d]+)*-[\d]+(?:\.[\d]+)*)/i;
+
+const extractStatuteSource = (
+  text: string,
+  preview?: string,
+): DisplaySource | null => {
+  const match = text.match(VA_CODE_RE);
+  if (!match) return null;
+  const sectionId = match[1];
+  const key = `virginia_code|${sectionId}|section`;
+  return {
+    key,
+    label: `virginia_code:${sectionId} (section)`,
+    pinned: true,
+    preview,
+  };
+};
+
 const parseSummarySources = (summaryText: string): DisplaySource[] => {
   const parsed = extractSummaryJson(summaryText);
-  if (!parsed || !Array.isArray(parsed.legal_chunks)) return [];
+  if (!parsed) return [];
 
   const deduped = new Map<string, DisplaySource>();
-  for (const rawChunk of parsed.legal_chunks) {
-    if (!rawChunk || typeof rawChunk !== "object") continue;
-    const chunk = rawChunk as Partial<SummaryLegalChunk>;
-    if (typeof chunk.source !== "string" || chunk.source.length === 0) {
-      continue;
-    }
-    const display = toDisplaySource({
-      source: chunk.source,
-      source_id:
-        typeof chunk.source_id === "string" ? chunk.source_id : undefined,
-      node_type:
-        typeof chunk.node_type === "string" ? chunk.node_type : undefined,
-      score: typeof chunk.score === "number" ? chunk.score : undefined,
-      preview:
-        typeof chunk.chunk_text === "string"
-          ? chunk.chunk_text
-          : typeof chunk.content === "string"
-            ? chunk.content
-            : typeof chunk.direct_text_excerpt === "string"
-              ? chunk.direct_text_excerpt
-              : undefined,
-    });
-    const existing = deduped.get(display.key);
-    if (!existing || (display.score ?? -Infinity) >= (existing.score ?? -Infinity)) {
-      deduped.set(display.key, display);
+
+  // Extract pinned sources from statute_reference strings
+  if (Array.isArray(parsed.statute_reference)) {
+    for (const ref of parsed.statute_reference) {
+      if (typeof ref !== "string") continue;
+      const display = extractStatuteSource(ref);
+      if (display && !deduped.has(display.key)) {
+        deduped.set(display.key, display);
+      }
     }
   }
+
+  if (Array.isArray(parsed.legal_chunks)) {
+    for (const rawChunk of parsed.legal_chunks) {
+      // Handle string chunks — extract statute references
+      if (typeof rawChunk === "string") {
+        const display = extractStatuteSource(rawChunk, rawChunk);
+        if (display && !deduped.has(display.key)) {
+          deduped.set(display.key, display);
+        }
+        continue;
+      }
+      if (!rawChunk || typeof rawChunk !== "object") continue;
+      const chunk = rawChunk as Partial<SummaryLegalChunk>;
+      if (typeof chunk.source !== "string" || chunk.source.length === 0) {
+        continue;
+      }
+      const display = toDisplaySource({
+        source: chunk.source,
+        source_id:
+          typeof chunk.source_id === "string" ? chunk.source_id : undefined,
+        node_type:
+          typeof chunk.node_type === "string" ? chunk.node_type : undefined,
+        score: typeof chunk.score === "number" ? chunk.score : undefined,
+        preview:
+          typeof chunk.chunk_text === "string"
+            ? chunk.chunk_text
+            : typeof chunk.content === "string"
+              ? chunk.content
+              : typeof chunk.direct_text_excerpt === "string"
+                ? chunk.direct_text_excerpt
+                : undefined,
+      });
+      const existing = deduped.get(display.key);
+      if (!existing || (display.score ?? -Infinity) >= (existing.score ?? -Infinity)) {
+        deduped.set(display.key, display);
+      }
+    }
+  }
+
   return Array.from(deduped.values());
 };
 
@@ -286,10 +328,10 @@ export function useChatProcessTimeline(source: "chat") {
         setToolSummaryText(summaryText);
         const summarySources = parseSummarySources(summaryText);
         if (summarySources.length > 0) {
-          setSourceMap(() => {
-            const next: Record<string, DisplaySource> = {};
-            for (const source of summarySources) {
-              next[source.key] = source;
+          setSourceMap((prev) => {
+            const next = { ...prev };
+            for (const s of summarySources) {
+              next[s.key] = s;
             }
             return next;
           });
@@ -310,15 +352,51 @@ export function useChatProcessTimeline(source: "chat") {
 
   const sources = useMemo(() => {
     return Object.values(sourceMap)
-      .sort(
-        (a, b) =>
+      .sort((a, b) => {
+        if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+        return (
           (b.score ?? Number.NEGATIVE_INFINITY) -
-          (a.score ?? Number.NEGATIVE_INFINITY),
-      )
+          (a.score ?? Number.NEGATIVE_INFINITY)
+        );
+      })
       .slice(0, MAX_SOURCES);
   }, [sourceMap]);
 
   const currentMessage = events[events.length - 1]?.message ?? null;
+
+  const snapshot = useCallback(() => {
+    if (events.length === 0 && sources.length === 0 && !toolSummaryText) {
+      return null;
+    }
+    return {
+      events: events.map((e) => ({ ...e })),
+      sources: sources.map((s) => ({ ...s })),
+      toolSummaryText,
+    };
+  }, [events, sources, toolSummaryText]);
+
+  const restore = useCallback(
+    (data: {
+      events?: TimelineEvent[];
+      sources?: DisplaySource[];
+      toolSummaryText?: string | null;
+    }) => {
+      if (data.events) {
+        setEvents(data.events);
+      }
+      if (data.sources) {
+        const map: Record<string, DisplaySource> = {};
+        for (const s of data.sources) {
+          map[s.key] = s;
+        }
+        setSourceMap(map);
+      }
+      if (data.toolSummaryText !== undefined) {
+        setToolSummaryText(data.toolSummaryText ?? null);
+      }
+    },
+    [],
+  );
 
   return {
     activeRunId,
@@ -326,6 +404,8 @@ export function useChatProcessTimeline(source: "chat") {
     events,
     isRunning,
     reset,
+    restore,
+    snapshot,
     sources,
     toolSummaryText,
   };

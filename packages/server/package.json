@@ -5,7 +5,8 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "sleep 3; CHAT_DETERMINISTIC_GRAPH=1 DATASETS_DIR=../datasets/data bun run --watch src/index.ts",
+    "predev": "bash ../../scripts/build-datasets.sh",
+    "dev": "CHAT_DETERMINISTIC_GRAPH=1 DATASETS_DIR=../datasets/data bun run --watch src/index.ts",
     "start": "bun run src/index.ts",
     "test": "vitest run",
     "build": "./scripts/build-server.sh",

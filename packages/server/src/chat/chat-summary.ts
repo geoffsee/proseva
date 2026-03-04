@@ -38,7 +38,7 @@ const createExecuteSummaryTool = (embeddingsClient: OpenAI) => {
         return JSON.stringify({ error: "query is required" });
       }
       const topK = parseNumberArg(args.topK) ?? 3;
-      const embeddingsModel = getConfig("EMBEDDINGS_MODEL") || "octen-embedding-0.6b";
+      const embeddingsModel = getConfig("EMBEDDINGS_MODEL") || "onnx-community/embeddinggemma-300m-ONNX";
       const targetDim = await getEmbeddingDim();
       if (targetDim <= 0) return JSON.stringify([]);
 

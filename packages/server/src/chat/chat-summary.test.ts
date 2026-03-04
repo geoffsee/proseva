@@ -12,7 +12,7 @@ vi.mock("../mcp-knowledge-client", () => ({
 
 vi.mock("../config", () => ({
   getConfig: vi.fn((key: string) => {
-    if (key === "EMBEDDINGS_MODEL") return "octen-embedding-0.6b";
+    if (key === "EMBEDDINGS_MODEL") return "onnx-community/embeddinggemma-300m-ONNX";
     if (key === "TEXT_MODEL_SMALL") return "gpt-4o-mini";
     return "";
   }),

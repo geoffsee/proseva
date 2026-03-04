@@ -7,6 +7,7 @@
     "build": "cargo build --release",
     "postinstall": "cargo check",
     "mcp": "bun run mcp-server.ts",
+    "generate": "cargo run --bin proseva-embeddings -- --input ../datasets/data/virginia.db --output ../datasets/data/graph.sqlite.db",
     "test": "vitest run"
   },
   "dependencies": {

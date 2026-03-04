@@ -20,9 +20,13 @@ struct Args {
     #[arg(long)]
     input: Option<PathBuf>,
 
-    /// Path to write embeddings.sqlite.db (output)
+    /// Path to write graph.sqlite.db (output)
     #[arg(long)]
     output: Option<PathBuf>,
+
+    /// Path to write embeddings.jsonl (output)
+    #[arg(long)]
+    jsonl: Option<PathBuf>,
 
     /// Skip embedding computation (only build graph)
     #[arg(long, default_value_t = false)]
@@ -39,15 +43,66 @@ struct Args {
     /// Skip ETL + graph, read texts from Parquet, run embedding only
     #[arg(long)]
     embed_from: Option<PathBuf>,
+
+    /// Load embeddings from JSONL into an existing graph DB (no model needed)
+    #[arg(long)]
+    load_jsonl: Option<PathBuf>,
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let args = Args::parse();
     let total_start = Instant::now();
 
     // Validate mutually exclusive flags
     if args.prepare.is_some() && args.embed_from.is_some() {
         anyhow::bail!("--prepare and --embed-from are mutually exclusive");
+    }
+
+    // --load-jsonl mode: load pre-computed embeddings from JSONL into existing DB
+    if let Some(ref jsonl_path) = args.load_jsonl {
+        if !jsonl_path.exists() {
+            anyhow::bail!("JSONL file not found: {}", jsonl_path.display());
+        }
+        let output_path = args
+            .output
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("--output is required with --load-jsonl"))?;
+
+        println!("JSONL:   {}", jsonl_path.display());
+        println!("Output:  {}", output_path.display());
+        println!();
+
+        let out_conn = db::writer::open_output_db(output_path.to_str().unwrap())?;
+        db::writer::clear_embeddings(&out_conn)?;
+
+        // Infer dimensions from first JSONL line
+        let first_line = {
+            use std::io::BufRead;
+            let file = std::fs::File::open(jsonl_path)?;
+            let mut reader = std::io::BufReader::new(file);
+            let mut line = String::new();
+            reader.read_line(&mut line)?;
+            line
+        };
+        let first_record: serde_json::Value = serde_json::from_str(&first_line)?;
+        let dims = first_record["embedding"]
+            .as_array()
+            .ok_or_else(|| anyhow::anyhow!("First JSONL line has no 'embedding' array"))?
+            .len();
+
+        println!("  Inferred dimensions: {}", dims);
+        db::writer::write_model_info(&out_conn, "onnx-community/embeddinggemma-300m-ONNX", dims)?;
+
+        println!("  Loading embeddings from JSONL...");
+        let count = db::writer::load_embeddings_from_jsonl(&out_conn, jsonl_path)?;
+        println!("  Loaded {} embeddings", count);
+
+        println!(
+            "\n=== Done in {:.2}s ===",
+            total_start.elapsed().as_secs_f64()
+        );
+        return Ok(());
     }
 
     // --embed-from mode: skip ETL, read from Parquet, embed into existing DB
@@ -60,8 +115,16 @@ fn main() -> Result<()> {
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("--output is required with --embed-from"))?;
 
+        let jsonl_path = args.jsonl.unwrap_or_else(|| {
+            output_path
+                .parent()
+                .unwrap()
+                .join("embeddings.jsonl")
+        });
+
         println!("Parquet: {}", parquet_path.display());
         println!("Output:  {}", output_path.display());
+        println!("JSONL:   {}", jsonl_path.display());
         println!();
 
         // Read (node_id, text) pairs from Parquet
@@ -97,13 +160,14 @@ fn main() -> Result<()> {
         db::writer::clear_embeddings(&out_conn)?;
 
         // Run embedding
-        run_embedding(&out_conn, &node_ids, &texts, args.batch_size)?;
+        run_embedding(&out_conn, &jsonl_path, &node_ids, &texts, args.batch_size).await?;
 
         println!(
             "\n=== Done in {:.2}s ===",
             total_start.elapsed().as_secs_f64()
         );
         println!("Output: {}", output_path.display());
+        println!("JSONL:  {}", jsonl_path.display());
         return Ok(());
     }
 
@@ -121,11 +185,20 @@ fn main() -> Result<()> {
         input_path
             .parent()
             .unwrap()
-            .join("embeddings.sqlite.db")
+            .join("graph.sqlite.db")
+    });
+
+    let jsonl_path = args.jsonl.clone().unwrap_or_else(|| {
+        let mut s = output_path.to_str().unwrap().to_string();
+        if let Some(pos) = s.rfind('.') {
+            s.truncate(pos);
+        }
+        PathBuf::from(format!("{}.jsonl", s))
     });
 
     println!("Input:  {}", input_path.display());
     println!("Output: {}", output_path.display());
+    println!("JSONL:  {}", jsonl_path.display());
     println!();
 
     // Open input database
@@ -296,7 +369,7 @@ fn main() -> Result<()> {
     if args.skip_embeddings {
         println!("\n  Skipping embeddings (--skip-embeddings)");
     } else {
-        run_embedding(&out_conn, &embed_node_ids, &embed_texts, args.batch_size)?;
+        run_embedding(&out_conn, &jsonl_path, &embed_node_ids, &embed_texts, args.batch_size).await?;
     }
 
     println!(
@@ -309,13 +382,17 @@ fn main() -> Result<()> {
         "=== Done in {:.2}s ===",
         total_start.elapsed().as_secs_f64()
     );
-    println!("Output: {}", output_path.display());
+    println!("Output:  {}", output_path.display());
+    if !args.skip_embeddings {
+        println!("JSONL:   {}", jsonl_path.display());
+    }
 
     Ok(())
 }
 
-fn run_embedding(
+async fn run_embedding(
     out_conn: &Connection,
+    jsonl_path: &std::path::Path,
     embed_node_ids: &[i64],
     embed_texts: &[String],
     batch_size: usize,
@@ -323,12 +400,16 @@ fn run_embedding(
     println!("\n=== Pass 3: Computing embeddings ===");
     let pass3_start = Instant::now();
 
-    let embedder = embed::Embedder::new(batch_size)?;
+    let mut embedder = embed::Embedder::new(batch_size).await?;
     let dims = embedder.model_dimensions();
 
-    db::writer::write_model_info(out_conn, "Octen-Embedding-0.6B-INT4-ONNX", dims)?;
+    db::writer::write_model_info(out_conn, "onnx-community/embeddinggemma-300m-ONNX", dims)?;
 
     println!("  Embedding {} texts...", embed_texts.len());
+
+    // Create JSONL file
+    let jsonl_file = std::fs::File::create(jsonl_path)?;
+    let mut writer = std::io::BufWriter::new(jsonl_file);
 
     // Sort texts by length (proxy for token count) so similar-length texts
     // are grouped together — gives more predictable batch timing and better
@@ -382,9 +463,17 @@ fn run_embedding(
     let embeds_written = embedder.embed_batched(
         &sorted_ids,
         &sorted_texts,
-        |ids, vecs| db::writer::write_embeddings_batch(out_conn, ids, vecs),
-    )?;
-    println!("  Wrote {} embeddings", embeds_written);
+        |ids, vecs| db::writer::write_embeddings_jsonl_batch(&mut writer, ids, vecs),
+    ).await?;
+    println!("  Wrote {} embeddings to {}", embeds_written, jsonl_path.display());
+
+    // Flush writer before reading back
+    drop(writer);
+
+    println!("  Loading embeddings into SQLite for backwards compatibility...");
+    let db_written = db::writer::load_embeddings_from_jsonl(out_conn, jsonl_path)?;
+    println!("  Wrote {} embeddings to database", db_written);
+
     println!(
         "  Pass 3 took:    {:.2}s",
         pass3_start.elapsed().as_secs_f64()

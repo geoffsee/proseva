@@ -50,9 +50,22 @@ const Chat = observer(function Chat() {
     useState<Omit<Note, "id" | "createdAt" | "updatedAt">>(emptyForm);
   const [historyOpen, setHistoryOpen] = useState(false);
 
+  const wasTypingRef = useRef(false);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatStore.messages.length, chatStore.isTyping]);
+
+  // Snapshot timeline into the last assistant message when typing ends
+  useEffect(() => {
+    if (wasTypingRef.current && !chatStore.isTyping) {
+      const snap = processTimeline.snapshot();
+      if (snap) {
+        chatStore.setLastAssistantMetadata(snap);
+      }
+    }
+    wasTypingRef.current = chatStore.isTyping;
+  }, [chatStore.isTyping, processTimeline, chatStore]);
 
   const send = () => {
     const text = input.trim();
@@ -85,14 +98,23 @@ const Chat = observer(function Chat() {
 
   const selectConversation = (id: string) => {
     chatStore.loadConversation(id);
-    processTimeline.reset();
+    // Restore timeline from the last assistant message's metadata
+    const lastAssistant = [...chatStore.messages]
+      .reverse()
+      .find((m) => m.role === "assistant" && m.metadata);
+    if (lastAssistant?.metadata) {
+      processTimeline.restore(lastAssistant.metadata);
+    } else {
+      processTimeline.reset();
+    }
     setHistoryOpen(false);
     setInput("");
   };
 
   const showProcessPanel =
     chatStore.isTyping ||
-    (chatStore.messages.length > 0 && processTimeline.events.length > 0);
+    (chatStore.messages.length > 0 &&
+      (processTimeline.events.length > 0 || processTimeline.sources.length > 0));
   const processStatusText =
     activityStatus ||
     processTimeline.currentMessage ||
@@ -338,7 +360,7 @@ const Chat = observer(function Chat() {
                       {processTimeline.sources.slice(0, 5).map((source) => (
                         <Text key={source.key} fontSize="xs">
                           {source.label}
-                          {typeof source.score === "number"
+                          {!source.pinned && typeof source.score === "number"
                             ? ` (${source.score.toFixed(3)})`
                             : ""}
                         </Text>

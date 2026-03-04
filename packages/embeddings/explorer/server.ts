@@ -319,7 +319,7 @@ if (import.meta.main) {
   const explorerDir = dirname(new URL(import.meta.url).pathname);
   const defaultEmbeddings = join(
     explorerDir,
-    "../../datasets/data/embeddings.sqlite.db",
+    "../../datasets/data/graph.sqlite.db",
   );
   const defaultVirginia = join(explorerDir, "../../datasets/data/virginia.db");
 

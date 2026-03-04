@@ -610,7 +610,7 @@ describe("Chat API", () => {
     const body = await res.json();
     expect(body.reply).toBe("I found one relevant knowledge result.");
     expect(mockEmbeddingsCreate).toHaveBeenCalledWith({
-      model: "octen-embedding-0.6b",
+      model: "onnx-community/embeddinggemma-300m-ONNX",
       input: "best interests of the child",
       encoding_format: "float",
     });

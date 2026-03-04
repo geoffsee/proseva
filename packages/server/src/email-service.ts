@@ -377,6 +377,10 @@ export function initEmailPoller(): void {
   startPoller();
 }
 
+export function isEmailPollerRunning(): boolean {
+  return pollerJob !== null;
+}
+
 /**
  * Stop the email poller. Called on server shutdown.
  */

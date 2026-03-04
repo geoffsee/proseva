@@ -526,7 +526,7 @@ export const runDeterministicGraphOrchestration = async ({
     });
     try {
       const embeddingsModel =
-        getConfig("EMBEDDINGS_MODEL") || "octen-embedding-0.6b";
+        getConfig("EMBEDDINGS_MODEL") || "onnx-community/embeddinggemma-300m-ONNX";
       const targetDim = await getEmbeddingDim();
       if (targetDim <= 0) {
         console.warn(

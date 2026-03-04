@@ -40,7 +40,7 @@ let transport: StdioClientTransport | null = null;
 let cachedEmbeddingDim: number | null = null;
 
 function resolveDatasetFile(
-  fileName: "embeddings.sqlite.db" | "virginia.db",
+  fileName: "graph.sqlite.db" | "virginia.db",
 ): string | null {
   const datasetsDir = process.env.DATASETS_DIR;
   if (!datasetsDir) return null;
@@ -63,7 +63,7 @@ async function ensureClient(): Promise<Client> {
   const mcpServerPath = join(__dir, "../../embeddings/mcp-server.ts");
   const args = ["run", mcpServerPath];
 
-  const embPath = resolveDatasetFile("embeddings.sqlite.db");
+  const embPath = resolveDatasetFile("graph.sqlite.db");
   const virgPath = resolveDatasetFile("virginia.db");
   if (embPath) args.push("--embeddings", embPath);
   if (virgPath) args.push("--virginia", virgPath);

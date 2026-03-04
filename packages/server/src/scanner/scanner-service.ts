@@ -33,6 +33,7 @@ let sdk: BrotherAds3300wSdk | null = null;
 let scanInProgress = false;
 let pollInProgress = false;
 let lastError: string | undefined;
+let lastLoggedError: string | undefined;
 let previousPaperState: PaperState | undefined;
 let scanCount = 0;
 let configuredEndpoints: string[] = [];
@@ -111,6 +112,11 @@ async function pollScanner(): Promise<void> {
     const status = await sdk.getStatus();
     lastError = undefined;
 
+    if (lastLoggedError) {
+      console.log(`[scanner] recovered from error: ${lastLoggedError}`);
+      lastLoggedError = undefined;
+    }
+
     const currentPaperState = detectPaperState(status.adfState);
     if (currentPaperState !== previousPaperState) {
       console.log(
@@ -128,7 +134,10 @@ async function pollScanner(): Promise<void> {
   } catch (error) {
     const message = asErrorMessage(error);
     lastError = `status poll failed: ${message}`;
-    console.error(`[scanner] ${message}`);
+    if (message !== lastLoggedError) {
+      console.error(`[scanner] ${message}`);
+      lastLoggedError = message;
+    }
   } finally {
     pollInProgress = false;
   }
@@ -173,6 +182,10 @@ export function initScanner(options?: { onComplete?: OnScanComplete }): void {
   );
 }
 
+export function isScannerRunning(): boolean {
+  return pollTimer !== null;
+}
+
 /**
  * Stop the document scanner service.
  */
@@ -185,6 +198,7 @@ export function stopScanner(): void {
   scanInProgress = false;
   pollInProgress = false;
   previousPaperState = undefined;
+  lastLoggedError = undefined;
   configuredEndpoints = [];
   onScanComplete = null;
   console.log("[scanner] Stopped");

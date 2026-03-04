@@ -9,9 +9,10 @@ import {
 } from "./blob-store";
 import { ingestPdfToBlob, classifyDocument } from "./ingest";
 import { autoPopulateFromDocument } from "./ingestion-agent";
-import { initScheduler } from "./scheduler";
-import { initScanner, stopScanner } from "./scanner";
-import { initEmailPoller, stopEmailPoller } from "./email-service";
+import { initScheduler, isSchedulerRunning } from "./scheduler";
+import { initScanner, stopScanner, isScannerRunning } from "./scanner";
+import { initEmailPoller, stopEmailPoller, isEmailPollerRunning } from "./email-service";
+import { startEmbeddingServer, stopEmbeddingServer, embeddingServerStatus } from "./embedding-server";
 import { configRouter } from "./config-api";
 import { securityRouter } from "./security-api";
 import { authRouter, verifyToken } from "./auth-api";
@@ -175,12 +176,15 @@ router.all("/graphql", async (req: Request) => {
   });
 });
 
+// Start the embedding server (no-ops in dev when binary is absent).
+startEmbeddingServer();
+
 // Initialize WASM modules and database before handling any requests.
 ensureWasmSimilarityInit();
 await initDb();
 const datasetsDir = process.env.DATASETS_DIR;
 const embeddingsDbPath = datasetsDir
-  ? join(datasetsDir, "embeddings.sqlite.db")
+  ? join(datasetsDir, "graph.sqlite.db")
   : null;
 console.info(
   `[startup][embeddings] db.embeddings.size=${db.embeddings.size} DATASETS_DIR=${datasetsDir ?? "<unset>"} embeddings_db_path=${embeddingsDbPath ?? "<n/a>"} embeddings_db_exists=${embeddingsDbPath ? existsSync(embeddingsDbPath) : false}`,
@@ -205,11 +209,13 @@ void maybeAutoIngestFromEnv().catch((err) =>
 
 process.on("beforeExit", () => void db.flush());
 process.on("SIGINT", () => {
+  stopEmbeddingServer();
   stopScanner();
   stopEmailPoller();
   void db.flush().then(() => process.exit(0));
 });
 process.on("SIGTERM", () => {
+  stopEmbeddingServer();
   stopScanner();
   stopEmailPoller();
   void db.flush().then(() => process.exit(0));
@@ -326,8 +332,18 @@ initScanner({
 
 const port = parseInt(process.env.PORT || "3001", 10);
 
+const HEARTBEAT_INTERVAL_MS = 60_000;
+function logHeartbeat() {
+  const tag = (ok: boolean) => (ok ? "up" : "down");
+  console.log(
+    `[heartbeat] server=up embeddings=${embeddingServerStatus()} scheduler=${tag(isSchedulerRunning())} email=${tag(isEmailPollerRunning())} scanner=${tag(isScannerRunning())} ws=${wsClients.size}`,
+  );
+}
+setInterval(logHeartbeat, HEARTBEAT_INTERVAL_MS);
+
 if (import.meta.main) {
   console.log(`ProSeVA server running on http://localhost:${port}`);
+  logHeartbeat();
 }
 
 // Re-export broadcast for backward compatibility (used by other modules)

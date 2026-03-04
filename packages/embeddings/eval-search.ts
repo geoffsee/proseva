@@ -44,7 +44,7 @@ function findGitRoot(startDir = process.cwd()) {
   return null;
 }
 
-const EMB_PATH = `${findGitRoot()}/packages/datasets/data/embeddings.sqlite.db`;
+const EMB_PATH = `${findGitRoot()}/packages/datasets/data/graph.sqlite.db`;
 const VIRG_PATH = `${findGitRoot()}/packages/datasets/data/virginia.db`;
 const K = 10;
 

@@ -1,6 +1,7 @@
 import { types, flow } from "mobx-state-tree";
 import { v4 as uuidv4 } from "uuid";
 import { ChatMessageModel } from "./models/ChatMessageModel";
+import type { ChatMessageMetadata } from "./models/ChatMessageModel";
 import * as apiModule from "../lib/api";
 
 const normalizeChatInput = (value: string): string =>
@@ -47,6 +48,7 @@ export const ChatStore = types
           role: m.role,
           text: m.text,
           createdAt: m.createdAt,
+          metadata: m.metadata ?? null,
         })),
       );
       existing.updatedAt = new Date().toISOString();
@@ -149,6 +151,7 @@ export const ChatStore = types
           role: m.role,
           text: m.text,
           createdAt: m.createdAt,
+          metadata: m.metadata ?? null,
         })),
       );
       self.selectedHistoryId = selected.id;
@@ -156,6 +159,14 @@ export const ChatStore = types
     restoreArchivedConversations() {
       // Kept for backward compatibility with existing call sites.
       self.selectedHistoryId = null;
+    },
+    setLastAssistantMetadata(metadata: ChatMessageMetadata) {
+      for (let i = self.messages.length - 1; i >= 0; i--) {
+        if (self.messages[i].role === "assistant") {
+          self.messages[i].metadata = metadata;
+          break;
+        }
+      }
     },
     clearMessages() {
       self.messages.clear();

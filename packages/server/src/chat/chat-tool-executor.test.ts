@@ -17,9 +17,13 @@ vi.mock("../mcp-knowledge-client", () => ({
   searchKnowledge: (...args: unknown[]) => mockSearchKnowledge(...args),
 }));
 
+vi.mock("../mcp-sqlite-client", () => ({
+  callSqliteTool: vi.fn(),
+}));
+
 vi.mock("../config", () => ({
   getConfig: vi.fn((key: string) => {
-    if (key === "EMBEDDINGS_MODEL") return "octen-embedding-0.6b";
+    if (key === "EMBEDDINGS_MODEL") return "onnx-community/embeddinggemma-300m-ONNX";
     return "";
   }),
 }));
@@ -41,6 +45,7 @@ describe("createExecuteTool", () => {
       embeddingsClient,
       caseToolNames: new Set(["GetCases"]),
       knowledgeToolNames: new Set(["get_node"]),
+      sqliteToolNames: new Set([]),
       searchKnowledgeToolName: "SearchKnowledge",
     });
 
@@ -58,6 +63,7 @@ describe("createExecuteTool", () => {
       embeddingsClient,
       caseToolNames: new Set(["GetCases"]),
       knowledgeToolNames: new Set(["get_node"]),
+      sqliteToolNames: new Set([]),
       searchKnowledgeToolName: "SearchKnowledge",
     });
 
@@ -88,6 +94,7 @@ describe("createExecuteTool", () => {
       embeddingsClient,
       caseToolNames: new Set(["GetCases"]),
       knowledgeToolNames: new Set(["get_node"]),
+      sqliteToolNames: new Set([]),
       searchKnowledgeToolName: "SearchKnowledge",
     });
 
@@ -113,6 +120,7 @@ describe("createExecuteTool", () => {
       embeddingsClient,
       caseToolNames: new Set(["GetCases"]),
       knowledgeToolNames: new Set(["get_node"]),
+      sqliteToolNames: new Set([]),
       searchKnowledgeToolName: "SearchKnowledge",
     });
 
