@@ -17,6 +17,7 @@ function resolveSpawnArgs(): { cmd: string; args: string[]; cwd?: string } | nul
   }
 
   // Dev: find the embeddings package relative to this source file and use cargo
+  if (!import.meta.dir) return null;
   const embeddingsDir = resolve(import.meta.dir, "../../embeddings");
   const cargoToml = join(embeddingsDir, "Cargo.toml");
   if (existsSync(cargoToml)) {
