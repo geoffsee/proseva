@@ -12,7 +12,7 @@ import { autoPopulateFromDocument } from "./ingestion-agent";
 import { initScheduler, isSchedulerRunning } from "./scheduler";
 import { initScanner, stopScanner, isScannerRunning } from "./scanner";
 import { initEmailPoller, stopEmailPoller, isEmailPollerRunning } from "./email-service";
-import { startEmbeddingServer, stopEmbeddingServer, embeddingServerStatus } from "./embedding-server";
+import { startEmbeddingServer, stopEmbeddingServer, embeddingServerStatus, getEmbeddingModelStatus, triggerModelDownload } from "./embedding-server";
 import { configRouter } from "./config-api";
 import { securityRouter } from "./security-api";
 import { authRouter, verifyToken } from "./auth-api";
@@ -163,6 +163,25 @@ router.get(
   "/health",
   asIttyRoute("get", "/health", () => ({ status: "ok" })),
 );
+
+// --- Embedding model status & download ---
+router.get("/embeddings/status", async () => getEmbeddingModelStatus());
+
+router.post("/embeddings/download", async () => {
+  const result = triggerModelDownload(
+    (progress) => {
+      broadcast("embedding-download-progress", { progress, downloading: true });
+    },
+    () => {
+      broadcast("embedding-download-progress", {
+        progress: 100,
+        downloading: false,
+        ready: true,
+      });
+    },
+  );
+  return { started: !result.alreadyDownloaded, alreadyDownloaded: result.alreadyDownloaded };
+});
 
 // Mount GraphQL (graphql-yoga) endpoint.
 // Wrap yoga's response in a native Response so itty-router's format chain

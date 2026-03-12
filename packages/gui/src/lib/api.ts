@@ -1294,6 +1294,30 @@ export const virginiaCourtsApi = {
   },
 };
 
+export interface EmbeddingModelStatus {
+  modelDownloaded: boolean;
+  serverStatus: "up" | "down";
+  downloading: boolean;
+  downloadProgress: number;
+  error: string | null;
+}
+
+export const embeddingsApi = {
+  status: async (): Promise<EmbeddingModelStatus> => {
+    const res = await fetch(`${API_BASE}/embeddings/status`, {
+      headers: await getAuthHeaders(),
+    });
+    return res.json();
+  },
+  download: async (): Promise<{ started: boolean; alreadyDownloaded: boolean }> => {
+    const res = await fetch(`${API_BASE}/embeddings/download`, {
+      method: "POST",
+      headers: await getAuthHeaders(),
+    });
+    return res.json();
+  },
+};
+
 export const api = {
   cases: casesApi,
   contacts: contactsApi,
@@ -1320,4 +1344,5 @@ export const api = {
   ingest: ingestApi,
   email: emailApi,
   virginiaCourts: virginiaCourtsApi,
+  embeddings: embeddingsApi,
 };

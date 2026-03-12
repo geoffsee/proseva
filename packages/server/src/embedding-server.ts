@@ -1,8 +1,16 @@
 import { spawn, type ChildProcess } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { homedir } from "node:os";
 
 let embeddingProcess: ChildProcess | null = null;
+
+// Model download state
+let modelDownloading = false;
+let modelDownloadProgress = 0; // 0-100
+let modelDownloadError: string | null = null;
+let onProgressCallback: ((progress: number) => void) | null = null;
+let onReadyCallback: (() => void) | null = null;
 
 /**
  * Resolve how to start the embedding server.
@@ -76,7 +84,33 @@ export function startEmbeddingServer(): void {
       console.log(
         `[startup] Embedding server ready (pid=${embeddingProcess?.pid}, port=${port})`,
       );
+      modelDownloading = false;
+      modelDownloadProgress = 100;
+      modelDownloadError = null;
+      onReadyCallback?.();
+      onReadyCallback = null;
+      onProgressCallback = null;
     }
+
+    // Track download/init progress from Rust output
+    if (msg.includes("Downloading") || msg.includes("extracting")) {
+      modelDownloading = true;
+      // Parse percentage if present (e.g. "50%", "50.0%")
+      const pctMatch = msg.match(/(\d+(?:\.\d+)?)%/);
+      if (pctMatch) {
+        modelDownloadProgress = Math.min(parseFloat(pctMatch[1]), 99);
+        onProgressCallback?.(modelDownloadProgress);
+      }
+    }
+    if (msg.includes("Model ready")) {
+      modelDownloadProgress = 80; // Model downloaded, workers still initializing
+      onProgressCallback?.(modelDownloadProgress);
+    }
+    if (msg.includes("workers initialized")) {
+      modelDownloadProgress = 95;
+      onProgressCallback?.(modelDownloadProgress);
+    }
+
     console.log(`[embedding-server] ${msg}`);
   });
   embeddingProcess.stderr?.on("data", (data: Buffer) => {
@@ -86,10 +120,18 @@ export function startEmbeddingServer(): void {
     console.log(
       `[embedding-server] Process exited code=${code} signal=${signal}`,
     );
+    if (modelDownloading) {
+      modelDownloading = false;
+      modelDownloadError = `Embedding server exited unexpectedly (code=${code}, signal=${signal})`;
+    }
     embeddingProcess = null;
   });
   embeddingProcess.on("error", (err) => {
     console.error(`[embedding-server] Failed to start: ${err.message}`);
+    if (modelDownloading) {
+      modelDownloading = false;
+      modelDownloadError = err.message;
+    }
     embeddingProcess = null;
   });
 }
@@ -98,6 +140,81 @@ export type EmbeddingServerStatus = "up" | "down";
 
 export function embeddingServerStatus(): EmbeddingServerStatus {
   return embeddingProcess !== null && !embeddingProcess.killed ? "up" : "down";
+}
+
+/**
+ * Resolve the model cache directory, mirroring the Rust logic.
+ */
+function resolveModelCacheDir(): string {
+  if (process.env.FASTEMBED_CACHE_DIR) return process.env.FASTEMBED_CACHE_DIR;
+  if (process.env.HF_HOME) return process.env.HF_HOME;
+  return join(homedir(), ".cache", "huggingface", "hub");
+}
+
+/**
+ * Check whether the embedding model has been downloaded to the local cache.
+ * fastembed stores models under `models--{org}--{name}/` in the cache dir.
+ */
+export function isEmbeddingModelDownloaded(): boolean {
+  const cacheDir = resolveModelCacheDir();
+  const modelDir = join(cacheDir, "models--onnx-community--embeddinggemma-300m-ONNX");
+  // The model directory must exist AND contain a snapshots subdirectory with content
+  if (!existsSync(modelDir)) return false;
+  const snapshotsDir = join(modelDir, "snapshots");
+  if (!existsSync(snapshotsDir)) return false;
+  // Check that at least one snapshot exists
+  try {
+    const entries = readdirSync(snapshotsDir);
+    return entries.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+export interface EmbeddingModelStatus {
+  modelDownloaded: boolean;
+  serverStatus: EmbeddingServerStatus;
+  downloading: boolean;
+  downloadProgress: number;
+  error: string | null;
+}
+
+export function getEmbeddingModelStatus(): EmbeddingModelStatus {
+  return {
+    modelDownloaded: isEmbeddingModelDownloaded(),
+    serverStatus: embeddingServerStatus(),
+    downloading: modelDownloading,
+    downloadProgress: modelDownloadProgress,
+    error: modelDownloadError,
+  };
+}
+
+/**
+ * Trigger model download by starting the embedding server.
+ * Tracks progress from stdout and calls callbacks.
+ */
+export function triggerModelDownload(
+  onProgress?: (progress: number) => void,
+  onReady?: () => void,
+): { alreadyDownloaded: boolean } {
+  if (isEmbeddingModelDownloaded() && embeddingServerStatus() === "up") {
+    return { alreadyDownloaded: true };
+  }
+
+  modelDownloading = true;
+  modelDownloadProgress = 0;
+  modelDownloadError = null;
+  onProgressCallback = onProgress ?? null;
+  onReadyCallback = onReady ?? null;
+
+  // If server is already running, just wait for it
+  if (embeddingProcess) {
+    return { alreadyDownloaded: false };
+  }
+
+  // Start the server which will download the model
+  startEmbeddingServer();
+  return { alreadyDownloaded: false };
 }
 
 /**
